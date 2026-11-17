@@ -151,6 +151,8 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "archive", label: "Archive the template" },
         { id: "restore", label: "Restore the template" },
         { id: "delete", label: "Delete permanently" },
+        /** The neutral mark the destroy control carries (#1130) — a glyph is copy, so it lives here. */
+        { id: "delete-mark", label: "×" },
         { id: "delete-title", label: "Delete {title} permanently?" },
         {
           id: "delete-body",

@@ -39,7 +39,8 @@ import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answerGateOf } from "@/lib/flow/answer-gate";
-import { instancePath } from "@/lib/flow/paths";
+import { positionOf } from "@/lib/flow/answer-position";
+import { answerDraftsPath, answerSheetPath, answersPath, instancePath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -98,12 +99,28 @@ export async function generateMetadata({
 
 export default async function AnswerSheetPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ instanceId: string }>;
+  /**
+   * #1128 — `?aspect=` (a position) and the two answers a write can bounce back with
+   * (`?incomplete=1` from `Next` on a half-answered Aspect, `?refused=<code>` from the draft
+   * endpoint). Nothing here decides a *state*: the seat, the mode, the seal and the resume point
+   * all come from the read, and a forged position only moves the reader around their own sheet.
+   */
+  searchParams?: Promise<{
+    aspect?: string | string[];
+    incomplete?: string | string[];
+    refused?: string | string[];
+  }>;
 }) {
   const { instanceId } = await params;
   const screen = await screenFor(instanceId);
   if (screen === undefined) notFound();
+
+  const query = searchParams === undefined ? {} : await searchParams;
+  const first = (value: string | string[] | undefined): string | undefined =>
+    Array.isArray(value) ? value[0] : value;
 
   const gate = answerGateOf({
     instanceRecordId: screen.instanceRecordId,
@@ -125,6 +142,20 @@ export default async function AnswerSheetPage({
         viewer={screen.viewer}
         mode={screen.mode}
         backHref={instancePath(instanceId)}
+        sheetPath={answerSheetPath(instanceId)}
+        draftAction={answerDraftsPath(instanceId)}
+        answersAction={gate.action ?? answersPath(instanceId)}
+        /* The other party's name, from the rows: the privacy note names who cannot see this
+           sheet, and it is the one name the projection carries for them. */
+        otherName={
+          screen.viewer.role === "counterparty"
+            ? screen.initiatorName
+            : (screen.counterpartyName ?? "")
+        }
+        position={positionOf(screen.aspects, first(query.aspect))}
+        {...(first(query.refused) === undefined ? {} : { refused: first(query.refused) })}
+        {...(first(query.incomplete) === "1" ? { incomplete: true } : {})}
+        resultsReady={screen.report !== null}
       />
     </StageColumn>
   );

@@ -52,6 +52,10 @@ import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
+/**
+ * #1131 — Chat v2: one thread per relationship, in the member's dashboard.
+ */
+import { chatPageCopy } from "./chat";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
@@ -60,8 +64,11 @@ import { dashboardPageCopy } from "./dashboard";
 import { dashboardSupportPageCopy } from "./dashboard-support";
 // #533 phase 2 — the initiator's own templates and relationships.
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
+// #1132 — the member's billing surface: one trial panel per relationship, and the Counterparty view.
+import { paymentPageCopy } from "./payment";
 import { dashboardRelationshipsPageCopy } from "./dashboard-relationships";
 import { dashboardTemplateEditorPageCopy } from "./dashboard-template-editor";
+import { dashboardTemplateProposalPageCopy } from "./dashboard-template-proposal";
 import { dashboardTemplatesPageCopy } from "./dashboard-templates";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
@@ -150,6 +157,12 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // bundle draws a greeting, one next step and two shelves, and the counts' own lists are one click
   // away at `/assessments?filter=…` (which is where those cards pointed anyway).
   "/dashboard": startPageCopy,
+  /**
+   * #1131 — one thread per relationship. The AlignSynch build's chat, beside the member's other
+   * record lists: `/chat` stays the **quiz** product's conversations (#300 gates it to that brand),
+   * so this is a sibling of the three routes below rather than a replacement for a quiz surface.
+   */
+  "/dashboard/chat": chatPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:
@@ -158,6 +171,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/relationships/[id]": dashboardRelationshipDetailPageCopy,
   "/dashboard/templates": dashboardTemplatesPageCopy,
   "/dashboard/templates/[id]": dashboardTemplateEditorPageCopy,
+  "/dashboard/templates/[id]/propose": dashboardTemplateProposalPageCopy,
+  "/dashboard/payment": paymentPageCopy,
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
@@ -204,17 +219,15 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
   "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
   /**
-   * The public catalogue, at two addresses and one fixture (#905).
+   * The public catalogue, one address and one fixture (#905, consolidated in #1127).
    *
    * `/relationship-templates` is the catalogue the header, the footer and every "start with a
-   * template" action point at — the V2 composition (`lib/templates-catalogue.ts`).
-   * `/relationship-types` is the retained #889 variation (`lib/templates-page.ts`) and the
-   * namespace a type's own page lives in. Both read this fixture, which is why its rows are keyed
-   * by surface rather than edited in place: one copy table, two pages, neither renaming the other.
+   * template" action point at, and `/relationship-templates/[slug]` is one row of it. The second
+   * surface `/relationship-types` (the retained #889 variation) is retired with its 308, so this
+   * table has one catalogue row rather than two that must be kept saying the same thing.
    */
   "/relationship-templates": templatesPageCopy,
-  "/relationship-types": templatesPageCopy,
-  "/relationship-types/[slug]": templatesDetailPageCopy,
+  "/relationship-templates/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

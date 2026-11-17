@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/og-image.png" width="720" alt="The AlignSynch share card, 1200×630: the AlignSynch lockup on a white panel, the headline 'Two answers. One Gap.' and the Gap drawn as two strokes parting." />
+  <img src="public/og/readme-banner.png" width="1000" alt="The AlignSynch readme banner, 1280×400: the lockup on a white panel, the headline 'Two answers. One Gap.', and the relationship screen beside it." />
 </p>
 
 <p align="center">

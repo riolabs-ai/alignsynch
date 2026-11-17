@@ -13,10 +13,22 @@
  * that reads expired": a second failed renewal for an already-lapsed account moves nothing, so it
  * has nothing to announce. That is what keeps the second delivery from being a second letter.
  *
- * **Both seats are told.** A lapse stops both of them (`lib/relationship/membership.ts` — read-only
- * for both, and the counterparty must not read it as their own failure), and template #7 is written
- * so either seat can receive it. The addresses are the ones the relationship already stores
- * (`session_invite.initiator_email` and `session_invite.email`, the same two columns
+ * **Both seats are told, and each in its own words.** A lapse stops both of them
+ * (`lib/relationship/membership.ts` — read-only for both, and the counterparty must not read it as
+ * their own failure). Until #1139 one template said so to both, and its "until a plan is active
+ * again" was a leak: the Counterparty never sees a price, a plan, a trial, a card or an extension
+ * (#1121, #1138). So the notice now chooses **per seat**:
+ *
+ *   the Initiator, and the lapse is the trial's   `trial-ended-paused` (#12) — Align paused, the one
+ *                                                 free 7-day extension, the plan's address
+ *   the Initiator, any other reason                `membership-lapsed` (#7) — unchanged: "resume it"
+ *   the Counterparty, always                       `relationship-paused` (#13) — the neutral
+ *                                                 sentence, no money in it
+ *
+ * The reason is `relationship.lapse_reason`, which the same statement selects, and the predicate is
+ * `lib/relationship/pause.ts::isTrialPauseReason` — the screen's own rule, so a free week is never
+ * offered in a mailbox that the screen would refuse. The addresses are the ones the relationship
+ * already stores (`session_invite.initiator_email` and `session_invite.email`, the same two columns
  * `readUnlockFacts()` uses) — no lookup of an account's address from a mailbox, and no guessed
  * address. A seat with no stored address is counted, not invented.
  *
@@ -35,10 +47,13 @@
 import { getPool } from "@/lib/db/client";
 import {
   membershipLapsedTemplate,
+  relationshipPausedTemplate,
   renderTemplate,
+  trialEndedPausedTemplate,
   trialEndingTemplate,
 } from "@/lib/email/templates";
 import { relationshipLink, sendMail, type MailOutcome, baseUrl } from "@/lib/flow/email";
+import { isTrialPauseReason } from "@/lib/relationship/pause";
 import type { Sql } from "@/lib/relationship/enforcement";
 
 /** Where a member reads or buys their plan — the trial notice's only address. */
@@ -62,6 +77,7 @@ export interface NoticeResult {
 
 /** One seat, as the relationship's own rows describe it. */
 interface Seat {
+  readonly role: "initiator" | "counterparty";
   readonly name: string;
   readonly email: string | null;
 }
@@ -72,11 +88,16 @@ interface AddressedSeat {
   readonly email: string;
 }
 
+/** A relationship seat that holds an address: what the lapse loop iterates. */
+type AddressedRoleSeat = Seat & AddressedSeat;
+
 /** A relationship that just lapsed, with the two seats' names and stored addresses. */
 interface LapsedSeatsRow {
   readonly id: string;
   readonly title: string | null;
   readonly expired_at: Date | string | null;
+  /** `relationship.lapse_reason` — which mail the Initiator gets, and never what the Counterparty reads. */
+  readonly lapse_reason: string | null;
   readonly initiator_name: string | null;
   readonly initiator_email: string | null;
   readonly counterparty_name: string | null;
@@ -94,6 +115,7 @@ interface LapsedSeatsRow {
 const LAPSED_SEATS_SQL = `SELECT r.id,
          t.title,
          r.expired_at,
+         r.lapse_reason,
          MAX(p.name) FILTER (WHERE p.role = 'initiator')    AS initiator_name,
          MAX(p.name) FILTER (WHERE p.role = 'counterparty') AS counterparty_name,
          MAX(iv.initiator_email)                            AS initiator_email,
@@ -104,7 +126,7 @@ const LAPSED_SEATS_SQL = `SELECT r.id,
     LEFT JOIN party p ON p.session_record_id = s.record_id
     LEFT JOIN session_invite iv ON iv.session_record_id = s.record_id
    WHERE r.id = ANY($1::text[])
-   GROUP BY r.id, t.title, r.expired_at`;
+   GROUP BY r.id, t.title, r.expired_at, r.lapse_reason`;
 
 /** Does this database carry the managed-auth schema at all? A scratch branch does not. */
 const AUTH_USER_PRESENT_SQL = `SELECT to_regclass('neon_auth."user"') IS NOT NULL AS present`;
@@ -154,8 +176,16 @@ function addressOf(email: string | null): string | null {
 /** The two seats of one relationship, as the row describes them. */
 function seatsOf(row: LapsedSeatsRow): readonly Seat[] {
   return [
-    { name: nameOrThere(row.initiator_name), email: addressOf(row.initiator_email) },
-    { name: nameOrThere(row.counterparty_name), email: addressOf(row.counterparty_email) },
+    {
+      role: "initiator",
+      name: nameOrThere(row.initiator_name),
+      email: addressOf(row.initiator_email),
+    },
+    {
+      role: "counterparty",
+      name: nameOrThere(row.counterparty_name),
+      email: addressOf(row.counterparty_email),
+    },
   ];
 }
 
@@ -198,7 +228,7 @@ export async function sendMembershipLapsedNotices(input: {
       continue;
     }
 
-    const seats = seatsOf(row).filter((seat): seat is AddressedSeat => seat.email !== null);
+    const seats = seatsOf(row).filter((seat): seat is AddressedRoleSeat => seat.email !== null);
     if (seats.length === 0) {
       // Neither seat has an address on file (a create that stored none): the relationship is still
       // read-only in the app, which is the state the member acts on, so this is a degraded path.
@@ -215,14 +245,37 @@ export async function sendMembershipLapsedNotices(input: {
     }
 
     const link = relationshipLink(row.id, input.base);
+    const plansLink = `${(input.base ?? baseUrl()).replace(/\/+$/, "")}${PLANS_PATH}`;
+    const title = (row.title ?? "").trim() === "" ? "your relationship" : (row.title as string);
+    // The screen's own rule (`lib/relationship/pause.ts`): the trial's lapse — or one whose reason
+    // cannot be read — is the pause, and the pause is the only state that carries the free week.
+    const pausedForTrial = isTrialPauseReason(row.lapse_reason ?? null);
     const outcomes: MailOutcome[] = [];
     for (const seat of seats) {
-      const rendered = renderTemplate(membershipLapsedTemplate, {
-        recipient: seat.name,
-        template: (row.title ?? "").trim() === "" ? "your relationship" : (row.title as string),
-        endedAt,
-        link,
-      });
+      // Per seat, not per relationship (#1139). The Counterparty never reads a plan, a price, a
+      // trial, a card or an extension, so they never receive #7 or #12 whatever the reason was.
+      const rendered =
+        seat.role === "counterparty"
+          ? renderTemplate(relationshipPausedTemplate, {
+              recipient: seat.name,
+              template: title,
+              pausedAt: endedAt,
+              link,
+            })
+          : pausedForTrial
+            ? renderTemplate(trialEndedPausedTemplate, {
+                recipient: seat.name,
+                template: title,
+                endedAt,
+                link,
+                plansLink,
+              })
+            : renderTemplate(membershipLapsedTemplate, {
+                recipient: seat.name,
+                template: title,
+                endedAt,
+                link,
+              });
       outcomes.push(
         await sendMail(
           { to: seat.email, subject: rendered.subject, text: rendered.text, html: rendered.html },

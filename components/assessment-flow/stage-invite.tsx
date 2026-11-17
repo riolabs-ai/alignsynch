@@ -33,10 +33,13 @@
  * what a component writes, and this one writes none.
  */
 import { useState } from "react";
+import Link from "next/link";
 import type { PageCopy } from "@/content/pages";
+import { billingPlan } from "@/data/billing-plans";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import type { CarriedPlan } from "@/lib/flow/plan-intent";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { PRICING_PATH } from "@/lib/flow/paths";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { type CheckoutHandlers, InviteWalk } from "./invite-walk";
 import { StageFoot } from "./stage-foot";
 
@@ -122,6 +125,33 @@ export function StageInvite({
 
         {/* The two sentences that make "keep it as a draft" safe to choose. */}
         <aside className="space-y-5">
+          {/*
+            #1127 — **the plan the reader chose on `/pricing`, stated once on the stage that sells.**
+            The v2 bundle draws this as a chip beside the invite action: the tier's own name from
+            `data/billing-plans.ts`, the one sentence that says when it starts and what it costs
+            (nothing, until a card is added), and a way back to change the choice. Drawn only when
+            a plan was actually carried — a stage that printed "no plan" would be a question the
+            visitor already answered.
+          */}
+          {carriedPlan === undefined ? null : (
+            <section
+              aria-labelledby="create-invite-plan-heading"
+              className={CARD}
+              data-plan-chip={carriedPlan.planId}
+            >
+              <h2 id="create-invite-plan-heading" className={SMALL}>
+                {fillLabel(itemLabel(invite, "plan-chip"), {
+                  plan: billingPlan(carriedPlan.planId)?.name ?? carriedPlan.planId,
+                })}
+              </h2>
+              <Link
+                className="text-xs font-semibold text-action underline underline-offset-4"
+                href={PRICING_PATH}
+              >
+                {itemLabel(invite, "plan-change")}
+              </Link>
+            </section>
+          )}
           <section aria-labelledby="create-invite-note-heading" className={CARD}>
             <h2 id="create-invite-note-heading" className={HEADING}>
               {itemLabel(invite, "note-heading")}

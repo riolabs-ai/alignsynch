@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/marketing/marketing-header.tsx   (variation: a one-row band above every shell — one item, a door to `/admin/brand`, drawn only for an admin)
+ * template-ancestor: components/layout/public-header.tsx   (variation: a one-row band above every shell — one item, a door to `/admin/brand`, drawn only for an admin)
  *
  * The admin notice bar (#906) — the top edge of the viewport, for exactly one reader.
  *

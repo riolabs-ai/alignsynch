@@ -92,7 +92,7 @@ describe("the template chips are the taxonomy", () => {
 
     expect(hrefs.length).toBe(purchasableTypesByGroup().reduce((n, g) => n + g.types.length, 0));
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    for (const href of hrefs) expect(href.startsWith("/relationship-types/")).toBe(true);
+    for (const href of hrefs) expect(href.startsWith("/relationship-templates/")).toBe(true);
   });
 
   test("the two nested targets are the ones the hero cards jump to", () => {
@@ -302,7 +302,7 @@ describe("the structural promises, read off the source", () => {
     ];
     for (const file of files) {
       const source = read(file);
-      for (const chrome of ["marketing-header", "layout/footer", "news-signup"]) {
+      for (const chrome of ["public-header", "layout/footer", "news-signup"]) {
         expect(source.includes(chrome)).toBe(false);
       }
     }
@@ -312,13 +312,12 @@ describe("the structural promises, read off the source", () => {
     // The card's second "doomed if": an offset hard-coded in a section, so the first header-height
     // change breaks every anchor. One variable, one consumer.
     const globals = read("app/globals.css");
-    const header = read("components/marketing/marketing-header.tsx");
+    const header = read("components/layout/public-header.tsx");
 
-    expect(globals).toContain("--site-header-height: 5rem;");
+    expect(globals).toContain("--site-header-height: 4rem;");
     expect(globals).toContain("var(--site-header-height)");
-    // The header draws its row at `h-20`, which is 5rem — the two numbers are the same number.
-    expect(header).toContain("h-20");
-    expect(header.includes("h-[5rem]") || header.includes("h-20")).toBe(true);
+    // The header draws its row at `h-16`, which is 4rem — the two numbers are the same number.
+    expect(header).toContain("h-16");
 
     // And no section file carries a per-section magic number.
     for (const file of ["as2-how-it-works.tsx", "as2-templates.tsx", "as2-model.tsx"]) {

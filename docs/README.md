@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**187 documents in 9 sections.** Every page carries the same nav block, generated
+**189 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -45,7 +45,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 25 documents
+- [Release notes](#release-notes) — 27 documents
 
 ## Start here
 
@@ -270,6 +270,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-20-0.md`](changelog/v1-20-0.md) — **v1.20.0** — The release that made the version label true — the walk can be paid and sent, and the code it names was already live.
 - [`changelog/v1-20-1.md`](changelog/v1-20-1.md) — **v1.20.1** — Which release connected the billing state machine to the events it was waiting for, and shipped no new surface?
 - [`changelog/v1-21-0.md`](changelog/v1-21-0.md) — **v1.21.0** — Which release made a draft session distinguishable from a live one, and gave an invitation its own relationship?
+- [`changelog/v1-22-0.md`](changelog/v1-22-0.md) — **v1.22.0** — Which release turned the relationship into six sections a reader can address, and made a trial that ends pause instead of close?
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.
 - [`changelog/v1-5-0.md`](changelog/v1-5-0.md) — **v1.5.0** — The release where a person could delete their account.
@@ -278,6 +279,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-7-0.md`](changelog/v1-7-0.md) — **v1.7.0** — The release where the review shelf went live.
 - [`changelog/v1-8-0.md`](changelog/v1-8-0.md) — **v1.8.0** — The release where the flow conformed to its six-stage spec.
 - [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
+- [`changelog/v2-0-0-rc1.md`](changelog/v2-0-0-rc1.md) — **v2.0.0-rc1** — What does the v2 surface set look like as one candidate — and what does its capture prove?
 
 <!-- docs-hub:end -->
 

@@ -547,7 +547,7 @@ function AlignSynchLinkColumn({
           leaving={leaving}
         />
         <FooterLinkRow
-          href="/#questions"
+          href={`${TEMPLATE_CATALOGUE_PATH}#how`}
           label={itemLabel(links, "how-it-works")}
           leaving={leaving}
         />

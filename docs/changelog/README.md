@@ -44,6 +44,22 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1](v2-0-0-rc1.md)
+
+- **Released** 2026-11-17
+- **Tag** [`v2.0.0-rc1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1)
+- **Pull requests named** 4
+- **Theme:** the release candidate for the v2 surface set — nine surfaces landed as one integration branch, under a declared 2.0 number, with a capture of the routes it ships.
+- **Headline:** feat(v2) — the nine surfaces of 1.22 as one integration branch (#1170)
+
+### [v1.22.0](v1-22-0.md)
+
+- **Released** 2026-11-17
+- **Tag** [`v1.22.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0)
+- **Pull requests named** 18
+- **Theme:** the release where the relationship became six sections you can read — a Counterparty who joins instead of being described, numbered Aspects with a tolerance in words, and a trial that pauses instead of closing
+- **Headline:** feat(v2) — #1124 — Relationship Detail's six-tab layer (#1148)
+
 ### [v1.21.0](v1-21-0.md)
 
 - **Released** 2026-11-16

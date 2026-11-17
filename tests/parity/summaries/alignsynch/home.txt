@@ -32,12 +32,12 @@ headings (29)
   h3  "Website Links"
   h3  "Contact"
 
-landmarks (7)
+landmarks (8)
   banner         4
   contentinfo    1
-  navigation     2
+  navigation     3
 
-links (44 unique, 60 total)
+links (44 unique, 66 total)
   #benefits                                            1
   #business-relationships                              4
   #how-it-works                                        2
@@ -46,46 +46,46 @@ links (44 unique, 60 total)
   #relationship-templates                              4
   #stories                                             1
   /                                                    3
-  /#questions                                          2
-  /help                                                3
-  /login                                               1
-  /pricing                                             2
+  /help                                                4
+  /login                                               2
+  /pricing                                             3
   /privacy                                             2
-  /register                                            1
-  /relationship-templates                              2
-  /relationship-types/brother-sister                   1
-  /relationship-types/brothers                         1
-  /relationship-types/business-partners                1
-  /relationship-types/co-founders                      1
-  /relationship-types/colleagues                       1
-  /relationship-types/customer-vendor-product          1
-  /relationship-types/customer-vendor-services         1
-  /relationship-types/father-daughter                  1
-  /relationship-types/father-son                       1
-  /relationship-types/friends                          1
-  /relationship-types/gal-friends                      1
-  /relationship-types/guy-friend-gal-friend            1
-  /relationship-types/guy-friends                      1
-  /relationship-types/hoa-board-owner                  1
-  /relationship-types/investor-entrepreneur            1
-  /relationship-types/mother-daughter                  1
-  /relationship-types/mother-son                       1
-  /relationship-types/parent-child                     1
-  /relationship-types/parent-teacher                   1
-  /relationship-types/patient-caregiver                1
-  /relationship-types/project-manager-member           1
-  /relationship-types/siblings                         1
-  /relationship-types/sisters                          1
-  /relationship-types/spouses                          1
-  /relationship-types/staff-manager                    1
-  /relationship-types/teacher-student                  1
-  /relationship-types/team                             1
+  /relationship-templates                              4
+  /relationship-templates#catalog                      1
+  /relationship-templates#how                          3
+  /relationship-templates/brother-sister               1
+  /relationship-templates/brothers                     1
+  /relationship-templates/business-partners            1
+  /relationship-templates/co-founders                  1
+  /relationship-templates/colleagues                   1
+  /relationship-templates/customer-vendor-product      1
+  /relationship-templates/customer-vendor-services     1
+  /relationship-templates/father-daughter              1
+  /relationship-templates/father-son                   1
+  /relationship-templates/friends                      1
+  /relationship-templates/gal-friends                  1
+  /relationship-templates/guy-friend-gal-friend        1
+  /relationship-templates/guy-friends                  1
+  /relationship-templates/hoa-board-owner              1
+  /relationship-templates/investor-entrepreneur        1
+  /relationship-templates/mother-daughter              1
+  /relationship-templates/mother-son                   1
+  /relationship-templates/parent-child                 1
+  /relationship-templates/parent-teacher               1
+  /relationship-templates/patient-caregiver            1
+  /relationship-templates/project-manager-member       1
+  /relationship-templates/siblings                     1
+  /relationship-templates/sisters                      1
+  /relationship-templates/spouses                      1
+  /relationship-templates/staff-manager                1
+  /relationship-templates/teacher-student              1
+  /relationship-templates/team                         1
   /terms                                               1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.21.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1 1
 
 counts
-  elements  356
+  elements  367
   images    6
-  buttons   1
+  buttons   2
   inputs    4
-  classes   485 (sha 0e8ca02e627e)
+  classes   497 (sha e68135bc7066)

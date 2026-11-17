@@ -65,9 +65,15 @@
     // reformat here would be undone by the next generator run and fail that check in between. The
     // hand-authored half — the markdown — is formatted normally, because that is the file a person
     // edits.
+    // `AGENTS.md` and `CLAUDE.md` are written by the GitNexus generator
+    // (`gitnexus analyze`), which owns their formatting and rewrites them on every run, so biome
+    // padding the generated tables' pipes would be undone by the next generation and re-dirty the
+    // tree in between — the `lib/email/bodies.generated.ts` case, one file class over.
     "includes": [
       "**",
       "!pnpm-lock.yaml",
+      "!AGENTS.md",
+      "!CLAUDE.md",
       "!docs/review/artifacts",
       "!docs/specs/spec-as2-style-home-redesign",
       "!docs/specs/spec-as2-style-templates-redesign",

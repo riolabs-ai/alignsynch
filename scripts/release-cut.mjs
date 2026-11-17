@@ -106,6 +106,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 import { compareVersions, isBump, isVersion } from "./release-version.mjs";
+import { readChangedPaths, renderTable } from "./tree-hygiene.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -661,7 +662,11 @@ function docsEvidence() {
       } catch {
         continue;
       }
-      const match = /^#\s+v?(\d+\.\d+\.\d+[^\s—–-]*)/.exec(title);
+      // A release candidate's own title carries the suffix (`# v2.0.0-rc1 — …`), so the capture
+      // group stops at whitespace or the em/en dash the house style puts after the number and
+      // NOT at a hyphen: `[^\s—–]*` is what reads `v1.22.0` out of a title but silently drops the
+      // `-rc1` off a candidate, and a bump whose page can never name it is refused by this row.
+      const match = /^#\s+v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/.exec(title);
       if (!match || !isVersion(match[1])) continue;
       if (!newest || compareVersions(match[1], newest.version) === 1) {
         newest = { version: match[1], source: `${path} (its title)` };
@@ -1046,6 +1051,34 @@ function ask(question) {
  * Arguments
  * ------------------------------------------------------------------ */
 
+/**
+ * **Who wrote the tree, printed before anything is read (#1178).**
+ *
+ * A cut is made from a clean tree and this script does not enforce that — `scripts/release.sh` does,
+ * as its own refusal. The table belongs here as well because `--prepare` writes the bump and the
+ * entry into whatever `git status` already holds: an `AGENTS.md` from `next dev` or a `CLAUDE.md`
+ * from `gitnexus analyze` would ride into the release commit, and a `data/health/platform-health.json`
+ * the previous cut's record step left behind would make the last record look current.
+ *
+ * It reports and never refuses — the refusal is the release script's, where a cut is made, and a
+ * `--check` on a dirty tree is a legitimate way to read the plan. Two lines when the tree is clean,
+ * nothing more.
+ */
+function reportTreeHygiene() {
+  let rows;
+  try {
+    rows = readChangedPaths(ROOT);
+  } catch (error) {
+    say(`  ${C.dim}tree hygiene: git status could not be read — ${error.message}${C.off}`);
+    return;
+  }
+  if (rows.length === 0) return;
+  say();
+  for (const line of renderTable(rows).split("\n")) say(`  ${C.dim}${line}${C.off}`);
+  say(`  ${C.dim}(a cut is made from a clean tree — the table above is what to clear)${C.off}`);
+  say();
+}
+
 function parseArgs(argv) {
   const opts = {
     mode: "plan",
@@ -1168,6 +1201,19 @@ async function main(argv) {
         "merely inherits the variable, `env -u HERMES_KANBAN_TASK pnpm release:cut --check` is the plan.",
     );
   }
+
+  // Who may run this comes before whether the tree agrees with itself, and after the worker rule —
+  // the two actor guards, in order of specificity. This used to live only in `execute()`, which the
+  // plan's refusals are returned before, so a worker that unset the env var was told "4 value(s)
+  // disagree" and never told the thing that actually stops it: a tag belongs to a human shell.
+  if (opts.mode === "execute" && (!process.stdin.isTTY || !process.stdout.isTTY)) {
+    die(
+      `--execute requires an interactive TTY — the tag belongs to a human shell, not to a piped or dispatched run. ` +
+        `The plan is safe to run anywhere: pnpm release:cut --check`,
+    );
+  }
+
+  reportTreeHygiene();
 
   const evidence = gather(opts);
 

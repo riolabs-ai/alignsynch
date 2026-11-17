@@ -273,13 +273,18 @@ describe("S4 — an Aspect row is the artifact's line", () => {
   });
 
   it("closes an open row only through Save or Cancel, and asks before discarding", () => {
-    const source = code("components/assessment-flow/aspect-list.tsx");
-    // The open row's form is never re-toggled: opening is one way in, Cancel and Save are the
-    // ways out, and Cancel asks when the form holds words the row does not.
-    expect(source).toContain("function cancelRow(");
-    expect(source).toContain("function isDirty(");
-    expect(source).toContain('window.confirm(itemLabel(words, "unsaved"))');
-    expect(source).not.toContain("setOpenId(openId === row.id ? null : row.id)");
+    /*
+     * #1133 — the dirty check and the "discard?" question moved with the editor: the row no longer
+     * expands in place, so the drawer owns them (`aspect-drawer.tsx`) and the list keeps the two
+     * ways out. Both halves are asserted, in the files that now own them: the list never re-toggles
+     * a row, and the sheet asks before it throws typed words away.
+     */
+    const list = code("components/assessment-flow/aspect-list.tsx");
+    expect(list).not.toContain("setOpenId(openId === row.id ? null : row.id)");
+    const drawer = code("components/assessment-flow/aspect-drawer.tsx");
+    expect(drawer).toContain("function isDirty(");
+    expect(drawer).toContain('window.confirm(itemLabel(words, "unsaved"))');
+    expect(drawer).toContain("function cancel(");
     // The prompt itself is copy, so the fixture carries it (E23).
     expect(itemLabel(aspects, "unsaved")).toBe("Discard the changes to this Aspect?");
   });

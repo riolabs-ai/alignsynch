@@ -36,12 +36,12 @@
  *
  * **A card states the record's own facts, and one price that is the plan's.** The title, the
  * summary, `count(item)` for the Aspect count, and the type/realm/roles/price the catalogue
- * authors. The price is not per relationship: `RELATIONSHIP_PRICE_CENTS` ($9.99) predates the
- * pricing rewrite, which sells Basic at $8.95/month with unlimited relationships, so a card
- * charging $9.99 beside a plan page selling $8.95 would be two price models in one product. The
- * card therefore prints **one month of Basic** — `CATALOGUE_PRICE_CENTS`, read from the pricing
- * fixture — which is what using any type here actually costs. No people, no rating and no "N
- * people use this": nothing here measures one.
+ * authors. The price is not per relationship: `RELATIONSHIP_PRICE_CENTS` predates the pricing
+ * rewrite, which sells the Single plan at a monthly figure with unlimited relationships, so a card
+ * charging that taxonomy amount beside a plan page selling Single's own price would be two price
+ * models in one product. The card therefore prints **one month of the entry plan** —
+ * `CATALOGUE_PRICE_CENTS`, read from the pricing fixture — which is what using any type here
+ * actually costs. No people, no rating and no "N people use this": nothing here measures one.
  */
 import { LeavingLink } from "@/components/layout/leaving-link";
 import { Chip, CHIP_TAG } from "@/components/ui/badge";
@@ -270,7 +270,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
           <dt className="sr-only">{copy.priceLabel}</dt>
           {/*
            * One price per card, and it is the plan's: no type is sold on its own. The plan's name
-           * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
+           * is in the visible chip, because a bare figure beside nine cards reads as nine
            * subscriptions.
            */}
           <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>

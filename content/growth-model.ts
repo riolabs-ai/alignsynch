@@ -271,15 +271,18 @@ export type GrowthModel = z.infer<typeof zGrowthModel>;
 /**
  * The three tiers' economics, in the order the plan-mix chart stacks them.
  *
- * Measured against the product rather than invented: `basic` is the $8.95 entry tier and
- * `principal` the $16.95 one (`data/billing-plans.ts`), and an upper tier that churns at half the
- * rate of the entry one is the ordinary shape of a subscription base, not a boast.
+ * Measured against the product rather than invented: the amounts are the approved catalogue's —
+ * Single `$9.99`, Family `$19.99` (`data/billing-plans.ts`, #1127) — and an upper tier that churns at
+ * half the rate of the entry one is the ordinary shape of a subscription base, not a boast. The
+ * figures are inputs to the model rather than a render, which is why they are cents here and not
+ * read from the fixture at import: `content/` compiles under `tsconfig.datacheck.json` with no
+ * `@/` alias, and `pnpm growth:check` re-runs the committed artifact from them.
  */
 export const GROWTH_PLANS: readonly GrowthPlan[] = [
   {
     id: "basic",
     label: "Basic",
-    monthlyCents: 895,
+    monthlyCents: 999,
     logoChurnBps: 340,
     revenueChurnBps: 210,
     startingShareBps: 6_800,
@@ -288,7 +291,7 @@ export const GROWTH_PLANS: readonly GrowthPlan[] = [
   {
     id: "principal",
     label: "Principal",
-    monthlyCents: 1_695,
+    monthlyCents: 1_999,
     logoChurnBps: 160,
     revenueChurnBps: 110,
     startingShareBps: 3_200,

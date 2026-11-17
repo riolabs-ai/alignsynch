@@ -18,12 +18,12 @@ failure in the wrong place.
 
 ## What exists now
 
-| File                         | Role                                                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scripts/verify.sh`          | the gate: `deps → glossary → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it      |
-| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, regenerates `docs/glossary.md` and fails on a diff (#138), then runs `bash scripts/verify.sh`. No other check steps |
-| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                                        |
-| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                                       |
+| File                         | Role                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/verify.sh`          | the gate: `tree-hygiene (report) → deps → glossary → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it |
+| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, regenerates `docs/glossary.md` and fails on a diff (#138), then runs `bash scripts/verify.sh`. No other check steps                    |
+| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                                                           |
+| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                                                          |
 
 `data:check` and `test` are conditional on `package.json` having that script. Both exist on
 `main` today, so the gate runs both (`data:check` 11.6–13.6 s, `test` 15.7–18.3 s locally on

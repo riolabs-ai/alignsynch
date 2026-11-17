@@ -31,9 +31,9 @@ import {
   billingPlans,
   planPriceCents,
 } from "@/data/billing-plans";
-
-const PAGE_PATH = "components/pricing/pricing-plans.tsx";
-const pageSource = readFileSync(join(process.cwd(), PAGE_PATH), "utf8");
+import { MEMBERSHIP_PLANS } from "@/data/membership-plans";
+import { pricingPageCopy } from "@/data/pages/pricing";
+import { pricingCards } from "@/lib/pricing-page";
 
 /** Every component the plan band renders, read as source — the acceptance's tree, as a test. */
 const PRICING_DIR = "components/pricing";
@@ -43,11 +43,6 @@ const pricingSources = readdirSync(join(process.cwd(), PRICING_DIR))
     file: `${PRICING_DIR}/${file}`,
     source: readFileSync(join(process.cwd(), PRICING_DIR, file), "utf8"),
   }));
-
-/** The owner's yearly rule: twenty percent off the monthly rate, for twelve months. */
-function yearlyFromMonthly(monthlyCents: number): number {
-  return Math.round(monthlyCents * 12 * 0.8);
-}
 
 describe("the fixture is coherent", () => {
   it("has no problems", () => {
@@ -73,24 +68,29 @@ describe("the fixture is coherent", () => {
     }
   });
 
-  it("prices the two paid tiers at 8.95 and 16.95 a month", () => {
-    expect(billingPlan("basic")?.monthlyCents).toBe(895);
-    expect(billingPlan("principal")?.monthlyCents).toBe(1_695);
+  it("prices the two paid tiers at the approved 9.99 and 19.99 a month (#1127)", () => {
+    expect(billingPlan("basic")?.monthlyCents).toBe(999);
+    expect(billingPlan("principal")?.monthlyCents).toBe(1_999);
   });
 
-  it("charges a year at 20% off the monthly rate × 12, and divides back to a whole month", () => {
+  it("charges a year at the approved annual amounts, and divides back to a whole month", () => {
+    // The annual figure is an **authored amount**, not a formula: the owner priced Single Annual at
+    // a round `$99` against `$9.99 × 12 = $119.88`, and the Family row is the unclaimed Family
+    // Annual, left at the amount it was created with. What is still checked is the arithmetic the
+    // card depends on — the yearly state prints `yearlyCents / 12` beside "/mo, billed yearly", so
+    // the division has to be exact.
     for (const plan of billingPlans.filter((row) => row.id !== "free")) {
-      expect(plan.yearlyCents, `${plan.id}: yearly`).toBe(yearlyFromMonthly(plan.monthlyCents));
-      // The card prints `yearlyCents / 12` beside "/mo, billed yearly" — a third decimal would
-      // render, so the division has to be exact.
       expect(plan.yearlyCents % 12, `${plan.id}: whole months`).toBe(0);
+      expect(plan.yearlyCents, `${plan.id}: cheaper than twelve months`).toBeLessThan(
+        plan.monthlyCents * 12,
+      );
     }
-    // 8_592 / 12 = 716 and 16_272 / 12 = 1_356 — the "per month" figures the yearly state prints.
-    expect(billingPlan("basic")?.yearlyCents).toBe(8_592);
+    // 9_900 / 12 = 825 and 16_272 / 12 = 1_356 — the "per month" figures the yearly state prints.
+    expect(billingPlan("basic")?.yearlyCents).toBe(9_900);
     expect(billingPlan("principal")?.yearlyCents).toBe(16_272);
     expect(
       billingPlanRows().find((row) => row.id === "basic" && row.interval === "year")?.priceCents,
-    ).toBe(8_592);
+    ).toBe(9_900);
     expect(
       billingPlanRows().find((row) => row.id === "principal" && row.interval === "year")
         ?.priceCents,
@@ -139,9 +139,9 @@ describe("the rows the migration writes and db:verify compares", () => {
     const principal = billingPlan("principal");
     expect(principal).toBeDefined();
     if (principal === undefined) return;
-    // The card prints `$13.56` beside "/mo, billed yearly"; the yearly row is what is charged.
+    // The card prints `$8.25` beside "/mo, billed yearly"; the yearly row is what is charged.
     expect(planPriceCents(principal, "year")).toBe(16_272);
-    expect(planPriceCents(principal, "month")).toBe(1_695);
+    expect(planPriceCents(principal, "month")).toBe(1_999);
     for (const row of billingPlanRows()) {
       const plan = billingPlan(row.id);
       expect(plan).toBeDefined();
@@ -154,33 +154,45 @@ describe("the rows the migration writes and db:verify compares", () => {
 });
 
 describe("the pricing page reads one list", () => {
-  it("imports the fixture, and carries no PLANS_DATA of its own", () => {
-    expect(pageSource).toMatch(/from\s+["']@\/data\/billing-plans["']/);
-    // Strip comments first: the doc comment records *why* the old `PLANS_DATA` array was removed,
-    // and that explanation is not a second list. Assert on the code the browser receives.
-    const pageCode = pageSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-    expect(pageCode).not.toContain("PLANS_DATA");
-    expect(pageCode).not.toMatch(/monthly:\s*\d/);
-    expect(pageCode).not.toMatch(/yearly:\s*\d/);
+  /**
+   * **Where the band's words and figures come from since #1127.** The band is no longer a grid of
+   * `billing_plan` rows rendered by `components/pricing/pricing-plans.tsx` directly: the v2 page
+   * draws three *plans* (Single · Family · Single Annual), and `lib/pricing-page.ts` is the one
+   * projection that joins the fixture's words to the catalogue's names and amounts. So the same
+   * three questions are asked of the module that now answers them.
+   */
+  const projection = readFileSync(join(process.cwd(), "lib/pricing-page.ts"), "utf8");
+  const code = () => projection.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+
+  it("reads the catalogues, and carries no list of its own", () => {
+    expect(projection).toMatch(/from\s+["']@\/data\/membership-plans["']/);
+    // A price list re-typed here would be the second source this projection exists to prevent.
+    expect(code()).not.toContain("PLANS_DATA");
+    expect(code()).not.toMatch(/monthly:\s*\d/);
+    expect(code()).not.toMatch(/yearly:\s*\d/);
+    // …and no cents literal: every amount is `formatCurrency(plan.priceCents)`.
+    expect(code()).not.toMatch(/priceCents:\s*\d/);
   });
 
   it("types no price under components/pricing — the card's grep, as a test", () => {
-    // The card's criterion is `rg -n '\$[0-9]+\.' components/pricing/` returning zero. A figure is
-    // printed from a row (`formatCurrencyAmount(interval.displayCents)`), never written down.
+    // The card's criterion is `rg -n '\$[0-9]+\.' components/pricing/` returning zero, and the
+    // acceptance's is the same grep across the tree. A figure is printed from the catalogue
+    // (`formatCurrency(plan.priceCents)`), never written down.
     const offenders = pricingSources
       .filter(({ source }) => /\$[0-9]+\./.test(source))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
   });
 
-  it("derives the Recommendation from the plan's own field, never from an index or an id", () => {
-    // Three things read `popular`: the ribbon, the card's border and the button's fill. A literal
-    // "basic" here would be a second answer to "which plan is recommended" — the defect the
-    // `popular` field exists to prevent.
-    expect(pageSource).toContain("plan.popular &&");
-    expect(pageSource).toContain("plan.popular ?");
-    const pageCode = pageSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-    expect(pageCode).not.toMatch(/\bplan\.id\s*===\s*["']/);
-    expect(pageCode).not.toContain("BILLING_PLAN_IDS");
+  it("derives the ribbon from the catalogue's own id, and exactly one card carries it", () => {
+    // Three things read `popular`: the ribbon, the card's border and the button's fill. The id is
+    // named once, in the projection — a second literal in the component would be a second answer
+    // to "which plan is recommended", the defect the field exists to prevent.
+    expect(projection).toContain("POPULAR_PLAN_ID");
+    expect(projection).not.toMatch(/\bid\s*===\s*["'](?:family|annual)["']/);
+    const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
+    expect(cards.filter((card) => card.popular)).toHaveLength(1);
+    // …and the three cards are the three plans the catalogue sells, in its order.
+    expect(cards.map((card) => card.id)).toEqual(MEMBERSHIP_PLANS.map((plan) => plan.id));
   });
 });

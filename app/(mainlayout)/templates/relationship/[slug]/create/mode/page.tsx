@@ -40,7 +40,8 @@ import { createRefusal } from "@/lib/flow/create-copy";
 import { parseCreateDraft } from "@/lib/flow/create-draft";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { createRelationshipPath } from "@/lib/flow/paths";
-import { createDraftCookieName } from "@/lib/flow/session";
+import { PLAN_INTENT_COOKIE, createDraftCookieName } from "@/lib/flow/session";
+import { parsePlanIntent } from "@/lib/flow/plan-intent";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,16 @@ export default async function TemplateCreateModePage({
       : parseCreateDraft(jar.get(createDraftCookieName(detail.template.id))?.value);
   if (draft === null) redirect(whoPath);
 
+  /**
+   * **The plan `/pricing` carried into the flow, for the rail's "· then <Plan>" line (#1127).**
+   *
+   * Stage 1 posts the pair into `flow_plan_intent`; from stage 2 on the cookie is the only carrier,
+   * so every stage reads it here and hands it to the walk, which resolves the *name* from
+   * `data/membership-plans.ts`. A cookie the catalogue does not sell parses to `null`, and the rail
+   * then states the trial with no plan after it — a choice nobody made is not drawn.
+   */
+  const planIntent = parsePlanIntent(jar.get(PLAN_INTENT_COOKIE)?.value);
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
@@ -120,6 +131,7 @@ export default async function TemplateCreateModePage({
       backHref={whoPath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
+      {...(planIntent === null ? {} : { planIntent })}
     />
   );
 }

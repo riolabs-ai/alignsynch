@@ -40,10 +40,14 @@ import {
 } from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
 import type { AlignmentSummary } from "@/lib/member/alignment-summary";
+import type { CardMenuData } from "@/components/dashboard/card-menu";
+import type { CardMenuWrite, CardMenuWriteId, RelationshipMenuWords } from "@/lib/member/card-menu";
+import { relationshipMenuOf } from "@/lib/member/card-menu";
+import { refusalsOf, relationshipMenuNotices, relationshipMenuWords } from "@/lib/member/menu-copy";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
 import { cardStateOf, type RelationshipCardState } from "@/lib/member/start";
 import { RELATIONSHIPS_PATH, TEMPLATE_LIBRARY_TAB_PATH } from "@/lib/flow/paths";
-import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -55,31 +59,18 @@ import {
   titleOf,
 } from "./relationship-card-model";
 import { RelationshipStart, type RelationshipStartTemplate } from "./relationship-create";
+import { STATE_FILTERS, stateFilterOf, type StateFilter } from "@/lib/member/state-filter";
 
-/** The filter row, in the order the bundle draws it. The id is the fixture item, the value the state. */
-const STATE_FILTERS = [
-  { value: "all", id: "all" },
-  { value: "live", id: "live" },
-  { value: "waiting", id: "waiting" },
-  { value: "draft", id: "draft" },
-  { value: "paused", id: "paused" },
-] as const;
-
-export type StateFilter = (typeof STATE_FILTERS)[number]["value"];
-type SortOrder = "newest" | "oldest";
-
-/**
- * The `?filter=` value as a chip (#1129) — `all` for anything the row does not name.
- *
- * The bundle deep-links `?filter=paused`, so the chip is addressable: the page reads the value
- * here rather than comparing it inline, and an unknown word lands on `All` instead of drawing an
- * empty list with no way back.
+/*
+ * The chip list and its normaliser live in `lib/member/state-filter.ts` (#1134): the page reads
+ * `?filter=` **before** it renders, and calling a function exported from this `"use client"` module
+ * from a server component is a request-time 500 — `stateFilterOf` was exactly that until this card.
+ * Re-exported here so the tests and any other importer keep one door.
  */
-export function stateFilterOf(value: string | string[] | undefined): StateFilter {
-  const one = Array.isArray(value) ? value[0] : value;
-  const found = STATE_FILTERS.find((filter) => filter.value === one);
-  return found === undefined ? "all" : found.value;
-}
+export { STATE_FILTERS, stateFilterOf };
+export type { StateFilter };
+
+type SortOrder = "newest" | "oldest";
 
 /** Which of the four states a row draws as — `null` for `void`, which this screen does not draw. */
 export function stateOf(row: MemberRelationshipRow): RelationshipCardState | null {
@@ -115,10 +106,11 @@ export function visibleRelationships(
   );
 }
 
-/** The card's words, as this screen's own fixture declares them (`card-v2`). */
-export function cardWordsOf(copy: PageCopy): RelationshipCardWords {
+/** The card's words, as this screen's own fixture declares them (`card-v2`, and `card-menu` + `#1134`). */
+export function cardWordsOf(copy: PageCopy): RelationshipCardWords & RelationshipMenuWords {
   const words = sectionOf(copy, "card-v2");
   return {
+    ...relationshipMenuWords(copy),
     live: itemLabel(words, "live"),
     waiting: itemLabel(words, "waiting"),
     draft: itemLabel(words, "draft"),
@@ -149,6 +141,7 @@ export function RelationshipsList({
   templates,
   unreadable,
   initialFilter = "all",
+  menuWrites,
 }: {
   copy: PageCopy;
   rows: readonly MemberRelationshipRow[];
@@ -157,6 +150,12 @@ export function RelationshipsList({
   unreadable: string | null;
   /** The chip `?filter=` names (#1129); `All` when the address names none. */
   initialFilter?: StateFilter;
+  /**
+   * The card kebab's writers (#1134). The page hands them in — they are `"use server"` actions, and
+   * importing an actions module from this client tree would be E34's crossing. Omitted, the grid
+   * draws the cards it drew before: one action, no menu.
+   */
+  menuWrites?: Partial<Record<CardMenuWriteId, CardMenuWrite>>;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [state, setState] = useState<StateFilter>(initialFilter);
@@ -184,6 +183,9 @@ export function RelationshipsList({
   const failure = sectionOf(copy, "unreadable");
   const startLabel = itemLabel(sectionOf(copy, "new"), "start");
   const words = cardWordsOf(copy);
+  /** The kebab's notices and refusals (#1134), read once — they are the same on every card. */
+  const menuNotices = relationshipMenuNotices(copy);
+  const refusals = refusalsOf(sectionOf(copy, "menu-refusals"), "failed");
 
   const query = searchQuery.trim().toLowerCase();
   const visible = visibleRelationships(rows, { state, query, order: sort });
@@ -332,9 +334,39 @@ export function RelationshipsList({
         <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((row) => {
             const view = cardViewOf(row, summaries[row.id] ?? null, words);
-            return view === null ? null : (
+            if (view === null) return null;
+            /*
+             * The kebab (#1134). Its rows follow the card's *state* (a draft can be abandoned, an
+             * invitation resent, a live relationship left) and, in the paused state, the viewer's
+             * seat — `Add a Card` is the Initiator's, so `isInitiator` is passed in rather than
+             * compared in the card.
+             */
+            const menu: CardMenuData | undefined =
+              menuWrites === undefined
+                ? undefined
+                : {
+                    label: fillLabel(words.more, { title: view.title }),
+                    entries: relationshipMenuOf(words, {
+                      state: view.state,
+                      isInitiator: row.viewerRole === "initiator",
+                      href: view.href,
+                      actionHref: view.actionHref,
+                      instanceRecordId: row.sessionRecordId,
+                    }),
+                    payload: {
+                      relationshipId: row.id,
+                      instanceRecordId: row.sessionRecordId ?? undefined,
+                    },
+                    title: view.title,
+                    otherParty: partyOf(row) ?? undefined,
+                    notices: menuNotices,
+                    refusals: refusals.refusals,
+                    fallbackRefusal: refusals.fallback,
+                    writes: menuWrites,
+                  };
+            return (
               <li key={row.id}>
-                <RelationshipCard view={view} labels={words} />
+                <RelationshipCard view={view} labels={words} menu={menu} />
               </li>
             );
           })}

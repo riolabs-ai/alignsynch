@@ -1,37 +1,17 @@
 "use client";
 
-// template-ancestor: components/settings/account-settings.tsx   (variation: the settings page over the identity record — four cards, one form each)
-
-import { SignOutButton } from "@/components/identity/sign-out-button";
-import { DeleteAccountCard } from "@/components/identity/delete-account-card";
-import { PasswordCard } from "@/components/identity/password-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormSurface } from "@/components/ui/form-surface";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import type { PublicProfile } from "@/content/identity";
-import type { PageCopy } from "@/content/pages";
-import type { DeleteAccountOutcome } from "@/app/(mainlayout)/settings/delete-account-actions";
-import type { ResetSetOutcome } from "@/lib/auth/reset-token";
-import { loginPathFor } from "@/lib/auth/paths";
-import { fillLabel, itemLabel, itemOf, sectionOf } from "@/lib/page-copy";
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { Check, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+// template-ancestor: components/dashboard/start-page.tsx   (variation: the v2 settings page — the same page-header band and section cards, over four forms that each own one action)
 
 /**
- * `/settings`, the editable half (issue #164).
+ * `/settings`, the editable half (issue #164), drawn in the v2 visual system (#1136).
  *
- * One form, one `POST /api/profile`. What it changes is exactly what `content/identity.ts` holds:
- * display name, handle, bio, the country pair. Email is shown and is **not** editable — it lives
- * in Neon's managed auth and the app cannot change it; the fixture says so next to the value
- * instead of offering a control that could only fail.
+ * One form per section, one action each:
+ *
+ *   Profile   `POST /api/profile` — the fields `content/identity.ts` holds, and the address it does
+ *             not (read-only, inside the same card, where bundle 11 draws it)
+ *   Password  the session-authorised set/changing grant (`lib/auth/reset-set.ts`)
+ *   Session   `endSession()` — the same step the rail's row and the account menu run
+ *   Delete    `deleteAccountAction`, behind the typed phrase (#278)
  *
  * Three things this component deliberately does not do:
  *
@@ -47,7 +27,31 @@ import { type FormEvent, useState } from "react";
  *
  * Status is a discriminated union rather than two booleans: "saving" and "saved" and "failed" are
  * mutually exclusive states of one request, and a pair of flags lets two of them be true at once.
+ * The band above the sections is bundle 11's: an eyebrow with the settings glyph and the person's
+ * own name, the H1 "Account Settings", and one purpose line.
  */
+import { DeleteAccountCard } from "@/components/identity/delete-account-card";
+import { PasswordCard } from "@/components/identity/password-card";
+import { SessionCard } from "@/components/identity/session-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import type { PublicProfile } from "@/content/identity";
+import type { PageCopy } from "@/content/pages";
+import type { BrandId } from "@/data/brand";
+import type { DeleteAccountOutcome } from "@/app/(mainlayout)/settings/delete-account-actions";
+import type { ResetSetOutcome } from "@/lib/auth/reset-token";
+import { loginPathFor } from "@/lib/auth/paths";
+import { fillLabel, itemLabel, itemOf, sectionOf } from "@/lib/page-copy";
+import { Check, ExternalLink, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
+
 type SaveStatus =
   | { readonly kind: "idle" }
   | { readonly kind: "saving" }
@@ -75,6 +79,8 @@ interface SettingsViewProps {
    * session and re-checks the typed phrase, so this component holds no authority of its own.
    */
   deleteAccount: (confirmation: string) => Promise<DeleteAccountOutcome>;
+  /** This build's id — the session card's sign-out landing is a function of it. */
+  brandId: BrandId;
 }
 
 export function SettingsView({
@@ -85,8 +91,10 @@ export function SettingsView({
   hasPassword,
   savePassword,
   deleteAccount,
+  brandId,
 }: SettingsViewProps) {
   const router = useRouter();
+  const eyebrow = sectionOf(copy, "eyebrow");
   const identity = sectionOf(copy, "identity");
   const countries = sectionOf(copy, "countries");
   const account = sectionOf(copy, "account");
@@ -160,61 +168,94 @@ export function SettingsView({
   const publicHref = handle.trim() === "" ? undefined : `/profile/${handle.trim().toLowerCase()}`;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold">{copy.heading}</h1>
-        {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
-      </header>
+    <div className="w-full max-w-3xl space-y-4">
+      {/*
+        The band is the v2 page header (`docs/specs/v2-bundles/11-…/settings.html`): the three-stop
+        stripe, then an eyebrow carrying the settings glyph and the person's own name, the H1 and
+        one purpose line. Same markup as `components/dashboard/start-page.tsx`, which is this
+        template's ancestor — a settings page that measured its own header would be a second band.
+      */}
+      <section
+        className="overflow-hidden rounded-lg border bg-card"
+        aria-labelledby="settings-heading"
+      >
+        <div className="flex h-1" aria-hidden="true">
+          <span className="flex-1 bg-action" />
+          <span className="w-1/4 bg-deep/60" />
+          <span className="w-1/6 bg-accent/50" />
+        </div>
+        <div className="p-5 lg:p-6">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-deep">
+            <SlidersHorizontal aria-hidden="true" className="size-4 shrink-0" />
+            <span>
+              {fillLabel(itemLabel(eyebrow, "name"), {
+                name: profile?.displayName ?? signedInName,
+              })}
+            </span>
+          </p>
+          <h1
+            id="settings-heading"
+            className="mt-2 text-2xl font-bold tracking-tight text-primary xxl:text-3xl"
+          >
+            {copy.heading}
+          </h1>
+          {copy.subtitle !== undefined && (
+            <p className="mt-1 text-base text-foreground">{copy.subtitle}</p>
+          )}
+        </div>
+      </section>
 
       <FormSurface>
         <CardHeader>
-          <CardTitle>{identity.heading}</CardTitle>
+          <h2 id="settings-profile" className="text-base font-semibold text-primary">
+            {identity.heading}
+          </h2>
           {identity.body !== undefined && <CardDescription>{identity.body}</CardDescription>}
         </CardHeader>
         <CardContent>
-          <form onSubmit={save} className="space-y-5">
-            <div className="flex items-center gap-4">
-              <GeneratedAvatar
-                name={displayName || signedInName}
-                seed={handle || email}
-                size={64}
-              />
-              <div className="text-sm text-muted-foreground">
-                {fillLabel(itemLabel(account, "signed-in-as"), { name: signedInName })}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="display-name">{itemLabel(identity, "display-name")}</Label>
-              <Input
-                id="display-name"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder={itemLabel(identity, "display-name-placeholder")}
-              />
-              <p className="text-xs text-muted-foreground">
-                {itemLabel(identity, "display-name-hint")}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="handle">{itemLabel(identity, "handle")}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {itemLabel(identity, "handle-prefix")}
-                </span>
+          <form onSubmit={save} className="space-y-4">
+            {/*
+              Two columns from `sm` up, as the bundle measures Profile: the display name beside the
+              profile URL, then the address across both. The avatar moved out of the form (it was a
+              64px disc repeating the name the field already holds) — the band above names the
+              person, and the menu names them on every other page.
+            */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="display-name">{itemLabel(identity, "display-name")}</Label>
                 <Input
-                  id="handle"
-                  value={handle}
-                  onChange={(event) => setHandle(event.target.value)}
+                  id="display-name"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
                   placeholder={itemLabel(identity, "display-name-placeholder")}
-                  autoComplete="username"
+                  autoComplete="name"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {itemLabel(identity, "display-name-hint")}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">{itemLabel(identity, "handle-hint")}</p>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="handle">{itemLabel(identity, "handle")}</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {itemLabel(identity, "handle-prefix")}
+                  </span>
+                  <Input
+                    id="handle"
+                    value={handle}
+                    onChange={(event) => setHandle(event.target.value)}
+                    placeholder={itemLabel(identity, "display-name-placeholder")}
+                    autoComplete="username"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {itemLabel(identity, "handle-hint")}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="bio">{itemLabel(identity, "bio")}</Label>
               <Textarea
                 id="bio"
@@ -226,13 +267,13 @@ export function SettingsView({
               <p className="text-xs text-muted-foreground">{itemLabel(identity, "bio-hint")}</p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="country">{itemLabel(identity, "country")}</Label>
               <select
                 id="country"
                 value={countryCode}
                 onChange={(event) => setCountryCode(event.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">{itemLabel(identity, "country-none")}</option>
                 {(countries.items ?? []).map((country) => (
@@ -244,7 +285,28 @@ export function SettingsView({
               <p className="text-xs text-muted-foreground">{itemLabel(identity, "country-hint")}</p>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/*
+              The address, where bundle 11 draws it — inside Profile, across the grid — and
+              read-only, because it belongs to Neon's managed sign-in and the app never writes it.
+              A disabled input would be announced as a control; this is a value with its own note,
+              which is what it actually is.
+            */}
+            <div className="space-y-1.5">
+              <Label htmlFor="email-readonly">{itemLabel(account, "email")}</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  id="email-readonly"
+                  className="flex h-10 min-w-0 flex-1 items-center truncate rounded-md border border-input bg-mist px-3 font-mono text-sm"
+                >
+                  {email}
+                </span>
+                <Badge variant="outline">{itemLabel(account, "email-readonly")}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{itemLabel(account, "email-hint")}</p>
+              <p className="text-xs text-muted-foreground">{itemLabel(account, "email-contact")}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 border-t pt-4">
               <Button type="submit" disabled={status.kind === "saving"}>
                 {status.kind === "saving"
                   ? itemLabel(identity, "saving")
@@ -267,7 +329,8 @@ export function SettingsView({
               )}
             </div>
             {status.kind === "error" && (
-              <p aria-live="polite" className="text-sm text-red-600">
+              <p aria-live="polite" className="flex items-center gap-2 text-sm text-foreground">
+                <X aria-hidden="true" className="size-4 shrink-0" />
                 {status.message}
               </p>
             )}
@@ -277,30 +340,9 @@ export function SettingsView({
 
       <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
 
-      <DeleteAccountCard copy={copy} remove={deleteAccount} />
+      <SessionCard copy={copy} name={signedInName} brandId={brandId} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{account.heading}</CardTitle>
-          {account.body !== undefined && <CardDescription>{account.body}</CardDescription>}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label>{itemLabel(account, "email")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm">{email}</span>
-              <Badge variant="outline">{itemLabel(account, "email-readonly")}</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">{itemLabel(account, "email-hint")}</p>
-          </div>
-          <Separator />
-          <SignOutButton
-            label={itemLabel(account, "sign-out")}
-            pendingLabel={itemLabel(account, "signing-out")}
-            errorLabel={itemLabel(identity, "error-network")}
-          />
-        </CardContent>
-      </Card>
+      <DeleteAccountCard copy={copy} remove={deleteAccount} />
     </div>
   );
 }
