@@ -28,6 +28,7 @@ import { DEMO_ROLE_LABELS, DEMO_ROLES, type DemoRole } from "@/lib/auth/demo-acc
 import {
   type DemoRoleAction,
   type DemoRoleState,
+  DEMO_NEXT_FIELD,
   DEMO_ROLE_FIELD,
   INITIAL_DEMO_ROLE_STATE,
 } from "@/lib/auth/demo-form";
@@ -45,7 +46,15 @@ const NOTE_IDS: Readonly<Record<DemoRole, string>> = {
   admin: "admin-note",
 };
 
-export function DemoRoles({ copy, action }: { copy: PageCopy; action: DemoRoleAction }) {
+export function DemoRoles({
+  copy,
+  action,
+  next,
+}: {
+  copy: PageCopy;
+  action: DemoRoleAction;
+  next: string;
+}) {
   const block = sectionOf(copy, "demo");
 
   return (
@@ -57,7 +66,7 @@ export function DemoRoles({ copy, action }: { copy: PageCopy; action: DemoRoleAc
       <p className="text-xs text-amber-900/80">{block.body}</p>
       <div className="grid gap-2">
         {DEMO_ROLES.map((role) => (
-          <DemoRoleButton key={role} role={role} block={block} action={action} />
+          <DemoRoleButton key={role} role={role} block={block} action={action} next={next} />
         ))}
       </div>
     </section>
@@ -69,10 +78,12 @@ function DemoRoleButton({
   role,
   block,
   action,
+  next,
 }: {
   role: DemoRole;
   block: ReturnType<typeof sectionOf>;
   action: DemoRoleAction;
+  next: string;
 }) {
   const [state, formAction, pending] = useActionState<DemoRoleState, FormData>(
     action,
@@ -82,6 +93,9 @@ function DemoRoleButton({
   return (
     <form action={formAction} className="space-y-1">
       <input type="hidden" name={DEMO_ROLE_FIELD} value={role} />
+      {/* #1187 — the return the person came here for. The page validated it; the action does
+          again, because a form post is whatever a client sent. */}
+      <input type="hidden" name={DEMO_NEXT_FIELD} value={next} />
       <Button
         type="submit"
         disabled={pending}
