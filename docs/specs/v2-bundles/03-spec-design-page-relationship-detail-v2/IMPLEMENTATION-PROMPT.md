@@ -14,7 +14,7 @@
 
 **Prepared:** 2026-11-16  
 **Repo path:** `docs/specs/v2-bundles/03-spec-design-page-relationship-detail-v2/` · **Issue:** #1124 (+ #1121, #1133, #1135)  
-**Source:** `v2-prototype` pass 10 (final, QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0).  
+**Source:** `v2-prototype` pass 10 plus the 2026-11-16 trial-start decision (DESIGN-NOTES v3.2 §45). QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0.  
 **Priority:** P1 (where completion lands and where both people live after acceptance)  
 **Issues:** [#1124](https://github.com/riolabs-ai/alignsynch/issues/1124) Relationship Detail v2 · [#1121](https://github.com/riolabs-ai/alignsynch/issues/1121) trial-ended states · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119) · tokens [#1120](https://github.com/riolabs-ai/alignsynch/issues/1120) · trial data [#1115](https://github.com/riolabs-ai/alignsynch/issues/1115) · CRUD (built in pass 10): [#1133](https://github.com/riolabs-ai/alignsynch/issues/1133) proposed changes, [#1134](https://github.com/riolabs-ai/alignsynch/issues/1134) Counterparty fork, [#1135](https://github.com/riolabs-ai/alignsynch/issues/1135) invitation hygiene and leave  
 **Target:** `/dashboard/relationships/[id]`, every state for both roles.  
@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | Shell | `components/assessment-flow/record-detail-shell.tsx` | Unchanged; the tabs go inside its children. Light band variant is open (see Decisions). |
 | Detail sections | `components/dashboard/relationship-detail.tsx` (`DetailSection`, `DetailFacts`) | Wrap sections in `Tabs`; At a Glance = `DetailFacts`. |
-| Trial state | `lib/billing/trial.ts` `trialStateOf()` (PR #1116), #1115 | `none | active | ending | lapsed`; paused = lapsed with no card. Extension availability = `trial_extended_at` is null. |
+| Trial state | `lib/billing/trial.ts` `trialStateOf()` (PR #1116), #1115 | `none` until the Counterparty accepts; `active` from acceptance; then `ending | lapsed`. Paused = lapsed with no card. Extension availability = `trial_extended_at` is null. **PR #1116 must move its grant from creation to acceptance** so `trial_ends_at` stays unset on drafts and pending invites. |
 | Next Step | `src/domain.py next_step()` in the prototype | Widest Gap first; tie → Wish beats Feel → template Aspect order. Port as a pure function with a unit test. |
 | Layout | `components/layout/main-layout.tsx`, `sidebar.tsx` | 1440 cap; full sidebar from `xl`, icon rail `md`–`xl`. |
 | Comments | #921 | The Discussion model is out of scope; draw it with the existing data. |
@@ -50,7 +50,7 @@
 ### Structure
 
 - **Hero (light band):** 4 px graphite→deep→cyan identity rule, eyebrow with icon, H1 (relationship title), one-line purpose, **The Two of You** party cards (`NEW: party-card`, "(You)" marks the viewer), **Your Shared Goal**.
-- **Aside, "Where You Are":** stage gauge (`NEW: stage-gauge`, live variant), badge (icon + word), one status line, the graphite Next Step block with one action. Initiator-only trial pill under the status line ("Trial · 3 Days Left" / "Extra Week · 7 Days Left", links to `#payment`). Then **At a Glance** (`DetailFacts`) with the vivid mini status bar and legend "● 1 In Synch · ● 2 Small Gap · ● 2 Gap".
+- **Aside, "Where You Are":** stage gauge (`NEW: stage-gauge`, live variant), badge (icon + word), one status line, the graphite Next Step block with one action. Initiator-only trial pill under the status line, linking to `#payment`: **"Trial Starts When Elena Accepts"** on draft and invite sent (no countdown); **"Trial · 7 Days Left"** once she has accepted (joined or waiting); **"Trial · 3 Days Left"** on the live sample; **"Extra Week · 7 Days Left"** after the extension. At a Glance membership and the Payment tab mirror this. Then **At a Glance** (`DetailFacts`) with the vivid mini status bar and legend "● 1 In Synch · ● 2 Small Gap · ● 2 Gap".
 - **Tabs:** Discussion (thread, Aspect-linked comments, composer) · Aspects (answer rows with `NEW: paired-answer-bars` and vivid outlines) · Members (party rows, role actions, Invitation History scroll region with `tabindex=0 role=region`) · Details (facts and Timeline) · Settings (Mode, Alignment Tolerance; "Changes apply from the next round.") · Payment (`NEW: payment-panel`).
 
 ### States (one status, one action)
@@ -71,7 +71,7 @@ Payment tab: Initiator sees Status, Trial Ends / Extra Week, "1 Free Week Availa
 
 ### Arrival banners (one line, dismissible)
 
-- `?from=wizard` "Relationship Created" (+ trial end date) · `?from=wizard&draft=1` "Saved as Draft" · `?from=join` "You’ve Joined. Marcus has been told you’re in." (+ "Your suggestion was sent to him.") · `?from=extend` "7 More Days Added · Stage 6 is running again. Your extra week ends Nov 26." Dismissing removes `from` and keeps the state.
+- `?from=wizard` "Relationship Created" + "Your 7-day free trial starts when Elena accepts. No card needed." · `?from=wizard&draft=1` "Saved as Draft" + "Send the invite when you are ready. Your trial starts when Elena accepts." · `?from=join` "You’ve Joined. Marcus has been told you’re in." (+ "Your suggestion was sent to him.") · `?from=extend` "7 More Days Added · Stage 6 is running again. Your extra week ends Nov 26." Dismissing removes `from` and keeps the state. The Details timeline records "7-day free trial started" on "Elena Joined · Stage 6 Live", never on Created or Invite Sent.
 
 ### Pass 10 actions (CRUD)
 
@@ -109,8 +109,8 @@ Payment tab: Initiator sees Status, Trial Ends / Extra Week, "1 Free Week Availa
 | `components/quiz/comment` | relationship-detail.html (3) |
 | `components/ui/alert (tone: success)` | relationship-detail.html (1) |
 | `components/ui/avatar` | relationship-detail.html (8) |
-| `components/ui/badge` | relationship-detail.html (42) |
-| `components/ui/badge (tone: billing, link)` | relationship-detail.html (2) |
+| `components/ui/badge` | relationship-detail.html (44) |
+| `components/ui/badge (tone: billing, link)` | relationship-detail.html (3) |
 | `components/ui/button` | relationship-detail.html (38) |
 | `components/ui/button (variant: ghost on action)` | relationship-detail.html (1) |
 | `components/ui/button (variant: outline on action)` | relationship-detail.html (14) |
@@ -153,7 +153,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 7. **Archive over delete.** Default to Archive (reversible) for templates and relationships; hard delete only where there is no shared data and it is confirmed.
 8. **Title Case for labels, buttons, tabs and headings, with no ending period**; sentence case for sentences. Product terms are capitalized: Aspect, Feel, Wish, Think, Guess, Stage, Align, In Synch, Small Gap, Gap, Alignment Tolerance.
 9. **Route conflict.** The repo's public catalog is `/relationship-types`; the v2 route is **`/relationship-templates`**. Ship `/relationship-templates` and `/relationship-templates/[slug]`, permanently redirect (308) `/relationship-types` and `/relationship-types/[slug]` to them, and update `RELATIONSHIP_TYPES_PATH` (`lib/flow/paths.ts`) so no link points at the old route.
-10. **Card-free trial, decided placement.** Stage 4 is the account only. The trial choice sits on the Stage 5 send button, **Continue with 7 Days Free** (as in PR #1116); payment happens only after the relationship exists. (Open: PR #1116 anchors the trial at creation; the pass 10 copy says it starts when you send. See bundle 01.) When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
+10. **Card-free trial, decided placement and start.** Stage 4 is the account only. The Stage 5 primary button is **Continue with 7 Days Free** and only sends the invite. **The 7-day free trial starts when the Counterparty accepts** (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces PR #1116's start at relationship creation and the earlier prototype start-at-send copy; PR #1116 must move its grant to acceptance. When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
 11. **One status and one next action per state.** Banners confirm what just happened and never repeat the status.
 12. **Layout.** QuizHub breakpoints, content capped at 1440 px (`max-w-content`), `data-qh` on prototype elements names the QuizHub source to reuse.
 

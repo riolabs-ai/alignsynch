@@ -16,7 +16,7 @@
 
 This folder is the self-contained handoff for the approved v2 Create Relationship wizard (Stages 1–5).
 
-The wizard is **P0**: build it first. Owner decision of 2026-11-16, drawn in this pass 10 HTML: Stage 4 is account only, and the card-free trial sits on the Stage 5 button **Continue with 7 Days Free** (PR #1116), with the Pricing plan chip beside it. Pass 10 also adds the Aspect drawer, Add an Aspect and edit mode for draft and invited relationships. One open owner decision is flagged in the brief: does the trial start at creation (PR #1116) or at send (prototype copy)?
+The wizard is **P0**: build it first. Owner decisions of 2026-11-16, drawn in this HTML: Stage 4 is account only; the Stage 5 button is **Continue with 7 Days Free** and only sends the invite; the Pricing plan chip sits beside it; **the 7-day free trial starts when the Counterparty accepts**. Drafts and pending invites use no trial days. PR #1116 must move its trial grant from relationship creation to acceptance. Pass 10 also adds the Aspect drawer, Add an Aspect and edit mode for draft and invited relationships.
 
 - Open `wizard.html` for the browser-ready page (`?stage=1..5`, `?from=my-template`, `?from=pricing&plan=family`, `?stage=1&edit=invited`).
 - `css/tokens.css` holds the `:root` custom properties (they port into `app/globals.css`); `js/tw-config.js` is the Tailwind theme (it ports 1:1 into `tailwind.config.ts` `theme.extend`). Page styling is Tailwind utility classes in the HTML; there is no other page CSS.

@@ -14,7 +14,7 @@
 
 **Prepared:** 2026-11-16  
 **Repo path:** `docs/specs/v2-bundles/10-spec-design-page-assessment-v2/` · **Issue:** #1128  
-**Source:** `v2-prototype` pass 10 (final, QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0).  
+**Source:** `v2-prototype` pass 10 plus the 2026-11-16 trial-start decision (DESIGN-NOTES v3.2 §45). QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0.  
 **Priority:** P0 (the CRUD triage's biggest gap: without it nobody can answer)  
 **Issues:** [#1128](https://github.com/riolabs-ai/alignsynch/issues/1128) the v2 answer screen · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119) · tokens [#1120](https://github.com/riolabs-ai/alignsynch/issues/1120) · results land on Align [#1122](https://github.com/riolabs-ai/alignsynch/issues/1122)  
 **Target:** the existing assessment route for a relationship round (confirm in `lib/flow/paths.ts`), for both roles.  
@@ -83,7 +83,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 7. **Archive over delete.** Default to Archive (reversible) for templates and relationships; hard delete only where there is no shared data and it is confirmed.
 8. **Title Case for labels, buttons, tabs and headings, with no ending period**; sentence case for sentences. Product terms are capitalized: Aspect, Feel, Wish, Think, Guess, Stage, Align, In Synch, Small Gap, Gap, Alignment Tolerance.
 9. **Route conflict.** The repo's public catalog is `/relationship-types`; the v2 route is **`/relationship-templates`**. Ship `/relationship-templates` and `/relationship-templates/[slug]`, permanently redirect (308) `/relationship-types` and `/relationship-types/[slug]` to them, and update `RELATIONSHIP_TYPES_PATH` (`lib/flow/paths.ts`) so no link points at the old route.
-10. **Card-free trial, decided placement.** Stage 4 is the account only. The trial choice sits on the Stage 5 send button, **Continue with 7 Days Free** (as in PR #1116); payment happens only after the relationship exists. (Open: PR #1116 anchors the trial at creation; the pass 10 copy says it starts when you send. See bundle 01.) When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
+10. **Card-free trial, decided placement and start.** Stage 4 is the account only. The Stage 5 primary button is **Continue with 7 Days Free** and only sends the invite. **The 7-day free trial starts when the Counterparty accepts** (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces PR #1116's start at relationship creation and the earlier prototype start-at-send copy; PR #1116 must move its grant to acceptance. When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
 11. **One status and one next action per state.** Banners confirm what just happened and never repeat the status.
 12. **Layout.** QuizHub breakpoints, content capped at 1440 px (`max-w-content`), `data-qh` on prototype elements names the QuizHub source to reuse.
 

@@ -14,7 +14,7 @@
 
 **Prepared:** 2026-11-16  
 **Repo path:** `docs/specs/v2-bundles/02-spec-design-page-onboarding-v2/` · **Issue:** #1127, #1125  
-**Source:** `v2-prototype` pass 10 (final, QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0).  
+**Source:** `v2-prototype` pass 10 plus the 2026-11-16 trial-start decision (DESIGN-NOTES v3.2 §45). QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0.  
 **Priority:** **P0** (visitor conversion and the invitee's first minutes)  
 **Issues:** epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119) · Counterparty join [#1125](https://github.com/riolabs-ai/alignsynch/issues/1125) · wizard handoff [#1123](https://github.com/riolabs-ai/alignsynch/issues/1123) · trial data [#1115](https://github.com/riolabs-ai/alignsynch/issues/1115) / PR [#1116](https://github.com/riolabs-ai/alignsynch/pull/1116) · public visual rollout [#854](https://github.com/riolabs-ai/alignsynch/issues/854) · visitor conversion [#1127](https://github.com/riolabs-ai/alignsynch/issues/1127)  
 **Target:** Four surfaces that take a visitor or an invitee to their first relationship:
@@ -28,7 +28,7 @@
 
 **Stack constraint:** Existing Next.js App Router, React, TypeScript and Tailwind CSS v3. The repository pins Tailwind CSS `3.4.17`; do not migrate to Tailwind v4 as part of this work. Reuse QuizHub (ThemeForest React/TW3) components plus the AlignSynch globals only.
 
-> **Owner decision (2026-11-16), drawn in the pass 10 HTML.** The plan chosen on Pricing is carried through the catalog and template page into the wizard and shows at **Stage 5** (the invite stage), in the billing note beside the **Continue with 7 Days Free** button (PR #1116). Stage 4 is account only. The template page note "You create your account at Stage 4. No card needed." stays true. See bundle 01 for the open trial-anchor decision (created vs sent).
+> **Owner decision (2026-11-16), drawn in the pass 10 HTML.** The plan chosen on Pricing is carried through the catalog and template page into the wizard and shows at **Stage 5** (the invite stage), in the billing note beside the **Continue with 7 Days Free** button (PR #1116). Stage 4 is account only. The template page note "You create your account at Stage 4. No card needed." stays true. **Resolved (2026-11-16):** the 7-day free trial starts when the other person accepts, not at creation and not when you send. PR #1116 must move its grant to acceptance. See bundle 01.
 
 ## Copy-ready team prompt
 
@@ -82,17 +82,17 @@
 
 ### Pricing (`/pricing`)
 
-- H1 "Simple Pricing. Start Free." and "Every plan starts with a 7-day free trial and no card. You pay only once a relationship is set up, and the person you invite never pays."
+- H1 "Simple Pricing. Start Free." and "Every plan starts with a 7-day free trial and no card. The trial begins when the other person accepts. The person you invite never pays."
 - Three plan cards (Single highlighted "Most Popular"); each shows price, "After a 7-day free trial · No card to start", four ticks and **Start With <Plan>**.
 - **Orphan fix:** every Start With <Plan> → `/relationship-templates?from=pricing&plan=<id>#catalog`. No pricing CTA links to Payment or a checkout.
 - "Not sure? Start with the most popular" → the most popular template page on Single.
-- How Billing Works (billing surface): 1 Pick a Template ("Your plan is saved while you choose.") · 2 Set Up and Invite ("Your 7-day free trial starts. No card.") · 3 Add a Card When Ready ("Only after your relationship exists.").
+- How Billing Works (billing surface): 1 Pick a Template ("Your plan is saved while you choose.") · 2 Set Up and Invite ("Your trial starts when they accept. No card.") · 3 Add a Card When Ready ("Only after the trial, if you want to keep going.").
 - FAQ (three items) and the final CTA band.
 
 ### Plan carry (`plan` param)
 
 - `plan` and `from=pricing` are appended to every template-page and wizard link while a plan is chosen, so the plan survives each hop.
-- In the wizard the plan shows only at **Stage 5**, in the billing note: "<Plan> Plan · $x / month after the trial, once you add a card · Change"; the rail summary reads "Free Trial · Starts When You Send · then <Plan>". The default is still the card-free trial; nothing is charged before the relationship exists.
+- In the wizard the plan shows only at **Stage 5**, in the billing note: "<Plan> Plan · $x / month after the trial, once you add a card · Change"; the rail summary reads "Free Trial · Starts When Elena Accepts · then <Plan>". The default is still the card-free trial; the clock starts when they accept, and nothing is charged before then.
 - The Counterparty never sees a plan or price (`flow9` check).
 
 ### Counterparty join (invite link)
@@ -173,7 +173,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 7. **Archive over delete.** Default to Archive (reversible) for templates and relationships; hard delete only where there is no shared data and it is confirmed.
 8. **Title Case for labels, buttons, tabs and headings, with no ending period**; sentence case for sentences. Product terms are capitalized: Aspect, Feel, Wish, Think, Guess, Stage, Align, In Synch, Small Gap, Gap, Alignment Tolerance.
 9. **Route conflict.** The repo's public catalog is `/relationship-types`; the v2 route is **`/relationship-templates`**. Ship `/relationship-templates` and `/relationship-templates/[slug]`, permanently redirect (308) `/relationship-types` and `/relationship-types/[slug]` to them, and update `RELATIONSHIP_TYPES_PATH` (`lib/flow/paths.ts`) so no link points at the old route.
-10. **Card-free trial, decided placement.** Stage 4 is the account only. The trial choice sits on the Stage 5 send button, **Continue with 7 Days Free** (as in PR #1116); payment happens only after the relationship exists. (Open: PR #1116 anchors the trial at creation; the pass 10 copy says it starts when you send. See bundle 01.) When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
+10. **Card-free trial, decided placement and start.** Stage 4 is the account only. The Stage 5 primary button is **Continue with 7 Days Free** and only sends the invite. **The 7-day free trial starts when the Counterparty accepts** (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces PR #1116's start at relationship creation and the earlier prototype start-at-send copy; PR #1116 must move its grant to acceptance. When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
 11. **One status and one next action per state.** Banners confirm what just happened and never repeat the status.
 12. **Layout.** QuizHub breakpoints, content capped at 1440 px (`max-w-content`), `data-qh` on prototype elements names the QuizHub source to reuse.
 
