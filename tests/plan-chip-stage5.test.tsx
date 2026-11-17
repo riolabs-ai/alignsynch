@@ -63,11 +63,12 @@ describe("the address /pricing emits (#1127)", () => {
     expect(href).not.toContain("plan=");
   });
 
-  it("is what the grid emits, and /pricing/start is no longer a card's destination", () => {
-    // The grid's address comes from one function; the retired route is still served (old links), but
-    // a card that reached it would be the double step #1127 removes.
-    expect(source("components/pricing/pricing-plans.tsx")).toContain("pricingCataloguePath({");
-    expect(source("components/pricing/pricing-plans.tsx")).not.toContain("pricingStartPath(");
+  it("is what the band emits, and /pricing/start is no longer a card's destination", () => {
+    // The band's address comes from one function, called by the projection that builds the cards;
+    // the retired route is still served (old links), but a card that reached it would be the
+    // double step #1127 removes.
+    expect(source("lib/pricing-page.ts")).toContain("pricingCataloguePath({");
+    expect(source("lib/pricing-page.ts")).not.toContain("pricingStartPath(");
   });
 });
 

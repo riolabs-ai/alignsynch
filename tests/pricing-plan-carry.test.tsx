@@ -62,12 +62,20 @@ vi.mock("next/navigation", () => ({
 
 import { GET as pricingStart } from "@/app/(marketing)/pricing/start/route";
 import { InviteWalk } from "@/components/assessment-flow/invite-walk";
+import { PricingCta } from "@/components/pricing/pricing-cta";
 import { PricingPlans } from "@/components/pricing/pricing-plans";
-import { billingPlanRows, BILLING_INTERVALS } from "@/data/billing-plans";
+import { BILLING_INTERVALS } from "@/data/billing-plans";
+import { MEMBERSHIP_PLANS } from "@/data/membership-plans";
 import { assessmentCreatePageCopy, PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { pricingPlans } from "@/lib/billing/catalogue";
+import {
+  POPULAR_PLAN_ID,
+  pricingBands,
+  pricingCards,
+  pricingHero,
+  pricingUnsure,
+} from "@/lib/pricing-page";
 import {
   carriedPlanOf,
   isPaidPlanTier,
@@ -160,64 +168,79 @@ describe("what a plan card can carry, and what it cannot", () => {
 
 describe("every /pricing action opens the flow's door (#1043)", () => {
   /**
-   * The grid as the page builds it, with rows coming from the table so the paid cards are sellable —
-   * the same projection `/pricing` renders, and the same `startHref` it now passes.
+   * The page's bands as `/pricing` builds them (#1127): the three approved plans, no entitlement,
+   * so every card offers its own action. Rendered the way the page composes them, so the assertion
+   * is about the render a visitor gets rather than about a component in isolation.
    */
-  function grid(): string {
-    const plans = pricingPlans({
-      rows: billingPlanRows(),
-      source: "table",
-      entitledPlanId: null,
-      startHref: pricingCataloguePath(),
-    });
-    return renderToStaticMarkup(
-      createElement(PricingPlans, {
-        copy: sectionOf(pricingPageCopy, "plans"),
-        plans,
-        testMode: false,
-      }),
-    );
+  function bands(): { plans: string; cta: string } {
+    const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
+    const model = pricingBands(pricingPageCopy, false);
+    return {
+      plans: renderToStaticMarkup(
+        createElement(PricingPlans, {
+          hero: pricingHero(pricingPageCopy),
+          cards,
+          unsure: pricingUnsure({ copy: pricingPageCopy, cards }),
+          bands: model,
+        }),
+      ),
+      cta: renderToStaticMarkup(
+        createElement(PricingCta, {
+          heading: model.ctaHeading,
+          body: model.ctaBody,
+          label: model.ctaLabel,
+          href: model.ctaHref,
+        }),
+      ),
+    };
   }
 
-  it("carries the tier and the interval to the catalogue from every plan card that sells one", () => {
+  it("carries each plan's own tier and interval to the catalogue from every card", () => {
     // #1127 — a plan is *chosen* here and *sold* nowhere: the card's action is the catalogue with
     // its choice in the address (`/relationship-templates?from=pricing&plan=…&interval=…#catalog`),
-    // and no card reaches `/pricing/start` or a checkout any more.
-    const html = grid();
-    for (const tier of CARRIED_TIERS) {
-      // The month toggle is the grid's default, so the address is the monthly one.
-      expect(html).toContain(
-        `href="${pricingCataloguePath({ planId: tier, interval: "month" })}"`.replaceAll(
-          "&",
-          "&amp;",
-        ),
-      );
-      expect(html).toContain(`data-plan-carry="${tier}"`);
-      expect(html).toContain('data-plan-carry-interval="month"');
+    // and no card reaches `/pricing/start` or a checkout any more. Each plan has ONE interval, so
+    // the address is the plan's own pair rather than a toggle position.
+    const { plans } = bands();
+    for (const plan of MEMBERSHIP_PLANS) {
+      const href = pricingCataloguePath({ planId: plan.tier, interval: plan.interval });
+      expect(plans).toContain(`href="${href.replaceAll("&", "&amp;")}"`);
+      expect(plans).toContain(`data-plan-cta="${plan.id}"`);
     }
-    // The carry is per row, not one shared address.
-    expect(CARRIED_TIERS.length).toBeGreaterThan(1);
+    // The carry is per card, not one shared address.
     expect(
       new Set(
-        CARRIED_TIERS.map((tier) => pricingCataloguePath({ planId: tier, interval: "month" })),
+        MEMBERSHIP_PLANS.map((plan) =>
+          pricingCataloguePath({ planId: plan.tier, interval: plan.interval }),
+        ),
       ).size,
-    ).toBe(CARRIED_TIERS.length);
+    ).toBe(MEMBERSHIP_PLANS.length);
   });
 
   it("leaves the general CTA carrying nothing, and opens no checkout and no sign-up", () => {
-    const html = grid();
-    // The free card's action is the general door: no tier in its address, so nothing to preselect.
-    expect(html).toContain(`href="${pricingCataloguePath()}"`);
-    expect(html).toMatch(/data-plan-general="free"/);
+    const { plans, cta } = bands();
+    // The closing band's action is the general door: no tier in its address, so nothing to
+    // preselect, and a choice left by an earlier visit is cleared by the route it names.
+    expect(cta).toContain(`href="${pricingCataloguePath()}"`);
     // Nothing on this page starts a checkout any more, and nothing sends a reader to `/register`:
-    // both were doors out of the flow (#1043).
-    expect(html).not.toContain("/api/billing/checkout");
-    expect(html).not.toContain('href="/register"');
-    expect(html).not.toContain('href="checkout"');
-    // The address every action lands on is the public Templates listing, via the one route.
-    for (const path of [TEMPLATE_CATALOGUE_PATH, "/pricing/start"]) {
-      expect(path).not.toBe("/api/billing/checkout");
+    // both were doors out of the flow (#1043). Nor does it collect a card — the create path stays
+    // payment-free (#1115 D3).
+    for (const html of [plans, cta]) {
+      expect(html).not.toContain("/api/billing/checkout");
+      expect(html).not.toContain('href="/register"');
+      expect(html).not.toContain('href="checkout"');
+      expect(html).not.toContain("<input");
     }
+  });
+
+  it("marks exactly one plan Most Popular, and it is the one the strip points at", () => {
+    const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
+    const popular = cards.filter((card) => card.popular);
+    expect(popular).toHaveLength(1);
+    expect(popular[0]?.id).toBe(POPULAR_PLAN_ID);
+    const unsure = pricingUnsure({ copy: pricingPageCopy, cards });
+    // The strip names the ribboned plan and opens that plan's own door.
+    expect(unsure.body).toContain(popular[0]?.name ?? "");
+    expect(unsure.cta.href).toBe(popular[0]?.cta.href);
   });
 });
 
