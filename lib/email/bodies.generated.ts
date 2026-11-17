@@ -6,7 +6,7 @@
 export const EMAIL_BODIES = {
   "counterparty-invitation": "This is {{inviter}}'s invitation to answer {{template}}: a set of statements about the two of you,\nanswered separately.",
   "invitation-reminder": "This invitation is the way in to {{template}}, and it stops working on {{expires_on}}.",
-  "counterparty-joined": "The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is\nleft.",
+  "counterparty-joined": "The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is\nleft. Your trial has started, and it runs from the day the invitation was accepted.",
   "gap-report-ready": "The report sets your answers side by side, so you can see where the two of you agree — In Synch — and\nwhere the difference is the Gap.",
   "trial-ending": "While the trial runs, the relationship it pays for stays writable: both of you can answer, accept and\nedit.",
   "membership-lapsed": "Nothing was deleted: the membership that paid for {{template}} ended, and what it bought is still\nyours to read.",

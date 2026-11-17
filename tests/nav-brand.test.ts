@@ -184,6 +184,8 @@ const ADMIN_GROUP = [
   "/admin/docs",
   // #1126 — the CRUD & Permissions matrix, directly after Docs: the second reference row.
   "/admin/permissions",
+  // #1138 — the transactional-mail override editor, the third reference row.
+  "/admin/email-templates",
   "/admin/audit",
 ];
 

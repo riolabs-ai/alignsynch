@@ -5,7 +5,8 @@
  * were written before anything could reach them: the receiver subscribed to three
  * `checkout`/`customer.subscription.*` events, so a lapsed pair was never announced and a trial was
  * never warned. This module is the wiring — **the copy is not here**, and neither is the transport.
- * Both go through the band (`renderTemplate()` → `lib/email/band.ts`) and `sendMail()`
+ * Both go through the band (`renderTemplateForSend()` → `renderTemplate()` → `lib/email/band.ts`,
+ * so a published admin override wins over the code default — #1138) and `sendMail()`
  * (`lib/flow/email.ts`), which is the same one `sendMail` half the product already uses.
  *
  * **A notice is mailed per transition, never per state.** `sendMembershipLapsedNotices()` is handed
@@ -45,10 +46,10 @@
  * never a lost subscription.
  */
 import { getPool } from "@/lib/db/client";
+import { renderTemplateForSend } from "@/lib/email/send";
 import {
   membershipLapsedTemplate,
   relationshipPausedTemplate,
-  renderTemplate,
   trialEndedPausedTemplate,
   trialEndingTemplate,
 } from "@/lib/email/templates";
@@ -254,28 +255,42 @@ export async function sendMembershipLapsedNotices(input: {
     for (const seat of seats) {
       // Per seat, not per relationship (#1139). The Counterparty never reads a plan, a price, a
       // trial, a card or an extension, so they never receive #7 or #12 whatever the reason was.
+      // Each arm goes through `renderTemplateForSend()` (#1138), so a published override applies
+      // to all three mails rather than to the Initiator's lapsed one alone.
       const rendered =
         seat.role === "counterparty"
-          ? renderTemplate(relationshipPausedTemplate, {
-              recipient: seat.name,
-              template: title,
-              pausedAt: endedAt,
-              link,
-            })
+          ? await renderTemplateForSend(
+              relationshipPausedTemplate,
+              {
+                recipient: seat.name,
+                template: title,
+                pausedAt: endedAt,
+                link,
+              },
+              { sql },
+            )
           : pausedForTrial
-            ? renderTemplate(trialEndedPausedTemplate, {
-                recipient: seat.name,
-                template: title,
-                endedAt,
-                link,
-                plansLink,
-              })
-            : renderTemplate(membershipLapsedTemplate, {
-                recipient: seat.name,
-                template: title,
-                endedAt,
-                link,
-              });
+            ? await renderTemplateForSend(
+                trialEndedPausedTemplate,
+                {
+                  recipient: seat.name,
+                  template: title,
+                  endedAt,
+                  link,
+                  plansLink,
+                },
+                { sql },
+              )
+            : await renderTemplateForSend(
+                membershipLapsedTemplate,
+                {
+                  recipient: seat.name,
+                  template: title,
+                  endedAt,
+                  link,
+                },
+                { sql },
+              );
       outcomes.push(
         await sendMail(
           { to: seat.email, subject: rendered.subject, text: rendered.text, html: rendered.html },
@@ -325,11 +340,15 @@ export async function sendTrialEndingNotice(input: {
     return { kind: "trial-ending", outcome: "no-address", recipients: 0, relationshipId: null };
   }
 
-  const rendered = renderTemplate(trialEndingTemplate, {
-    recipient: seat.name,
-    trialEndsAt: input.trialEndsAt,
-    link: `${(input.base ?? baseUrl()).replace(/\/+$/, "")}${PLANS_PATH}`,
-  });
+  const rendered = await renderTemplateForSend(
+    trialEndingTemplate,
+    {
+      recipient: seat.name,
+      trialEndsAt: input.trialEndsAt,
+      link: `${(input.base ?? baseUrl()).replace(/\/+$/, "")}${PLANS_PATH}`,
+    },
+    { sql },
+  );
   const outcome = await sendMail(
     { to: seat.email, subject: rendered.subject, text: rendered.text, html: rendered.html },
     { sender: "trial", ...(input.fetchImpl === undefined ? {} : { fetchImpl: input.fetchImpl }) },

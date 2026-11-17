@@ -47,9 +47,20 @@ export interface EmailBodySpec {
   readonly placeholders: readonly string[];
 }
 
-/** The body as written, for a caller that wants the string (a test, or a plain-text export). */
-export function bodyText(spec: EmailBodySpec, values: Record<string, string>): string {
-  const raw = EMAIL_BODIES[spec.id];
+/**
+ * The body **as written** — the markdown the owner's pen put there, placeholders filled.
+ *
+ * `source` is the one argument an override adds (#1138): an admin's published body is text of the
+ * same shape as the markdown, so it goes through this same function rather than a second filler.
+ * It is *not* a second source of truth — the register still decides which fields a template has,
+ * and the admin page shows `{{name}}` chips from the same `placeholders` list.
+ */
+export function bodyText(
+  spec: EmailBodySpec,
+  values: Record<string, string>,
+  source?: string,
+): string {
+  const raw = source ?? bodySource(spec);
   if (raw === undefined) {
     throw new Error(
       `no body registered for "${spec.id}" — content/email-bodies.md has no section for it`,
@@ -72,6 +83,23 @@ export function bodyText(spec: EmailBodySpec, values: Record<string, string>): s
 }
 
 /**
+ * The body exactly as `content/email-bodies.md` writes it, `{{placeholders}}` intact.
+ *
+ * The admin editor (#1138) needs this and not `bodyText()`: it shows the owner's draft *with* the
+ * variables, because that is what an admin edits. A filled body would show one afternoon's names
+ * in place of the `{{inviter}}` the chips stand for.
+ */
+export function bodySource(spec: EmailBodySpec): string {
+  const raw = EMAIL_BODIES[spec.id];
+  if (raw === undefined) {
+    throw new Error(
+      `no body registered for "${spec.id}" — content/email-bodies.md has no section for it`,
+    );
+  }
+  return raw.trim();
+}
+
+/**
  * The body as blocks, ready for `EmailDocument.blocks`.
  *
  * The parse is deliberately the smallest one that carries the nine bodies: a blank line ends a
@@ -80,8 +108,12 @@ export function bodyText(spec: EmailBodySpec, values: Record<string, string>): s
  * column, a mail client re-wraps at the reader's, and keeping the source's breaks would put a hard
  * newline mid-sentence into plain text.
  */
-export function bodyBlocks(spec: EmailBodySpec, values: Record<string, string>): EmailBlock[] {
-  return blocksFromText(bodyText(spec, values), spec.id);
+export function bodyBlocks(
+  spec: EmailBodySpec,
+  values: Record<string, string>,
+  source?: string,
+): EmailBlock[] {
+  return blocksFromText(bodyText(spec, values, source), spec.id);
 }
 
 /** The parse above, on its own, so a test can drive a shape no body in the file happens to use. */

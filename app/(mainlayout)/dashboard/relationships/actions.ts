@@ -634,7 +634,7 @@ export async function resendInviteAction(payload: {
   });
   if (!result.ok) return { ok: false, code: result.code, message: result.reason };
 
-  const message = invitationMessage({
+  const message = await invitationMessage({
     to: result.email,
     initiatorName: result.initiatorName,
     counterpartyName: result.counterpartyName,

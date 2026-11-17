@@ -57,18 +57,29 @@ function calendarDate(instant: Date): string {
   return instant.toISOString().slice(0, 10);
 }
 
-export function relationshipPausedDocument(facts: RelationshipPausedFacts): EmailDocument {
+/**
+ * The document. `body` is the admin's published or draft body text when there is one (#1138) —
+ * it replaces this template's markdown section, never the sentences written around it.
+ */
+export function relationshipPausedDocument(
+  facts: RelationshipPausedFacts,
+  body?: string,
+): EmailDocument {
   const paused = calendarDate(facts.pausedAt);
   return {
     subject: RELATIONSHIP_PAUSED_SUBJECT,
     preheader: `Nothing was deleted on ${facts.template}: everything you both answered is saved.`,
     blocks: [
-      ...bodyBlocks(RELATIONSHIP_PAUSED_BODY, {
-        recipient: facts.recipient,
-        template: facts.template,
-        paused_on: paused,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        RELATIONSHIP_PAUSED_BODY,
+        {
+          recipient: facts.recipient,
+          template: facts.template,
+          paused_on: paused,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, ${facts.template} has been paused since ${paused}.`,

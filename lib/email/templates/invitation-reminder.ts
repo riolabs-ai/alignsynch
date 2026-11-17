@@ -60,17 +60,21 @@ export function expiryDateOf(expiresAt: Date): string {
 /** `Your invitation expires in 2 days` — the spec's subject, which names no party. */
 export const REMINDER_SUBJECT = "Your invitation expires in 2 days";
 
-export function reminderDocument(facts: ReminderFacts): EmailDocument {
+export function reminderDocument(facts: ReminderFacts, body?: string): EmailDocument {
   return {
     subject: REMINDER_SUBJECT,
     preheader: `Your invitation to answer ${facts.template} expires on ${expiryDateOf(facts.expiresAt)}.`,
     blocks: [
-      ...bodyBlocks(REMINDER_BODY, {
-        inviter: facts.inviter,
-        template: facts.template,
-        link: facts.link,
-        expires_on: expiryDateOf(facts.expiresAt),
-      }),
+      ...bodyBlocks(
+        REMINDER_BODY,
+        {
+          inviter: facts.inviter,
+          template: facts.template,
+          link: facts.link,
+          expires_on: expiryDateOf(facts.expiresAt),
+        },
+        body,
+      ),
       { kind: "paragraph", text: `Open your invitation: ${facts.link}` },
       {
         kind: "paragraph",
