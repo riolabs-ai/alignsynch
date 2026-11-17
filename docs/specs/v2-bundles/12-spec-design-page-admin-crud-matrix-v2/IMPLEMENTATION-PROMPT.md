@@ -12,12 +12,12 @@
 
 <!-- bundle-nav:end -->
 
-**Prepared:** 2026-11-16  
-**Repo path:** `docs/specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/` · **Issue:** #1126  
-**Source:** `v2-prototype` pass 10 plus the admin matrix (DESIGN-NOTES v3.3 §46–47). QA-clean: check4 (including the new admin states), flow11, axe 0, brand lint 0. Existing pages still pass check4 at 390/1280.  
-**Priority:** P2  
-**Issues:** [#1126](https://github.com/riolabs-ai/alignsynch/issues/1126) admin menu · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)  
-**Target:** a new admin-only, read-only page at `/admin/permissions`, reached from a new Admin rail row placed directly after Docs.  
+**Prepared:** 2026-11-16\
+**Repo path:** `docs/specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/` · **Issue:** #1126\
+**Source:** `v2-prototype` pass 10 plus the admin matrix (DESIGN-NOTES v3.3 §46–47). QA-clean: check4 (including the new admin states), flow11, axe 0, brand lint 0. Existing pages still pass check4 at 390/1280.\
+**Priority:** P2\
+**Issues:** [#1126](https://github.com/riolabs-ai/alignsynch/issues/1126) admin menu · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)\
+**Target:** a new admin-only, read-only page at `/admin/permissions`, reached from a new Admin rail row placed directly after Docs.\
 **Stack constraint:** Existing Next.js App Router, React, TypeScript and Tailwind CSS v3. The repository pins Tailwind CSS `3.4.17`; do not migrate to Tailwind v4 as part of this work. Reuse QuizHub (ThemeForest React/TW3) components plus the AlignSynch globals only.
 
 ## Copy-ready team prompt
