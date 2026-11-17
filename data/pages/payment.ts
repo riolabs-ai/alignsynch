@@ -8,7 +8,8 @@
  *
  * **Every word here is the bundle's, verbatim**, including its Title Case and its curly
  * apostrophe. The prototype's own fixture data is *not* ported: the price is the plan's
- * (`data/billing-plans.ts` Basic, `$8.95`), the dates come from
+ * (`data/billing-plans.ts` Basic — the approved catalogue's own monthly amount, formatted at
+ * render, never typed here), the dates come from
  * `billing_subscription.current_period_end`, and a relationship's name is its own row's. Only the
  * sentences live here.
  *

@@ -21,6 +21,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { PaymentView } from "@/components/billing/payment-view";
+import { formatCurrency } from "@/content/core";
+import { billingPlan } from "@/data/billing-plans";
 import { paymentPageCopy } from "@/data/pages/payment";
 import { billingViewOf, type BillingFacts, type BillingView } from "@/lib/billing/payment-view";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
@@ -95,7 +97,9 @@ describe("the initiating account's page", () => {
     expect(html).toContain("Free Trial · 3 Days Left");
     expect(html).toContain("Trial Ends");
     expect(html).toContain("After the Trial");
-    expect(html).toContain("$8.95");
+    // The figure is the plan fixture's, not a literal the test types (#1132 x #1127): the surface
+    // prices the membership from `data/billing-plans.ts`, so the check reads the same source.
+    expect(html).toContain(formatCurrency(billingPlan("basic")?.monthlyCents ?? 0));
     expect(html).toContain("Add a Card");
     expect(html).toContain("With Elena Reyes");
     expect(html).toContain("Payment Method");

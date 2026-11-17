@@ -64,7 +64,13 @@ const MEMBERSHIP_PLAN: BillingPlan = (() => {
   return plan;
 })();
 
-/** `"$8.95"` — the monthly figure, formatted once so two panels cannot disagree. */
+/**
+ * The monthly figure, formatted once so two panels cannot disagree.
+ *
+ * It is read from the plan fixture rather than typed: since #1127's approved catalogue the Basic
+ * plan's month is `$9.99`, which happens to be the figure the bundle's prototype drew as mock
+ * data — the number moved, the rule (derived, never typed) did not.
+ */
 export function membershipPrice(): string {
   return formatCurrency(MEMBERSHIP_PLAN.monthlyCents);
 }

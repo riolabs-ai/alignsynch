@@ -137,8 +137,9 @@ describe("the trial panel", () => {
     const plan = billingPlan("basic");
     expect(plan).toBeDefined();
     expect(membershipPrice()).toBe(formatCurrency(plan?.monthlyCents ?? 0));
-    // The prototype draws "$9.99 / month" as fixture data. The real number is Basic's month.
-    expect(membershipPrice()).not.toBe("$9.99");
+    // The prototype draws "$9.99 / month" as fixture data, and since #1127's approved catalogue
+    // Basic's own month is $9.99 too: the mock and the fixture now agree on the number, so the
+    // check that the price is *derived* is the assertion above, not a difference from the mock.
     const panel = onlyPanel(factsOf());
     const afterTrial = panel.fields.find((field) => field.label === "after-trial");
     expect(wordsOf(afterTrial?.value ?? { kind: "text", text: "" })).toBe(membershipPrice());
