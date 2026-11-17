@@ -178,6 +178,20 @@ export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 
 /**
+ * `/dashboard/payment` — the member's billing surface (#1132).
+ *
+ * One page for both parties, and the role is derived from the rows rather than from the address: an
+ * account that has initiated a relationship reads its trial panels, and one that was only ever
+ * invited reads the coverage band. The bundle draws no rail row for it
+ * (`docs/specs/v2-bundles/08-spec-design-page-payment-v2/payment.html`), so nothing in the shell
+ * links here yet — the inbound link arrives with the surfaces whose bundles do link `payment.html`
+ * (Start and Account Settings).
+ *
+ * A literal, not an import: this module is imported by `"use client"` components.
+ */
+export const PAYMENT_PATH = `${OVERVIEW_PATH}/payment`;
+
+/**
  * `/relationship-types` — one relationship *type*'s public page (#794).
  *
  * The reachable half of `TEMPLATES_PATH`: the *taxonomy* of relationship types the shop sells,

@@ -321,6 +321,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/dashboard-relationship-detail",
     budget: 0,
   },
+  /**
+   * #1132 — the member's billing surface. Budget 0, measured: every word on it is
+   * `data/pages/payment.ts`, the dates are the subscription row's instants, the price is the plan's
+   * `monthlyCents`, and the only other strings the document carries are addresses and class names.
+   */
+  "/dashboard/payment": {
+    page: "app/(mainlayout)/dashboard/payment/page.tsx",
+    dirs: ["components/billing", "components/ui"],
+    fixture: "data/pages/payment",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],

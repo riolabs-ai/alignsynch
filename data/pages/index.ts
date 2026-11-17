@@ -58,6 +58,8 @@ import { dashboardPageCopy } from "./dashboard";
 import { dashboardSupportPageCopy } from "./dashboard-support";
 // #533 phase 2 — the initiator's own templates and relationships.
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
+// #1132 — the member's billing surface: one trial panel per relationship, and the Counterparty view.
+import { paymentPageCopy } from "./payment";
 import { dashboardRelationshipsPageCopy } from "./dashboard-relationships";
 import { dashboardTemplateEditorPageCopy } from "./dashboard-template-editor";
 import { dashboardTemplatesPageCopy } from "./dashboard-templates";
@@ -151,6 +153,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/relationships/[id]": dashboardRelationshipDetailPageCopy,
   "/dashboard/templates": dashboardTemplatesPageCopy,
   "/dashboard/templates/[id]": dashboardTemplateEditorPageCopy,
+  "/dashboard/payment": paymentPageCopy,
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,

@@ -126,6 +126,8 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/help", mode: "column" },
   { path: "/dashboard/relationships", mode: "column" },
   { path: "/dashboard/relationships/[id]", mode: "column" },
+  // #1132 — the billing surface: the same left edge as the detail screen it is a sibling of.
+  { path: "/dashboard/payment", mode: "column" },
   { path: "/dashboard/support", mode: "column" },
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },
