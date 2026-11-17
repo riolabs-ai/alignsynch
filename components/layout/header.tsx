@@ -8,7 +8,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -25,16 +24,16 @@ import { endSession } from "@/lib/auth/sign-out";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import type { BrandMark } from "@/lib/brand-mark";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
-import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, itemLabelOr, sectionOf } from "@/lib/page-copy";
 import { accountMenu, type AccountMenuRowId } from "@/lib/shell/account-menu";
-import { searchSectionFor } from "@/lib/shell-copy";
+import { accountSignOutFor } from "@/lib/shell/account-sign-out";
+import { accountCopyFor, searchSectionFor } from "@/lib/shell-copy";
 import {
   Bell,
   ChevronLeft,
   FileQuestion,
   FileText,
   LogOut,
-  Mail,
   Menu,
   MessageCircleQuestion,
   MessageSquare,
@@ -50,25 +49,28 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import ChatDrawer from "../header/ChatDrawer";
 import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
 
 /**
- * The icon and its two colours, per row — the only thing the header adds to `accountMenu()`'s
- * derived rows (#979). Keyed by the row id rather than by position, so a row that disappears (a
- * visitor's Settings, a member's profile before they have a handle) cannot shift a neighbour's
- * icon, and a new row id is a compile error until it is given art.
+ * The icon per row — the only thing the header adds to `accountMenu()`'s derived rows (#979).
+ * Keyed by the row id rather than by position, so a row that disappears (a visitor's Account
+ * Settings, a member's profile before they have a handle) cannot shift a neighbour's icon, and a
+ * new row id is a compile error until it is given art.
+ *
+ * **The v2 menu draws the icon bare** (#1136): one 16px line glyph in muted ink beside the label,
+ * not the tinted square chip this header used to paint. The chip was the quiz shell's decoration;
+ * `settings.html` measures a flat row, and a row is what the build draws.
  */
-const ACCOUNT_ROW_ART: Readonly<
-  Record<AccountMenuRowId, { icon: typeof User; ground: string; ink: string }>
-> = {
-  "sign-in": { icon: User, ground: "bg-muted", ink: "" },
-  "sign-up": { icon: UserPlus, ground: "bg-gray-100", ink: "text-gray-600" },
-  profile: { icon: User, ground: "bg-blue-100", ink: "text-blue-600" },
-  dashboard: { icon: TrendingUp, ground: "bg-muted", ink: "text-action" },
-  quizzes: { icon: MessageCircleQuestion, ground: "bg-blue-100", ink: "text-blue-600" },
-  settings: { icon: Settings, ground: "bg-gray-100", ink: "text-gray-600" },
+const ACCOUNT_ROW_ICON: Readonly<Record<AccountMenuRowId, typeof User>> = {
+  "sign-in": User,
+  "sign-up": UserPlus,
+  profile: User,
+  dashboard: TrendingUp,
+  quizzes: MessageCircleQuestion,
+  settings: Settings,
 };
 
 /**
@@ -192,7 +194,7 @@ export function Header({
   // owns the words, this file owns which ids it renders. A renamed id is a red build
   // (E23) and a blank header would be the alternative.
   const searchCopy = searchSectionFor(copy, brandId);
-  const accountCopy = sectionOf(copy, "account");
+  const accountCopy = accountCopyFor(copy, brandId);
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");
   /**
@@ -329,9 +331,11 @@ export function Header({
 
   /**
    * Sign out from the account menu — the same step the rail's row runs, so one control does not
-   * pretend while the other revokes. On success the person lands on the marketing front page,
-   * signed out, with no dashboard chrome; a failure is said out loud under the button rather than
-   * swallowed (issue #272's rule, on the header's control).
+   * pretend while the other revokes. `endSession()` is that step; where the browser goes next is
+   * chrome, and `accountSignOutFor(brandId)` decides it (#1136): the v2 build lands on the public
+   * catalog and confirms with the fixture's sentence, the quiz build keeps the front page it
+   * shipped and says nothing. A failure is said out loud under the control rather than swallowed
+   * (issue #272's rule, on the header's control).
    */
   const signOut = async () => {
     if (signingOut) return;
@@ -342,7 +346,10 @@ export function Header({
       setSignOutFailed(true);
       return;
     }
-    router.replace("/");
+    const landing = accountSignOutFor(brandId);
+    const says = landing.toast === undefined ? undefined : itemLabelOr(accountCopy, landing.toast);
+    if (says !== undefined) toast(says);
+    router.replace(landing.href);
     router.refresh();
   };
 
@@ -657,14 +664,14 @@ export function Header({
           </Button>
 
           {/*
-            The account row's first chip. On the quiz product it is the wallet balance and it
-            opens the quiz dashboard's wallet tab; an alignment visitor has no wallet there, and
-            `/dashboard/user` is that product's account home, so their chip is the brand's own
-            account route instead (`/settings`, in `lib/nav.ts`'s ALIGNMENT_ROUTES). Both routes
-            are session-gated; neither is deleted, and the elevated viewer keeps the wallet word
-            for word.
+            The account row's first chip is the quiz product's wallet balance, and it opens the quiz
+            dashboard's wallet tab. **The alignment build has no chip here any more** (#1136): the
+            v2 header measures search, notifications and the avatar menu, and a second door to
+            `/settings` beside the menu's own Account Settings row was a duplicate of a row that now
+            exists. Nothing is deleted — a viewer carrying `quiz-surfaces` keeps the wallet word for
+            word, and the quiz build's own header is unchanged.
           */}
-          {seesQuizProduct(brandId, viewer) ? (
+          {seesQuizProduct(brandId, viewer) && (
             <Link
               href="/dashboard/user?tab=wallet"
               className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
@@ -674,105 +681,108 @@ export function Header({
               </span>
               <span className="text-green-500">💰</span>
             </Link>
-          ) : (
-            <Link
-              href="/settings"
-              className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="text-sm font-medium">{itemLabel(accountCopy, "settings")}</span>
-            </Link>
           )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              {/*
+                The trigger is a button with a name (#1136). It used to be a `Button` wrapping the
+                avatar with no accessible name at all, so a screen reader announced "button" and the
+                slot read as decoration — which is exactly what the issue reports. `aria-label` comes
+                from the fixture (`menu`), and Radix supplies `aria-haspopup="menu"` and
+                `aria-expanded`; the focus ring is the shell's own.
+              */}
+              <button
+                type="button"
+                aria-label={menu.menuLabel}
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
                 {account === null ? (
                   /* Signed out: a neutral disc, not a person. The label says what the slot is
-                     for, and the menu it opens offers the only action that exists. */
+                     for, and the menu it opens offers the only actions that exist. */
                   <SignedOutAvatar label={itemLabel(accountCopy, "signed-out")} size={32} />
                 ) : (
                   <GeneratedAvatar name={account.name} seed={account.handle} size={32} />
                 )}
-              </Button>
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
+            <DropdownMenuContent align="end" className="w-60 p-1">
               {/*
-                The menu is the session's, not a list with a session-shaped header (#979). A
-                signed-out visitor used to get Settings and a destructive **Log out** below the
-                "Sign in" row: nothing to log out of, and a control describing a session that did
-                not exist. `accountMenu()` decides which rows exist; this file draws them.
+                The menu is the session's, not a list with a session-shaped header (#979), and its
+                shape is the v2 bundle's (#1136): the name and the address as a header block, then
+                one flat row per destination, then Sign Out as a row rather than a filled button in
+                the footer.
 
-                The identity block is a member's only: a visitor's first rows *are* Sign in and
-                Sign up, so drawing both would offer the same door twice.
+                The identity block is a member's only: a visitor's first rows *are* Sign In and Sign
+                Up, so drawing both would offer the same door twice. It is the **name and the
+                address**, not a 64px avatar with a handle — the bundle draws two lines, and the
+                handle is a URL (`/profile/<handle>`), which the My Profile row already carries.
               */}
               {menu.account !== null && (
-                <div className="flex flex-col space-y-2 p-4">
-                  <div className="flex items-center gap-3">
-                    <GeneratedAvatar
-                      name={menu.account.name}
-                      seed={menu.account.handle}
-                      size={64}
-                    />
-                    <div>
-                      <h3 className="text-lg font-semibold">{menu.account.name}</h3>
-                      <p className="text-sm text-muted-foreground">{`@${menu.account.handle}`}</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        <span>{menu.account.email}</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="border-b px-2 pb-2 pt-1.5">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {menu.account.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{menu.account.email}</p>
                 </div>
               )}
 
-              {menu.signedIn && <DropdownMenuSeparator />}
-
-              <div className="p-2">
+              <div className="pt-1">
                 {menu.rows.map((row) => {
-                  const art = ACCOUNT_ROW_ART[row.id];
-                  const Icon = art.icon;
+                  const Icon = ACCOUNT_ROW_ICON[row.id];
                   return (
-                    <DropdownMenuItem key={row.id} asChild className="flex gap-3 px-3 py-1.5">
+                    <DropdownMenuItem
+                      key={row.id}
+                      asChild
+                      className="flex items-center gap-2 px-2 py-2"
+                    >
                       <Link href={row.href}>
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-md ${art.ground}`}
-                        >
-                          <Icon className={`h-4 w-4 ${art.ink}`} />
-                        </div>
+                        <Icon
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground"
+                        />
                         {row.hint === undefined ? (
                           <span>{row.label}</span>
                         ) : (
-                          <div className="flex flex-col">
+                          <span className="flex flex-col">
                             <span>{row.label}</span>
                             <span className="text-xs text-muted-foreground">{row.hint}</span>
-                          </div>
+                          </span>
                         )}
                       </Link>
                     </DropdownMenuItem>
                   );
                 })}
+
+                {/*
+                  Sign Out is a **row that acts**, not a link and not a red button (#272, locked
+                  rule 4): `endSession()` revokes the session, so the control is a `<button>`; and
+                  the v2 palette has no red for a destructive action, so it is drawn exactly like
+                  the row above it, with its own icon. `onSelect` rather than a click handler keeps
+                  it in Radix's roving-focus model, so it is reachable by arrow keys and activates
+                  with Enter — the issue's "works by keyboard" claim.
+
+                  `null` — not a disabled row — is how a visitor's menu says there is no session to
+                  end.
+                */}
+                {menu.signOut !== null && (
+                  <DropdownMenuItem
+                    disabled={signingOut}
+                    onSelect={() => {
+                      void signOut();
+                    }}
+                    className="flex items-center gap-2 px-2 py-2"
+                  >
+                    <LogOut aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                    <span>{signingOut ? menu.signOut.pending : menu.signOut.label}</span>
+                  </DropdownMenuItem>
+                )}
               </div>
 
-              {/*
-                Log out exists only for a member, and `null` — not a disabled button — is how a
-                visitor's menu says there is no session to end.
-              */}
-              {menu.signOut !== null && (
-                <div className="p-4 pt-0">
-                  <Button
-                    variant="destructive"
-                    className="w-full justify-center"
-                    onClick={signOut}
-                    disabled={signingOut}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>{signingOut ? menu.signOut.pending : menu.signOut.label}</span>
-                  </Button>
-                  {signOutFailed && (
-                    <p className="pt-2 text-sm text-red-600">{menu.signOut.error}</p>
-                  )}
-                </div>
+              {signOutFailed && menu.signOut !== null && (
+                <p role="status" className="px-2 pb-1.5 pt-1 text-xs text-muted-foreground">
+                  {menu.signOut.error}
+                </p>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

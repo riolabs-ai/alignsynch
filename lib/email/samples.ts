@@ -28,6 +28,8 @@ import type { ReminderFacts } from "@/lib/email/templates/invitation-reminder";
 import type { JoinedFacts } from "@/lib/email/templates/counterparty-joined";
 import type { ReportReadyFacts } from "@/lib/email/templates/report-ready";
 import type { TrialEndingFacts } from "@/lib/email/templates/trial-ending";
+import type { TrialEndedPausedFacts } from "@/lib/email/templates/trial-ended-paused";
+import type { RelationshipPausedFacts } from "@/lib/email/templates/relationship-paused";
 import type { MembershipLapsedFacts } from "@/lib/email/templates/membership-lapsed";
 import type { SupportReplyFacts } from "@/lib/email/templates/support-reply";
 import type { SignupConfirmationFacts } from "@/lib/email/templates/signup-confirmation";
@@ -132,6 +134,21 @@ const SAMPLE_FACTS: Readonly<Record<string, unknown>> = {
     expiredAt: SAMPLE_ENDED_AT,
     link: SAMPLE_NAMES.relationshipLink,
   } satisfies RelationshipExpiredFacts,
+  // The pause pair #1139 split out of #7: the Initiator's trial notice (which is the one mail that
+  // may offer the plan's address) and the Counterparty's neutral sentence.
+  "trial-ended-paused": {
+    recipient: SAMPLE_NAMES.initiator,
+    template: SAMPLE_NAMES.template,
+    endedAt: SAMPLE_ENDED_AT,
+    link: SAMPLE_NAMES.relationshipLink,
+    plansLink: SAMPLE_NAMES.plansLink,
+  } satisfies TrialEndedPausedFacts,
+  "relationship-paused": {
+    recipient: SAMPLE_NAMES.counterparty,
+    template: SAMPLE_NAMES.template,
+    pausedAt: SAMPLE_ENDED_AT,
+    link: SAMPLE_NAMES.relationshipLink,
+  } satisfies RelationshipPausedFacts,
 };
 
 /** The sample facts for one register id, or `undefined` — the honest answer for an unknown id. */

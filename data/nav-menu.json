@@ -101,6 +101,13 @@
           "icon": "templates",
           "needs": "member",
           "note": "#620 — one destination, two tabs: the catalogue and what this member owns. /dashboard/library is a 308 to this tab (next.config.mjs)."
+        },
+        {
+          "id": "chat",
+          "href": "/dashboard/chat",
+          "icon": "chat",
+          "needs": "member",
+          "note": "#1131 — one thread per relationship, last of the member's destinations as the v2 rail draws it (Start · My Relationships · Templates · Chat). NOT /chat: that address is the quiz product's conversations, gated to the quiz brand (#300), and it answers 404 on the build this rail belongs to."
         }
       ]
     },

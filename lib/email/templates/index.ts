@@ -15,11 +15,16 @@
  * house move.
  *
  * **The class is the column that decides the footer, so `renderTemplate()` forwards the one input
- * it needs.** Eleven of the twelve are transactional and carry no unsubscribe line. #9 is the
+ * it needs.** Twelve of the thirteen are transactional and carry no unsubscribe line. #9 is the
  * marketing one, and its unsubscribe URL is a per-recipient token — it cannot live in a fixture, so
  * it is an option on `renderTemplate()` and reaches the band unchanged. A caller that forgets it
  * gets the band's own throw ("a marketing mail needs an unsubscribe URL"), not a mail with no way
  * out.
+ *
+ * **Numerals are identities, and a new template takes the next free one.** #12 and #13 (#1139) were
+ * appended rather than inserted beside #7 where they read most naturally: 8–11 are cited by tests,
+ * docstrings and operations docs, and renumbering them would edit the record of what a numeral
+ * meant when it was written. The array stays in numeral order.
  *
  * **Text first holds for every entry by construction.** Each `document()` returns blocks; the
  * only way to get bodies is `renderTemplate()`, which composes the text and derives the HTML from
@@ -66,6 +71,16 @@ import {
   membershipLapsedDocument,
   type MembershipLapsedFacts,
 } from "@/lib/email/templates/membership-lapsed";
+import {
+  TRIAL_ENDED_PAUSED_BODY,
+  trialEndedPausedDocument,
+  type TrialEndedPausedFacts,
+} from "@/lib/email/templates/trial-ended-paused";
+import {
+  RELATIONSHIP_PAUSED_BODY,
+  relationshipPausedDocument,
+  type RelationshipPausedFacts,
+} from "@/lib/email/templates/relationship-paused";
 import {
   SUPPORT_REPLY_BODY,
   supportReplyDocument,
@@ -242,7 +257,7 @@ export const trialEndingTemplate: EmailTemplate<TrialEndingFacts> = {
   document: trialEndingDocument,
 };
 
-/** #7 — the membership lapsed: the words for `membershipOf()`'s read-only state. */
+/** #7 — the membership lapsed: the words for `membershipOf()`'s read-only state, Initiator only. */
 export const membershipLapsedTemplate: EmailTemplate<MembershipLapsedFacts> = {
   id: "membership-lapsed",
   numeral: 7,
@@ -291,15 +306,14 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
 };
 
 /**
- /**
-  * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
-  * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
-  * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
-  *
-  * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
-  * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
-  * templates and this one keeps the sequence contiguous.
-  */
+ * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
+ * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
+ * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
+ *
+ * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
+ * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
+ * templates and this one keeps the sequence contiguous.
+ */
 export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts> = {
   id: "relationship-expired",
   numeral: 11,
@@ -307,6 +321,44 @@ export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts
   recipient: "both",
   subject: relationshipExpiredSubject,
   document: relationshipExpiredDocument,
+};
+
+/**
+ * #12 — the trial ended and Align is paused, to the Initiator (#1139).
+ *
+ * The trial's lapse, and only that one: `lib/billing/notices.ts` chooses it from
+ * `relationship.lapse_reason`, so a failed payment still gets #7 and its "resume it" sentence rather
+ * than a free week the account cannot take.
+ */
+export const trialEndedPausedTemplate: EmailTemplate<TrialEndedPausedFacts> = {
+  id: "trial-ended-paused",
+  numeral: 12,
+  emailClass: "transactional",
+  // The Initiator's mail, and only theirs: it offers the free week and the plan's address, so the
+  // Counterparty's rule in `lib/email/override.ts::checkOverride` must bind it (#1139).
+  recipient: "initiator",
+  body: TRIAL_ENDED_PAUSED_BODY,
+  subject: (facts) => trialEndedPausedDocument(facts).subject,
+  document: trialEndedPausedDocument,
+};
+
+/**
+ * #13 — the relationship is paused, to the Counterparty (#1139).
+ *
+ * The seat that cannot act, told the one thing it needs: Align is paused, nothing was deleted, and
+ * they will hear when it resumes. No price, plan, trial, card or extension word is legal here —
+ * `tests/counterparty-no-leak.test.ts` sweeps this template for exactly that vocabulary.
+ */
+export const relationshipPausedTemplate: EmailTemplate<RelationshipPausedFacts> = {
+  id: "relationship-paused",
+  numeral: 13,
+  emailClass: "transactional",
+  // The Counterparty's own sentence (#1139) — the one seat that cannot act, and the seat the money
+  // rule exists for.
+  recipient: "counterparty",
+  body: RELATIONSHIP_PAUSED_BODY,
+  subject: (facts) => relationshipPausedDocument(facts).subject,
+  document: relationshipPausedDocument,
 };
 
 /**
@@ -325,7 +377,9 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<SupportReplyFacts>
   | EmailTemplate<SignupConfirmationFacts>
   | EmailTemplate<PurchaseConfirmationFacts>
-  | EmailTemplate<RelationshipExpiredFacts>;
+  | EmailTemplate<RelationshipExpiredFacts>
+  | EmailTemplate<TrialEndedPausedFacts>
+  | EmailTemplate<RelationshipPausedFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   releaseNoteTemplate,
@@ -339,6 +393,8 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   signupConfirmationTemplate,
   purchaseConfirmationTemplate,
   relationshipExpiredTemplate,
+  trialEndedPausedTemplate,
+  relationshipPausedTemplate,
 ];
 
 /** What a caller gets back: the document it was built from, and the two bodies. */

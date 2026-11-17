@@ -1,5 +1,5 @@
 /**
- * The twelve templates through the band (#548).
+ * The thirteen templates through the band (#548).
  *
  * Every property below is asserted for **every** template the same way, because the card states
  * them as rules rather than as copy:
@@ -38,6 +38,7 @@ import {
   purchaseConfirmationTemplate,
   reachesCounterparty,
   relationshipExpiredTemplate,
+  relationshipPausedTemplate,
   releaseNoteTemplate,
   reminderTemplate,
   renderTemplate,
@@ -45,6 +46,7 @@ import {
   signupConfirmationTemplate,
   supportReplyTemplate,
   templateById,
+  trialEndedPausedTemplate,
   trialEndingTemplate,
   type EmailTemplate,
   type RenderedTemplate,
@@ -262,6 +264,40 @@ const SAMPLES: readonly Sample[] = [
       mustSay: ["Avery", "Relationship Basics", "2026-11-15"],
     },
   ),
+  // The two halves the lapse notice is split into (#1139). They are asserted here like every other
+  // template, and the vocabulary rule the Counterparty's one has to keep is swept in
+  // `tests/counterparty-no-leak.test.ts` — a body that reads well and says "trial" passes this file.
+  sample(
+    trialEndedPausedTemplate,
+    {
+      recipient: "Avery",
+      template: "Relationship Basics",
+      endedAt: new Date("2026-11-05T09:00:00.000Z"),
+      link: RELATIONSHIP,
+      plansLink: PLAN,
+    },
+    {
+      name: "trial ended, Align paused (#12, the Initiator's)",
+      subject: "Your trial ended — Align is paused",
+      links: [RELATIONSHIP, PLAN],
+      mustSay: ["Avery", "Relationship Basics", "2026-11-05", "7-day extension"],
+    },
+  ),
+  sample(
+    relationshipPausedTemplate,
+    {
+      recipient: "Rowan",
+      template: "Relationship Basics",
+      pausedAt: new Date("2026-11-05T09:00:00.000Z"),
+      link: RELATIONSHIP,
+    },
+    {
+      name: "relationship paused (#13, the Counterparty's)",
+      subject: "Align is paused for now",
+      links: [RELATIONSHIP],
+      mustSay: ["Rowan", "Relationship Basics", "2026-11-05"],
+    },
+  ),
 ];
 
 const TRANSACTIONAL = SAMPLES.filter((item) => item.emailClass === "transactional");
@@ -378,7 +414,7 @@ describe("the class rule holds in both directions", () => {
   });
 
   it("every transactional template carries none", () => {
-    expect(TRANSACTIONAL).toHaveLength(10);
+    expect(TRANSACTIONAL).toHaveLength(12);
     for (const item of TRANSACTIONAL) {
       const rendered = item.render();
       expect(rendered.text).not.toContain("Unsubscribe");
@@ -400,9 +436,9 @@ describe("the class rule holds in both directions", () => {
 });
 
 describe("the register", () => {
-  it("holds templates 1–11, in order, once each", () => {
+  it("holds templates 1–13, in order, once each", () => {
     expect(EMAIL_TEMPLATES.map((template) => template.numeral)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
     ]);
     const ids = EMAIL_TEMPLATES.map((template) => template.id);
     expect(new Set(ids).size).toBe(ids.length);

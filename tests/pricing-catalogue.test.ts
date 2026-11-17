@@ -75,8 +75,8 @@ describe("the plan grid", () => {
       (plan) => plan.id === "principal",
     );
     expect(principal?.intervals.month).toEqual({
-      chargeCents: 1_695,
-      displayCents: 1_695,
+      chargeCents: 1_999,
+      displayCents: 1_999,
       sellable: true,
     });
     // 16_272 cents a year is the $13.56/mo the card prints; the checkout still charges 16_272.
@@ -88,8 +88,9 @@ describe("the plan grid", () => {
     const basic = grid({ rows: seeded, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "basic",
     );
-    expect(basic?.intervals.month?.displayCents).toBe(895);
-    expect(basic?.intervals.year?.displayCents).toBe(716);
+    expect(basic?.intervals.month?.displayCents).toBe(999);
+    // 9_900 a year is Single Annual's $99, printed as $8.25/mo.
+    expect(basic?.intervals.year?.displayCents).toBe(825);
   });
 
   it("removes the CTA at the interval whose row is inactive, and keeps the price", () => {
@@ -98,8 +99,8 @@ describe("the plan grid", () => {
       (plan) => plan.id === "basic",
     );
     expect(basic?.intervals.year).toEqual({
-      chargeCents: 8_592,
-      displayCents: 716,
+      chargeCents: 9_900,
+      displayCents: 825,
       sellable: false,
     });
     expect(basic?.intervals.month?.sellable).toBe(true);

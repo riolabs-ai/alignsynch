@@ -417,7 +417,7 @@ const nextConfig = {
       // edit to this row cannot reintroduce the shadow silently.
       {
         source: "/templates/:typeId((?!relationship(?:/|$))[^/]+)",
-        destination: "/relationship-types/:typeId",
+        destination: "/relationship-templates/:typeId",
         permanent: true,
       },
       /**
@@ -445,7 +445,38 @@ const nextConfig = {
        */
       {
         source: "/assessment/demo/:type",
-        destination: "/relationship-types/:type/demo",
+        destination: "/relationship-templates/:type/demo",
+        permanent: true,
+      },
+      /**
+       * #1127 — **one public catalogue, one address.** `/relationship-types` served the catalogue
+       * *and* was the namespace a type's page and its worked example lived in, so the same model was
+       * reachable at two doors: `/relationship-templates` (the canonical one since #905) and
+       * `/relationship-types` (the retained #889 composition, mounted until this card). Jaden's
+       * call is that `/relationship-templates` is the address, so all three retired paths 308 to
+       * their counterparts and the `app/(marketing)/relationship-types/` tree is deleted rather
+       * than shadowed — a `permanent: true` source runs before the filesystem route, so a page left
+       * there would be built and unreachable.
+       *
+       * **The slug rows carry their own segment, and the bare-slug row is last.** `/relationship-
+       * types/<id>/demo` has a more specific source than `/relationship-types/<id>`, and Next
+       * matches in table order; putting the bare row last keeps the demo row from being consumed by
+       * it. Nothing else ever lived under this prefix, so there is no wildcard and no lookahead —
+       * `/relationship-types/<id>/junk` stays the plain 404 it always was.
+       */
+      {
+        source: "/relationship-types",
+        destination: "/relationship-templates",
+        permanent: true,
+      },
+      {
+        source: "/relationship-types/:slug/demo",
+        destination: "/relationship-templates/:slug/demo",
+        permanent: true,
+      },
+      {
+        source: "/relationship-types/:slug",
+        destination: "/relationship-templates/:slug",
         permanent: true,
       },
     ];

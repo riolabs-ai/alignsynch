@@ -22,7 +22,8 @@
 import type { Metadata } from "next";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
-import { RelationshipsList, stateFilterOf } from "@/components/dashboard/relationships-list";
+import { RelationshipsList } from "@/components/dashboard/relationships-list";
+import { stateFilterOf } from "@/lib/member/state-filter";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -35,6 +36,12 @@ import { type AlignmentSummary, alignmentSummaryOf } from "@/lib/member/alignmen
 import { readMemberAlignments } from "@/lib/db/member-alignments";
 import { listLibraryTemplates } from "@/lib/db/template-library";
 import type { RelationshipStartTemplate } from "@/components/dashboard/relationship-create";
+import {
+  abandonRelationshipAction,
+  cancelInviteAction,
+  leaveRelationshipAction,
+  resendInviteAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +117,12 @@ export default async function MemberRelationshipsPage({
         templates={templates}
         unreadable={unreadable}
         initialFilter={initialFilter}
+        menuWrites={{
+          resend: resendInviteAction,
+          "cancel-invite": cancelInviteAction,
+          abandon: abandonRelationshipAction,
+          leave: leaveRelationshipAction,
+        }}
       />
     </StageColumn>
   );

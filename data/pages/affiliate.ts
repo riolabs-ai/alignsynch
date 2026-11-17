@@ -303,7 +303,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
           id: "how-much-can-i-earn",
           label: "How much can I earn?",
           value:
-            "Earnings vary based on your audience and promotion efforts. With our 30% commission rate on all plans, affiliates earn between $5.99 and $14.99 per month for each referred user. Some of our top affiliates earn over $5,000 monthly with consistent promotion.",
+            "Earnings vary based on your audience and promotion efforts. With our 30% commission rate on all plans, affiliates earn between $3.00 and $6.00 per month for each referred user. Some of our top affiliates earn over $5,000 monthly with consistent promotion.",
         },
         {
           id: "when-paid",

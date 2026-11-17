@@ -31,64 +31,75 @@
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 import { formatCurrency } from "../../content/core";
-import { billingPlan } from "../billing-plans";
-import type { PaidPlanId } from "../billing-prices";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
+import {
+  MEMBERSHIP_PLANS,
+  MEMBERSHIP_PLAN_TIERS,
+  type MembershipPlanId,
+  membershipPlan,
+} from "../membership-plans";
 import { lifecycleStageSection } from "./lifecycle";
 
 /**
- * One tier's monthly figure, from the fixture that sells it (#975).
+ * The plan panel's three rows, priced from the catalogue that sells them (#975, #1127).
  *
  * This section used to carry two typed prices — `$9.95` and `$19.85` — under a comment claiming
  * they were "data here for the reason every other figure in this tree is: a price typed into
  * markup is a price that can disagree with the one the pricing page sells". They were typed here,
- * and they did disagree: `/dashboard/templates` sold `Basic · $8.95/mo` and `/pricing` sold the
- * same, while stage 5 of the create flow asked the same person for `$9.95 /mo` and `$19.85 /mo`
- * over the identical two choices. Three prices, one relationship, no gate anywhere that compared
- * them.
+ * and they did disagree: `/dashboard/templates` and `/pricing` sold the price fixture's monthly
+ * figure, while stage 5 of the create flow asked the same person for a different pair over the
+ * identical two choices. Three prices, one relationship, no gate anywhere that compared them.
  *
- * So the figure is read, never typed: `data/billing-plans.ts` is the one home for a price, and
- * this module names a tier and prints its monthly amount. A tier that stops existing is a thrown
- * error at import — a screen with a missing price is a screen that would otherwise print `$0.00`.
+ * So the rows are **derived, never typed**: `data/membership-plans.ts` names the three plans
+ * (Single `$9.99`/mo · Family `$19.99`/mo, up to four relationships · Single Annual `$99`/yr), and
+ * every amount in this section is `formatCurrency(spec.priceCents)` read out of it. A plan that
+ * stops existing is a thrown error at import — a screen with a missing price is a screen that
+ * would otherwise print `$0.00`.
  */
-const ONE_RELATIONSHIP_PLAN_ID = "basic";
-const UNLIMITED_PLAN_ID = "principal";
 
 /**
  * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
  *
- * The `plans` section below is keyed by the row ids the prototype prints (`one`, `unlimited`,
- * `one-note`, `one-price`), and each row's figure is read from the tier named here
- * (`monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID)`). That pair is what a checkout must be asked for, and
- * it is declared once, here, beside the prices it produces — a second map anywhere else is how the
- * two vocabularies drifted apart in the first place.
+ * The `plans` section below is keyed by the row ids the artifact draws (`single`, `family`,
+ * `annual`), and each row's figure is read from the plan of that id. That tier is what a checkout
+ * must be asked for, and it is declared once — in `data/membership-plans.ts`, re-exported here
+ * under the name every reader already imports — a second map anywhere else is how the two
+ * vocabularies drifted apart in the first place.
  *
  * **Why it needs saying out loud.** Both vocabularies are `string`, so nothing in the type system
- * saw the walk posting a row id as a tier: stage 5 sent `"one"`, the adapter answered *"one" is not
- * a plan this product sells*, the card frame never mounted, and — with `#1019`'s send behind that
- * gate — no new relationship could be completed. `tests/plan-billing-tier.test.tsx` binds this map
- * to `BILLING_PLAN_IDS` **and** to a Price at both intervals, so the next rename on either side
- * fails a check instead of a checkout.
+ * saw the walk posting a row id as a tier: stage 5 once sent `"one"`, the adapter answered *"one"
+ * is not a plan this product sells*, the card frame never mounted, and — with `#1019`'s send behind
+ * that gate — no new relationship could be completed. `tests/plan-billing-tier.test.tsx` binds this
+ * map to `BILLING_PLAN_IDS` **and** to a Price at the row's own interval, so the next rename on
+ * either side fails a check instead of a checkout.
  *
- * `satisfies Record<string, PaidPlanId>` keeps a tier that is not sold (`free`) out of the map at
- * compile time; the reverse direction — a row this map prices that the panel does not draw — is
- * the key comparison the test makes, since no type can see a map entry nothing reads.
+ * Two rows may share a tier (`Single` and `Single Annual` are both `basic`): a plan is a
+ * (tier, interval) pair, and the interval is what tells them apart.
  */
-export const PLAN_BILLING_TIER = {
-  one: ONE_RELATIONSHIP_PLAN_ID,
-  unlimited: UNLIMITED_PLAN_ID,
-} as const satisfies Record<string, PaidPlanId>;
+export const PLAN_BILLING_TIER = MEMBERSHIP_PLAN_TIERS;
 
 /** The plan rows the money panel draws: the keys of the map above. */
 export type PlanRowId = keyof typeof PLAN_BILLING_TIER;
 
-function monthlyPriceOf(id: typeof ONE_RELATIONSHIP_PLAN_ID | typeof UNLIMITED_PLAN_ID): string {
-  const plan = billingPlan(id);
-  if (plan === undefined) {
+/** The plan, or a thrown error naming the id — a row with no price is not a row. */
+function planSpec(id: MembershipPlanId) {
+  const spec = membershipPlan(id);
+  if (spec === undefined) {
     throw new Error(
-      `data/billing-plans.ts has no "${id}" plan — the create flow's stage 5 prints its monthly figure`,
+      `data/membership-plans.ts has no "${id}" plan — the create flow's stage 5 prints its figure`,
     );
   }
-  return formatCurrency(plan.monthlyCents);
+  return spec;
+}
+
+/** One row's amount, as the card prints it: `$9.99`, `$19.99`, `$99`. */
+function planPriceOf(id: MembershipPlanId): string {
+  return formatCurrency(planSpec(id).priceCents, { trimZeroCents: true });
+}
+
+/** One row's interval suffix — the unit the amount above is charged in. */
+function planIntervalOf(id: MembershipPlanId): string {
+  return planSpec(id).interval === "month" ? "/mo" : "/yr";
 }
 
 export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
@@ -165,15 +176,20 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The two plans (#690, re-headed by #911).
+       * The three plans (#690, re-headed by #911, re-catalogued by #1127).
        *
-       * **The figures are read from `data/billing-plans.ts` (#975).** They were typed here as
-       * `$9.95` / `$19.85` and had drifted from the plan fixture the shelf and `/pricing` sell
-       * (`Basic · $8.95/mo`), so one person asking "what does this cost?" got three answers.
-       * `monthlyPriceOf()` above names the tier and prints its amount; nothing in this file
-       * spells a price. The rows are a single-choice group (`role="radio"`, `aria-checked`)
-       * shaped like the Mode choice, and choosing one commits nothing — the card step is where a
-       * card is taken, and it charges nothing either.
+       * **The figures are read from the plan catalogue (#975).** They were once typed here as
+       * `$9.95` / `$19.85` and had drifted from the price fixture the shelf and `/pricing` sell, so
+       * one person asking "what does this cost?" got three answers. `planPriceOf()` above names the
+       * plan and prints its amount; nothing in this file spells a price. The rows are a
+       * single-choice group (`role="radio"`, `aria-checked`) shaped like the Mode choice, and
+       * choosing one commits nothing — the card step is where a card is taken, and it charges
+       * nothing either.
+       *
+       * **#1127 replaced the two rows with the owner's approved three** — Single `$9.99`/mo,
+       * Family `$19.99`/mo for up to four relationships, Single Annual `$99`/yr — and each row now
+       * carries its own interval, because a plan is a (tier, interval) pair and the annual row is
+       * not a monthly one.
        *
        * **#911 changed what this step is for.** It used to be a soft prompt beside a send that went
        * through unpaid. Now the walk's first step is where the money is *decided*: the two things
@@ -183,28 +199,27 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * a survey.
        *
        * The trial sentence is the prototype's, verbatim, because it is the promise the card step
-       * rests on: nothing is charged when the card is saved.
+       * rests on: nothing is charged when the card is saved — and on the create path (#1115 D3)
+       * there is no card to save at all: the row writes the choice and the week opens at the
+       * Counterparty's acceptance.
        */
       id: "plans",
       heading: "Join a membership plan",
       body: "Two things the money buys: you join a membership plan, and this relationship is activated. Nothing is charged today — the trial starts when the card is saved.",
       items: [
         { id: "legend", label: "Choose a plan" },
-        { id: "one", label: "Basic" },
-        {
-          id: "one-note",
-          label:
-            "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
-        },
-        { id: "one-price", label: monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID) },
-        { id: "unlimited", label: "Principal" },
-        {
-          id: "unlimited-note",
-          label: "Every relationship you open, for as long as you keep the plan.",
-        },
-        { id: "unlimited-price", label: monthlyPriceOf(UNLIMITED_PLAN_ID) },
-        { id: "per", label: "/mo" },
-        { id: "best-value", label: "best value" },
+        /*
+          One row per plan, built from the catalogue so the three plans, their order, their names,
+          their capacities and their amounts cannot be a second list (#1127). `single-price` is
+          `$9.99`, `family-note` is the capacity in words, and `annual-interval` is `/yr` — all read
+          from `data/membership-plans.ts`, none typed here.
+        */
+        ...MEMBERSHIP_PLANS.flatMap((plan) => [
+          { id: plan.id, label: plan.name },
+          { id: `${plan.id}-note`, label: plan.summary },
+          { id: `${plan.id}-price`, label: planPriceOf(plan.id) },
+          { id: `${plan.id}-interval`, label: planIntervalOf(plan.id) },
+        ]),
         {
           id: "trial",
           label:
@@ -415,6 +430,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
             "The invitation did not go out — the request could not reach the app. Nothing was sent and nothing was charged. Try again, or keep the draft.",
         },
         { id: "note-heading", label: "What you can do later" },
+        /**
+         * #1127 — the plan chip, drawn on stage 5 when the reader chose a plan on `/pricing`.
+         *
+         * The v2 bundle puts the choice here rather than on stage 4, and says the same two things
+         * the flow has always kept apart: the plan is *saved*, and nothing is charged until a card
+         * is added. `{plan}` is the billing fixture's own tier name — never a word typed here.
+         */
+        {
+          id: "plan-chip",
+          label:
+            "{plan} Plan · Saved from Pricing. It starts after the free week, only once you add a card.",
+        },
+        { id: "plan-change", label: "Change" },
         {
           id: "reassure",
           label: "You can resend, edit the title, or withdraw the invitation at any point.",
@@ -468,6 +496,17 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "summary-membership", label: "Membership" },
         { id: "summary-membership-value", label: "Free Trial · Starts When {name} Accepts" },
         { id: "summary-membership-value-unnamed", label: "Free Trial · Starts When They Accept" },
+        /**
+         * **The plan the reader chose on `/pricing`, said after the trial** (#1127, bundle 01).
+         *
+         * The rail's membership row reads `Free Trial · Starts When Elena Accepts · then Family`:
+         * the trial is what opens at acceptance, and the plan is what carries on after it — one
+         * row, because a reader deciding whether to invite someone wants both facts in the place
+         * they look for the relationship's state. `{plan}` is filled from
+         * `data/membership-plans.ts` (the catalogue's own name, never a query value), and the line
+         * is absent entirely when nothing was carried — a choice nobody made is not stated.
+         */
+        { id: "summary-membership-then", label: " · then {plan}" },
         { id: "summary-aspects-value", label: "{count} Aspects" },
         { id: "none", label: "—" },
       ],
@@ -615,6 +654,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "back", label: "Back" },
       ],
     },
+    /**
+     * The Aspect drawer (#1133) — the shared vocabulary, spread in from `content/aspect-drawer.ts`
+     * because the same drawer opens here, on a relationship's Aspects tab and in a My Template's
+     * Edit. The row no longer expands in place; the pencil and `Add an Aspect` open this sheet.
+     */
+    aspectDrawerSection(),
     {
       /**
        * The one band a server-side refusal draws (#688).

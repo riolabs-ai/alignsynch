@@ -125,7 +125,8 @@ describe("the register", () => {
     const ids = memberFacingTemplates().map((template) => template.id);
     // The members' mails, in the register's own order — the issue's inventory minus the rows it
     // keeps off this page (`stakeholder-release-note`) and minus the ones it defers to a later
-    // answer (the pause pair, the propose-change trio, the reminders, the extra week).
+    // answer (the propose-change trio, the reminders, the extra week). The pause pair was deferred
+    // here when #1138 was written; #1139 landed it (#12 and #13), so the two rows are in it now.
     expect(ids).toEqual([
       "counterparty-invitation",
       "invitation-reminder",
@@ -137,6 +138,8 @@ describe("the register", () => {
       "signup-confirmation",
       "purchase-confirmation",
       "relationship-expired",
+      "trial-ended-paused",
+      "relationship-paused",
     ]);
   });
 

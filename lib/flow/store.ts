@@ -123,6 +123,7 @@ import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/
 import {
   acceptedBy,
   instanceStatusOf,
+  parseDraft,
   parseSubmission,
   visibleRoles,
   type InstanceProgress,
@@ -2010,6 +2011,157 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     const after = await progressOfClient(client, input.instanceRecordId, aspects.rows.length);
     await client.query("COMMIT");
     return { ok: true, status: instanceStatusOf(after), role };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface DraftInput {
+  readonly instanceRecordId: string;
+  /** The viewer's cookie token; the role is looked up from its hash, never from the form. */
+  readonly token: string | undefined;
+  /** The signed-in account — the second answer to "who is writing", exactly as `submitAnswers`. */
+  readonly viewerUserId?: string | null;
+  readonly answers: ReadonlyMap<string, RawAnswer>;
+  /**
+   * **Start Over.** Delete this viewer's answers instead of writing them (#1128).
+   *
+   * The bundle draws the control on the resume banner, and it is the one way a person can get a
+   * partially-answered Aspect out of the way — an Aspect is written when its kinds are all picked,
+   * so an abandoned half-Aspect would otherwise be resumed into forever if its pair was chosen
+   * wrongly. It deletes **only this seat's** rows: the other party's column is not this endpoint's
+   * to touch, and `role` came from the cookie, not from a field.
+   */
+  readonly clear?: boolean;
+  readonly now?: Date;
+}
+
+export type DraftResult =
+  | {
+      readonly ok: true;
+      /** How many of the instance's Aspects this viewer has now answered, under the same lock. */
+      readonly answered: number;
+      readonly aspectCount: number;
+    }
+  | {
+      readonly ok: false;
+      readonly code: SubmissionRejection;
+      readonly reason: string;
+    };
+
+/**
+ * Save **some** of one party's answers, as they are picked (#1128).
+ *
+ * The same guards as `submitAnswers()`, in the same order, because they are the same write with a
+ * different completeness rule:
+ *
+ *   1. the session row is locked, so a void (#503) cannot be raced by a pick already in flight;
+ *   2. the seat is resolved from the cookie's token hash and then the account (#R2) — a request
+ *      cannot say who it is;
+ *   3. **this party's** acceptance is read under that lock: an accepted sheet is the record they
+ *      agreed to, so a draft write after it is refused exactly as a submit is (the per-party freeze
+ *      of #R2, not the old both-submitted one);
+ *   4. the mode comes from the locked row, never from the post.
+ *
+ * What it does **not** do is refuse an incomplete sheet: `parseDraft()` writes the Aspects whose
+ * every kind has been picked and leaves the rest alone, which is what makes "save as you go"
+ * possible at all on a table whose `feel`/`wish` are NOT NULL. The row is an **upsert** rather than
+ * the submit's delete-then-insert, so changing one Aspect never touches another.
+ *
+ * A refused draft is a code and a sentence, never a silent success: the screen has a line for each
+ * one, and the route answers it with the status `REFUSAL_STATUS` gives.
+ */
+export async function saveDraftAnswers(input: DraftInput): Promise<DraftResult> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const locked = await client.query<{ record_id: string; mode: string; voided_at: Date | null }>(
+      "SELECT record_id, mode, voided_at FROM session WHERE record_id = $1 FOR UPDATE",
+      [input.instanceRecordId],
+    );
+    if (locked.rows[0] === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "no-such-instance", reason: "no session has that id" };
+    }
+    if (locked.rows[0].voided_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "voided",
+        reason: `an operator voided this session at ${locked.rows[0].voided_at.toISOString()}; it accepts no further answers`,
+      };
+    }
+
+    const mode = zAssessmentMode.parse(locked.rows[0].mode);
+    const role =
+      (input.token === undefined || input.token === ""
+        ? undefined
+        : await partyRoleOf(client, input.instanceRecordId, input.token)) ??
+      (await partyRoleForUser(client, input.instanceRecordId, input.viewerUserId ?? null));
+    if (role === undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-a-party",
+        reason: "this browser holds no party token for the session",
+      };
+    }
+
+    const aspects = await client.query<{ item_id: string }>(
+      "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
+      [input.instanceRecordId],
+    );
+    const progress = await progressOfClient(client, input.instanceRecordId, aspects.rows.length);
+    if (acceptedBy(progress, role)) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "frozen",
+        reason: `the ${role} has accepted this session; the answers are frozen`,
+      };
+    }
+
+    if (input.clear === true) {
+      await client.query("DELETE FROM opinion WHERE session_record_id = $1 AND role = $2", [
+        input.instanceRecordId,
+        role,
+      ]);
+    } else {
+      const draft = parseDraft(
+        aspects.rows.map((row) => row.item_id),
+        input.answers,
+        mode,
+      );
+      for (const answer of draft) {
+        await client.query(
+          `INSERT INTO opinion (session_record_id, role, item_id, feel, wish, think, guess)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (session_record_id, role, item_id)
+           DO UPDATE SET feel = EXCLUDED.feel, wish = EXCLUDED.wish,
+                         think = EXCLUDED.think, guess = EXCLUDED.guess`,
+          [
+            input.instanceRecordId,
+            role,
+            answer.itemId,
+            answer.opinions.feel,
+            answer.opinions.wish,
+            answer.opinions.think ?? null,
+            answer.opinions.guess ?? null,
+          ],
+        );
+      }
+    }
+
+    const after = await progressOfClient(client, input.instanceRecordId, aspects.rows.length);
+    await client.query("COMMIT");
+    return {
+      ok: true,
+      answered: role === "initiator" ? after.initiatorAnswered : after.counterpartyAnswered,
+      aspectCount: aspects.rows.length,
+    };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;

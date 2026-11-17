@@ -111,11 +111,19 @@ import {
   type ResendInviteOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
-import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detail";
+import {
+  ASPECT_EDITOR_SECTION,
+  ASPECTS_LIVE_SECTION,
+} from "@/data/pages/dashboard-relationship-detail";
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, itemOf, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { RELATIONSHIPS_PATH, createInviteForPath, reportPath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIPS_PATH,
+  answerSheetPath,
+  createInviteForPath,
+  reportPath,
+} from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { useState, useTransition, type ReactNode } from "react";
@@ -375,6 +383,8 @@ export function RelationshipDetail({
    */
   const tabCopy = sectionOf(copy, "tabs");
   const tabs = (tabCopy.items ?? []).map((item) => ({ id: item.id, label: item.label }));
+  /** #1133 — the live Aspects band's two sentences (the rule, and why the pencils are gone). */
+  const liveAspectCopy = sectionOf(copy, ASPECTS_LIVE_SECTION);
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -970,6 +980,54 @@ export function RelationshipDetail({
     ...(membershipFact === null ? [] : [membershipFact]),
   ];
 
+  /**
+   * #1128 — **the Next Step while the relationship is answering, and the door #1128 says was
+   * missing.**
+   *
+   * The bundle draws one Next Step per state, and the state a live session is in before both
+   * sheets are sealed is *answer it*: `Start Your First Assessment` with the three-minute promise,
+   * one button into `/assessment/instances/[id]/answer`. The verb is the reader's own answered
+   * count (`viewerAnswered`, read from their `opinion` rows), so a return visit says `Continue`.
+   *
+   * It is drawn instead of the pause panel, never beside it (`paused` wins). A sealed sheet still
+   * gets it: the answer screen is the one that decides whether it draws the sheet or the record, and
+   * a reader who wants their own answers should not have to guess a URL to find them.
+   */
+  const assessmentCopy = sectionOf(copy, "assessment");
+  const answerHref =
+    relationship.sessionRecordId === null ? null : answerSheetPath(relationship.sessionRecordId);
+  const answered = relationship.viewerAnswered ?? 0;
+  const assessmentPanel =
+    paused || relationship.closed || answerHref === null ? null : (
+      <section
+        data-next-step-assessment={answered > 0 ? "continue" : "start"}
+        className={`space-y-3 ${DETAIL_CARD}`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip variant="soft">{itemLabel(assessmentCopy, "next-step")}</Chip>
+        </div>
+        <h2 className="text-base font-semibold">
+          {itemLabel(assessmentCopy, answered > 0 ? "continue-heading" : "start-heading")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {fillLabel(itemLabel(assessmentCopy, "body"), { count: relationship.aspectCount })}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {fillLabel(itemLabel(assessmentCopy, "progress"), {
+            answered,
+            count: relationship.aspectCount,
+          })}
+        </p>
+        <a
+          href={answerHref}
+          data-start-assessment="true"
+          className="inline-flex h-9 items-center gap-2 rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+        >
+          {itemLabel(assessmentCopy, answered > 0 ? "continue" : "start")}
+        </a>
+      </section>
+    );
+
   /*
    * #1121 — **the pause block, above the facts card in the rail.**
    *
@@ -1106,7 +1164,6 @@ export function RelationshipDetail({
             <AspectList
               copy={copy}
               wordsSection={ASPECT_EDITOR_SECTION}
-              validationSection={null}
               aspects={aspectDrafts}
               addRemove
               onChange={mirrorAspects}
@@ -1156,35 +1213,56 @@ export function RelationshipDetail({
             ) : null}
           </div>
         ) : (
-          <ol className="mt-4 grid gap-3">
-            {aspects.map((aspect, index) => (
-              <li
-                key={aspect.id ?? `row-${String(index + 1)}`}
-                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
-                className="rounded-lg border border-border bg-card p-6"
+          <>
+            {/*
+              #1133 — **the live band.** Once Stage 6 is running the Aspects are locked, and the
+              screen says so instead of leaving a person to wonder where the pencils went. It is
+              the panel's own copy (`aspects-live`), not a sentence written here: E23, and because
+              the same two sentences are the contract the write layer enforces (`saveAspects`
+              refuses `not-editable` inside its transaction).
+            */}
+            {relationship.status === "active" ? (
+              <div
+                data-relationship-aspects-live="true"
+                className="mt-4 rounded-lg border border-border bg-mist p-4"
               >
-                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
-                <p className={`mt-2 ${DETAIL_MUTED}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "left")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.leftValue}
+                <p className="flex items-start gap-2 text-sm font-medium text-foreground">
+                  <span aria-hidden="true">🔒</span>
+                  <span>{itemLabel(liveAspectCopy, "locked-now")}</span>
                 </p>
-                <p className={DETAIL_MUTED}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "right")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.rightValue}
-                </p>
-              </li>
-            ))}
-          </ol>
+                <p className={`mt-1 pl-6 ${DETAIL_MUTED}`}>{itemLabel(liveAspectCopy, "rule")}</p>
+              </div>
+            ) : null}
+            <ol className="mt-4 grid gap-3">
+              {aspects.map((aspect, index) => (
+                <li
+                  key={aspect.id ?? `row-${String(index + 1)}`}
+                  data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
+                  className="rounded-lg border border-border bg-card p-6"
+                >
+                  <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
+                  <p className={`mt-2 ${DETAIL_MUTED}`}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectCopy, "left")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    {aspect.leftValue}
+                  </p>
+                  <p className={DETAIL_MUTED}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectCopy, "right")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    {aspect.rightValue}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </>
         )}
       </DetailSection>
     ),
@@ -1216,6 +1294,7 @@ export function RelationshipDetail({
       facts={
         <>
           {/* #1121 — the pause block first, then the facts card: the bundle's aside order. */}
+          {assessmentPanel}
           {pausePanel}
           <DetailFacts
             facts={factRows}
