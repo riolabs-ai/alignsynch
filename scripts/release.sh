@@ -437,6 +437,20 @@ guard_current_branch() { git symbolic-ref --quiet --short HEAD 2>/dev/null || pr
 # paths would refuse with half a message and a code nobody can read. `sed` reads its whole input.
 show_paths() { sed -e 's/^/  /' -e '6,$d'; }
 
+# **Who wrote each path.** The refusal below used to be the only thing that noticed an uncommitted
+# file, and it said "the tree is dirty" — no culprit, no remedy (#1178). On this repo the usual
+# culprit is not the operator: `next dev` rewrites `AGENTS.md` and `gitnexus analyze` writes
+# `CLAUDE.md`, so the honest instruction is "run `git checkout -- AGENTS.md` or commit it", not
+# "stash it". `scripts/tree-hygiene.mjs` holds the table and prints it; this function only indents
+# it and can never fail — a cut from a dirty tree must still arrive at the refusal, with a diagnosis
+# attached or without one.
+tree_hygiene_report() {
+  command -v node >/dev/null 2>&1 || return 0
+  [ -f scripts/tree-hygiene.mjs ] || return 0
+  node scripts/tree-hygiene.mjs 2>&1 | sed -e 's/^/  /' || true
+  return 0
+}
+
 guard_arm() { # capture the starting state, and make every way out of this run restore it
   [ "$GUARD_ARMED" -eq 1 ] && return 0
   GUARD_START_BRANCH="$(guard_current_branch)"
@@ -475,6 +489,9 @@ guard_restore() { # <exit code> — the state the caller gets back, and the line
     printf 'release: %s is left with uncommitted changes — this script never discards work:\n' \
       "$branch" >&2
     printf '%s\n' "$dirty" | show_paths >&2
+    # The diagnosis, before the instruction: a path a *tool* wrote is cleared by the command the
+    # table prints, and "git stash" (the old advice) is exactly wrong for it.
+    tree_hygiene_report >&2
     printf '  commit or `git stash` them before the next cut\n' >&2
   elif [ "$GUARD_START_SHA" != "$(git rev-parse HEAD 2>/dev/null || true)" ]; then
     start="$(git rev-parse --short "$GUARD_START_SHA" 2>/dev/null || printf '%s' "$GUARD_START_SHA")"
@@ -502,6 +519,13 @@ require_cut_checkout() { # the three states a cut cannot start from, each refuse
   if [ -n "$dirty" ]; then
     printf 'release: the tree is dirty — a release is cut from a clean tree, never from work in progress:\n' >&2
     printf '%s\n' "$dirty" | show_paths >&2
+    # **The diagnosis, and it is the whole point of the table (#1178).** The paths below are
+    # frequently not the operator's: `next dev` rewrites `AGENTS.md`, `gitnexus analyze` writes
+    # `CLAUDE.md`, and this release's own record step leaves `data/health/platform-health.json`
+    # uncommitted on purpose. Naming the writer is the difference between "clean the tree" and
+    # "run the one command that clears it". The refusal itself is unchanged and unchanged on
+    # purpose: a cut is still made from a clean tree.
+    tree_hygiene_report >&2
     die "commit or 'git stash' those paths, then cut again"
   fi
 }

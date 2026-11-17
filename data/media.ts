@@ -376,6 +376,27 @@ export const media = {
     height: 680,
     kind: "background",
   },
+  "og.email-banner": {
+    src: "/og/email-banner.png",
+    alt: "AlignSynch release-note header — two answers, one Gap",
+    width: 1120,
+    height: 280,
+    kind: "illustration",
+  },
+  "og.readme-banner": {
+    src: "/og/readme-banner.png",
+    alt: "AlignSynch banner — two answers, one Gap, beside the relationship screen",
+    width: 1280,
+    height: 400,
+    kind: "illustration",
+  },
+  "og.release-default": {
+    src: "/og/release-default.png",
+    alt: "AlignSynch release notes card — what changed, and why",
+    width: 1200,
+    height: 630,
+    kind: "illustration",
+  },
   placeholder: {
     src: "/placeholder.svg",
     alt: "",

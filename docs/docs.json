@@ -1001,6 +1001,11 @@
           "path": "changelog/v1-9-0.md",
           "title": "v1.9.0",
           "question": "The release where the payer could finally pay."
+        },
+        {
+          "path": "changelog/v2-0-0-rc1.md",
+          "title": "v2.0.0-rc1",
+          "question": "What does the v2 surface set look like as one candidate — and what does its capture prove?"
         }
       ]
     }
