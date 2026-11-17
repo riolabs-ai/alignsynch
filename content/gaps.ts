@@ -331,6 +331,33 @@ export function gapMeetsSetting(gap: Gap, setting: AlignmentSetting): boolean {
 }
 
 /**
+ * The four ways one Gap *reads* under an Alignment Tolerance — the Align surface's vocabulary.
+ *
+ * `gapMeetsSetting` answers the bipartite fact; a screen has to answer it in words, and a
+ * 1-step Gap is the row where the two tolerances differ without changing the status's name:
+ *
+ *   gap  tolerance  status           word                                mark
+ *   0    either     in-synch         In Synch                            ✓
+ *   1    soft       small-gap-ok     Small Gap · OK                      ≈
+ *   1    full       small-gap-tight  Small Gap · Not OK under Full       ≈ (Gap colour)
+ *   ≥2   either     gap              Gap                                 flag
+ *
+ * That is the owner's locked reading (#1119 D-E, #1122): under Full a Small Gap keeps its word
+ * and its ≈ and takes the Gap's colour, so a re-score never renames a status, and no status is
+ * ever carried by colour alone. This function is the one place that row is decided — a surface
+ * comparing `gap === 1` itself would be a second copy of the rule and could drift from this one.
+ */
+export const ALIGNMENT_STATUSES = ["in-synch", "small-gap-ok", "small-gap-tight", "gap"] as const;
+
+export type AlignmentStatus = (typeof ALIGNMENT_STATUSES)[number];
+
+export function alignmentStatusOf(gap: Gap, setting: AlignmentSetting): AlignmentStatus {
+  if (gap === 0) return "in-synch";
+  if (gap === 1) return gapMeetsSetting(gap, setting) ? "small-gap-ok" : "small-gap-tight";
+  return "gap";
+}
+
+/**
  * Is the instance aligned under its Setting — derived from the Gaps on every call.
  *
  * Aligned means **every Gap the instance actually has** meets the Setting. A kind that is
