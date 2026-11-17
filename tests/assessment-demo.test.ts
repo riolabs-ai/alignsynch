@@ -39,7 +39,9 @@ vi.mock("next/navigation", () => ({
  */
 vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
-import DemoPage, { generateMetadata } from "@/app/(marketing)/relationship-types/[slug]/demo/page";
+import DemoPage, {
+  generateMetadata,
+} from "@/app/(marketing)/relationship-templates/[slug]/demo/page";
 import { formatCurrency } from "@/content/core";
 import { GAP_KINDS, gapKindsIn, gapKindsOf } from "@/content/gaps";
 import {
@@ -179,7 +181,7 @@ describe("the page draws the label and the report", () => {
     const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
 
     // The address is the catalogue's, one level under the type page …
-    expect(relationshipTypeDemoPath(type)).toBe(`/relationship-types/${type}/demo`);
+    expect(relationshipTypeDemoPath(type)).toBe(`/relationship-templates/${type}/demo`);
     expect(html).not.toContain("/assessment/demo");
     // … the breadcrumb back is the type itself, not the signed-in library …
     expect(html).toContain(`href="${relationshipTypePath(type)}"`);
@@ -248,7 +250,7 @@ describe("the box under the report prices the plan, never the relationship (#805
     // (the same shape `tests/member-templates-tabs.test.ts` scans `lib/member/shelf.ts` with), so
     // the scan is for a read: an import of the constant, a formatter call, or the type's field.
     const source = readFileSync(
-      new URL("../app/(marketing)/relationship-types/[slug]/demo/page.tsx", import.meta.url),
+      new URL("../app/(marketing)/relationship-templates/[slug]/demo/page.tsx", import.meta.url),
       "utf8",
     );
     expect(source).not.toMatch(/import[^;]*RELATIONSHIP_PRICE_CENTS/);

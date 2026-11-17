@@ -30,7 +30,7 @@
  */
 import type { PageCopySection } from "@/content/pages";
 import type { ShellAccount } from "@/lib/auth/shell-account";
-import { itemLabel } from "@/lib/page-copy";
+import { itemLabel, itemLabelOr } from "@/lib/page-copy";
 
 /** The rows a menu can carry. A closed union so the header's icon map is exhaustive. */
 export type AccountMenuRowId =
@@ -64,6 +64,11 @@ export interface AccountMenu {
   readonly signedIn: boolean;
   /** The person, or `null` — never a fixture stand-in (#212). */
   readonly account: ShellAccount | null;
+  /**
+   * The avatar button's accessible name (`data/pages/shell.ts` → `menu`, #1136). The trigger used
+   * to be an icon button with no name at all, which is what the issue calls a decorative avatar.
+   */
+  readonly menuLabel: string;
   /** The rows the menu offers, in the order it draws them. */
   readonly rows: readonly AccountMenuRow[];
   /** The log-out action, present **only** for a member. */
@@ -75,7 +80,7 @@ const SIGN_IN_PATH = "/login";
 const SIGN_UP_PATH = "/register";
 
 export function accountMenu(input: {
-  /** The shell fixture's `account` section. */
+  /** The shell fixture's `account` (or `account-alignsynch`) section. */
   readonly copy: PageCopySection;
   readonly account: ShellAccount | null;
   /** `seesQuizProduct(brandId, viewer)` — whether this viewer carries the quiz destinations. */
@@ -84,11 +89,13 @@ export function accountMenu(input: {
   readonly profileHref: string | null;
 }): AccountMenu {
   const { copy, account, quizRows, profileHref } = input;
+  const menuLabel = itemLabel(copy, "menu");
 
   if (account === null) {
     return {
       signedIn: false,
       account: null,
+      menuLabel,
       rows: [
         { id: "sign-in", label: itemLabel(copy, "signed-out"), href: SIGN_IN_PATH },
         { id: "sign-up", label: itemLabel(copy, "sign-up"), href: SIGN_UP_PATH },
@@ -109,13 +116,17 @@ export function accountMenu(input: {
    * "My Profile" is conditional on there being one (#226): a brand-new account has no
    * `user_profile` row until it first saves `/settings`, so with no handle the row is absent rather
    * than pointing at a stranger — or, since #979, at `/profile/<empty>`.
+   *
+   * **A hint is optional per brand, not per row** (#1136): the v2 menu draws one line per row, so
+   * `account-alignsynch` declares no `*-hint` items and the rows simply carry none. `itemLabelOr`
+   * is the reader for that, and the quiz section keeps the subtitles it shipped.
    */
   if (quizRows) {
     if (profileHref !== null) {
       rows.push({
         id: "profile",
         label: itemLabel(copy, "profile"),
-        hint: itemLabel(copy, "profile-hint"),
+        hint: itemLabelOr(copy, "profile-hint"),
         href: profileHref,
       });
     }
@@ -124,13 +135,13 @@ export function accountMenu(input: {
       {
         id: "dashboard",
         label: itemLabel(copy, "dashboard"),
-        hint: itemLabel(copy, "dashboard-hint"),
+        hint: itemLabelOr(copy, "dashboard-hint"),
         href: "/dashboard/user",
       },
       {
         id: "quizzes",
         label: itemLabel(copy, "quizzes"),
-        hint: itemLabel(copy, "quizzes-hint"),
+        hint: itemLabelOr(copy, "quizzes-hint"),
         href: "/my-quizzes",
       },
     );
@@ -139,13 +150,14 @@ export function accountMenu(input: {
   rows.push({
     id: "settings",
     label: itemLabel(copy, "settings"),
-    hint: itemLabel(copy, "settings-hint"),
+    hint: itemLabelOr(copy, "settings-hint"),
     href: "/settings",
   });
 
   return {
     signedIn: true,
     account,
+    menuLabel,
     rows,
     signOut: {
       label: itemLabel(copy, "logout"),

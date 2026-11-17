@@ -20,6 +20,7 @@
  *   unreadable  the database did not answer
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
 
 export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
   heading: "Your template",
@@ -68,6 +69,12 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "new-aspect", label: "New Aspect" },
       ],
     },
+    /**
+     * The Aspect drawer (#1133) — the same shared vocabulary Stage 3 and a relationship's Aspects
+     * tab read (`content/aspect-drawer.ts`). On this page it replaces the per-Aspect accordion:
+     * each row's pencil opens the sheet, and `Add an Aspect` opens it empty.
+     */
+    aspectDrawerSection(),
     {
       id: "preview",
       heading: "As the other person sees it",
@@ -117,7 +124,7 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         // names. The band is the console's (`band="catalogue"`), so a member's screen never draws
         // these controls; the words are still the member's own, because a template they own is
         // archived by an operator and never destroyed out from under a relationship.
-        { id: "retire", label: "Retire" },
+        { id: "retire", label: "Retire This Template" },
         {
           id: "retire-body",
           label:
@@ -125,7 +132,9 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "archive", label: "Archive the template" },
         { id: "restore", label: "Restore the template" },
-        { id: "delete", label: "Delete permanently" },
+        { id: "delete", label: "Delete Permanently" },
+        /** The neutral mark the destroy control carries — a glyph is copy, so it lives here. */
+        { id: "delete-mark", label: "×" },
         { id: "delete-title", label: "Delete {title} permanently?" },
         {
           id: "delete-body",
@@ -192,6 +201,71 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
       id: "unreadable",
       heading: "This template could not be read",
       body: "The database did not answer. Nothing was changed.",
+    },
+    /* ------------------------------------------------------------------ *
+     * The template's own page (#1130) — `?edit=1` is the editor above
+     * ------------------------------------------------------------------ */
+    /**
+     * The page's header and its two actions. The template's title is the `h1` and comes from the row;
+     * everything else a reader sees here is one of these words.
+     */
+    {
+      id: "detail",
+      items: [
+        { id: "eyebrow", label: "My Template" },
+        { id: "create", label: "Create Relationship" },
+        { id: "edit", label: "Edit" },
+        { id: "aspects-heading", label: "Aspects" },
+        { id: "aspects-count", label: "{count} Aspects" },
+        /**
+         * The locked 1–5 band, drawn per Aspect. The two ends are the Aspect's own values; the five
+         * cells are `bg-scale-1…5` and are numbered, and nothing here is an input — the preview shows
+         * the scale the relationship will ask, and a field on this page would be a second editor.
+         */
+        { id: "left-means", label: "1 Means" },
+        { id: "right-means", label: "5 Means" },
+        { id: "scale-locked", label: "The 1–5 scale is fixed for every Aspect" },
+        {
+          id: "no-aspects",
+          label: "This template has no Aspects yet. Edit it to add the first one.",
+        },
+      ],
+    },
+    {
+      id: "detail-about",
+      heading: "About",
+      body: "This template is yours. A relationship started from it copies its Aspects into a record of its own, so tuning them here never changes a relationship you have already configured, and the catalogue only sees what an operator publishes.",
+      items: [
+        { id: "summary", label: "Summary" },
+        { id: "status", label: "State" },
+        { id: "draft", label: "Working copy" },
+        { id: "archived", label: "Archived" },
+        { id: "published", label: "Published" },
+      ],
+    },
+    /**
+     * Used In — the aside's second card, and the fact that decides whether the destroy control exists
+     * at all. `deleteMyTemplate()` refuses a row any relationship was created from, so the band stops
+     * offering the control rather than offering one that always refuses.
+     */
+    {
+      id: "used",
+      heading: "Used In",
+      items: [
+        { id: "none", label: "Not used in a relationship yet." },
+        { id: "one", label: "Used in 1 relationship." },
+        { id: "many", label: "Used in {count} relationships." },
+        {
+          id: "archive-only",
+          label: "Used in {count} relationship(s), so it can only be archived.",
+        },
+      ],
+    },
+    {
+      id: "share",
+      heading: "Share It With Others",
+      body: "Propose this template to the Library. A proposal is reviewed before anything is shared: it cannot publish itself, and nothing you send reaches another member until an operator accepts it.",
+      items: [{ id: "cta", label: "Propose to Library" }],
     },
   ],
 });

@@ -21,13 +21,18 @@
  * A monthly price is here (`plans.pro.monthly`) because no plan entity exists yet — WU-9 owns
  * the plan cards, and when that fixture lands the price moves to the plan record.
  *
- * ## The declared disagreement
+ * ## The declared disagreement, and why one half is now gone
  *
- * `/pricing` advertises `Save 20%` for annual billing and `/settings` advertises
- * `Annual (Save 16%)`. Two surfaces, one concept, two numbers. Rendering a single value would
- * silently change one of the two pages, so both are carried (`pricing.annualDiscount`,
- * `settings.annualDiscount`) and the decision — which number is true — is a follow-up card,
- * not a build. A fixture that quietly picked one would hide a pricing bug behind a green gate.
+ * `/settings` advertises `Annual (Save 16%)` against the catalogue's own annual amount, which is
+ * two months free — a different number from the 16%. The two values were carried side by side
+ * (`pricing.annualDiscount`, `settings.annualDiscount`) rather than one picked, because rendering
+ * a single value would silently change one of the pages.
+ *
+ * **`pricing.annualDiscount` is deleted (#1127).** The v2 pricing page has no discount badge: the
+ * annual card states what it is (`1 relationship · 2 months free`, the catalogue's own summary)
+ * and the page types no percentage, so the metric had no reader — and a metric nothing renders is
+ * fixture drift (E25). The remaining claim on `/settings` stays where it was; reconciling it with
+ * the catalogue is a follow-up card, not this one.
  */
 import type { MetricSnapshot } from "../content/metrics";
 
@@ -154,8 +159,10 @@ export const metrics = {
   "plans.premium.monthly": { unit: "currency", value: 1_999, period: "month" },
   "plans.premium.yearly": { unit: "currency", value: 19_999, period: "year" },
   "plans.free.quizLimit": { unit: "count", value: 5, period: "allTime" },
-  /** Declared disagreement — see the header. */
-  "pricing.annualDiscount": { unit: "percent", value: 20, period: "allTime" },
+  /**
+   * The `/settings` claim, kept and alone since #1127 deleted its `/pricing` counterpart — see the
+   * header. Reconciling it with the catalogue's annual amount is a follow-up card.
+   */
   "settings.annualDiscount": { unit: "percent", value: 16, period: "allTime" },
 
   /* --- the marketing shell -------------------------------------------------------- */

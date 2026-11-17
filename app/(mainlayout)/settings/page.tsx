@@ -29,6 +29,7 @@
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { SettingsView } from "@/components/identity/settings-view";
 import { publicProfileOf } from "@/content/identity";
+import { brand, brandIdOf } from "@/data/brand";
 import { settingsPageCopy } from "@/data/pages/settings";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
@@ -58,6 +59,13 @@ export default async function SettingsPage() {
   // `false` and the card offers to set one — the case that makes this card worth having.
   const hasPassword = await accountHasPassword(user.userId);
 
+  /**
+   * `StageColumn` stays (#858, and `data/surface-columns.ts` registers `/settings` as a `column`
+   * page): the column is the left edge every dashboard page shares, and a settings page that
+   * centred itself would be the fourth left edge #858 removed. The **measure** inside it is bundle
+   * 11's 768px — a `max-w-3xl` on the view, not an `mx-auto`, so the body keeps the column's edge
+   * and only its line length changes.
+   */
   return (
     <StageColumn>
       <SettingsView
@@ -68,6 +76,7 @@ export default async function SettingsPage() {
         hasPassword={hasPassword}
         savePassword={savePassword}
         deleteAccount={deleteAccountAction}
+        brandId={brandIdOf(brand)}
       />
     </StageColumn>
   );
