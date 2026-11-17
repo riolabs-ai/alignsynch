@@ -1,10 +1,10 @@
-import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
+import { ClaimForm } from "@/components/assessment-flow/claim-form";
 import { InviteView } from "@/components/assessment-flow/invite-view";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { invitePageCopy } from "@/data/pages/invite";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimRefusalOf } from "@/lib/flow/claim";
-import { instancePath, inviteWizardStepOf } from "@/lib/flow/paths";
+import { instancePath } from "@/lib/flow/paths";
 import { partyTokensFrom } from "@/lib/flow/session";
 import { previewInvite } from "@/lib/flow/store";
 import { cookies } from "next/headers";
@@ -12,29 +12,26 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 /**
- * `/invite/[token]` — what the invitation says, and the Counterparty's three-step onboarding
- * (#146, #202, #t_0aa81144).
+ * `/invite/[token]` — the Counterparty's claim, in **two fields and one screen** (#146, #202,
+ * #t_0aa81144, #1115 task 4).
  *
  * The GET is inert: `previewInvite()` reads the invitation's state and this page renders it.
  * Claiming is `POST /invite/[token]/claim`, because a single-use token spent by a GET would be
  * spent by the first mail client that previewed the link.
  *
- * **The invitation lands on step 1, not on a questionnaire.** Until #t_0aa81144 this page was
- * one button whose POST answered with the instance screen: the person it was addressed to was
- * joined to a relationship and dropped into a form with no sentence saying who had invited them,
- * what would happen, or what was expected of them. The page now renders the wizard
- * (`components/assessment-flow/counterparty-wizard.tsx`) for a browser that may claim it —
- * `?step=1|2|3`, step 1 by default — and the claim is the **last** hop: a form on step 3, after
- * the account gate. The token stays in the path of every step and in the encoded `next` of the
- * sign-in links, so nothing re-mints it and nothing loses it.
+ * **The three onboarding screens are gone.** Until #1115 this page addressed `?step=1|2|3` — what
+ * this is, what happens next, and an account gate that asked for a password — and the claim was a
+ * checkbox on the third. The owner's rule for this side of the flow is *no friction* (issue #1115,
+ * US-2: "at most two fields before the counterparty can begin answering"), so the claim is one
+ * screen: the name the invitation already carries, and the address it was sent to. The old step
+ * URLs still resolve — `?step=3` and a refusal's `?claim=<code>` both land here — because a link in
+ * somebody's mail client cannot be rewritten, and this page ignores the parameter rather than
+ * 404ing on it.
  *
- * **The response renders inside the flow's one modal (#710).** `CounterpartyWizard` is framed by
- * `StageShell` and sits under the six-stage `StageRail` at **Connect**, so the link a stranger
+ * **The response renders inside the flow's one modal (#710).** `ClaimForm` is framed by
+ * `StageShell` and sits under the five-stage `StageRail` at **Account**, so the link a stranger
  * follows opens the same dialog the Initiator's stages do — same rail, same close, and a completed
- * response exits onto `/dashboard` (`afterClaimTarget()`). The stage is addressed, not inferred:
- * `?step=1|2|3` with the token in the path means a refresh, a direct link and the sign-in round
- * trip all land on the same screen. The refusal bands (`InviteView`) are not the response path —
- * there is nothing to respond to on a dead token — so they keep the surface they had.
+ * response exits onto `/dashboard` (`afterClaimTarget()`).
  *
  * A browser that may not claim it still gets the sentence it needs, from `InviteView`:
  *
@@ -45,9 +42,10 @@ import type { Metadata } from "next";
  *                         was about the request rather than the token
  *
  * **The one redirect this page does.** A browser that already holds this seat — the Counterparty
- * who claimed it here — and follows the link again is sent to the session: "this invitation was
- * used already" is true of the token and useless to the person who used it. Nothing is written on
- * that path (`previewInvite()` answered it), so the GET stays inert.
+ * who claimed it here — and follows the link again is sent to the session. Since #1115 the claim
+ * endpoint *resumes* such a seat from a new browser (the address is the proof), so the redirect and
+ * the resume are two answers to the same situation: a returning person is not shown "this was used
+ * already" about a seat that is theirs.
  *
  * A token that is not even the right shape never reaches the database: `previewInvite()` returns
  * `unknown` for it, which is the same band a real-but-unknown token gets.
@@ -63,10 +61,10 @@ export default async function InvitePage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ step?: string | string[]; claim?: string }>;
+  searchParams: Promise<{ claim?: string }>;
 }) {
   const { token } = await params;
-  const { step: rawStep, claim } = await searchParams;
+  const { claim } = await searchParams;
   const jar = await cookies();
   const viewer = await currentUserIfConfigured();
 
@@ -85,16 +83,14 @@ export default async function InvitePage({
 
   const refusal = claimRefusalOf(claim);
 
-  // The wizard is the surface for the person the invitation is for: a live token and a browser
-  // that is not already one of its parties. Everything else is a band on `InviteView`.
+  // The claim screen is the surface for the person the invitation is for: a live token and a
+  // browser that is not already one of its parties. Everything else is a band on `InviteView`.
   if (preview.state === "claimable" && preview.viewerRole === null) {
     return (
-      <CounterpartyWizard
+      <ClaimForm
         copy={invitePageCopy}
         preview={preview}
         token={token}
-        step={inviteWizardStepOf(rawStep)}
-        viewerName={viewer?.name || viewer?.email || null}
         {...(refusal === undefined ? {} : { refusal })}
       />
     );

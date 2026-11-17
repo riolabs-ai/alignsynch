@@ -61,6 +61,14 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "published", label: "Published" },
     { id: "invited", label: "Invited" },
     { id: "trial", label: "Trial ends" },
+    /**
+     * #1115 task 5 — the connection row. `connected` is drawn from `connectionOf()` (both seats
+     * bound to an account and the session exists — never from an answer or an opinion count), so
+     * the words here are only the two states it can be in.
+     */
+    { id: "connection", label: "Connection" },
+    { id: "connected", label: "Connected" },
+    { id: "waiting", label: "Waiting on {name}" },
     { id: "none", label: "—" },
     /** #533 phase 3 — the badge the derived lapse draws beside the stored status. */
     { id: "read-only", label: "Read-only" },

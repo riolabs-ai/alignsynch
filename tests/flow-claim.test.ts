@@ -19,7 +19,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
-import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
+import { ClaimForm } from "@/components/assessment-flow/claim-form";
 import { InviteView } from "@/components/assessment-flow/invite-view";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
@@ -151,11 +151,13 @@ describe("the invite fixture carries every band the page can ask for", () => {
     }
   });
 
-  it("names the party being joined, and the confirmation that says so", () => {
+  it("names the party being joined, and the two fields that say who is joining", () => {
     const claim = sectionOf(invitePageCopy, "claim");
     expect(itemLabel(claim, "join")).toContain("{counterparty}");
     expect(itemLabel(claim, "join")).toContain("the Counterparty");
-    expect(itemLabel(claim, "confirm")).toContain("{counterparty}");
+    // #1115 task 4 — the confirmation checkbox is retired; the fields are the statement.
+    expect(itemLabel(claim, "name").length).toBeGreaterThan(0);
+    expect(itemLabel(claim, "email").length).toBeGreaterThan(0);
   });
 
   it("has an answering-party band on the instance screen for both roles", () => {
@@ -186,11 +188,20 @@ function inviteMarkup(input: Parameters<typeof InviteView>[0]): string {
   return renderToStaticMarkup(createElement(InviteView, input));
 }
 
-function wizardMarkup(input: Parameters<typeof CounterpartyWizard>[0]): string {
-  return renderToStaticMarkup(createElement(CounterpartyWizard, input));
+function claimMarkup(input: {
+  refusal?: "email-mismatch" | "unconfirmed" | "already-bound";
+}): string {
+  return renderToStaticMarkup(
+    createElement(ClaimForm, {
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      ...(input.refusal === undefined ? {} : { refusal: input.refusal }),
+    }),
+  );
 }
 
-const CLAIM_CONTROL = "Accept the invitation";
+const CLAIM_CONTROL = "Accept and answer";
 
 describe("the invitation's refusal bands", () => {
   it("refuses the Initiator their own invitation, and offers no control that would take it", () => {
@@ -225,85 +236,50 @@ describe("the invitation's refusal bands", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The onboarding wizard (#t_0aa81144)
+ * The claim screen — two fields, one form (#1115 task 4)
  * ------------------------------------------------------------------ */
 
-describe("the counterparty wizard", () => {
-  it("step 1 says who invited them and what this is, and claims nothing", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 1,
-      viewerName: null,
-    });
-    expect(html).toContain("Avery invited you to answer Relationship Basics.");
+describe("the counterparty's claim screen", () => {
+  it("is one screen: the flow's shell, the flow's rail, and this stage", () => {
+    const html = claimMarkup({});
     // #825 — the rail is the flow's five stages, and this screen is Account (stage 4).
+    expect(html).toContain('data-stage-shell="true"');
     expect(html).toContain("Stage 4 of 5");
     expect(html).toContain('data-step-state="current"');
-    expect(html).not.toContain('name="confirm"');
-    expect(html).toContain('href="/invite/token-1?step=2"');
+    // The old three-step addressing is gone: no Back/Continue pair, no step links.
+    expect(html).not.toContain('href="/invite/token-1?step=');
   });
 
-  it("step 2 explains the order, and the back link returns to step 1 with the token", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 2,
-      viewerName: null,
-    });
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain("You can change any opinion until you accept the session.");
-    expect(html).toContain('href="/invite/token-1"');
-    expect(html).toContain('href="/invite/token-1?step=3"');
-  });
-
-  it("step 3 signed out offers sign-in and sign-up, both carrying the step URL as next", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: null,
-    });
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain("Accepting costs you nothing");
-    expect(html).toContain(
-      'href="/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
-    );
-    expect(html).toContain(
-      'href="/register?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
-    );
-    expect(html).not.toContain('name="confirm"');
-  });
-
-  it("step 3 signed in is the one screen that can claim", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: "Rowan",
-    });
-    expect(html).toContain("You are signed in as Rowan.");
-    expect(html).toContain('action="/invite/token-1/claim"');
-    expect(html).toContain('name="confirm"');
+  it("asks for the name and the address, and nothing else", () => {
+    const html = claimMarkup({});
+    expect(html).toContain('name="name"');
+    expect(html).toContain('name="email"');
     expect(html).toContain('value="Rowan"');
-    expect(html).toContain(CLAIM_CONTROL);
+    // No account gate, no password, no confirmation checkbox: the fields are the statement.
+    expect(html).not.toContain('type="password"');
+    expect(html).not.toContain('name="confirm"');
     expect(html).not.toContain('href="/login?next=');
+    expect(html).not.toContain('href="/register?next=');
   });
 
-  it("draws the store's refusal sentence on the step the claim was refused from", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: "Rowan",
-      refusal: "unconfirmed",
-    });
-    expect(html).toContain("Nothing was claimed: the claim did not confirm joining as Rowan.");
+  it("posts both fields to the claim endpoint on one screen", () => {
+    const html = claimMarkup({});
+    expect(html).toContain('action="/invite/token-1/claim"');
+    expect(html).toContain('method="post"');
+    expect(html).toContain(CLAIM_CONTROL);
+  });
+
+  it("says who is being joined and who pays, and never asks the counterparty to", () => {
+    const html = claimMarkup({});
+    expect(html).toContain("You are joining as Rowan, the Counterparty.");
+    expect(html).toContain("Accepting costs you nothing");
+  });
+
+  it("draws the store's refusal sentence above the form that can retry it", () => {
+    const html = claimMarkup({ refusal: "email-mismatch" });
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("this invitation was sent to a different address");
+    expect(html).toContain('action="/invite/token-1/claim"');
   });
 });
 
@@ -364,10 +340,10 @@ describe("the instance screen names the answering party on every visit", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The addresses the wizard hands around (#t_0aa81144)
+ * The invitation addresses a mail client may still hold (#t_0aa81144, #1115)
  * ------------------------------------------------------------------ */
 
-describe("the wizard's addresses", () => {
+describe("the invitation's addresses", () => {
   it("keeps the token in the path on every step", () => {
     expect(inviteStepPath("token-1", 1)).toBe("/invite/token-1");
     expect(inviteStepPath("token-1", 2)).toBe("/invite/token-1?step=2");

@@ -85,7 +85,7 @@ import {
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeRelationshipCount } from "@/lib/db/billing";
+import { activeRelationshipCount, grantAcceptanceTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import { openPaymentObligation, type PaymentSql } from "@/lib/db/relationship-payment";
 import {
@@ -109,7 +109,7 @@ import {
 } from "@/lib/db/steps";
 import { invitationLink } from "@/lib/flow/email";
 import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
-import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
+import { claimEmailMatches, confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
 import {
   readMembershipForRelationship,
@@ -848,8 +848,13 @@ function cryptoRandomId(): string {
  * ------------------------------------------------------------------ */
 
 export interface ClaimInput {
-  /** The invitation's raw token, from the URL. */
-  readonly token: string;
+  /**
+   * The invitation's raw token, from the URL (#1115 task 4 renamed it from `token`).
+   *
+   * The field is named for what it is: the claim's first argument is not a session and not an
+   * account, it is the invitation — and the name keeps that visible at every call site.
+   */
+  readonly invitationToken: string;
   /**
    * Every `flow_party_*` token this browser holds (`partyTokensFrom()`). The claim is
    * only valid for a browser that is not already bound to this instance (#202).
@@ -861,8 +866,7 @@ export interface ClaimInput {
    * The claim's second identity, beside the cookie: resolved by the route from the request's
    * **session cookies**, written on the Counterparty's party row in the same transaction that
    * writes the row, so the person who claims an invitation finds the instance in their
-   * `/assessment/instances` list without needing the link again. A signed-out claim is
-   * unchanged — a link-bound browser with no account, `party.user_id` NULL.
+   * `/assessment/instances` list without needing the link again.
    *
    * It also *refuses*: an account that already answers as a party to this instance cannot
    * claim the other seat (`already-a-party`), because one account cannot be both parties
@@ -870,13 +874,43 @@ export interface ClaimInput {
    * fixed for the cookie. Nothing posted by the browser reaches this property.
    */
   readonly viewerUserId?: string | null;
-  /** What the claim form posted as its confirmation: the counterparty's name. */
-  readonly confirm?: string | null;
+  /**
+   * #1115 task 4 — the account the posted **address** resolves to, when the browser is signed out.
+   *
+   * The two-field claim asks for a name and an address and nothing else, so the account a seat
+   * binds to is the one that address names. The route resolves it before the transaction opens
+   * (`lib/auth/claim-account.ts`) — finding the existing account, or creating one from the address
+   * — and passes the id here. It is a **read-only** input like `viewerUserId`: nothing posted by
+   * the form can name an account, and a signed-in claimer's own session always wins.
+   */
+  readonly accountUserId?: string | null;
+  /** The claim form's `name` field: who this post says is joining (#1115 task 4). */
+  readonly name?: string | null;
+  /**
+   * The claim form's `email` field — the address the invitation was sent to, and the account the
+   * seat binds to (#1115 task 4). Compared with `session_invite.email`; a different address is
+   * refused `email-mismatch`.
+   */
+  readonly email?: string | null;
   readonly now?: Date;
 }
 
 export type ClaimResult =
-  | { readonly ok: true; readonly instanceRecordId: string; readonly sessionToken: string }
+  | {
+      readonly ok: true;
+      readonly instanceRecordId: string;
+      readonly sessionToken: string;
+      /**
+       * The account the seat is bound to, when the claim knew one (#1115 task 4). `null` for a
+       * claim with no account: the browser holds the party cookie and nothing else.
+       */
+      readonly accountUserId: string | null;
+      /**
+       * `true` when this post resumed a seat an earlier claim already took — the same address,
+       * the same row, a fresh browser cookie. No account is created and no seat is re-pointed.
+       */
+      readonly resumed: boolean;
+    }
   | {
       readonly ok: false;
       readonly code: ClaimRefusal;
@@ -909,9 +943,13 @@ export type ClaimResult =
  * the invite row locked, a second counterparty row is a refusal, never an overwrite.
  */
 export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
-  const { token } = input;
+  const token = input.invitationToken;
   const now = input.now ?? new Date();
-  const claimerUserId = normalizedUserId(input.viewerUserId);
+  // Two identities, one binding: the signed-in account always wins, and the address the form
+  // posted resolves the account for a browser that has none (#1115 task 4). Neither is ever read
+  // from a posted field that names an account.
+  const claimerUserId =
+    normalizedUserId(input.viewerUserId) ?? normalizedUserId(input.accountUserId);
   if (!tokenIsWellFormed(token)) {
     return { ok: false, code: "unknown", reason: "that token is not an invitation token" };
   }
@@ -921,11 +959,12 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     const found = await client.query<{
       session_record_id: string;
       counterparty_name: string;
+      email: string | null;
       claimed_at: Date | null;
       expires_at: Date;
       revoked_at: Date | null;
     }>(
-      `SELECT session_record_id, counterparty_name, claimed_at, expires_at, revoked_at
+      `SELECT session_record_id, counterparty_name, email, claimed_at, expires_at, revoked_at
          FROM session_invite
         WHERE token_hash = $1
           FOR UPDATE`,
@@ -948,7 +987,22 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
         reason: `an operator revoked that invitation at ${invite.revoked_at.toISOString()}`,
       };
     }
+    // #1115 task 4 — a spent invitation is not a dead end for **the person it was sent to**. A
+    // second submit from the same address (a cookie lost, a new browser, a link opened twice) is
+    // the same seat resumed, not a second claim: no party row is inserted, no account is created
+    // and the seat is never re-pointed — `resumeClaimedSeat()` refuses unless the posted address is
+    // the invitation's and the bound account (when there is one) is the claimer's.
     if (invite.claimed_at !== null) {
+      const resumed = await resumeClaimedSeat(client, {
+        invite,
+        claimerUserId,
+        email: input.email ?? null,
+        now,
+      });
+      if (resumed !== null) {
+        await client.query("COMMIT");
+        return resumed;
+      }
       await client.query("ROLLBACK");
       return {
         ok: false,
@@ -995,7 +1049,19 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       };
     }
 
-    if (!confirmationMatches(input.confirm, invite.counterparty_name)) {
+    // #1115 task 4 — the address is the claim's one new fact, and the seat binds to the account it
+    // names. A post naming an address the invitation was **not** sent to is somebody else's claim:
+    // the link alone used to be the whole credential, and it is no longer the only one.
+    if (!claimEmailMatches(input.email, invite.email)) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "email-mismatch",
+        reason: "the address on this claim is not the one the invitation was sent to",
+      };
+    }
+
+    if (!confirmationMatches(input.name, invite.counterparty_name)) {
       await client.query("ROLLBACK");
       return {
         ok: false,
@@ -1056,6 +1122,40 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
         "UPDATE session SET state = 'active' WHERE record_id = $1 AND state = 'draft'",
         [invite.session_record_id],
       );
+      // #1115 / spec D3 — **the week opens here, and only here.**
+      //
+      // The owner's rule is the acceptance: a draft and a pending invitation consume no trial days,
+      // and the pair is *connected* the moment this transaction gives it a second seat. So the grant
+      // runs beside that seat, after the relationship is `active` — an acceptance that commits has a
+      // week, and a week never exists without one. It is deliberately the last of the acceptance's
+      // writes: everything above is what makes the claim true, and the row is what the week is.
+      //
+      // Its failure is the claim's failure, on purpose. `membershipOf()` reads an `active`
+      // relationship with no entitling subscription as **lapsed** (precisely because this write
+      // makes the row and the week one fact), so a claim that committed with a failed grant would
+      // hand the pair a read-only relationship. A rolled-back claim is the honest answer — the
+      // person retries the link and nothing was consumed.
+      //
+      // **The row is the Initiator's**, not the claimer's: the Counterparty joins a pair that is
+      // already paid for and never buys anything (spec US-2), so the account the product will charge
+      // is the account whose week starts. `nothing-written` is the ordinary second relationship —
+      // the account already holds an entitling subscription, so it inherits that clock rather than
+      // opening a second week (one week per account, D3), and a replayed claim cannot restart it.
+      const grantee = await client.query<{ initiator_user_id: string | null }>(
+        "SELECT initiator_user_id FROM relationship WHERE id = $1",
+        [relationshipId],
+      );
+      const trialUserId = grantee.rows[0]?.initiator_user_id ?? null;
+      // A relationship with no Initiator account (a signed-out create) has nobody to key a week to.
+      // The seat is still bound: the claim is not the payer's write, and refusing it would make the
+      // invitation the first thing to stop working.
+      if (trialUserId !== null) {
+        await grantAcceptanceTrial(sqlOf(client), {
+          userId: trialUserId,
+          relationshipId,
+          now,
+        });
+      }
       // The relationship's own mirror of the seat, bound in the same transaction. `party` is the
       // fact (`party_session_user_key` makes one account one seat) and this column is what the
       // console and the demo harness read back; nothing in the product wrote it until now, so a
@@ -1083,13 +1183,89 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       );
     }
     await client.query("COMMIT");
-    return { ok: true, instanceRecordId: invite.session_record_id, sessionToken };
+    return {
+      ok: true,
+      instanceRecordId: invite.session_record_id,
+      sessionToken,
+      accountUserId: claimerUserId,
+      resumed: false,
+    };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
   } finally {
     client.release();
   }
+}
+
+/* ------------------------------------------------------------------ *\
+ * Resuming a seat an earlier claim took (#1115 task 4)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The seat a **second** submit takes back, when it is the same person's.
+ *
+ * The two-field entry makes losing the browser's cookie a real event: no password was asked for,
+ * so the only thing that gets a person back into a claim they already took is the address on the
+ * invitation. This is that path — and it is deliberately narrow, because a resume that is too
+ * generous is a seat takeover:
+ *
+ *   the address must be the invitation's   `claimEmailMatches`, the same rule a fresh claim uses
+ *   the seat must exist                    a spent token with no counterparty row is drift, and
+ *                                          drift is refused rather than repaired here
+ *   the bound account must be the claimer  when the row carries `user_id`, only that account may
+ *                                          resume it; a row with none (a cookie-only claim) has
+ *                                          nothing to compare, and the address is the whole proof
+ *
+ * What it writes is **one column**: the party row's `access_token_hash`, because the browser needs
+ * a token to answer with. `claimed_at`, the relationship's status, the session's state and the
+ * bound account are all left exactly as the first claim wrote them — a resume is not a claim.
+ */
+async function resumeClaimedSeat(
+  client: PoolClient,
+  input: {
+    readonly invite: {
+      readonly session_record_id: string;
+      readonly email: string | null;
+      readonly claimed_at: Date | null;
+    };
+    readonly claimerUserId: string | null;
+    readonly email: string | null;
+    readonly now: Date;
+  },
+): Promise<ClaimResult | null> {
+  if (input.invite.claimed_at === null) return null;
+  if (!claimEmailMatches(input.email, input.invite.email)) return null;
+
+  const found = await client.query<{ user_id: string | null }>(
+    `SELECT user_id FROM party
+      WHERE session_record_id = $1 AND role = 'counterparty'
+      LIMIT 1`,
+    [input.invite.session_record_id],
+  );
+  const seat = found.rows[0];
+  if (seat === undefined) return null;
+  const bound = normalizedUserId(seat.user_id);
+  if (bound !== null && bound !== input.claimerUserId) return null;
+  if (input.claimerUserId === null && bound !== null) {
+    // The seat belongs to an account and this post resolved none: the person has to sign in as
+    // that account rather than be handed the seat on an address alone.
+    return null;
+  }
+
+  const sessionToken = mintToken();
+  await client.query(
+    `UPDATE party SET access_token_hash = $2
+      WHERE session_record_id = $1 AND role = 'counterparty'`,
+    [input.invite.session_record_id, hashToken(sessionToken)],
+  );
+  return {
+    ok: true,
+    instanceRecordId: input.invite.session_record_id,
+    sessionToken,
+    accountUserId: bound ?? input.claimerUserId,
+    resumed: true,
+  };
 }
 
 /* ------------------------------------------------------------------ *\

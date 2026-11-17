@@ -42,6 +42,14 @@ export const CLAIM_REFUSALS = [
   "already-a-party",
   "already-bound",
   "unconfirmed",
+  /**
+   * #1115 task 4 — the posted address is not the one the invitation was sent to. Two fields make
+   * the address the claim's one new fact, and the seat binds to the account it names, so a claim
+   * that names a different address is refused rather than silently binding a seat to a stranger.
+   * Its own code because its sentence is its own: nothing is wrong with the link, and the fix is a
+   * resend to the right address.
+   */
+  "email-mismatch",
 ] as const;
 
 export type ClaimRefusal = (typeof CLAIM_REFUSALS)[number];
@@ -91,4 +99,40 @@ export function confirmationMatches(
   const given = submitted.trim();
   if (given === "") return false;
   return given === counterpartyName.trim();
+}
+
+/**
+ * The address a claim posted, normalised — trimmed and lower-cased, because mail addresses are
+ * case-insensitive in practice and a phone keyboard capitalises the first letter (#1115 task 4).
+ *
+ * `null` when nothing usable was posted. The claim refuses `email-mismatch` on that, rather than
+ * treating an empty field as "any address": the seat binds to an account, and an account needs one.
+ */
+export function claimEmailOf(raw: string | null | undefined): string | null {
+  if (raw === null || raw === undefined) return null;
+  const trimmed = raw.trim();
+  return trimmed === "" ? null : trimmed.toLowerCase();
+}
+
+/**
+ * Whether a claim names the address the invitation was sent to (#1115 task 4).
+ *
+ * This is the *stronger* half of a two-field claim, and the reason the address is asked at all: the
+ * link alone used to be the whole credential, and now the seat binds to an account — so a claim
+ * that names a different address is somebody else's, whatever they hold. Case and padding do not
+ * matter; the identity does.
+ *
+ * An invitation that carries **no** address (a seeded row, or a create that never collected one)
+ * has no fact to disagree with, so any address is accepted: refusing there would block a seat that
+ * nothing else protects, and the claim is only as strict as the row it reads.
+ */
+export function claimEmailMatches(
+  submitted: string | null | undefined,
+  invitationEmail: string | null | undefined,
+): boolean {
+  const given = claimEmailOf(submitted);
+  if (given === null) return false;
+  const invited = claimEmailOf(invitationEmail);
+  if (invited === null) return true;
+  return given === invited;
 }
