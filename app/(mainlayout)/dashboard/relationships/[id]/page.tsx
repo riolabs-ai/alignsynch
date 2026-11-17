@@ -42,6 +42,7 @@ import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
+  claimExtensionAction,
   completeRelationshipAction,
   editRelationshipAction,
   forkRelationshipTemplateAction,
@@ -60,11 +61,16 @@ export const metadata: Metadata = {
 
 export default async function MemberRelationshipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  /** #1121 — `?from=extend` only. Every other fact on this page is read, never passed in. */
+  searchParams?: Promise<{ from?: string | string[] }>;
 }) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
   const { id } = await params;
+  const query = searchParams === undefined ? {} : await searchParams;
+  const queryFrom = Array.isArray(query.from) ? query.from[0] : query.from;
 
   let view: Awaited<ReturnType<typeof readMyRelationship>>;
   try {
@@ -177,6 +183,14 @@ export default async function MemberRelationshipPage({
           onRepublish={republishInviteAction}
           onComplete={completeRelationshipAction}
           onFork={forkRelationshipTemplateAction}
+          onClaimExtension={claimExtensionAction}
+          /*
+            #1121 — `?from=extend` is the one query string this screen keeps, and it is an arrival
+            rather than a state: the banner says a week was just added, and every state on the page
+            is derived from rows. Next 16 hands `searchParams` as a Promise, unwrapped after the
+            gate so a refusal never depends on the URL being well-formed.
+          */
+          arrival={queryFrom === "extend" ? "extend" : null}
           /*
             #785 — where a forked copy lands. Passed rather than imported inside the component:
             `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no database), and the
