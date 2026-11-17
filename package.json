@@ -42,6 +42,7 @@
     "worktrees:prune": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/worktree-prune.mjs",
     "release": "bash scripts/release.sh",
     "release:cut": "node scripts/release-cut.mjs",
+    "release:approvals": "node scripts/release-record.mjs approvals",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",
     "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",

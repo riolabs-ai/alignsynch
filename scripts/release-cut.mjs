@@ -76,6 +76,18 @@
  * variable still cannot tag. The one accidental exemption is deliberate: `env -u
  * HERMES_KANBAN_TASK` from a human shell is a human shell.
  *
+ * **The second door is an approval, not a flag.** `--execute` without a TTY reads
+ * `docs/releases/<candidate>.approval.json` — a file a human authored and committed to `main`,
+ * naming the version, the exact commit, the person and the URL where they said so — and tags only
+ * if that approval covers this cut: the version matches, the commit *is* HEAD and HEAD *is*
+ * `origin/main`, the tree is clean, `approved_by` is a person and `url` is on this repository.
+ * Every failure is named with both sides. There is no `--approved-by`/`--approval` flag, and no
+ * mode — `--check`, `--prepare`, `--execute` — ever writes the artifact: a self-issued approval is
+ * not an approval, and the file being a reviewed diff is the whole mechanism. The rule lives in
+ * `scripts/release-approval.mjs` with its cases in `tests/release-approval.test.ts`; the record of
+ * the cut that used one lands in `data/health/release-approvals.json`
+ * (`scripts/release-record.mjs::recordApproval`) once the tag exists.
+ *
  * `--execute` composes `bash scripts/release.sh --tag-only <v>` rather than re-implementing the
  * tag: that mode keeps its #1041 behaviour (re-record the platform health and refuse a stale
  * record), and it is the only thing that publishes a GitHub Release byte-identically from the
@@ -94,7 +106,7 @@
  * Usage:
  *   pnpm release:cut [--check]                 the plan: computed number, census, seven values
  *   pnpm release:cut --prepare --limits <f>    write the entry + the bump (no commit, no tag)
- *   pnpm release:cut --execute                 tag + publish — interactive TTY only
+ *   pnpm release:cut --execute                 tag + publish — a TTY, or a committed approval
  *   pnpm release:cut --override <v> --reason "<why>"   declare a number the census did not compute
  *   pnpm release:cut [plan] --milestones <f>   read milestone evidence from a JSON file (offline)
  *   pnpm release:cut --theme "<theme>"         the theme in the milestone name it prints
@@ -106,6 +118,15 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 import { compareVersions, isBump, isVersion } from "./release-version.mjs";
+import {
+  approvalBanner,
+  approvalPath,
+  bareVersion,
+  confirmTypedVersion,
+  preApproval,
+  tagOnlyPlan,
+} from "./release-approval.mjs";
+import { approvalLedgerPath, recordApproval } from "./release-record.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -883,7 +904,7 @@ function printNextSteps(evidence, opts) {
     `                        a row in docs/changelog/releases.json, then pnpm docs:nav && node scripts/changelog-view.mjs`,
   );
   say(
-    `  3. merge, then tag    pnpm release:cut --execute   ${C.dim}(interactive shell only — it refuses a worker)${C.off}`,
+    `  3. merge, then tag    pnpm release:cut --execute   ${C.dim}(a TTY, or docs/releases/<candidate>.approval.json — it refuses a worker)${C.off}`,
   );
   say();
   say(
@@ -991,45 +1012,141 @@ function prepare(evidence, opts) {
 }
 
 /* ------------------------------------------------------------------ *
- * --execute: the tag, and only from a human shell
+ * --execute: the tag, from a human shell or a pre-approved cut
  * ------------------------------------------------------------------ */
 
-async function execute(evidence) {
+/**
+ * Two doors, one tag.
+ *
+ * A TTY is the first: the plan is printed and the version typed back, exactly as before. Without a
+ * TTY the cut reads a committed approval artifact (`scripts/release-approval.mjs`) and tags only if
+ * it covers **this** commit, on the head of `main`, with a clean tree, a person's name and a URL on
+ * this repository. There is no third door: no flag supplies an approval, and no mode writes one.
+ *
+ * Both halves take their side effects as `deps` so the rule is testable without a terminal and
+ * without a tag — `spawnTag` is asserted, never run, in `tests/release-approval.test.ts`.
+ */
+export async function execute(evidence, deps = {}) {
+  return process.stdin.isTTY && process.stdout.isTTY
+    ? executeInteractive(evidence, deps)
+    : executePreApproved(evidence, deps);
+}
+
+export async function executeInteractive(evidence, deps = {}) {
   const { candidate } = evidence;
+  const out = deps.out ?? say;
+  const fail = deps.fail ?? ((message) => die(message));
 
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    die(
-      `--execute requires an interactive TTY — the tag belongs to a human shell, not to a piped or dispatched run. ` +
-        `The plan is safe to run anywhere: pnpm release:cut --check`,
-    );
-  }
-
-  say();
-  say(
+  out();
+  out(
     `  ${C.bold}tag v${candidate}${C.off} — this runs: bash scripts/release.sh --tag-only ${candidate}`,
   );
-  say(
+  out(
     `  ${C.dim}that mode is the only path to a tag and to a GitHub Release; it re-records the platform`,
   );
-  say(
+  out(
     `  health and refuses a stale record (#1041). It needs the gate to be green and a clean tree.`,
   );
-  say(`  If this shell is to run the record step, run it through the repo's env:${C.off}`);
-  say(
+  out(`  If this shell is to run the record step, run it through the repo's env:${C.off}`);
+  out(
     `  ${C.dim}  ~/.hermes/profiles/alignsynch/bin/withenv.sh <repo> pnpm release:cut --execute${C.off}`,
   );
-  say();
+  out();
 
-  const answer = await ask(`  type the version to tag (v${candidate}): `);
-  if (answer.trim() !== candidate && answer.trim() !== `v${candidate}`) {
-    die(`confirmation '${answer.trim()}' is not v${candidate} — nothing was tagged`);
+  const answer = await (deps.ask ?? ask)(`  type the version to tag (v${candidate}): `);
+  const confirmed = confirmTypedVersion(answer, candidate);
+  if (!confirmed.ok) {
+    fail(confirmed.problem);
+    return 1;
   }
 
-  const run = spawnSync("bash", [join(ROOT, "scripts/release.sh"), "--tag-only", candidate], {
-    cwd: ROOT,
-    stdio: "inherit",
-  });
-  return run.status ?? 1;
+  const plan = tagOnlyPlan(deps.root ?? ROOT, candidate);
+  const run = (deps.spawnTag ?? spawnTagOnly)(plan.command, plan.args);
+  return run?.status ?? 1;
+}
+
+/**
+ * The pre-approved door: no TTY, so an artifact carries the human's decision. Every refusal names
+ * both sides of the disagreement, and the artifact is never written here — a self-issued approval
+ * is not an approval.
+ *
+ * `origin/main` is the **local** ref: this path does not fetch, because a cut must not advance a
+ * ref before it has decided to tag. A stale ref can therefore only produce a refusal — `--tag-only`
+ * runs `git fetch origin main` and asserts `HEAD == origin/main` again before it tags — so the
+ * direction of the error is always "refused late", never "tagged a commit main does not carry".
+ */
+export async function executePreApproved(evidence, deps = {}) {
+  const candidate = bareVersion(evidence.candidate);
+  const root = deps.root ?? ROOT;
+  const out = deps.out ?? say;
+  const fail = deps.fail ?? ((message) => die(message));
+  const path = approvalPath(root, candidate);
+
+  const gate =
+    deps.gate ??
+    (() =>
+      preApproval({
+        candidate,
+        path,
+        read: deps.readApproval,
+        headSha: deps.headSha ?? (() => git("rev-parse", "HEAD")),
+        originMainSha: deps.originMainSha ?? (() => git("rev-parse", "origin/main")),
+        status: deps.status ?? (() => git("status", "--short")),
+      }));
+
+  const result = gate();
+  if (!result.ok) {
+    out();
+    out(
+      `  ${C.red}no pre-approval for v${candidate} — ${result.problems.length} named failure(s):${C.off}`,
+    );
+    for (const problem of result.problems) out(`    ✗ ${problem.message}`);
+    out();
+    out(
+      `  ${C.dim}the artifact is ${path} — authored by hand and committed to main; this script never writes it${C.off}`,
+    );
+    fail(
+      `--execute has no interactive TTY and no valid pre-approval for v${candidate} ` +
+        `(${result.problems[0].code}) — nothing was tagged. The artifact it needs is ${path}`,
+    );
+    return 1;
+  }
+
+  const approval = result.approval;
+  out();
+  out(`  ${C.bold}★ ${approvalBanner(approval)}${C.off}`);
+  out(`  ${C.dim}artifact ${path}${approval.reason ? ` — ${approval.reason}` : ""}${C.off}`);
+  out(
+    `  ${C.dim}runs: bash scripts/release.sh --tag-only ${candidate} (the only path to a tag)${C.off}`,
+  );
+  out();
+
+  const plan = tagOnlyPlan(root, candidate);
+  const run = (deps.spawnTag ?? spawnTagOnly)(plan.command, plan.args);
+  const status = run?.status ?? 1;
+  if (status !== 0) return status;
+
+  // The record, after the tag: `release.sh` refuses a dirty tree, so the ledger is written once the
+  // commit is tagged, and the tag therefore cannot be missing from the ledger it is named by.
+  try {
+    const written = (deps.recordApproval ?? recordApproval)(
+      { ...approval, tag: `v${candidate}` },
+      { path: deps.ledgerPath ?? approvalLedgerPath(root) },
+    );
+    out(
+      `  ${C.green}recorded${C.off} ${written} ${C.dim}— git add it with the health record${C.off}`,
+    );
+  } catch (error) {
+    out(
+      `  ${C.yellow}the tag exists, but the approval record could not be written: ${error.message}${C.off}`,
+    );
+  }
+  return 0;
+}
+
+/** The one spawn both doors use: `bash scripts/release.sh --tag-only <candidate>`, in the tree. */
+function spawnTagOnly(command, args, root = ROOT) {
+  return spawnSync(command, args, { cwd: root, stdio: "inherit" });
 }
 
 function ask(question) {
@@ -1141,7 +1258,7 @@ const USAGE = `release:cut — the release's one state and one actor (#1064)
 
   pnpm release:cut [--check]                  the plan: computed number, census, the seven values
   pnpm release:cut --prepare --limits <file>   write the entry + the bump (no commit, no tag)
-  pnpm release:cut --execute                   tag + publish — interactive TTY only
+  pnpm release:cut --execute                   tag + publish — a TTY, or a committed approval artifact
   pnpm release:cut --override <v> --reason "<why>"   declare a number the census did not compute
   pnpm release:cut --milestones <file>         read milestone evidence from JSON (offline, a scratch tree)
   pnpm release:cut --theme "<theme>"           the theme in the milestone name it prints
