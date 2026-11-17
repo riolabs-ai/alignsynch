@@ -495,6 +495,17 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "summary-membership", label: "Membership" },
         { id: "summary-membership-value", label: "Free Trial · Starts When {name} Accepts" },
         { id: "summary-membership-value-unnamed", label: "Free Trial · Starts When They Accept" },
+        /**
+         * **The plan the reader chose on `/pricing`, said after the trial** (#1127, bundle 01).
+         *
+         * The rail's membership row reads `Free Trial · Starts When Elena Accepts · then Family`:
+         * the trial is what opens at acceptance, and the plan is what carries on after it — one
+         * row, because a reader deciding whether to invite someone wants both facts in the place
+         * they look for the relationship's state. `{plan}` is filled from
+         * `data/membership-plans.ts` (the catalogue's own name, never a query value), and the line
+         * is absent entirely when nothing was carried — a choice nobody made is not stated.
+         */
+        { id: "summary-membership-then", label: " · then {plan}" },
         { id: "summary-aspects-value", label: "{count} Aspects" },
         { id: "none", label: "—" },
       ],

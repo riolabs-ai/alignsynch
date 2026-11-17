@@ -44,7 +44,8 @@ import { createRefusal } from "@/lib/flow/create-copy";
 import { parseCreateDraft } from "@/lib/flow/create-draft";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { createModePath, createRelationshipPath } from "@/lib/flow/paths";
-import { createDraftCookieName } from "@/lib/flow/session";
+import { PLAN_INTENT_COOKIE, createDraftCookieName } from "@/lib/flow/session";
+import { parsePlanIntent } from "@/lib/flow/plan-intent";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +106,9 @@ export default async function TemplateCreateAspectsPage({
 
   const templateAspects = detail === undefined ? [] : aspectsFromTemplate(detail.aspects);
 
+  // #1127 — the rail's "· then <Plan>" line, from the cookie stage 1 wrote (see `mode/page.tsx`).
+  const planIntent = parsePlanIntent(jar.get(PLAN_INTENT_COOKIE)?.value);
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
@@ -127,6 +131,7 @@ export default async function TemplateCreateAspectsPage({
       backHref={modePath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
+      {...(planIntent === null ? {} : { planIntent })}
     />
   );
 }

@@ -84,6 +84,8 @@ import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
 import type { CheckoutHandlers } from "./invite-walk";
 import type { CarriedPlan, PlanIntent } from "@/lib/flow/plan-intent";
+import { carriedPlanOf } from "@/lib/flow/plan-intent";
+import { membershipPlan } from "@/data/membership-plans";
 import { FlowStageCard } from "./flow-stage-card";
 import {
   RelationshipFlowShell,
@@ -91,6 +93,7 @@ import {
   type FlowMount,
   type FlowRail,
 } from "./relationship-flow-shell";
+import type { WizardRailSummaryRow } from "./wizard-rail";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
 import { StageInvite } from "./stage-invite";
@@ -576,6 +579,44 @@ export function CreateRelationship({
     "",
     "",
   ];
+  const railPlanName: string | null = (() => {
+    const carried =
+      carriedPlan ?? (planIntent === undefined ? null : carriedPlanOf(planIntent));
+    return carried === null ? null : (membershipPlan(carried.row)?.name ?? null);
+  })();
+  const summary: WizardRailSummaryRow[] = [
+    { label: itemLabel(wizard, "summary-title"), value: draft.title.trim() || none },
+    { label: itemLabel(wizard, "summary-template"), value: template.title },
+    {
+      label: itemLabel(wizard, "summary-mode"),
+      value: draft.mode === "basic" || draft.mode === "advanced" ? MODE_LABELS[draft.mode] : none,
+    },
+    {
+      label: itemLabel(wizard, "summary-tolerance"),
+      value:
+        draft.alignmentSetting === "soft" || draft.alignmentSetting === "full"
+          ? SETTING_LABELS[draft.alignmentSetting]
+          : none,
+    },
+    {
+      label: itemLabel(wizard, "summary-aspects"),
+      value: fillLabel(itemLabel(wizard, "summary-aspects-value"), {
+        count: aspects?.length ?? template.aspectCount,
+      }),
+    },
+    {
+      label: itemLabel(wizard, "summary-membership"),
+      value: `${
+        named === null
+          ? itemLabel(wizard, "summary-membership-value-unnamed")
+          : fillLabel(itemLabel(wizard, "summary-membership-value"), { name: named })
+      }${
+        railPlanName === null
+          ? ""
+          : fillLabel(itemLabel(wizard, "summary-membership-then"), { plan: railPlanName })
+      }`,
+    },
+  ];
   const rail: FlowRail = {
     label: itemLabel(wizard, "rail-label"),
     count: stageCount,
@@ -584,6 +625,7 @@ export function CreateRelationship({
     alignPreviewLabel: itemLabel(wizard, "align-label"),
     alignPreviewNote: fillName("align-note-short"),
     summaryHeading: itemLabel(wizard, "summary-heading"),
+    summary,
     steps: stageNames.map((label, index) => {
       const step = index + 1;
       const state =
@@ -613,34 +655,6 @@ export function CreateRelationship({
         ...(state === "done" && href !== "" ? { href } : {}),
       };
     }),
-    summary: [
-      { label: itemLabel(wizard, "summary-title"), value: draft.title.trim() || none },
-      { label: itemLabel(wizard, "summary-template"), value: template.title },
-      {
-        label: itemLabel(wizard, "summary-mode"),
-        value: draft.mode === "basic" || draft.mode === "advanced" ? MODE_LABELS[draft.mode] : none,
-      },
-      {
-        label: itemLabel(wizard, "summary-tolerance"),
-        value:
-          draft.alignmentSetting === "soft" || draft.alignmentSetting === "full"
-            ? SETTING_LABELS[draft.alignmentSetting]
-            : none,
-      },
-      {
-        label: itemLabel(wizard, "summary-aspects"),
-        value: fillLabel(itemLabel(wizard, "summary-aspects-value"), {
-          count: aspects?.length ?? template.aspectCount,
-        }),
-      },
-      {
-        label: itemLabel(wizard, "summary-membership"),
-        value:
-          named === null
-            ? itemLabel(wizard, "summary-membership-value-unnamed")
-            : fillLabel(itemLabel(wizard, "summary-membership-value"), { name: named }),
-      },
-    ],
   };
 
   return (
