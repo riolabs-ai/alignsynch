@@ -343,10 +343,17 @@ export function platformPayload(
   return { payload, media: index.bytes, problems: index.problems };
 }
 
-/** The active set (the tenant store when it exists, the fixtures otherwise) as content. */
+/**
+ * The active set (the tenant store when it exists, the fixtures otherwise) as content.
+ *
+ * The record arrays are `sessions` since #1103 phase 3, and a platform package's content group
+ * still names the same array with the pre-migration key — that document is `bundleVersion: 2`
+ * and this card did not move it. So this is the one place the two vocabularies meet: the value
+ * is the current model's, the field keeps the v2 package's key until that format bumps.
+ */
 export function activeContent(options: { store?: string } = {}): PlatformContent {
   const dataset = activeDataset({ store: options.store });
-  return { templates: dataset.payload.templates, instances: dataset.payload.instances };
+  return { templates: dataset.payload.templates, instances: dataset.payload.sessions };
 }
 
 /* ------------------------------------------------------------------ *
@@ -928,7 +935,7 @@ export function unpackPackage(file: string, options: UnpackOptions = {}): Unpack
       store,
       serializeDatasetPayload({
         templates: parsed.bundle.payload.content.templates as Assessment[],
-        instances: parsed.bundle.payload.content.instances as AssessmentSession[],
+        sessions: parsed.bundle.payload.content.instances as AssessmentSession[],
       }),
     );
     installed = store;

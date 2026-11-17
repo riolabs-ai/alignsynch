@@ -30,13 +30,13 @@ import { DEMO_ACCOUNTS, DEMO_DOMAIN, inviteEmailFor } from "../scripts/db-seed-i
 const BUNDLE_PATH = new URL("../data/bundles/demo-dataset.alignsynch.json", import.meta.url);
 
 interface DatasetBundle {
-  readonly payload: { readonly instances: unknown[] };
+  readonly payload: { readonly sessions: unknown[] };
 }
 
 const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
 
 /** The bundle's sessions, through the model — a bundle that drifts fails here, not in a seed. */
-const sessions = zAssessmentSession.array().parse(bundle.payload.instances);
+const sessions = zAssessmentSession.array().parse(bundle.payload.sessions);
 
 /** The sessions that carry an invitation, which is what makes `inviteEmailFor` run at all. */
 const invited = sessions

@@ -386,10 +386,10 @@ describe("an identity carries three facts and no credential", () => {
  * ================================================================== */
 
 describe("bundleVersion 1 still imports", () => {
-  it("parses the committed demo bundle exactly as it did before this cut", () => {
+  it("parses the committed demo bundle at the version this build writes", () => {
     const parsed = parseBundle(readFileSync(DEMO_BUNDLE_FILE, "utf8"));
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.issues.map(formatBundleIssue).join("\n"));
-    assert.equal(parsed.bundle.bundleVersion, 1);
+    assert.equal(parsed.bundle.bundleVersion, 3);
     assert.equal(parsed.bundle.kind, "dataset");
   });
 
@@ -400,14 +400,14 @@ describe("bundleVersion 1 still imports", () => {
     assert.equal(serializeBundle(parsed.bundle), text);
   });
 
-  it("refuses a version 3 document, naming both versions this build reads", () => {
+  it("refuses a version 4 document, naming every version this build reads", () => {
     const payload = payloadCopy();
     const raw = JSON.parse(bundleText(payload)) as Record<string, unknown>;
-    raw.bundleVersion = 3;
+    raw.bundleVersion = 4;
     const parsed = parseBundle(JSON.stringify(raw));
     assert.equal(parsed.ok, false);
     assert.equal(parsed.ok ? "" : parsed.issues[0]?.code, "B6");
-    assert.match(parsed.ok ? "" : (parsed.issues[0]?.message ?? ""), /this build reads 1 and 2/);
+    assert.match(parsed.ok ? "" : (parsed.issues[0]?.message ?? ""), /this build reads 1, 2 and 3/);
   });
 
   it("refuses a version-2 document that is not a platform", () => {
@@ -492,10 +492,10 @@ describe("the platform payload's own references (B8)", () => {
 /* ================================================================== *
  * 6. The committed demo bundle is untouched by all of this
  * ================================================================== */
-describe("the fixtures' dataset bundle still builds through the v1 path", () => {
+describe("the fixtures' dataset bundle still builds through the v3 path", () => {
   it("is the same bundle the fixtures produce", () => {
     const bundle = canonicalDemoBundle(assessments, assessmentSessions, APP);
-    assert.equal(bundle.bundleVersion, 1);
+    assert.equal(bundle.bundleVersion, 3);
     assert.equal(bundle.kind, "dataset");
     const reparsed = parseBundle(serializeBundle(bundle));
     assert.ok(reparsed.ok);

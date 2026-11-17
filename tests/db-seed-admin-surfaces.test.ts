@@ -27,7 +27,8 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { zAssessmentSession, seededLifecycleOf } from "@/content/assessment";
+import { seededLifecycleOf } from "@/content/assessment";
+import { zDatasetBundle } from "@/content/bundle";
 import { DEMO_NOW_ISO } from "@/content/core";
 import { billingPlan, planPriceCents } from "@/data/billing-plans";
 import { ADMIN_ACTIONS, AUDIT_TARGET_TABLES } from "@/lib/admin/roles";
@@ -46,13 +47,14 @@ interface Expectations {
   readonly rows: Record<string, number>;
 }
 
-interface DatasetBundle {
-  readonly payload: { readonly instances: unknown[] };
-}
-
 const expectations = JSON.parse(readFileSync(EXPECTATIONS_PATH, "utf8")) as Expectations;
-const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
-const bundleSessions = zAssessmentSession.array().parse(bundle.payload.instances);
+/**
+ * The document through the format's own reader, not its raw JSON: phase 3 turned the record arrays'
+ * key into `sessions` and kept a dual-shape reader for version 2, so reaching into `payload` by hand
+ * reads a key the current document no longer has.
+ */
+const bundle = zDatasetBundle.parse(JSON.parse(readFileSync(BUNDLE_PATH, "utf8")));
+const bundleSessions = bundle.payload.sessions;
 
 /** The tier both anchors carry in the committed dataset, read from the fixture rather than typed. */
 const GRANTED_SESSION_ID = "assessment-instance-avery-rowan-flat";

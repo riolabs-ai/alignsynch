@@ -6,33 +6,35 @@
 
 <!-- docs-nav:end -->
 
-Four templates and four instances live in `data/assessments.ts`, compiled into the build. That
+Four templates and four sessions live in `data/assessments.ts`, compiled into the build. That
 is a fine store for this repository and a useless one for anybody else: a tenant cannot produce
 a template this repo can read, and this repo cannot hand a tenant a dataset it can install. A
 **bundle** is the file in between — one versioned, self-describing JSON document — and
 `pnpm bundles` is how it is written and read.
 
-There are two documents now, and the second one is additive:
+There are three versions now, and only the last is written:
 
-| bundleVersion | kind                   | what it carries                                                                | command                              |
-| ------------- | ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------ |
-| 1             | `template` / `dataset` | records — one template, or templates and instances                             | `pnpm bundles`                       |
-| 2             | `platform`             | records **and** config, declared identities, media and the build it belongs to | `pnpm bundle:pack` / `bundle:unpack` |
+| bundleVersion | kind                   | what it carries                                                                      | command                              |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ |
+| 1             | `template` / `dataset` | records — one template, or templates and the sessions that copy them (**read only**) | `pnpm bundles`                       |
+| 2             | `platform`             | records **and** config, declared identities, media and the build it belongs to       | `pnpm bundle:pack` / `bundle:unpack` |
+| 3             | `template` / `dataset` | the same records, under `payload.sessions` — what `export` writes                    | `pnpm bundles`                       |
 
-A v1 document still reads exactly as it did (#147 is untouched), and a v2 document must be
-`kind: "platform"`. The platform package is described under **The platform package** below.
+A v1 document is **read** for one release (one deprecation line, then normalized) and never
+written; see **Version 3 — the sessions key** below. A v2 document must be `kind: "platform"`;
+the platform package is described under **The platform package**.
 
 ## The envelope
 
 ```json
 {
   "format": "alignsynch-bundle",
-  "bundleVersion": 1,
+  "bundleVersion": 3,
   "kind": "dataset",
   "appVersion": "1.0.0",
   "payload": {
     "templates": [ /* zAssessment, at least one */ ],
-    "instances": [ /* zAssessmentInstance, any count */ ]
+    "sessions": [ /* zAssessmentSession, any count */ ]
   }
 }
 ```
@@ -71,26 +73,30 @@ pnpm bundles export --dataset --fix              # write data/bundles/demo-datas
 pnpm bundles import <file>                       # validate, then write the tenant store
 ```
 
-`--out <file>` overrides the destination for `export`, `--check` and `--fix`. `exports/` is
-gitignored: the artifact worth shipping is the committed demo bundle, and a plain export must not
-dirty the tree.
+`--out <file>` overrides the destination for `export`, `--check` and `--fix`. `--store <file>`
+points the command at another store than `data/generated/assessments.json` — that is how a round
+trip is proved without touching the tree's active set. `exports/` is gitignored: the artifact
+worth shipping is the committed demo bundle, and a plain export must not dirty the tree.
 
 Exit status: `0` ok · `1` refused (the file or the store says no) · `2` how you called it.
 
 ## The store, and the active set
 
 An import writes `data/generated/assessments.json` (gitignored) — the **dataset payload**, not an
-envelope, holding `{ templates, instances }` in canonical form. When that file exists it is the
+envelope, holding `{ templates, sessions }` in canonical form. When that file exists it is the
 active set: it supersedes `data/assessments.ts` for export and for `data:check`'s E1/E2/E31.
 Deleting it resets the tenant to the fixtures, which stay untouched as the demo bundle's source.
+A store written by a build before version 3 is read too — normalized exactly as a v1 bundle is,
+so an upgrade does not report a format change as a data error — and the next import or export
+writes the current shape. Reading never rewrites the file.
 
 - **Dataset import replaces.** It is an install, not a merge, so re-running it is idempotent and
   there is no collision concept to fail on.
 - **Template import appends.** If no store exists yet the fixtures are materialized into it first
   — that is the moment a tenant stops borrowing our fixtures and owns its data — and then the
   template is added.
-- **Nothing is ever renamed** in bundle version 1. A template import that collides with the
-  active set on an `id` or a `type/slug` is refused (`B5`), naming every collision. Renaming
+- **Nothing is ever renamed** in a bundle this build writes. A template import that collides with
+  the active set on an `id` or a `type/slug` is refused (`B5`), naming every collision. Renaming
   would rewrite the template's `templateId` and both copies of its item ids, which makes the
   byte-identical round trip unprovable; remapping is a later issue if tenants ever need two
   copies of one template.
@@ -100,21 +106,52 @@ Deleting it resets the tenant to the fixtures, which stay untouched as the demo 
 
 ## The refusals
 
-| Code | Rule                                                                                         |
-| ---- | -------------------------------------------------------------------------------------------- |
-| B1   | envelope shape: not one JSON object, a bad `format` / `kind` / `appVersion`, an unknown key  |
-| B2   | payload record: a `zAssessment` / `zAssessmentInstance` issue, or an unknown key on one      |
-| B3   | dataset collection: an id or slug twice, a `templateId` outside the bundle, a drifted copy   |
-| B4   | forbidden key: a key naming a credential, wherever it sits                                   |
-| B5   | a template import colliding with the active store — the import refuses rather than rewriting |
-| B6   | `bundleVersion`: this build reads 1 and 2                                                    |
-| B7   | build identity: the package's `schemaVersion` / `lockfileSha256` is not this tree's          |
-| B8   | a package that drops a record something it keeps still references                            |
+| Code | Rule                                                                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------------------- |
+| B1   | envelope shape: not one JSON object, a bad `format` / `kind` / `appVersion`, an unknown key                         |
+| B2   | payload record: a `zAssessment` / `zAssessmentInstance` issue, or an unknown key on one                             |
+| B3   | dataset collection: an id or slug twice, a `templateId` outside the bundle, a drifted copy                          |
+| B4   | forbidden key: a key naming a credential, wherever it sits                                                          |
+| B5   | a template import colliding with the active store — the import refuses rather than rewriting                        |
+| B6   | `bundleVersion`: this build reads 1, 2 and 3                                                                        |
+| B7   | build identity: the package's `schemaVersion` / `lockfileSha256` is not this tree's                                 |
+| B8   | a package that drops a record something it keeps still references                                                   |
+| B9   | the record-array key disagrees with the version — the old key at v3, the new one at v1, or both keys in one payload |
 
 Every refusal is one line per problem, `[B<n>] <path>: <message>`, where the path is the key a
 person has to change: `[B4] payload.templates.0.secret: forbidden key "secret" — …`. The codes
 are declared once in [`scripts/rule-codes.ts`](../../scripts/rule-codes.ts) with one owner each, the
 same way the `E` codes are.
+
+## Version 3 — the sessions key
+
+`instance` was this product's word for **session** and it is retired (#1103). The code moved
+first; the file format is the last place it lived, and that is the one breaking step:
+
+- **`payload.sessions`** replaces `payload.instances` in a dataset, under `bundleVersion: 3`.
+  Everything else about the document is unchanged, and so is every row id — `assessment-instance-*`
+  is a handle referenced by relationships, party rows and the atlas fixtures, and a vocabulary card
+  does not rewrite primary keys.
+- **A version-1 document still imports.** The reader parses it with the v1 schema, normalizes the
+  payload to the current shape and prints exactly one line:
+
+  ```text
+  bundle: legacy instances key accepted (deprecated)
+  ```
+
+  `parseBundle()` marks the result `legacy`, `importBundleFile()` reports it as `deprecated`, and
+  nothing writes the old shape back: the store an import writes, and every export after it, is
+  version 3. Deleting that tolerance is a later card.
+- **The committed bundle is generated, never edited.** `pnpm bundles export --dataset --fix`
+  rewrites `data/bundles/demo-dataset.alignsynch.json` from the fixtures, and `data:check` **E32**
+  compares the two byte for byte — so a hand edit, or a fixture change without a regeneration, is
+  a red build rather than a mystery. The version bump moved exactly two lines of that file.
+- **A half-migrated file is refused, not guessed at.** A version-3 document still carrying the old
+  key, a version-1 document already carrying the new one, and a payload carrying **both** are all
+  `B9`, with the path at the offending key.
+- **One consumer still emits the old shape:** the platform package's `content` group
+  (`payload.content.instances`, `bundleVersion: 2`) — a different document with its own version
+  gate, deliberately not moved here. Nothing else in this repo writes a v1 dataset.
 
 ## The platform package (`bundleVersion: 2`)
 
@@ -277,7 +314,7 @@ version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
 
 ## What this does not do
 
-- No quiz or article bundles — a v1 `kind` is `["template", "dataset"]`, and a v2 one is
+- No quiz or article bundles — a v1 or v3 `kind` is `["template", "dataset"]`, and a v2 one is
   `"platform"`, which is the records, the config, the declarations, the media index and the build.
 - No id/slug rewriting, suffixing or `--force` overwrite-by-id.
 - No UI: no buttons, routes or uploads. `pnpm bundles` and `pnpm bundle:pack` are the whole
@@ -290,7 +327,7 @@ version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
 - **The app does not read the store yet.** `/assessment/[slug]` reads six Postgres tables
   ([`docs/specs/two-party-flow.md`](../specs/two-party-flow.md), #145/#146), so the flow and the bundle
   store are two sources today. Switching that route to the store would undo the two-party flow,
-  and the store is not a database: it carries templates and instances, not invitations or
+  and the store is not a database: it carries templates and sessions, not invitations or
   submitted answers. `data/tenant-assessments.ts` in the original spec is therefore not part of
   this change; the store is what `data:check` and the CLI read, and the portability that makes a
   tenant possible is the bundle itself.

@@ -1339,13 +1339,13 @@ async function syncReviewArtifacts(client) {
  */
 function bundleRelationshipIdsFromFile() {
   const bundle = JSON.parse(readFileSync(DEMO_DATASET_FILE, "utf8"));
-  const instances = bundle?.payload?.instances;
-  if (!Array.isArray(instances)) {
+  const sessions = bundle?.payload?.sessions;
+  if (!Array.isArray(sessions)) {
     throw new Error(
-      `${displayPath(DEMO_DATASET_FILE)} carries no payload.instances — cannot tell which relationships are the bundle's`,
+      `${displayPath(DEMO_DATASET_FILE)} carries no payload.sessions — cannot tell which relationships are the bundle's`,
     );
   }
-  return instances.map((instance) => `relationship-${instance.id}`);
+  return sessions.map((session) => `relationship-${session.id}`);
 }
 
 /**
@@ -1609,7 +1609,7 @@ async function main() {
   // without it, the fixtures are, exactly as before #183.
   const demoDataset = demo ? await readDemoDataset() : null;
   const { assessments, assessmentSessions: assessmentInstances } = demoDataset
-    ? { assessments: demoDataset.templates, assessmentSessions: demoDataset.instances }
+    ? { assessments: demoDataset.templates, assessmentSessions: demoDataset.sessions }
     : await import("../data/assessments.ts");
 
   // One name for "where the rows came from", used by the sweep, the assertion and the closing
