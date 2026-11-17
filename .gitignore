@@ -61,6 +61,17 @@ tests/parity/artifacts/
 # Hermes profile/board state occasionally lands in a card workspace; never commit it.
 .hermes/
 
+# The GitNexus agent mirrors (#1178). `gitnexus analyze` writes `.agents/skills/` — a mirror of the
+# generated skills, created by `dist/cli/skill-gen.js` when the mirror root is absent — and `.agents`
+# is one of the six paths the tool's own `dist/storage/gitnexus-managed-paths.js` names as its output.
+# It is a generator's working directory, not something a human edits, and leaving it unignored is how
+# `?? .agents/` came to refuse an rc1 cut in the primary checkout: the third occurrence of the same
+# disease as `AGENTS.md` and `CLAUDE.md`. Those two are **not** ignored on purpose — they are files a
+# person reads and greps, and they are committed (#1176). `.claude/` and `.cursor/` stay unignored for
+# the same reason: a human may legitimately keep settings there, so `scripts/tree-hygiene.mjs` names
+# them in its table instead of hiding them.
+.agents/
+
 # The audience and positioning canon is held outside this repository on purpose (#903): the repo
 # is public, and the note is a private copy handoff. The copies stay on disk, untracked,
 # and this rule is what stops the next `git add -A` from publishing them.

@@ -12,13 +12,23 @@
  * component can filter and label rows without dragging `node:fs` into the browser bundle — the
  * same split `lib/docs/rows.ts` / `lib/docs/tree.ts` makes, and for the same E34 reason.
  *
- * **The file format, because the file does not exist yet.** #1126 names the columns
- * (`object, action, role, prototype, selector, upstream, mvp, rationale`) and the Priority filter
- * separately, and the page's own counts (33 P0 · 18 P1 · 28 P2 · 15 Won't) can only be recomputed
- * if priority is a column. So a matrix is a set of markdown tables whose header row names those
- * nine columns, in any order, anywhere in the document — one table or twelve, with prose between
- * them. Every other `|`-line is a cell. A header that omits a column is not a matrix this page can
- * count, so it is refused by name rather than rendered with a blank column.
+ * **The file format, as the source actually writes it (#1158).** A matrix is a set of markdown
+ * tables whose header row names the issue's own columns — `object, action, role, prototype,
+ * selector, upstream, mvp, rationale` — in any order, anywhere in the document, with prose between
+ * them. Every other `|`-line is a cell, and a header that omits a required column is refused by
+ * name rather than rendered blank.
+ *
+ * **Priority is a column the source may not have.** The page's counts and its Priority filter can
+ * only be recomputed if priority is known, so the parser reads it from a `priority` column when
+ * the header names one and otherwise from `mvp` — which is how the landed source writes it:
+ * its vocabulary line reads `mvp (priority) = P0 / P1 / P2 / Won't / —`. A header with neither is
+ * refused, because a rank the parser guessed is a rank the page would print as fact.
+ *
+ * **The columns drawn are the columns the header names.** `parseCrudMatrixDocument` returns the
+ * source's own column order beside its cells, so the page cannot draw a column the file does not
+ * have: the landed source has eight, and a `priority` column appears on screen only once a source
+ * carries one. A second table with a different header is refused — two shapes in one document is
+ * not one matrix.
  *
  * **Nothing is invented and nothing is defaulted.** An unknown `prototype`, `upstream` or
  * `priority` value is a refusal naming the row, not a `missing` the reader would take as fact; a
@@ -27,9 +37,9 @@
  * this: a source that is absent, or present and not parseable.
  *
  * **The counts are derived, never typed.** `countsOf` is the only place the header figures come
- * from, so 169 / 124 / 37 / 25 / 62 / 33 / 18 / 28 / 15 / 4 are consequences of the file and not
- * assertions about it. That is what makes the acceptance line "counts match the source file"
- * provable instead of copied.
+ * from, so every number in the counts band is a consequence of the file and not an assertion about
+ * it — which is what makes the acceptance line "counts match the source file" provable instead of
+ * copied, and what keeps them true after the source is edited.
  */
 
 /** The page's address — one constant, so the gate, the rail row and the tests cannot disagree. */
@@ -53,15 +63,19 @@ export const CRUD_EPIC_ISSUE_URL = "https://github.com/riolabs-ai/alignsynch/iss
 export const CRUD_PROTOTYPE_STATUSES = ["covered", "hinted", "missing", "n/a"] as const;
 export type CrudPrototypeStatus = (typeof CRUD_PROTOTYPE_STATUSES)[number];
 
-/** What upstream already answers. `conflict` is the row a card has to decide rather than port. */
-export const CRUD_UPSTREAM_STATUSES = ["exists", "not-found", "conflict"] as const;
+/**
+ * What upstream already answers. `conflict` is the row a card has to decide rather than port;
+ * `n/a` is the source's own `—` — the vocabulary line says "(— when not applicable)", and 27 of
+ * the landed file's 169 cells use it, so it is a status, not an empty cell.
+ */
+export const CRUD_UPSTREAM_STATUSES = ["exists", "not-found", "conflict", "n/a"] as const;
 export type CrudUpstreamStatus = (typeof CRUD_UPSTREAM_STATUSES)[number];
 
 /** The ranking, plus `none` for a cell the matrix deliberately does not schedule. */
 export const CRUD_PRIORITIES = ["P0", "P1", "P2", "Won't", "none"] as const;
 export type CrudPriority = (typeof CRUD_PRIORITIES)[number];
 
-/** One cell of the matrix — the issue's own eight columns plus the priority the counts need. */
+/** One cell of the matrix — the issue's own eight columns, plus the rank the counts need. */
 export interface CrudCell {
   readonly object: string;
   readonly action: string;
@@ -73,6 +87,16 @@ export interface CrudCell {
   readonly mvp: string;
   readonly rationale: string;
   readonly priority: CrudPriority;
+}
+
+/**
+ * The document, not just its rows: the cells **and** the columns the source's header names, in
+ * that header's order. The console draws the columns it is given, so a table's shape is the
+ * file's fact rather than a figure typed into a component.
+ */
+export interface CrudMatrixDocument {
+  readonly cells: readonly CrudCell[];
+  readonly columns: readonly CrudColumn[];
 }
 
 /** The header figures, all derived. `applicable` excludes the cells whose prototype is `n/a`. */
@@ -104,8 +128,8 @@ export class CrudMatrixUnreadable extends Error {
  * Parsing
  * ------------------------------------------------------------------ */
 
-/** The nine columns a matrix must name, in the order they are read. */
-const COLUMNS = [
+/** The eight columns a matrix must name, in the order they are read. */
+const REQUIRED_COLUMNS = [
   "object",
   "action",
   "role",
@@ -114,9 +138,27 @@ const COLUMNS = [
   "upstream",
   "mvp",
   "rationale",
-  "priority",
 ] as const;
-type ColumnName = (typeof COLUMNS)[number];
+type RequiredColumn = (typeof REQUIRED_COLUMNS)[number];
+
+/**
+ * A column the source may name instead of folding it into another. The landed source has no
+ * `priority` column — its `mvp` column *is* the priority — so the table keeps eight columns and
+ * the rank is read from `mvp`; a source that names `priority` separately gets drawn with it.
+ */
+const OPTIONAL_COLUMNS = ["priority"] as const;
+type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number];
+
+/** Every column the page knows how to draw — the source's own header words, canonicalised. */
+export type CrudColumn = RequiredColumn | OptionalColumn;
+
+/** A header cell, lowercased, as the canonical column name — or `null` for one we do not draw. */
+function columnOf(header: string): CrudColumn | null {
+  const name = keyOf(header);
+  if ((REQUIRED_COLUMNS as readonly string[]).includes(name)) return name as RequiredColumn;
+  if ((OPTIONAL_COLUMNS as readonly string[]).includes(name)) return name as OptionalColumn;
+  return null;
+}
 
 /**
  * Spellings a human writes and the parser accepts. The canonical value is the key; everything
@@ -138,6 +180,13 @@ const UPSTREAM_SPELLINGS: Record<string, CrudUpstreamStatus> = {
   "not found": "not-found",
   notfound: "not-found",
   conflict: "conflict",
+  // The source's "— when not applicable": an axis upstream has no answer for, which is a status
+  // and not a gap in the row.
+  "n/a": "n/a",
+  na: "n/a",
+  "not applicable": "n/a",
+  "—": "n/a",
+  "-": "n/a",
 };
 
 const PRIORITY_SPELLINGS: Record<string, CrudPriority> = {
@@ -193,14 +242,15 @@ function withoutFences(markdown: string): string[] {
 }
 
 /**
- * The matrix in a document, as cells. Throws `CrudMatrixUnreadable` — never a partial list — so
- * the page renders one honest panel instead of a table that quietly lost the rows it could not
- * read.
+ * The matrix in a document: its cells and the columns its header names. Throws
+ * `CrudMatrixUnreadable` — never a partial list — so the page renders one honest panel instead of
+ * a table that quietly lost the rows it could not read.
  */
-export function parseCrudMatrix(markdown: string): CrudCell[] {
+export function parseCrudMatrixDocument(markdown: string): CrudMatrixDocument {
   const lines = withoutFences(markdown);
   const cells: CrudCell[] = [];
   const seen = new Map<string, number>();
+  let columns: CrudColumn[] | null = null;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -212,8 +262,8 @@ export function parseCrudMatrix(markdown: string): CrudCell[] {
     const separator = lines[index + 1];
     if (separator === undefined || !isSeparator(separator)) continue;
 
-    const positions = new Map<ColumnName, number>();
-    for (const name of COLUMNS) {
+    const positions = new Map<CrudColumn, number>();
+    for (const name of REQUIRED_COLUMNS) {
       const position = header.indexOf(name);
       if (position < 0) {
         throw new CrudMatrixUnreadable(
@@ -221,6 +271,30 @@ export function parseCrudMatrix(markdown: string): CrudCell[] {
         );
       }
       positions.set(name, position);
+    }
+
+    // Where the rank lives: a `priority` column when the header names one, else `mvp`, which is
+    // how the source this page was built for writes it. Never a default — the counts depend on it.
+    const rankColumn: CrudColumn = header.includes("priority") ? "priority" : "mvp";
+    if (rankColumn === "priority") {
+      positions.set("priority", header.indexOf("priority"));
+    }
+
+    // The columns this table draws, in the header's own order. A document is one matrix, so a
+    // second table that names a different set is refused rather than merged into the first.
+    const named = header.flatMap((name) => {
+      const column = columnOf(name);
+      return column === null ? [] : [column];
+    });
+    if (columns === null) {
+      columns = named;
+    } else if (
+      named.length !== columns.length ||
+      named.some((name, at) => name !== columns?.[at])
+    ) {
+      throw new CrudMatrixUnreadable(
+        `${CRUD_MATRIX_PATH}:${index + 1} is a second table whose header names ${named.join(" / ")} where the first names ${columns.join(" / ")} — a document is one matrix`,
+      );
     }
 
     const width = header.length;
@@ -237,7 +311,7 @@ export function parseCrudMatrix(markdown: string): CrudCell[] {
         );
       }
 
-      const at = (name: ColumnName): string => values[positions.get(name) ?? 0] ?? "";
+      const at = (name: CrudColumn): string => values[positions.get(name) ?? 0] ?? "";
       const object = cleanCell(at("object"));
       const action = cleanCell(at("action"));
       const role = cleanCell(at("role"));
@@ -261,10 +335,10 @@ export function parseCrudMatrix(markdown: string): CrudCell[] {
         );
       }
 
-      const priority = PRIORITY_SPELLINGS[keyOf(at("priority"))];
+      const priority = PRIORITY_SPELLINGS[keyOf(at(rankColumn))];
       if (priority === undefined) {
         throw new CrudMatrixUnreadable(
-          `${CRUD_MATRIX_PATH}:${row + 1} has priority "${cleanCell(at("priority"))}"; the matrix's vocabulary is ${CRUD_PRIORITIES.join(" / ")}`,
+          `${CRUD_MATRIX_PATH}:${row + 1} has ${rankColumn} "${cleanCell(at(rankColumn))}"; the matrix's vocabulary is ${CRUD_PRIORITIES.join(" / ")}${rankColumn === "mvp" ? ' — this header names no "priority" column, so "mvp" carries the rank' : ""}`,
         );
       }
 
@@ -295,11 +369,19 @@ export function parseCrudMatrix(markdown: string): CrudCell[] {
 
   if (cells.length === 0) {
     throw new CrudMatrixUnreadable(
-      `${CRUD_MATRIX_PATH} holds no matrix table whose header names ${COLUMNS.map((name) => `"${name}"`).join(", ")}`,
+      `${CRUD_MATRIX_PATH} holds no matrix table whose header names ${REQUIRED_COLUMNS.map((name) => `"${name}"`).join(", ")}`,
     );
   }
 
-  return cells;
+  return { cells, columns: columns ?? [] };
+}
+
+/**
+ * The cells alone. The page wants the document (its columns are drawn too), so this form exists
+ * for the callers that only count or filter — and it is the same parse, never a second one.
+ */
+export function parseCrudMatrix(markdown: string): CrudCell[] {
+  return [...parseCrudMatrixDocument(markdown).cells];
 }
 
 /* ------------------------------------------------------------------ *\
