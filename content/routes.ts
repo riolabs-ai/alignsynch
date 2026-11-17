@@ -161,6 +161,9 @@ const DYNAMIC_ROUTES = [
   "/dashboard/relationships/[id]",
   "/dashboard/support/articles/[slug]",
   "/dashboard/templates/[id]",
+  // #1130 — Propose a Template: the form a member's own template offers to the Library. A reviewed
+  // request, never a publish, which is why it is a page under the template and not a control on it.
+  "/dashboard/templates/[id]/propose",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",
