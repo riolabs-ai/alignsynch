@@ -18,9 +18,10 @@ landmarks (4)
   main           1
   navigation     1
 
-links (8 unique, 9 total)
+links (9 unique, 10 total)
   /                                                    1
   /dashboard                                           1
+  /dashboard/chat                                      1
   /dashboard/help                                      1
   /dashboard/relationships                             1
   /dashboard/support                                   1
@@ -29,7 +30,7 @@ links (8 unique, 9 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0 2
 
 counts
-  elements  360
+  elements  365
   images    2
   buttons   16
   inputs    1
