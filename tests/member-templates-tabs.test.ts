@@ -33,7 +33,13 @@ import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail"
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
 import { billingPlan } from "@/data/billing-plans";
 import { RELATIONSHIP_PRICE_CENTS, relationshipType } from "@/data/relationship-types";
-import { catalogueCard, mineCard, templatesTabOf, templatesTabPath } from "@/lib/member/shelf";
+import {
+  catalogueCard,
+  mineCard,
+  minutesForAspects,
+  templatesTabOf,
+  templatesTabPath,
+} from "@/lib/member/shelf";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 const copy = dashboardTemplatesPageCopy;
@@ -119,21 +125,29 @@ describe("the catalogue card", () => {
     // The plan does not change with the template, so the card's one price is not a property of the
     // type: a hand-authored starter template costs the same plan as a taxonomy one.
     const untaxonomied = catalogueCard(copy, { ...catalogueRow, slug: "relationship-basics" });
-    expect(untaxonomied.chips).toEqual(["Template"]);
+    expect(untaxonomied.chips[0]).toBe("Template");
     expect(untaxonomied.meta).toContain(PLAN_LINE);
+  });
+
+  it("carries bundle 06's three chips, in its order — shelf, Aspect count, minutes", () => {
+    // `templates.html` draws every Library card as `Family` · `5 Aspects` · `About 3 Minutes`, and
+    // #1130 names the same trio. The minutes are derived, never stored: `minutesForAspects()` reads
+    // the Aspect count, and the three samples the artifact itself draws are pinned below.
+    expect(card.chips).toEqual(["Work", "5 Aspects", "About 3 Minutes"]);
+    expect(minutesForAspects(4)).toBe(2);
+    expect(minutesForAspects(5)).toBe(3);
+    expect(minutesForAspects(6)).toBe(4);
   });
 
   it("files the card on the shelf its relationship type names", () => {
     // The category is the type's (`data/template-categories.ts`), never the record's: the card says
     // the shelf a person would look on, and a starter the taxonomy does not carry says `Template`.
-    expect(card.chips).toEqual(["Work"]);
-    expect(catalogueCard(copy, { ...catalogueRow, slug: "brother-sister" }).chips).toEqual([
+    expect(card.chips[0]).toBe("Work");
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "brother-sister" }).chips[0]).toBe(
       "Family",
-    ]);
-    expect(catalogueCard(copy, { ...catalogueRow, slug: "spouses" }).chips).toEqual(["Couples"]);
-    expect(catalogueCard(copy, { ...catalogueRow, slug: "hoa-board-owner" }).chips).toEqual([
-      "Home",
-    ]);
+    );
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "spouses" }).chips[0]).toBe("Couples");
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "hoa-board-owner" }).chips[0]).toBe("Home");
   });
 
   it("offers the owner's two actions, and never the word instance", () => {
