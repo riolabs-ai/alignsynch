@@ -565,6 +565,26 @@
           "question": "Where did each file in the Account Settings bundle come from?"
         },
         {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md",
+          "title": "Admin CRUD & Permissions matrix v2 (handoff)",
+          "question": "How do I preview the admin CRUD and permissions matrix, its filters and its broken state?"
+        },
+        {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Admin CRUD & Permissions matrix v2 — implementation brief",
+          "question": "Which shell and components does the read-only Admin matrix reuse, and what must the React port honour?"
+        },
+        {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md",
+          "title": "Admin CRUD & Permissions matrix v2 — asset sources",
+          "question": "Where did each file in the Admin CRUD & Permissions matrix bundle come from?"
+        },
+        {
+          "path": "specs/v2-prototype/crud-matrix.md",
+          "title": "CRUD & Permissions matrix",
+          "question": "Which object × action × role rows does the v2 prototype cover, and where does upstream conflict?"
+        },
+        {
           "path": "specs/ui-divergence.md",
           "title": "Divergence table",
           "question": "Where does each surface deliberately differ from its ancestor?"

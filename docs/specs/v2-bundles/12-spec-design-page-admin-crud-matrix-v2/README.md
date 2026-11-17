@@ -1,5 +1,11 @@
 # AlignSynch v2 · Admin CRUD & Permissions matrix
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 (handoff) · prev [Account menu and Settings v2 — asset sources](../11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) · next [Admin CRUD & Permissions matrix v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->\n\n[Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none\n\n<!-- bundle-nav:end -->
 
 **Priority:** P2 · **Issues:** [#1126](https://github.com/riolabs-ai/alignsynch/issues/1126) (epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)) · **Prepared:** 2026-11-16 · **Repo path:** `docs/specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/`
@@ -21,3 +27,9 @@ The preview is static HTML. The Tailwind CDN script (`3.4.17`) and the Inter web
 To preview, serve this folder with any static HTTP server (for example `python3 -m http.server`) and open `admin-crud-matrix.html`. Links to pages in sibling bundles use `../<bundle>/` and resolve when all bundles sit side by side, as in the `bundles/` folder.
 
 <!-- bundle-nav:begin -->\n\n[Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none\n\n<!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 (handoff) · prev [Account menu and Settings v2 — asset sources](../11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) · next [Admin CRUD & Permissions matrix v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

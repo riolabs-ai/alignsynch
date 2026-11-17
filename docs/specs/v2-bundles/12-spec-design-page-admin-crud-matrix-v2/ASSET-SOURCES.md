@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 — asset sources · prev [Admin CRUD & Permissions matrix v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [CRUD & Permissions matrix](../../v2-prototype/crud-matrix.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->\n\n[Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none\n\n<!-- bundle-nav:end -->
 
 The static prototype uses local files so the preview does not depend on third-party hosts, apart from the Tailwind CDN and Google Fonts. This record says where each file came from so it can be traced or replaced.
@@ -21,3 +27,9 @@ The static prototype uses local files so the preview does not depend on third-pa
 No photography or third-party imagery is used in this bundle, so there are no licences or credits to record. The matrix rows and the P0 / conflict copy are the triage source, not fixture names.
 
 <!-- bundle-nav:begin -->\n\n[Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none\n\n<!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 — asset sources · prev [Admin CRUD & Permissions matrix v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [CRUD & Permissions matrix](../../v2-prototype/crud-matrix.md)
+
+<!-- docs-nav:end -->

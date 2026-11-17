@@ -1,5 +1,11 @@
 # AlignSynch Admin CRUD & Permissions matrix v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 — implementation brief · prev [Admin CRUD & Permissions matrix v2 (handoff)](README.md) · next [Admin CRUD & Permissions matrix v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none
@@ -205,3 +211,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Admin CRUD & Permissions matrix** · prev [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md) · next none
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Admin CRUD & Permissions matrix v2 — implementation brief · prev [Admin CRUD & Permissions matrix v2 (handoff)](README.md) · next [Admin CRUD & Permissions matrix v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

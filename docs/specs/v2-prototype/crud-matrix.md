@@ -1,5 +1,11 @@
 # AlignSynch v2 · CRUD & Permissions Matrix
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Specs & design briefs** › CRUD & Permissions matrix · prev [Admin CRUD & Permissions matrix v2 — asset sources](../v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md) · next [Divergence table](../ui-divergence.md)
+
+<!-- docs-nav:end -->
+
 Source for `/admin/permissions` (#1126). Generated from the v2 prototype triage (pass 10, 16 Nov 2026). One row per object × action × role.
 
 Vocabularies: role = Visitor / Initiator / Counterparty / Admin-curator; prototype = covered / hinted / missing / N/A; upstream = exists / not-found / conflict (— when not applicable); mvp (priority) = P0 / P1 / P2 / Won't / —.
@@ -175,3 +181,9 @@ Vocabularies: role = Visitor / Initiator / Counterparty / Admin-curator; prototy
 | Account / profile | delete | Counterparty | missing | — | exists | P1 | Same port. Upstream: exists — same account deletion |
 | Account / profile | share/propose | Initiator | missing | No public profile in the prototype | exists | P2 | Public profile is not part of the pair-alignment debut. Upstream: exists — /profile/[username], lib/db/user-profiles.ts |
 | Account / profile | export | Initiator | missing | — | not-found | P2 | Handle with account deletion / privacy, not the v2 UI debut. Upstream: not-found as a first-class data-export button (may be in the deletion spec) |
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Specs & design briefs** › CRUD & Permissions matrix · prev [Admin CRUD & Permissions matrix v2 — asset sources](../v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md) · next [Divergence table](../ui-divergence.md)
+
+<!-- docs-nav:end -->
