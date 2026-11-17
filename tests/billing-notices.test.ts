@@ -1,12 +1,14 @@
 /**
- * The two mails #1055 wires, in their own words (#1055, templates #6 and #7 of #548).
+ * The two mails #1055 wires, in their own words (#1055, templates #6 and #7 of #548), and the two
+ * the lapse notice became when it was split by seat (#1139, templates #12 and #13).
  *
  * `tests/billing-webhook-events.test.ts` proves *that* the receiver calls these senders. This file
- * proves *what they send*: the addresses they choose, the date they quote, and what they do when
- * there is nobody to write to. The templates themselves are asserted against `content/email-bodies`
- * in `tests/email-templates.test.ts`; here they are driven end to end through the band and the one
- * transport (`sendMail`), with the connection and the transport injected — so a case can read the
- * exact text the member would receive without a mailbox or a database.
+ * proves *what they send*: the addresses they choose, which template each seat receives, the date
+ * they quote, and what they do when there is nobody to write to. The templates themselves are
+ * asserted against `content/email-bodies` in `tests/email-templates.test.ts`; here they are driven
+ * end to end through the band and the one transport (`sendMail`), with the connection and the
+ * transport injected — so a case can read the exact text the member would receive without a mailbox
+ * or a database.
  *
  * The rows are a scripted connection, the same shape `tests/relationship-enforcement.test.ts` uses:
  * the fake answers the statements this module sends and records what it was asked.
@@ -66,6 +68,9 @@ function lapsedRow(over: Row = {}): Row {
     id: "rel-1",
     title: "Q4 leadership alignment",
     expired_at: new Date("2026-11-14T09:30:00.000Z"),
+    // What `lapseIfDue()` writes: a refused renewal. The trial's own reason is the other case, and
+    // it is the only one that carries the free week (#1139).
+    lapse_reason: "payment-failed",
     initiator_name: "Avery",
     initiator_email: "avery@example.test",
     counterparty_name: "Blake",
@@ -79,6 +84,17 @@ const AUTH_PRESENT = /to_regclass/;
 const AUTH_SEAT = /FROM neon_auth\."user" u/;
 const STORED_SEAT = /iv\.initiator_email IS NOT NULL/;
 
+/**
+ * The vocabulary the Counterparty must never read (#1121, #1138, #1139).
+ *
+ * Whole words, because `trial` in a sentence about the rule is not a leak. The same list
+ * `tests/counterparty-no-leak.test.ts` sweeps every Counterparty-recipient template with; asserted
+ * here as well because this file drives the sender, and a template can be clean while the *choice*
+ * of template for a seat is not.
+ */
+const COUNTERPARTY_MONEY =
+  /\b(price|pricing|plan|plans|trial|trials|card|cards|extension|extensions)\b/i;
+
 beforeEach(() => {
   vi.stubEnv("RESEND_API_KEY", "re_fixture");
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -90,7 +106,7 @@ afterEach(() => {
 });
 
 describe("sendMembershipLapsedNotices", () => {
-  it("writes to both seats, with the record's own date and the relationship's screen", async () => {
+  it("writes to both seats, each in its own words (#1139)", async () => {
     const { sql } = fakeSql([{ match: LAPSED_SEATS, rows: [lapsedRow()] }]);
     const { impl, sent } = captureTransport();
 
@@ -105,22 +121,77 @@ describe("sendMembershipLapsedNotices", () => {
       { kind: "membership-lapsed", outcome: "sent", recipients: 2, relationshipId: "rel-1" },
     ]);
     expect(sent).toHaveLength(2);
-    // A lapse stops both seats, and the counterparty must not read it as their own failure — so
-    // both are addressed, each under their own name.
+    // A lapse stops both seats — so both are addressed, each under their own name and in their own
+    // vocabulary: the account that owns the plan, and the person who was invited to it.
     expect(sent.map((message) => message.to).sort()).toEqual([
       "avery@example.test",
       "blake@example.test",
     ]);
+
+    const initiator = sent.find((message) => message.to === "avery@example.test");
+    const counterparty = sent.find((message) => message.to === "blake@example.test");
+
+    // The money did not arrive: the Initiator is told to resume it, and is **not** offered the free
+    // week — that week is the trial's own pause, and offering it here would be the false offer
+    // `lib/relationship/pause.ts` refuses to draw.
+    expect(initiator?.subject).toBe("Your relationship is read-only");
+    expect(initiator?.text).toContain("Hi Avery");
+    expect(initiator?.text).not.toContain("7-day extension");
+
+    // The Counterparty reads one neutral sentence: no cause, no plan, no price, no card.
+    expect(counterparty?.subject).toBe("Align is paused for now");
+    expect(counterparty?.text).toContain("Hi Blake");
+    expect(counterparty?.text).not.toMatch(COUNTERPARTY_MONEY);
+
     for (const message of sent) {
-      expect(message.subject).toBe("Your relationship is read-only");
       expect(message.text).toContain("Q4 leadership alignment");
       // The date is `relationship.expired_at`, printed as its own calendar day — never "today".
       expect(message.text).toContain("2026-11-14");
       expect(message.text).toContain("https://alignsynch.com/dashboard/relationships/rel-1");
     }
-    // Each seat is greeted by their own name, not the other's.
-    expect(sent.find((message) => message.to === "avery@example.test")?.text).toContain("Hi Avery");
-    expect(sent.find((message) => message.to === "blake@example.test")?.text).toContain("Hi Blake");
+  });
+
+  it("gives the Initiator the pause, the free week and the plan when the trial ran out", async () => {
+    const { sql } = fakeSql([
+      { match: LAPSED_SEATS, rows: [lapsedRow({ lapse_reason: "trial-ended" })] },
+    ]);
+    const { impl, sent } = captureTransport();
+
+    await sendMembershipLapsedNotices({
+      relationshipIds: ["rel-1"],
+      sql,
+      fetchImpl: impl,
+      base: "https://alignsynch.com",
+    });
+
+    const initiator = sent.find((message) => message.to === "avery@example.test");
+    expect(initiator?.subject).toBe("Your trial ended — Align is paused");
+    expect(initiator?.text).toContain("7-day extension");
+    expect(initiator?.text).toContain(`https://alignsynch.com${PLANS_PATH}`);
+
+    // The Counterparty's mail does not change with the reason: the pause is the whole of what they
+    // are told, whatever ended the membership.
+    const counterparty = sent.find((message) => message.to === "blake@example.test");
+    expect(counterparty?.subject).toBe("Align is paused for now");
+    expect(counterparty?.text).not.toMatch(COUNTERPARTY_MONEY);
+  });
+
+  it("reads an unrecorded reason as the trial's, exactly as the screen does", async () => {
+    const { sql } = fakeSql([{ match: LAPSED_SEATS, rows: [lapsedRow({ lapse_reason: null })] }]);
+    const { impl, sent } = captureTransport();
+
+    await sendMembershipLapsedNotices({
+      relationshipIds: ["rel-1"],
+      sql,
+      fetchImpl: impl,
+      base: "https://alignsynch.com",
+    });
+
+    // `isTrialPauseReason()` is the screen's own predicate: an unknown or absent reason is the pause
+    // that loses nothing, and the mail must not be the one place that guesses differently.
+    expect(sent.find((message) => message.to === "avery@example.test")?.subject).toBe(
+      "Your trial ended — Align is paused",
+    );
   });
 
   it("asks for the rows it was handed, and only those", async () => {
