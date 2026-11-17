@@ -618,6 +618,29 @@ export function claimPath(token: string): string {
 }
 
 /**
+ * `POST /invite/[token]/join` — step 2 of the join (`Join`), which carries the two fields to step 3
+ * (#1125).
+ *
+ * Its own address rather than a field on the claim's: the claim **is** the acceptance, and step 2 is
+ * the step before it. One endpoint that did both would make the `Join` button a claim, and the
+ * `Accept` button a second claim of a spent token — which the bundle does not draw and the store
+ * would refuse.
+ */
+export function joinDetailsPath(token: string): string {
+  return `${invitePath(token)}/join`;
+}
+
+/**
+ * `POST /invite/[token]/decline` — step 1's quiet "Not for you? Decline the invitation" (#1125).
+ *
+ * A POST and not a link, for the reason the claim is: following a URL must never end an invitation,
+ * and a mail client that prefetches the decline would kill the seat before anybody read the page.
+ */
+export function declinePath(token: string): string {
+  return `${invitePath(token)}/decline`;
+}
+
+/**
  * **Where a completed response sends the browser (#710).** The response path's counterparty has
  * just joined the relationship, so the same rule the create's own completion follows applies: the
  * modal closes onto the screen the joined relationship is listed on.

@@ -65,8 +65,16 @@ export async function POST(
   const form = await request.formData().catch(() => undefined);
   const postedName = form?.get("name");
   const postedEmail = form?.get("email");
+  const postedSuggestion = form?.get("suggestion");
+  const postedAspect = form?.get("suggestion-aspect");
   const name = typeof postedName === "string" ? postedName : null;
   const email = typeof postedEmail === "string" ? postedEmail : null;
+  // #1125 — the optional suggestion the acceptance's collapsible carries. It is a **message**, not an
+  // edit: it travels with the join notice to the Initiator (the sentence on the step says so —
+  // "Sent to {initiator} with your acceptance"), and nothing on this path writes an Aspect. Empty or
+  // absent is the ordinary case: most acceptances have nothing to suggest.
+  const suggestionText = typeof postedSuggestion === "string" ? postedSuggestion.trim() : "";
+  const suggestionAspect = typeof postedAspect === "string" ? postedAspect : "";
   const viewer = await currentUserIfConfigured();
   const viewerTokens = partyTokensFrom(jar);
 
@@ -116,7 +124,12 @@ export async function POST(
   // committed and after the claimer's cookie is set, so neither a provider refusal nor an
   // unreachable host can cost the person their claim; the redirect below happens either way.
   // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
-  await sendJoinNotice({ instanceRecordId: result.instanceRecordId }).catch((error: unknown) => {
+  await sendJoinNotice({
+    instanceRecordId: result.instanceRecordId,
+    ...(suggestionText === ""
+      ? {}
+      : { suggestion: { aspect: suggestionAspect, text: suggestionText } }),
+  }).catch((error: unknown) => {
     console.error(
       "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",
       error instanceof Error ? error.name : "unknown",

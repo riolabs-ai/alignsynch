@@ -110,7 +110,7 @@ import {
 import { invitationLink } from "@/lib/flow/email";
 import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { claimEmailMatches, confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
-import { inviteStateOf } from "@/lib/flow/invite-state";
+import { COUNTERPARTY_DECLINED_BY, inviteStateOf } from "@/lib/flow/invite-state";
 import {
   readMembershipForRelationship,
   readSubscriptionLive,
@@ -1190,6 +1190,109 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       accountUserId: claimerUserId,
       resumed: false,
     };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/* ------------------------------------------------------------------ *\
+ * Declining an invitation — the Counterparty's own ending (#1125)
+ * ------------------------------------------------------------------ */
+
+/** What `declineInvite()` answers: the write, or the code that refused it. */
+export type DeclineResult =
+  | { readonly ok: true; readonly instanceRecordId: string }
+  | { readonly ok: false; readonly code: ClaimRefusal; readonly reason: string };
+
+/**
+ * End an invitation from the Counterparty's side — one click, nothing else asked (#1125).
+ *
+ * **A decline is the same write as a revocation with the recipient's name in the actor column.**
+ * `docs/specs/v2-bundles/02-…/counterparty-join.html` draws one control on step 1 and a dead link
+ * after it, and `session_invite` already carries both columns that fact needs (`revoked_at`,
+ * `revoked_by`). A `declined_at` column would be a second way to say "this link is dead" and would
+ * need the whole read path taught about a fourth dead state; the marker reuses the one that exists
+ * and lets `inviteStateOf()` choose the Initiator's sentence from *who* acted (`declined` before
+ * `revoked`).
+ *
+ * **What it refuses, and why each refusal is a sentence rather than a 500:**
+ *
+ *   unknown    no row carries the token — the link was mistyped or is from another database
+ *   claimed    somebody already holds the seat; declining now would rewrite a pair that exists
+ *   expired    the link died on its own, so there is nothing to decline
+ *   revoked    an operator (or this person, twice) already ended it — the write is idempotent
+ *
+ * Every refusal leaves the row untouched, and the caller answers with the invitation's own band.
+ * The transaction takes the same `FOR UPDATE` the claim takes, so a decline and a claim of one
+ * token cannot both win.
+ */
+export async function declineInvite(input: {
+  readonly invitationToken: string;
+  readonly now?: Date;
+}): Promise<DeclineResult> {
+  const { invitationToken } = input;
+  const now = input.now ?? new Date();
+  if (!tokenIsWellFormed(invitationToken)) {
+    return { ok: false, code: "unknown", reason: "that token is not an invitation token" };
+  }
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query<{
+      session_record_id: string;
+      claimed_at: Date | null;
+      expires_at: Date;
+      revoked_at: Date | null;
+    }>(
+      `SELECT session_record_id, claimed_at, expires_at, revoked_at
+         FROM session_invite
+        WHERE token_hash = $1
+          FOR UPDATE`,
+      [hashToken(invitationToken)],
+    );
+    const invite = found.rows[0];
+    if (invite === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "unknown", reason: "no invitation carries that token" };
+    }
+    if (invite.claimed_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "claimed",
+        reason: `that invitation was claimed at ${invite.claimed_at.toISOString()}; the seat exists, so there is nothing to decline`,
+      };
+    }
+    if (invite.revoked_at != null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "revoked",
+        reason: `that invitation was already ended at ${invite.revoked_at.toISOString()}`,
+      };
+    }
+    if (invite.expires_at.getTime() <= now.getTime()) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "expired",
+        reason: `that invitation expired at ${invite.expires_at.toISOString()}`,
+      };
+    }
+    // The pair of columns the constraint `invite_revoked_by_comes_with_instant` wants, written
+    // together: the instant makes the link dead, the marker makes the *reason* readable to the
+    // Initiator's screen. `COUNTERPARTY_DECLINED_BY` is a word, so an operator's account id in the
+    // same column can never be mistaken for it.
+    await client.query(
+      `UPDATE session_invite SET revoked_at = $2, revoked_by = $3
+        WHERE token_hash = $1 AND claimed_at IS NULL AND revoked_at IS NULL`,
+      [hashToken(invitationToken), now.toISOString(), COUNTERPARTY_DECLINED_BY],
+    );
+    await client.query("COMMIT");
+    return { ok: true, instanceRecordId: invite.session_record_id };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -2572,8 +2675,14 @@ export interface InstanceBundle {
     readonly resentAt: Date | null;
     /** `resent_count` — lifetime re-invites, the fact `RESEND_LIFETIME_CAP` compares against. */
     readonly resentCount: number;
-    /** `revoked_at IS NOT NULL` — an operator killed this link (#503). */
+    /** `revoked_at IS NOT NULL` — an operator killed this link, or the Counterparty declined it (#503, #1125). */
     readonly revoked: boolean;
+    /**
+     * `revoked_by = 'counterparty'` — the dead link was ended by the person it was sent to, not by
+     * an operator (#1125). Read beside `revoked`, never instead of it: a decline *is* a revocation,
+     * and `inviteStateOf()` picks the sentence from the pair.
+     */
+    readonly declined: boolean;
   } | null;
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
   /**
@@ -2630,8 +2739,10 @@ export async function readInstanceBundle(
     resent_at: Date | null;
     resent_count: number;
     revoked_at: Date | null;
+    revoked_by: string | null;
   }>(
-    `SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at
+    `SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count,
+            revoked_at, revoked_by
        FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
@@ -2670,6 +2781,7 @@ export async function readInstanceBundle(
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
             revoked: invite.revoked_at != null,
+            declined: invite.revoked_by === COUNTERPARTY_DECLINED_BY,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
     voided: instance.voided === true,
@@ -3066,6 +3178,13 @@ export type InviteState =
    * The page explains rather than 404s, because the visitor followed a link somebody really sent.
    */
   | "lapsed"
+  /**
+   * #1125 — the person the invitation was sent to ended it themselves, from step 1's quiet
+   * "Not for you? Decline the invitation". Distinct from `revoked` for the same reason `revoked` is
+   * distinct from `expired`: it names *who* ended the link, and "ask for a new one" is not the advice
+   * for somebody who has just said no.
+   */
+  | "declined"
   | "unknown";
 
 export interface InvitePreview {
@@ -3091,11 +3210,49 @@ export interface InvitePreview {
    */
   readonly viewerRole: PartyRole | null;
   /**
+   * The relationship's own title — `session.name` when the create collected one, `null` otherwise
+   * (#1125).
+   *
+   * The join's first step names the thing the person is being invited *into*
+   * ("{initiator} invited you to align on {title}"), and that title is the relationship's, not the
+   * template's: two relationships made from Relationship Basics are two different conversations.
+   * `null` is a real state — every session created before the name existed — and the step falls
+   * back to `templateTitle` rather than printing nothing.
+   */
+  readonly relationshipTitle: string | null;
+  /**
+   * The template's `summary`, shown in the invitation's Shared Goal band (#1125).
+   *
+   * **The bundle draws the Initiator's own goal here, and no column stores one yet.** The wizard's
+   * stage 1 will collect "Your Shared Goal" (bundle 01); until that lands, the one authored sentence
+   * about this pairing is the template's, and printing it with the template's own name as its
+   * caption is true, where inventing a sentence and signing it with the Initiator's name is not.
+   */
+  readonly templateSummary: string | null;
+  /** `session.mode` — "Basic Mode" or "Advanced Mode", said in plain words on step 1 (#1125). */
+  readonly mode: AssessmentMode | null;
+  /** `session.alignment_setting` — Soft or Full, said in plain words on step 1 (#1125). */
+  readonly setting: AlignmentSetting | null;
+  /**
+   * The Aspects this seat will answer, in the relationship's own order (#1125).
+   *
+   * Read from the **session's** items — the copy the create made — never the template's, so a
+   * relationship whose Aspects the Initiator edited at stage 3 previews the list the Counterparty
+   * will actually answer. Empty for a token that names no session.
+   */
+  readonly aspects: readonly InviteAspect[];
+  /**
    * #533 phase 3 — the membership facts, so the page can print *when* it ended and *why* rather
    * than a bare band. `null` for an invitation whose session names no relationship, and absent in
    * the `unknown` preview (there is nothing to derive it from).
    */
   readonly membership?: Membership | null;
+}
+
+/** One Aspect as the invitation previews it: an id and the question, nothing else (#1125). */
+export interface InviteAspect {
+  readonly id: string;
+  readonly prompt: string;
 }
 
 /**
@@ -3129,6 +3286,11 @@ export async function previewInvite(
     counterpartyName: null,
     templateTitle: null,
     viewerRole: null,
+    relationshipTitle: null,
+    templateSummary: null,
+    mode: null,
+    setting: null,
+    aspects: [],
   };
   if (!tokenIsWellFormed(token)) return empty;
   const [row] = await query<{
@@ -3138,14 +3300,19 @@ export async function previewInvite(
     claimed_at: Date | null;
     expires_at: Date;
     revoked_at: Date | null;
+    revoked_by: string | null;
     initiator_name: string | null;
     title: string;
+    summary: string;
+    session_name: string | null;
+    mode: string;
+    alignment_setting: string;
   }>(
     `SELECT iv.session_record_id, ai.relationship_id, iv.counterparty_name, iv.claimed_at,
-            iv.expires_at, iv.revoked_at,
+            iv.expires_at, iv.revoked_at, iv.revoked_by,
             (SELECT p.name FROM party p
               WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
-            t.title
+            t.title, t.summary, ai.name AS session_name, ai.mode, ai.alignment_setting
        FROM session_invite iv
        JOIN session ai ON ai.record_id = iv.session_record_id
        JOIN record t ON t.id = ai.template_record_id
@@ -3163,6 +3330,7 @@ export async function previewInvite(
       claimed: row.claimed_at !== null,
       expiresAt: row.expires_at,
       revoked: row.revoked_at != null,
+      declined: row.revoked_by === COUNTERPARTY_DECLINED_BY,
     },
     now,
   );
@@ -3179,6 +3347,14 @@ export async function previewInvite(
   const viewerRole =
     (await viewerRoleOf(row.session_record_id, options.viewerTokens ?? [])) ??
     (await roleForUser(row.session_record_id, options.viewerUserId));
+  // The Aspects the Counterparty will answer, read off the **session's own** item rows (#1125): the
+  // copy the create made, in the order it made it, so a relationship whose list stage 3 edited
+  // previews what this person will actually be asked. One column and one prompt — the rest of the
+  // Aspect (its two Value words) is the answer screen's business.
+  const aspects = await query<{ item_id: string; prompt: string }>(
+    `SELECT item_id, prompt FROM item WHERE record_id = $1 ORDER BY position`,
+    [row.session_record_id],
+  );
   return {
     state,
     instanceRecordId: row.session_record_id,
@@ -3186,6 +3362,11 @@ export async function previewInvite(
     counterpartyName: row.counterparty_name,
     templateTitle: row.title,
     viewerRole: viewerRole ?? null,
+    relationshipTitle: row.session_name,
+    templateSummary: row.summary,
+    mode: zAssessmentMode.safeParse(row.mode).data ?? null,
+    setting: zAlignmentSetting.safeParse(row.alignment_setting).data ?? null,
+    aspects: aspects.map((aspect) => ({ id: aspect.item_id, prompt: aspect.prompt })),
     membership: membership?.membership ?? null,
   };
 }

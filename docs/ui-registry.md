@@ -22,8 +22,8 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **94** — 59 static, 35 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 359 files under `components/`, 352 of them `.tsx`
-- route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **43** — 363 files under `components/`, 356 of them `.tsx`
+- route handlers: **30** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 74 · **db** 38 · **live** 8 · **prototype** 1
 - templates: Both templates 50 · AlignSynch 43 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -279,7 +279,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/layout` — **fixture**
   - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
   - files (10): `admin-notice-bar.tsx`, `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `leaving-link.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
-  - routes (11): `/affiliate`, `/assessment`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/dashboard/relationships/[id]`, `/login`, `/register`, `/support`, `/templates/relationship/[slug]/create/commit`, `/tournaments`
+  - routes (12): `/affiliate`, `/assessment`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/dashboard/relationships/[id]`, `/invite/[token]`, `/login`, `/register`, `/support`, `/templates/relationship/[slug]/create/commit`, `/tournaments`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -480,7 +480,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
-  - components: `components/assessment-flow`, `components/ui`
+  - components: `components/assessment-flow`, `components/layout`, `components/ui`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/templates/relationship/[slug]/create` — **db**
@@ -534,7 +534,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share. It also owns the raised-surface container every dashboard page renders inside — `stage-column.tsx` (`StageColumn`), 1126px up to one left edge at 274 and no `mx-auto` — which is the shape #717 gave the eighteen admin pages and #858 gave the member console.
-  - files (39): `accept-session.tsx`, `account-panel.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `claim-form.tsx`, `create-relationship.tsx`, `flow-entry-link.tsx`, `flow-stage-card.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `invite-walk.tsx`, `plan-choices.tsx`, `record-detail-shell.tsx`, `reinvite-form.tsx`, `relationship-flow-shell.tsx`, `relationship-review.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-account.tsx`, `stage-choice-form.tsx`, `stage-column.tsx`, `stage-foot.tsx`, `stage-gauge.tsx`, `stage-invite.tsx`, `stage-one-fields.tsx`, `stage-one-form.tsx`, `stage-rail.tsx`, `stage-shell.tsx`, `stage-title-focus.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-list.tsx`, `wizard-progress.tsx`, `wizard-rail.tsx`, `wizard-steps.tsx`
+  - files (43): `accept-session.tsx`, `account-panel.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `create-relationship.tsx`, `flow-entry-link.tsx`, `flow-stage-card.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `invite-walk.tsx`, `join-accept-step.tsx`, `join-account-step.tsx`, `join-invite-step.tsx`, `join-party-cards.tsx`, `join-stepper.tsx`, `plan-choices.tsx`, `record-detail-shell.tsx`, `reinvite-form.tsx`, `relationship-flow-shell.tsx`, `relationship-review.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-account.tsx`, `stage-choice-form.tsx`, `stage-column.tsx`, `stage-foot.tsx`, `stage-gauge.tsx`, `stage-invite.tsx`, `stage-one-fields.tsx`, `stage-one-form.tsx`, `stage-rail.tsx`, `stage-shell.tsx`, `stage-title-focus.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-list.tsx`, `wizard-progress.tsx`, `wizard-rail.tsx`, `wizard-steps.tsx`
   - routes (52): `/admin/audit`, `/admin/billing`, `/admin/brand`, `/admin/broadcast`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/docs`, `/admin/docs/[...slug]`, `/admin/docs/features`, `/admin/docs/releases`, `/admin/gaps`, `/admin/growth`, `/admin/health`, `/admin/inbox`, `/admin/instances`, `/admin/instances/[id]`, `/admin/instances/[id]/report`, `/admin/review`, `/admin/templates`, `/admin/templates/[id]`, `/assessment`, `/assessment/[slug]`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessments`, `/dashboard`, `/dashboard/help`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/support`, `/dashboard/support/articles/[slug]`, `/dashboard/templates`, `/dashboard/templates/[id]`, `/dashboard/user`, `/invite/[token]`, `/my-quizzes`, `/profile/[username]`, `/relationship-types/[slug]/demo`, `/settings`, `/support`, `/templates/relationship/[slug]/create`, `/templates/relationship/[slug]/create/aspects`, `/templates/relationship/[slug]/create/commit`, `/templates/relationship/[slug]/create/invite`, `/templates/relationship/[slug]/create/mode`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it. `StageColumn` is the one container: a page that centres itself, or spells a second `max-w`, is the regression `data/surface-columns.ts` and `scripts/column-refs.ts` measure in the gate (a `wide`/`bleed` page is a registered exception with a reason and, for `bleed`, a way back). The stage dialog in `stage-shell.tsx` is the one documented centred box — a sheet, not a page column.
 
@@ -850,6 +850,8 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/assessment/new/who` — `app/(mainlayout)/assessment/new/who/route.ts`
 - `/favicon.ico` — `app/favicon.ico/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`
+- `/invite/[token]/decline` — `app/(mainlayout)/invite/[token]/decline/route.ts`
+- `/invite/[token]/join` — `app/(mainlayout)/invite/[token]/join/route.ts`
 - `/pricing/start` — `app/(marketing)/pricing/start/route.ts`
 - `/qa-demo-flow/[...shot]` — `app/qa-demo-flow/[...shot]/route.ts`
 - `/review-artifacts/[id]` — `app/review-artifacts/[id]/route.ts`

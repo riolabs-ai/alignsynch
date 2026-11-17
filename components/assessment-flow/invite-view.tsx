@@ -5,13 +5,15 @@
  * (#146, #202, #t_0aa81144).
  *
  * The live invitation — a claimable token and a browser that is not already a party — no longer
- * renders here: it renders the three-step onboarding wizard
- * (`components/assessment-flow/counterparty-wizard.tsx`), which owns the claim form on its last
- * step. What is left is the other side of that split, and it is all refusal and state:
+ * renders here: it renders the join's three steps (`join-invite-step.tsx` · `join-account-step.tsx`
+ * · `join-accept-step.tsx`), which own the acceptance on their last step (#1125). What is left is the
+ * other side of that split, and it is all refusal and state:
  *
- *   `preview.state`   one band per `claimed` / `expired` / `revoked` / `lapsed` / `unknown`, each
- *                     its own sentence in `data/pages/invite.ts`, so a dead link reads as news
- *                     rather than a status code in a tab
+ *   `preview.state`   one band per `claimed` / `expired` / `revoked` / `declined` / `lapsed` /
+ *                     `unknown`, each its own sentence in `data/pages/invite.ts`, so a dead link reads
+ *                     as news rather than a status code in a tab. A `declined` invitation also draws
+ *                     the one control that screen has — "Done" — because the person who said no is
+ *                     the one who reads it again.
  *   `viewerRole`      a browser that already answers as a party is named and told the invitation
  *                     is not its to take. The old page offered every visitor the button, so an
  *                     Initiator who followed their own link spent it and their session silently
@@ -26,6 +28,7 @@
  *
  * Literal-free: the words are `data/pages/invite.ts` (E23).
  */
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PageCopy } from "@/content/pages";
 import { isTokenStateRefusal, type ClaimRefusal } from "@/lib/flow/claim";
 import type { InvitePreview } from "@/lib/flow/store";
@@ -111,6 +114,18 @@ export function InviteView({
             <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
               {fillLabel(itemLabel(sectionOf(copy, "lapsed"), "ended"), values)}
             </p>
+          ) : null}
+          {/* #1125 — after a decline the person has one thing left to do on this page: leave it. The
+              bundle draws "Done" opening the public catalog; in this tree the front door it means is
+              the public home, which is a marketing route and so opens in a new tab (E39). */}
+          {preview.state === "declined" ? (
+            <div className="mt-6">
+              <LeavingLink
+                href="/"
+                label={itemLabel(sectionOf(copy, "declined"), "done")}
+                className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium text-primary hover:bg-mist"
+              />
+            </div>
           ) : null}
         </>
       )}

@@ -148,6 +148,9 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
         { id: "expired", label: "Expired" },
         { id: "claimed", label: "Accepted" },
         { id: "revoked", label: "Withdrawn" },
+        // #1125 — the Counterparty's own "Decline the invitation". Same write as a withdrawal
+        // (`revoked_by = 'counterparty'`), different actor, so a different word on the row.
+        { id: "declined", label: "Declined" },
       ],
     },
     {

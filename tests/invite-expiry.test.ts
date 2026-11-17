@@ -334,7 +334,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
     await initiatorScreen(BEFORE_EXPIRY);
 
     const [bundleQuery] = callsMatching(
-      /^SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at FROM session_invite/,
+      /^SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at, revoked_by FROM session_invite/,
     );
     expect(bundleQuery).toBeDefined();
     expect(bundleQuery.values).toEqual([INSTANCE_ID]);
@@ -375,7 +375,10 @@ describe("expiry is derived at read time, from the row", () => {
   it("keeps claimed ahead of expired — an invitation claimed in its window stays claimed", () => {
     const facts = { claimed: true, expiresAt: EXPIRES_AT };
     expect(inviteStateOf(facts, AFTER_EXPIRY)).toBe("claimed");
-    expect(INVITE_STATES).toEqual(["unclaimed", "expired", "claimed", "revoked"]);
+    // #1125 added `declined` and it sits between `claimed` and `revoked`: a claimed invitation is
+    // never `declined` (there is nothing left to decline), and a decline outranks a withdrawal
+    // because the two are the same write and only the actor tells them apart.
+    expect(INVITE_STATES).toEqual(["unclaimed", "expired", "claimed", "declined", "revoked"]);
   });
 
   it("withholds the link once expired, so the panel cannot offer a dead URL", async () => {

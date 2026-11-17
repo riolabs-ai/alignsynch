@@ -128,8 +128,12 @@ const INVITE_TONES: Record<InviteDisplayState, string> = {
   claimed:
     "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
   // #503 — a withdrawal is news too, and the same red as an expiry: there is nothing the
-  // Initiator can do with this link either.
+  // Initiator can do with this link either. #1125's decline is the same colour for the same
+  // reason — the seat is gone — and a different sentence, because a person said no rather than an
+  // operator deciding.
   revoked:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  declined:
     "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
 };
 
