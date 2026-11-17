@@ -6,6 +6,76 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [2.0.0-rc1] - 2026-11-17
+
+> **Declared override.** The commit census computes 1.23.0 (minor, 4 commit(s) since v1.22.0); this release is cut as 2.0.0-rc1 by decision: 2.0 is the release-candidate boundary for the v2 surfaces; the commits are feat/minor by shape and would compute 1.23.0
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+### Added
+
+- `feat(v2)` — the nine surfaces of 1.22 as one integration branch ([#1170](https://github.com/riolabs-ai/alignsynch/pull/1170))
+
+### Maintenance
+
+- `chore(repo)` — name the writer of every dirty path — release preflight, gate report, and .agents/ ignored ([#1180](https://github.com/riolabs-ai/alignsynch/pull/1180))
+- `chore(repo)` — commit the gitnexus block and CLAUDE.md, so the shared checkout stops being dirty ([#1176](https://github.com/riolabs-ai/alignsynch/pull/1176))
+- `chore(health)` — re-record platform health at v1.22.0 ([#1175](https://github.com/riolabs-ai/alignsynch/pull/1175))
+
+### Known limits
+
+- **This candidate's number is declared, not computed.** The census of `v1.22.0..HEAD` reads one `feat`
+  commit and would compute `1.23.0`. `v2.0.0-rc1` is the release-candidate boundary for the v2 surface
+  set by decision, and `pnpm release:cut` wrote that decision into the `CHANGELOG.md` entry as a banner
+  rather than leaving a silent number in `package.json`.
+
+- **The nine v2 surfaces arrive as one commit.** `#1170` merges seven branches with `--no-ff` on top of
+  the two v2 landings already on `main`, so the census counts a single commit and the entry names a
+  single pull request: Templates v2 (`#1130`, `#1151`), the account menu (`#1136`, `#1152`), card menus
+  and Save a Copy (`#1134`, `#1153`), Chat v2 (`#1131`, `#1154`), the Aspect drawer (`#1155`), Payment v2
+  (`#1156`) and conversion (`#1127`, `#1159`) — on top of app shell v2 (`#1129`, `#1150`) and invitation
+  hygiene (`#1135`, `#1149`), which shipped in `v1.22.0`'s window.
+
+- **The rest of the queue is excluded by name, and lands in `v2.0.0-rc2` (milestone 26, the pool).**
+  Open and **not** in this candidate: `#1173` the locked 1–5 answer screen (`#1128`), `#1167` admin email
+  templates (`#1138`), `#1168` the lapse notice splitting by seat (`#1139`), `#1163` the immediate-deletion
+  copy fix, `#1112` templates retirement phase 2 (`#1109`), and `#1165` the pre-approved cut artifact —
+  which is why this cut ran through `scripts/release.sh --tag-only` instead of `pnpm release:cut
+  --execute`. `#1161` (the three-plan catalogue) is still open, and the catalogue it carries is already in
+  this tree (`data/membership-plans.ts`, migration `0042`) via the integration branch; it is closed by
+  reference, not re-merged.
+
+- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106` in the
+  code and `#1107` in the bundle format — and both stay deferred under `t_6258b560`, so both nouns are
+  still in this tree's comments, its docs and its schema, and the platform bundle this build writes is
+  still version 2 (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
+
+- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and deferred
+  under `t_6258b560` to `v2.0`. Nothing in the dependency graph moves between `v1.22.0` and this tag.
+
+- **One migration rides this tag, and this tag does not apply it.** `db/migrations/0042_billing_plan_prices.sql`
+  arrives with the approved three-plan catalogue: `Single` `$9.99`/mo, `Family` `$19.99`/mo (≤4), `Single
+  Annual` `$99`/yr, mapped onto the four existing lookup keys, with `principal/year` deliberately left at
+  its seeded amount because no approved plan claims it. It was applied to the demo branch for this
+  candidate's QA. Production's ledger is run by hand — `pnpm db:migrate` — and a create against a
+  production database whose ledger has not been run is a separate, deliberate step, not something this
+  tag performs.
+
+- **The precondition QA covered a capture, not the atlas sweep.** `docs/qa-atlas/DEFERRED.md` records
+  `v1.22.0` as a declared deferral and the sweep for this candidate is deferred the same way, so the
+  evidence for `v2.0.0-rc1` is the capture under `docs/qa/release-2.0.0-rc1/` — the routes it exercised,
+  the assertions each still made, and the stills taken from this tree. Every route outside that capture
+  is gated by `scripts/verify.sh` (4154 tests, `data:check`, `parity`, `next build`) and not by a human
+  eye.
+
+- **This is a pre-release, and GitHub is told so.** A `-suffix` version is published with
+  `--prerelease`, so `v2.0.0-rc1` is never `latest`: `v1.22.0` remains the newest stable release and the
+  production deployment's `/api/version` is the only thing that says which build is live.
+
+- **Production's two `ADMIN_EMAILS` seats still answer `401`** (`#1084`). `walt1@alignsynch.com` and
+  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried from
+  `v1.22.0` unchanged: this candidate provisions neither seat, and the issue is open in the backlog.
+
 ## [1.22.0] - 2026-11-17
 
 ### Added
@@ -1833,3 +1903,4 @@ The admin console, and relationship templates become products.
 [1.19.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.18.0...v1.19.0
 [1.21.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.20.1...v1.21.0
 [1.22.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.21.0...v1.22.0
+[2.0.0-rc1]: https://github.com/riolabs-ai/alignsynch/compare/v1.22.0...v2.0.0-rc1

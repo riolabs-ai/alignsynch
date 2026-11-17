@@ -662,7 +662,11 @@ function docsEvidence() {
       } catch {
         continue;
       }
-      const match = /^#\s+v?(\d+\.\d+\.\d+[^\s—–-]*)/.exec(title);
+      // A release candidate's own title carries the suffix (`# v2.0.0-rc1 — …`), so the capture
+      // group stops at whitespace or the em/en dash the house style puts after the number and
+      // NOT at a hyphen: `[^\s—–]*` is what reads `v1.22.0` out of a title but silently drops the
+      // `-rc1` off a candidate, and a bump whose page can never name it is refused by this row.
+      const match = /^#\s+v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/.exec(title);
       if (!match || !isVersion(match[1])) continue;
       if (!newest || compareVersions(match[1], newest.version) === 1) {
         newest = { version: match[1], source: `${path} (its title)` };
@@ -1195,6 +1199,17 @@ async function main(argv) {
       `refusing to run inside a dispatched worker (HERMES_KANBAN_TASK=${process.env.HERMES_KANBAN_TASK}) — ` +
         "a cut is one actor and a worker is not it. Run it from an interactive shell. From a shell that " +
         "merely inherits the variable, `env -u HERMES_KANBAN_TASK pnpm release:cut --check` is the plan.",
+    );
+  }
+
+  // Who may run this comes before whether the tree agrees with itself, and after the worker rule —
+  // the two actor guards, in order of specificity. This used to live only in `execute()`, which the
+  // plan's refusals are returned before, so a worker that unset the env var was told "4 value(s)
+  // disagree" and never told the thing that actually stops it: a tag belongs to a human shell.
+  if (opts.mode === "execute" && (!process.stdin.isTTY || !process.stdout.isTTY)) {
+    die(
+      `--execute requires an interactive TTY — the tag belongs to a human shell, not to a piped or dispatched run. ` +
+        `The plan is safe to run anywhere: pnpm release:cut --check`,
     );
   }
 
