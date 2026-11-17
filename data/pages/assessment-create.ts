@@ -430,6 +430,50 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * The v2 wizard's chrome (#1123) — the rail beside the stage card, its gauge caption, the
+       * status word each cell carries and the relationship summary under them.
+       *
+       * **This is a layout port, and the words are the bundle's.** They arrive verbatim from
+       * `docs/specs/v2-bundles/01-spec-design-page-wizard-v2/wizard.html`, which is the approved
+       * visual reference for this surface; the stage names themselves stay the five in
+       * `data/pages/lifecycle.ts`, and the count stays `Stage {step} of 5`.
+       *
+       * **The sixth row is a preview, never a cell.** `Align` is the dashboard, not a stage of this
+       * flow (`docs/specs/flow-stages.md`), so the rail draws it dashed and after the five, with
+       * the sentence that says when it starts rather than a step number anybody can reach. The
+       * `{name}` in both Align sentences is the Counterparty's first name, filled at render; the
+       * view falls back to the unnamed form when Stage 1 has not been filled in yet.
+       */
+      id: "wizard",
+      heading: "Create Relationship",
+      items: [
+        { id: "exit", label: "Save and Exit" },
+        { id: "exit-visitor", label: "Exit" },
+        { id: "rail-label", label: "Setup progress" },
+        { id: "align-label", label: "Align" },
+        { id: "align-note", label: "Stage 6 Align starts when {name} joins" },
+        { id: "align-note-unnamed", label: "Stage 6 Align starts when they join" },
+        { id: "align-note-short", label: "Starts when {name} joins" },
+        { id: "align-note-short-unnamed", label: "Starts when they join" },
+        { id: "status-current", label: "In Progress" },
+        { id: "status-done", label: "Done" },
+        { id: "status-up-next", label: "Up Next" },
+        { id: "status-later", label: "Later" },
+        { id: "summary-heading", label: "Your Relationship" },
+        { id: "summary-title", label: "Title" },
+        { id: "summary-template", label: "Template" },
+        { id: "summary-mode", label: "Mode" },
+        { id: "summary-tolerance", label: "Alignment Tolerance" },
+        { id: "summary-aspects", label: "Aspects" },
+        { id: "summary-membership", label: "Membership" },
+        { id: "summary-membership-value", label: "Free Trial · Starts When {name} Accepts" },
+        { id: "summary-membership-value-unnamed", label: "Free Trial · Starts When They Accept" },
+        { id: "summary-aspects-value", label: "{count} Aspects" },
+        { id: "none", label: "—" },
+      ],
+    },
+    {
+      /**
        * Stage 1's field inventory, v9 (#825) — **the fields, not the screen's words**. The
        * heading and the sentence under it are the *page's* (`heading` / `subtitle` below), so
        * the screen says "Relationship Details" once: before this the section repeated the page

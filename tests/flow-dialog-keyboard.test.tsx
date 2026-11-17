@@ -109,7 +109,6 @@ const mountDialog = () =>
       <RelationshipFlowShell
         mount={FLOW_MOUNT_DIALOG}
         stage={2}
-        copy={assessmentCreatePageCopy}
         title={assessmentCreatePageCopy.heading}
         closeLabel="Close"
         closeHref={TEMPLATE_LIBRARY_PATH}

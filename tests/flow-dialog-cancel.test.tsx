@@ -91,7 +91,6 @@ function mount(mount: "page" | "dialog"): void {
       <RelationshipFlowShell
         mount={mount}
         stage={5}
-        copy={assessmentCreatePageCopy}
         title={assessmentCreatePageCopy.heading}
         closeLabel="Close"
         closeHref={TEMPLATE_LIBRARY_PATH}

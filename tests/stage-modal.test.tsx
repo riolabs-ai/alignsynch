@@ -141,7 +141,13 @@ describe("the four create stages", () => {
       for (const name of ["Details", "Settings", "Aspects", "Account", "Invite"]) {
         expect(html, `stage ${stage} keeps the rail's ${name}`).toContain(name);
       }
-      expect(html, `stage ${stage} still draws its column`).toContain("max-w-[1126px]");
+      // #1123 — the stage is a card inside the v2 grid: the wide two-column shell with the
+      // 260px rail, and the card itself. `StageColumn`'s 1126px single column is the fallback
+      // only the "nothing to copy" refusal draws now.
+      expect(html, `stage ${stage} draws the v2 grid`).toContain(
+        "lg:grid-cols-[260px_minmax(0,1fr)]",
+      );
+      expect(html, `stage ${stage} draws its stage card`).toContain(`data-stage-card="${stage}"`);
     }
   });
 

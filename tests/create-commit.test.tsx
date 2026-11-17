@@ -74,7 +74,6 @@ const DRAFT: CreateDraft = {
 
 const ACCOUNT = sectionOf(assessmentCreatePageCopy, "account");
 const INVITE = sectionOf(assessmentCreatePageCopy, "invite");
-const REVIEW = sectionOf(assessmentCreatePageCopy, "review");
 
 /** Stage 4's account column, as the page builds it — the signed-in confirmation. */
 const CONFIRMATION = createElement(
@@ -131,18 +130,24 @@ function stage3Html(): string {
 }
 
 describe("stage 4 — the review", () => {
-  it("prints the six facts stages 1–3 decided, under their own labels", () => {
+  it("prints the six facts stages 1–3 decided, in the rail's summary (#1123)", () => {
     const html = stage4Html();
-    for (const id of ["template", "initiator", "counterparty", "title", "mode", "setting"]) {
-      expect(html, `expected the ${id} row`).toContain(itemLabel(REVIEW, id));
+    // The review card used to live inside the stage. Since #1123 the v2 rail carries the same
+    // facts for all five stages, so the row is asserted where it now is: under the `Your
+    // Relationship` heading, labelled from the fixture's `wizard` section.
+    const wizard = sectionOf(assessmentCreatePageCopy, "wizard");
+    const summary = html.slice(html.indexOf(itemLabel(wizard, "summary-heading")));
+    for (const id of ["title", "template", "mode", "tolerance", "aspects", "membership"]) {
+      expect(summary, `expected the ${id} row`).toContain(itemLabel(wizard, `summary-${id}`));
     }
-    expect(html).toContain("Daniel Vance");
-    expect(html).toContain("Rowan Mercer");
-    expect(html).toContain(DRAFT.title);
-    expect(html).toContain(MODE_LABELS[DRAFT.mode as keyof typeof MODE_LABELS]);
-    expect(html).toContain(SETTING_LABELS[DRAFT.alignmentSetting as keyof typeof SETTING_LABELS]);
+    expect(summary).toContain(DRAFT.title);
+    expect(summary).toContain(TEMPLATE.title);
+    expect(summary).toContain(MODE_LABELS[DRAFT.mode as keyof typeof MODE_LABELS]);
+    expect(summary).toContain(
+      SETTING_LABELS[DRAFT.alignmentSetting as keyof typeof SETTING_LABELS],
+    );
     // The template's own Aspect count, not the list itself.
-    expect(html).toContain(`${TEMPLATE.aspectCount}`);
+    expect(summary).toContain(`${TEMPLATE.aspectCount}`);
   });
 
   it("names the stage as the fourth of five, and draws no Align cell", () => {
@@ -150,7 +155,12 @@ describe("stage 4 — the review", () => {
     expect(html).toContain('data-wizard-rail="4"');
     expect(html).toContain("Stage 4 of 5");
     expect(html).not.toContain("Stage 4 of 6");
-    expect(html).not.toContain(">Align<");
+    // `Align` is drawn, but only as the dashed preview row: no sixth cell, and no step number it
+    // could be reached by.
+    expect(html).toContain('data-align-preview="true"');
+    expect(html).not.toContain('data-step-cell="6"');
+    const preview = html.slice(html.indexOf('data-align-preview="true"'));
+    expect(preview.slice(0, preview.indexOf("</li>"))).toContain("Align");
   });
 });
 

@@ -56,6 +56,8 @@ export function StageShell({
   title,
   closeLabel,
   closeHref,
+  header,
+  wide = false,
   presentation = "route",
   onDismiss,
   children,
@@ -71,6 +73,23 @@ export function StageShell({
   closeLabel: string;
   /** Where leaving the flow goes. A path, so a dismissal is a page change. */
   closeHref: string;
+  /**
+   * **The v2 flow header (#1123).** When it is present the panel draws a header band — the flow's
+   * title on the left and the exit control, word and glyph, on the right — and the floating X is
+   * not drawn at all: one exit control, one accessible name, and a flow that says what it is.
+   *
+   * Both words arrive resolved from the caller's fixture (E23), and the word is the *visible*
+   * label, so the control is named by what it says rather than by an `aria-label` that would
+   * override it.
+   */
+  header?: { readonly label: string; readonly exitLabel: string };
+  /**
+   * **The wide variant.** The read-only flow screens are one column and stay inside the 880px
+   * reading cap; the v2 wizard draws a 260px rail beside its stage card and needs the room. A flag
+   * rather than a second shell because everything else — the overlay, the sheet below 1024, the
+   * close, the one scroll container — is the same frame.
+   */
+  wide?: boolean;
   /**
    * **How the frame is mounted (#979 B).** `route` is a stage address rendering its own overlay in
    * place — the deep-link, refresh and invitation path. `dialog` is the same frame drawn over the
@@ -114,7 +133,12 @@ export function StageShell({
         // above it `max-w` does and the auto margins centre what is left. The artifact measures
         // 880px at 1024, 1440, 1920 and 3400 — a wizard is read as one column, and a panel that
         // keeps growing puts a field's label a screen away from its input.
-        "lg:inset-6 lg:mx-auto lg:max-w-[880px] lg:rounded-lg lg:border",
+        //
+        // The v2 wizard (`wide`) raises the cap and nothing else: its rail is a 260px aside beside
+        // the stage card, which the reading width cannot hold, and 1180px still fits a 1280px
+        // viewport inside the same 24px gutters.
+        "lg:inset-6 lg:mx-auto lg:rounded-lg lg:border",
+        wide ? "lg:max-w-[1180px]" : "lg:max-w-[880px]",
       )}
     >
       <DialogPrimitive.Title className="sr-only">{title ?? null}</DialogPrimitive.Title>
@@ -134,14 +158,29 @@ export function StageShell({
           on the scroller would let scrolled content slide under the control. This way the band
           is the only thing that changes and nothing can sit beneath the control at any width.
         */}
-      <div className="flex shrink-0 justify-end px-2 py-2 lg:h-0 lg:p-0">
-        <DialogPrimitive.Close
-          aria-label={closeLabel}
-          className="z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:absolute lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-        >
-          <X className="h-5 w-5" aria-hidden="true" />
-        </DialogPrimitive.Close>
-      </div>
+      {header === undefined ? (
+        <div className="flex shrink-0 justify-end px-2 py-2 lg:h-0 lg:p-0">
+          <DialogPrimitive.Close
+            aria-label={closeLabel}
+            className="z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:absolute lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </DialogPrimitive.Close>
+        </div>
+      ) : (
+        /* The v2 flow header (#1123) — the same one close control, drawn as the bundle draws it:
+           the flow's name on the left, the exit word and its × on the right. It is in flow, so it
+           owns a band of its own at every width and can never sit over a stage. */
+        <div className="flex shrink-0 items-center gap-3 border-b border-line bg-background px-4 py-2 lg:px-6">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {header.label}
+          </p>
+          <DialogPrimitive.Close className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm font-medium text-primary transition-colors hover:bg-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <X className="h-4 w-4" aria-hidden="true" />
+            {header.exitLabel}
+          </DialogPrimitive.Close>
+        </div>
+      )}
       {/*
           The one scroll container. `min-h-0` matters: a flex child defaults to `min-height:auto`,
           which lets a long stage (Aspects) push the panel taller than the viewport instead of
