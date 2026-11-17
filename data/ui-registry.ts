@@ -582,9 +582,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.",
+      "Start — the v2 shell's signed-in landing (#1129): a greeting, the one conversation the numbers point at (the widest Gap across the viewer's live relationships), up to two small jobs (a paused relationship a card would resume, a draft whose invite has not gone out), the two relationships in play and four templates to start from.",
     notes:
-      "Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.",
+      "The page authors no figure. `lib/member/start.ts` maps the seven stored lifecycle values onto the card's four words and orders the jobs (conversation, then one job of each kind); `lib/member/alignment-summary.ts` derives each card's bar and its Next Step over `content/gaps.ts`, so the landing cannot disagree with the Align screen about the same numbers and no Gap is stored. The rows are read by `listMyRelationships` + `readMemberAlignments` — the second is scoped to `party.user_id = $1` and selects no party name, no `user_id` and no invitation row — and a failed read draws the failure panel instead of a zero (`DatabaseUnavailableError`), which is the same rule `/assessment/instances` follows (#213). The four counts the console Overview drew here until #1129 are gone from this route: the approved bundle draws a greeting and two shelves, and each count's list still answers at `/assessments?filter=<id>`.",
   },
   {
     kind: "route",
@@ -592,9 +592,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The relationships this member started: a table of their own initiator rows with the stored status on each, and the create band that copies one of their templates into a new relationship's own record.",
+      "My Relationships (#1129): every relationship this member is a party to, drawn as the v2 card — one state word, the five-mark alignment bar and one action — behind five filter chips in the card's own vocabulary (All · Stage 6 Live · Waiting on Invite · Draft · Paused), with a search over the relationship's own title and the other party's name, a sort over the rows in hand, and the create band that copies a template into a new relationship's own record.",
     notes:
-      "Reads `relationship.initiator_user_id = $1` and nothing else, so the list cannot show a counterparty's row. The status column is the stored `relationship.status` (0029/0030) — never derived from the parties — because phase 3's expiry sweep needs one column to move. Create is the only write on the page; Aspects belong to the detail screen.",
+      "Reads `listMyRelationships(user.userId)` (both seats: the rows this account started and the rows it was invited into) plus `readMemberAlignments(user.userId)` for the bar, so the card here and the card on `/dashboard` are one projection (`components/dashboard/relationship-card-model.ts`) over one verdict (`content/gaps.ts`). The five chips are `lib/member/start.ts::cardStateOf`'s four words plus All — a stored `pending` prints as Draft, `complete` as Stage 6 Live, and `void` is drawn on neither screen (#503). Create is the only write on the page; Aspects belong to the detail screen.",
   },
   {
     kind: "route",
