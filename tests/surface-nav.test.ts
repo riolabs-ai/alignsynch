@@ -118,6 +118,8 @@ describe("the shell's menus", () => {
       "/admin/broadcast",
       // #901 — the docs home: the manifest's 117 pages had no way in but the address bar.
       "/admin/docs",
+      // #1126 — the CRUD & Permissions matrix: the spec reference the docs alone cannot state.
+      "/admin/permissions",
       "/admin/audit",
       "/dashboard/relationships",
       "/assessments",

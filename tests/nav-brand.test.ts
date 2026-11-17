@@ -167,6 +167,8 @@ const ADMIN_GROUP = [
   "/admin/broadcast",
   // #901 — the docs home, after Broadcast and before the log.
   "/admin/docs",
+  // #1126 — the CRUD & Permissions matrix, directly after Docs: the second reference row.
+  "/admin/permissions",
   "/admin/audit",
 ];
 
