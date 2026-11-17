@@ -30,9 +30,13 @@ import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RelationshipFlowShell } from "@/components/assessment-flow/relationship-flow-shell";
+import {
+  RelationshipFlowShell,
+  type FlowRail,
+} from "@/components/assessment-flow/relationship-flow-shell";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { RELATIONSHIPS_PATH, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** The stage address the dialog describes, and the page it was opened over. */
 const STAGE_PATH = "/templates/relationship/relationship-basics/create/mode";
@@ -59,12 +63,46 @@ vi.mock("@radix-ui/react-dialog", async (importOriginal) => {
 const STAGE_BODY = createElement("p", { "data-stage-body": "true" }, "the stage's own body");
 const STAGE_BODY_HTML = renderToStaticMarkup(STAGE_BODY);
 
+/**
+ * The rail's facts, as `CreateRelationship` builds them (#1123) — from the fixture, so this file
+ * never spells a word the screen would have to agree with.
+ */
+const RAIL: FlowRail = (() => {
+  const stages = sectionOf(assessmentCreatePageCopy, "stages");
+  const wizard = sectionOf(assessmentCreatePageCopy, "wizard");
+  return {
+    label: itemLabel(wizard, "rail-label"),
+    count: fillLabel(itemLabel(stages, "count"), { step: 2 }),
+    name: itemLabel(stages, "2"),
+    alignNote: fillLabel(itemLabel(wizard, "align-note"), { name: "Elena" }),
+    alignPreviewLabel: itemLabel(wizard, "align-label"),
+    alignPreviewNote: fillLabel(itemLabel(wizard, "align-note-short"), { name: "Elena" }),
+    summaryHeading: itemLabel(wizard, "summary-heading"),
+    steps: [1, 2, 3, 4, 5].map((step) => ({
+      step,
+      label: itemLabel(stages, String(step)),
+      state: step < 2 ? "done" : step === 2 ? "current" : step === 3 ? "up-next" : "later",
+      statusLabel: itemLabel(
+        wizard,
+        step < 2
+          ? "status-done"
+          : step === 2
+            ? "status-current"
+            : step === 3
+              ? "status-up-next"
+              : "status-later",
+      ),
+    })),
+    summary: [{ label: itemLabel(wizard, "summary-template"), value: "Relationship Basics" }],
+  };
+})();
+
 function shellHtml(mount: "page" | "dialog", stage: 1 | 2 | 3 | 4 | 5 | undefined = 2): string {
   return renderToStaticMarkup(
     <RelationshipFlowShell
       mount={mount}
       stage={stage}
-      copy={assessmentCreatePageCopy}
+      rail={RAIL}
       title="Settings"
       closeLabel="Close"
       closeHref={TEMPLATE_LIBRARY_PATH}
@@ -97,7 +135,10 @@ describe("the flow's shell, in both mountings", () => {
       expect(html, `${name} mounting lost the stage body`).toContain(STAGE_BODY_HTML);
       // The rail is the shell's, so it is drawn the same way on both — five cells, one count.
       expect(html, `${name} mounting lost the rail`).toContain("Stage 2 of 5");
-      expect(html, `${name} mounting lost the column`).toContain("max-w-[1126px]");
+      expect(html.split("data-step-cell=").length - 1, `${name} mounting lost a cell`).toBe(5);
+      expect(html, `${name} mounting lost the v2 grid`).toContain(
+        "lg:grid-cols-[260px_minmax(0,1fr)]",
+      );
       // One frame in both: the shipped panel, with the stage already inside it.
       expect(html, `${name} mounting lost the panel`).toContain('data-stage-shell="true"');
     }

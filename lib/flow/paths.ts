@@ -63,6 +63,16 @@ export const MY_ASSESSMENTS_PATH = "/assessments";
 export const CREATE_INSTANCE_PATH = "/assessment/new";
 
 /**
+ * The id the stage card's heading carries, so the card can be the labelled region and
+ * `StageTitleFocus` can move focus to it (#1123).
+ *
+ * It lives here rather than in a component because E23 counts the leaf literals under
+ * `components/`: an `id` is a handle, not copy, and the check cannot tell the difference — so the
+ * one home for the string is a module that exists to hold flow handles.
+ */
+export const CREATE_STAGE_HEADING_ID = "create-stage-heading";
+
+/**
  * `POST /assessment/new/who` — stage 1's save (#688).
  *
  * A route handler below the create endpoint rather than a second verb on it: the endpoint

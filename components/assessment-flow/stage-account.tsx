@@ -1,13 +1,19 @@
 /**
- * template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the stage's left column is the app's own sign-in form rather than a set of fields this flow owns, and the right column is the review card instead of a payment walk)
+ * template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the stage is one column — the app's own sign-in form — because the relationship's shape is drawn once, in the wizard rail beside it)
  *
- * **Stage 4 — Account** (#825).
+ * **Stage 4 — Account** (#825). **Account only (#1123).**
  *
  * The stage exists so the relationship has an Initiator when its row is written: pressing the
  * advance form posts the template and writes the relationship as a `draft`, which is what
  * `docs/specs/flow-stages.md` → *Stage 4, Account* promises. It is the flow's only screen that is
- * about the person rather than about the relationship, so it is the only one whose left column is
- * not a form this flow owns.
+ * about the person rather than about the relationship, so it is the only one whose column is not a
+ * form this flow owns.
+ *
+ * **The review card is gone, and the v2 rail is why.** Until #1123 this stage drew a second column
+ * of the six facts stages 1–3 had decided. The v2 bundle draws each stage as one card beside a
+ * live "Your Relationship" summary, so those facts are already on screen at every width they can
+ * be read at — a second copy inside the stage would be the same card twice, and the bundle's
+ * Stage 4 is the account and nothing else.
  *
  * **The account form is the app's, never a second copy.** `account` is a node the page builds —
  * `components/auth/login-view.tsx` with `layout="embedded"` when nobody is signed in, and a
@@ -24,18 +30,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { PageCopy } from "@/content/pages";
-import type { CreateDraft } from "@/lib/flow/create-draft";
-import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
+import { CREATE_INSTANCE_PATH, CREATE_STAGE_HEADING_ID } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { RelationshipReview } from "./relationship-review";
 import { StageFoot } from "./stage-foot";
-
-const CARD =
-  "space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900";
 
 export function StageAccount({
   copy,
-  draft,
   template,
   account,
   backHref,
@@ -46,9 +46,8 @@ export function StageAccount({
   advanceHref,
 }: {
   copy: PageCopy;
-  draft: CreateDraft;
-  /** The template as the review prints it, and the id the create form posts. */
-  template: { readonly recordId: string; readonly title: string; readonly aspectCount: number };
+  /** The template the create form posts — its record id is all the write needs. */
+  template: { readonly recordId: string };
   /**
    * The account column: the embedded sign-in form, or the signed-in confirmation. `null` on the
    * re-entered state (a browser that already wrote the draft), where there is nothing left to ask.
@@ -74,26 +73,9 @@ export function StageAccount({
 
   return (
     <>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-        {/*
-         * The card is the account form, not a second copy of the stage's title (#777). The stage
-         * header above already draws this section's `heading` and `body` — once, as the approved
-         * reference draws them — so repeating them here put "Create your account" and its sentence
-         * on screen twice, one above the other. The region is labelled by the stage heading
-         * instead, which is what a screen reader was being told anyway.
-         */}
-        <section aria-labelledby="create-stage-heading" data-create-account="true" className={CARD}>
-          {account}
-        </section>
-
-        <aside className="space-y-5">
-          <RelationshipReview
-            copy={copy}
-            draft={draft}
-            template={{ title: template.title, aspectCount: template.aspectCount }}
-          />
-        </aside>
-      </div>
+      <section aria-labelledby={CREATE_STAGE_HEADING_ID} data-create-account="true">
+        {account}
+      </section>
 
       {/* The conversion: a plain form posting to the create endpoint with `draft=1`, so the row is
           written and nothing goes out (#825). It is a hidden form because the act belongs in the

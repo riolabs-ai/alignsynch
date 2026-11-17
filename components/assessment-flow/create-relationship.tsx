@@ -55,6 +55,7 @@
  * sets the model authors once — `MODE_LABELS` and `SETTING_LABELS`/`SETTING_DEFINITIONS`.
  */
 import Link from "next/link";
+import { Info, ListChecks, Mail, SlidersHorizontal, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   ALIGNMENT_SETTINGS,
@@ -68,22 +69,33 @@ import type { AspectDraft } from "@/lib/flow/aspects";
 import { fieldSentence } from "@/lib/flow/create-copy";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
+  CREATE_STAGE_HEADING_ID,
   RELATIONSHIPS_PATH,
   SAVE_MODE_PATH,
   SAVE_WHO_PATH,
   TEMPLATE_LIBRARY_PATH,
+  createAspectsPath,
   createCommitPath,
+  createModePath,
+  createRelationshipPath,
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
 import type { CheckoutHandlers } from "./invite-walk";
 import type { CarriedPlan } from "@/lib/flow/plan-intent";
-import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell";
+import { FlowStageCard } from "./flow-stage-card";
+import {
+  RelationshipFlowShell,
+  type FlowHeader,
+  type FlowMount,
+  type FlowRail,
+} from "./relationship-flow-shell";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
 import { StageInvite } from "./stage-invite";
 import { StageOneForm } from "./stage-one-form";
+import { StageTitleFocus } from "./stage-title-focus";
 
 /** Which of the create flow's five steps this render is (#688, #689, #690, #825). */
 export type CreateStage = 1 | 2 | 3 | 4 | 5;
@@ -255,6 +267,7 @@ export function CreateRelationship({
   carriedPlan,
   trialEndsAt,
   copyBlocked,
+  signedIn = true,
 }: {
   copy: PageCopy;
   /** 1 = Details, 2 = Settings, 3 = Aspects, 4 = Account, 5 = Invite. Both read it. */
@@ -356,6 +369,13 @@ export function CreateRelationship({
    * the last line of defence.
    */
   copyBlocked?: boolean;
+  /**
+   * **Is this viewer signed in?** The v2 header's exit word is the only thing it changes: a member
+   * leaves with `Save and Exit`, a visitor with `Exit`, because a visitor has no account for
+   * anything to be saved to (the bundle draws both). Defaults to `true` — the signed-in reading —
+   * so a render-only test or a caller that has not asked does not print the visitor's word.
+   */
+  signedIn?: boolean;
 }) {
   const band = sectionOf(copy, "template");
   const who = sectionOf(copy, "who");
@@ -387,6 +407,36 @@ export function CreateRelationship({
     // "previous step", and a close that walked backwards would leave four ways out of one modal.
     closeHref: TEMPLATE_LIBRARY_PATH,
   };
+
+  /**
+   * **The v2 wizard's chrome (#1123).** The rail's facts and the flow header's two words are
+   * resolved here, from the fixtures, for the reason every other word on this screen is: E23
+   * counts what a component writes, and a rail that assembled its own sentences would be a second
+   * vocabulary for the same flow.
+   *
+   * The Counterparty's first name is the `{name}` in both Align sentences and in the membership
+   * row — the bundle's "Elena" is fixture data (`IMPLEMENTATION-PROMPT.md` §*Prototype mechanics*),
+   * so it is bound to the draft instead. Before Stage 1 has a name there is nothing honest to
+   * interpolate, so the unnamed form of the same sentence is used rather than a blank.
+   */
+  const wizard = sectionOf(copy, "wizard");
+  const counterpartyName = draft.counterpartyFirst.trim();
+  const named = counterpartyName === "" ? null : counterpartyName;
+
+  /** The header's two words. A visitor has no account yet, and "Save" would promise a row there is none of. */
+  const header: FlowHeader = {
+    label: wizard.heading ?? "",
+    exitLabel: itemLabel(wizard, signedIn ? "exit" : "exit-visitor"),
+  };
+
+  /** The stage card's glyph, per stage — the bundle's own five (circle-info, sliders, list, user, mail). */
+  const stageIcon = {
+    1: <Info className="size-5" />,
+    2: <SlidersHorizontal className="size-5" />,
+    3: <ListChecks className="size-5" />,
+    4: <UserRound className="size-5" />,
+    5: <Mail className="size-5" />,
+  }[stage];
 
   // The stage's heading, computed once: it is both the screen's `<h1>` and the dialog's
   // accessible name (#709), so the two can never name the screen differently.
@@ -451,7 +501,7 @@ export function CreateRelationship({
     return (
       <RelationshipFlowShell
         mount={mount}
-        copy={copy}
+        header={header}
         title={empty.heading}
         closeLabel={shell.closeLabel}
         closeHref={shell.closeHref}
@@ -488,49 +538,131 @@ export function CreateRelationship({
     );
   }
 
+  /**
+   * **The v2 rail (#1123).** Built here, from the fixtures, now that a template is known — its own
+   * address is one of the rows, so it could not be assembled before the null check above.
+   *
+   * The Counterparty's first name is the `{name}` in both Align sentences and in the membership
+   * row: the bundle's "Elena" is fixture data (`IMPLEMENTATION-PROMPT.md` §*Prototype mechanics*),
+   * so it is bound to the draft. Before Stage 1 has a name the unnamed form of the same sentence is
+   * used rather than a blank.
+   *
+   * **Only Details, Settings and Aspects link back.** Those three are plain GETs that re-read the
+   * draft. Account is the write, and returning to it a stage later has no draft left to submit —
+   * the commit page redirects to Details — so it keeps no link and Invite has no address of its
+   * own until the row exists.
+   */
+  const fillName = (id: string): string =>
+    named === null
+      ? itemLabel(wizard, `${id}-unnamed`)
+      : fillLabel(itemLabel(wizard, id), { name: named });
+  const stageCount = fillLabel(itemLabel(stages, "count"), { step: stage });
+  const stageNames = [1, 2, 3, 4, 5].map((step) => itemLabel(stages, String(step)));
+  const none = itemLabel(wizard, "none");
+  const railHrefs = [
+    createRelationshipPath(template.slug),
+    createModePath(template.slug),
+    createAspectsPath(template.slug),
+    "",
+    "",
+  ];
+  const rail: FlowRail = {
+    label: itemLabel(wizard, "rail-label"),
+    count: stageCount,
+    name: stageNames[stage - 1] ?? "",
+    alignNote: fillName("align-note"),
+    alignPreviewLabel: itemLabel(wizard, "align-label"),
+    alignPreviewNote: fillName("align-note-short"),
+    summaryHeading: itemLabel(wizard, "summary-heading"),
+    steps: stageNames.map((label, index) => {
+      const step = index + 1;
+      const state =
+        step < stage
+          ? "done"
+          : step === stage
+            ? "current"
+            : step === stage + 1
+              ? "up-next"
+              : "later";
+      const statusLabel = itemLabel(
+        wizard,
+        state === "done"
+          ? "status-done"
+          : state === "current"
+            ? "status-current"
+            : state === "up-next"
+              ? "status-up-next"
+              : "status-later",
+      );
+      const href = railHrefs[index] ?? "";
+      return {
+        step,
+        label,
+        state,
+        statusLabel,
+        ...(state === "done" && href !== "" ? { href } : {}),
+      };
+    }),
+    summary: [
+      { label: itemLabel(wizard, "summary-title"), value: draft.title.trim() || none },
+      { label: itemLabel(wizard, "summary-template"), value: template.title },
+      {
+        label: itemLabel(wizard, "summary-mode"),
+        value: draft.mode === "basic" || draft.mode === "advanced" ? MODE_LABELS[draft.mode] : none,
+      },
+      {
+        label: itemLabel(wizard, "summary-tolerance"),
+        value:
+          draft.alignmentSetting === "soft" || draft.alignmentSetting === "full"
+            ? SETTING_LABELS[draft.alignmentSetting]
+            : none,
+      },
+      {
+        label: itemLabel(wizard, "summary-aspects"),
+        value: fillLabel(itemLabel(wizard, "summary-aspects-value"), {
+          count: aspects?.length ?? template.aspectCount,
+        }),
+      },
+      {
+        label: itemLabel(wizard, "summary-membership"),
+        value:
+          named === null
+            ? itemLabel(wizard, "summary-membership-value-unnamed")
+            : fillLabel(itemLabel(wizard, "summary-membership-value"), { name: named }),
+      },
+    ],
+  };
+
   return (
     <RelationshipFlowShell
       mount={mount}
       stage={stage}
-      copy={copy}
+      rail={rail}
+      header={header}
       title={heading}
       closeLabel={shell.closeLabel}
       closeHref={shell.closeHref}
     >
-      <div className="space-y-6">
-        {/*
-         * **One back affordance per screen, and it lives in the foot** (#760). Stages 2–4 used
-         * to draw a bare `Back` link at the top of the column while stage 1 drew its own in the
-         * form's action row — three shapes for one act, and none of them the pair the artifact
-         * draws. The foot below is now the only place it appears, on all four stages.
-         */}
-
-        {/*
-         * Where the person is in the five stages (#687, #825) is the shell's: Details, Settings,
-         * Aspects, Account and Invite, drawn above this body by `RelationshipFlowShell` so the
-         * dialog and the page cannot number the same screen differently (#979 B).
-         */}
-
-        <div>
-          <h1
-            id="create-stage-heading"
-            className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
-          >
-            {heading}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            {stage === 1
-              ? copy.subtitle
-              : stage === 2
-                ? sectionBody(mode)
-                : stage === 3
-                  ? sectionBody(aspectsSection)
-                  : stage === 4
-                    ? sectionBody(accountSection)
-                    : sectionBody(inviteSection)}
-          </p>
-        </div>
-
+      <FlowStageCard
+        stage={stage}
+        eyebrow={stageCount}
+        title={heading ?? ""}
+        purpose={
+          (stage === 1
+            ? copy.subtitle
+            : stage === 2
+              ? sectionBody(mode)
+              : stage === 3
+                ? sectionBody(aspectsSection)
+                : stage === 4
+                  ? sectionBody(accountSection)
+                  : sectionBody(inviteSection)) ?? ""
+        }
+        titleId={CREATE_STAGE_HEADING_ID}
+        titleLevel={1}
+        icon={stageIcon}
+      >
+        <StageTitleFocus id={CREATE_STAGE_HEADING_ID} />
         <ProblemBand
           heading={problems.heading}
           sentence={problem}
@@ -754,12 +886,7 @@ export function CreateRelationship({
         ) : stage === 4 ? (
           <StageAccount
             copy={copy}
-            draft={draft}
-            template={{
-              recordId: template.recordId,
-              title: template.title,
-              aspectCount: template.aspectCount,
-            }}
+            template={{ recordId: template.recordId }}
             account={account ?? null}
             {...(accountAdvanceHref === undefined ? {} : { advanceHref: accountAdvanceHref })}
             backHref={backHref}
@@ -784,13 +911,7 @@ export function CreateRelationship({
             cancelLabel={cancelLabel}
           />
         )}
-      </div>
+      </FlowStageCard>
     </RelationshipFlowShell>
   );
-}
-
-/** A value, or the fixture's dash when the person left it blank. */
-function orNone(copy: ReturnType<typeof sectionOf>, value: string): string {
-  const trimmed = value.trim();
-  return trimmed === "" ? itemLabel(copy, "none") : trimmed;
 }

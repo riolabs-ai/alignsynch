@@ -45,8 +45,14 @@ of the relationship lives.
 
 `Align` is the dashboard's surface, not a cell in the rail. It is live once **one or more
 assessments are shared** — in progress or completed — and it is read on the relationship detail
-page. The creation modal therefore prints **`Stage {n} of 5`** and never draws `Align`: a cell the
-creator can reach inside the flow would claim the flow ends somewhere it does not.
+page. The creation modal therefore prints **`Stage {n} of 5`** and never numbers `Align`: a cell
+the creator can reach inside the flow would claim the flow ends somewhere it does not.
+
+Since #1123 the v2 rail draws `Align` as a **dashed preview row after the five** — the sixth
+position, labelled `Starts when <Counterparty> joins`. It is a preview and not a cell: it carries
+no step number a person can press, no link, no `aria-current` and no `data-step-cell`, and the card
+above it still prints `Stage {n} of 5`. A preview says when the next surface starts; a cell would
+say the flow goes there.
 
 This replaces the earlier rule (#735) that Align was the flow's conditional sixth stage. The
 dashboard behaviour it described is unchanged; only its position moved.
@@ -67,6 +73,15 @@ The flow opens as **one overlay over the stage routes**: a dialog centred and ca
 a full-height sheet at 390. A stage URL still renders standalone — a deep link, a refresh or an
 invitation link must never 404. **Account is stage 4 _inside_ the overlay**; there is no longer a
 gate step after Invite, and no page whose only job is to demand an account.
+
+**Since #1123 the create flow's panel is the wide variant — 1180px, and the cap is the only thing
+that changes.** The v2 wizard draws a 260px sticky rail (the setup gauge, the five rows, the Align
+preview and the live `Your Relationship` summary) beside one stage card, and a rail plus a readable
+card does not fit in the reading width. The overlay, the sheet below 1024, the dismissal and the
+one scroll container are unchanged; every other flow screen keeps the 880px cap. The same card adds
+the flow's own header inside the panel — `Create Relationship` on the left, `Save and Exit` (a
+visitor's `Exit`) as the one close control on the right — so the dismiss word is the bundle's and
+the floating X is not drawn twice.
 
 ### Where the flow is entered — three classes, one rule
 
@@ -275,6 +290,12 @@ The relationship's shape — one template, two seats, the aspect count, the part
 drawn in this stage's right column, because those facts are all known before the account is chosen
 and repeating them on Invite is one card too many.
 
+**Since #1123 that column is the wizard rail's `Your Relationship` summary (#1123).** The v2 bundle
+draws Stage 4 as the account and nothing else, with the shape of the relationship in the rail beside
+every stage, so the review card that used to sit inside the stage is gone: one statement of the
+facts, on the surface that carries them for all five stages, instead of a second copy inside one of
+them.
+
 ## Stage 5, Invite — the walk, the act inside it, and the relationship it lands on
 
 **No step of the create flow takes a card (#1115).** The account's seven-day trial is opened by the
@@ -357,8 +378,10 @@ thing being paid for is a membership plan and an activated relationship, and not
 
 - `tests/flow-stages.test.ts` reads `data/pages/lifecycle.ts` and fails unless the stage words are
   exactly these five, in this order, with `Stage {step} of 5`, and fails on the word `Ongoing`
-  anywhere in the flow's copy or routes. It fails if the rail draws a `Connect` cell or an `Align`
-  cell — neither is a stage of this flow.
+  anywhere in the flow's copy or routes. It fails if a rail draws a `Connect` cell or an `Align`
+  **cell** — neither is a stage of this flow; since #1123 the create flow's own rail may draw
+  `Align` only as the dashed preview row, which `tests/wizard-v2-layout.test.tsx` holds to the shape
+  above (no step number, no link, no `data-step-cell`).
 - `tests/create-fields.test.ts` pins the stage 1 inventory above against
   `data/pages/assessment-create.ts` — field ids, labels, placeholders, required markers and help,
   in order — so a silent eighth field or a dropped seventh is red.

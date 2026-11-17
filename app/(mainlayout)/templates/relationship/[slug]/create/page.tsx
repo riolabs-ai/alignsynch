@@ -182,6 +182,7 @@ export default async function TemplateCreatePage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={1}
+      signedIn={viewer !== null}
       mount={mount}
       template={
         detail === undefined

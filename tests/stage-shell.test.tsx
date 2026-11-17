@@ -98,11 +98,12 @@ describe("the stage rail", () => {
     // against the whole document would pass on a rail that drew nothing.
     const start = html.indexOf("<nav");
     const rail = html.slice(start, html.indexOf("</nav>", start));
-    expect(rail).toContain('aria-label="Relationship lifecycle"');
-    // One cell per stage (#716): the rail is the measured cell band, so the count is cells and
-    // not list items — and there is no numbered list to count with.
+    expect(rail).toContain('aria-label="Setup progress"');
+    // One cell per stage (#1123): the v2 rail is the measured cell band, five rows, and the sixth
+    // row is the dashed Align preview — a preview, so it carries no cell and no step number.
     expect(rail.split("data-step-cell=").length - 1).toBe(5);
-    expect(rail).not.toContain("<ol");
+    expect(rail.split("data-align-preview=").length - 1).toBe(1);
+    expect(rail).not.toContain('data-align-preview="true" data-step-cell');
     for (const name of STAGE_NAMES) expect(rail).toContain(name);
   });
 
@@ -110,9 +111,12 @@ describe("the stage rail", () => {
     const html = createStepHtml();
     expect(html.split('aria-current="step"')).toHaveLength(2);
     expect(html.split('data-step-state="current"')).toHaveLength(2);
-    expect(html).toContain('data-wizard-rail="1"');
+    expect(html).toContain('data-stage-gauge="1"');
     expect(html).toContain("Stage 1 of 5");
-    expect(html).toContain('data-step-state="upcoming"');
+    // The stage after the current one is drawn `up-next` and the rest `later` — the bundle's two
+    // forward words, and the reason a rail can say what is coming without promising a link.
+    expect(html).toContain('data-step-state="up-next"');
+    expect(html).toContain('data-step-state="later"');
   });
 
   it("draws the current stage from the caller's fact, not from a guess", () => {

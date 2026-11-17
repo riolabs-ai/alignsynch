@@ -201,6 +201,7 @@ export default async function TemplateCreateInvitePage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={5}
+      signedIn={viewer !== null}
       mount={mount}
       template={
         detail === undefined
