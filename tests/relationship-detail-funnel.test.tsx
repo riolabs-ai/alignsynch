@@ -3,9 +3,9 @@
  *
  * The card asks for two things a screenshot cannot settle on its own:
  *
- *   1. **the initiator's draft funnel** — `edit → aspects → plan → publish` reachable on a
+ *   1. **the initiator's draft funnel** — `edit → aspects → publish` reachable on a
  *      `draft`. A camera sees what is on screen and says nothing about the step that is not;
- *      this file renders the real component over a real draft view and asserts each of the four
+ *      this file renders the real component over a real draft view and asserts each of the three
  *      affordances by its own marker, in the rail order the component declares.
  *   2. **the counterparty's read-only screen has a door** — the notice (#706) used to name three
  *      destinations in prose and link to none of them, which is the dead end the owner reported.
@@ -31,7 +31,7 @@ import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
 import { RelationshipEditDialog } from "@/components/dashboard/relationship-edit-dialog";
 import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
-import { PRICING_PATH, RELATIONSHIPS_PATH } from "@/lib/flow/paths";
+import { RELATIONSHIPS_PATH } from "@/lib/flow/paths";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -44,11 +44,9 @@ const PUBLISH_SUBMIT = itemLabel(
   "submit",
 );
 const ALL_RELATIONSHIPS = itemLabel(sectionOf(dashboardRelationshipDetailPageCopy, "back"), "all");
-const GATE_HEADING = sectionOf(dashboardRelationshipDetailPageCopy, "publish-gate").heading;
 
 function viewOf(input: {
   status: MemberRelationshipView["status"];
-  hasMembership: boolean;
   isInitiator?: boolean;
   view?: MemberRelationshipView["view"];
 }): MemberRelationshipView {
@@ -76,7 +74,6 @@ function viewOf(input: {
     // #706 — the two write flags the read derives, verbatim: `isInitiator && <status question>`.
     aspectsEditable: isInitiator && draft,
     publishable: isInitiator && draft,
-    hasMembership: input.hasMembership,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -122,7 +119,7 @@ function html(view: MemberRelationshipView, editTrigger: ReactNode = EDIT_TRIGGE
 
 describe("#873 · the initiator's draft funnel", () => {
   it("step 1 — the edit door is drawn, and drawn before the publish band", () => {
-    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
+    const rendered = html(viewOf({ status: "draft" }));
     // #923 — the rail carries the trigger, not the form: the panel is not in the document.
     expect(rendered).toContain('data-relationship-edit-open="true"');
     expect(rendered).toContain(`>${EDIT_OPEN}</button>`);
@@ -136,36 +133,34 @@ describe("#873 · the initiator's draft funnel", () => {
   it("step 1b — a relationship the page cannot edit renders no Edit control at all", () => {
     // #923 keeps `editState === undefined || closed` meaning *no control*: a disabled button
     // would claim a permission the server would refuse, and that is not the same screen.
-    const rendered = html(viewOf({ status: "draft", hasMembership: true }), null);
+    const rendered = html(viewOf({ status: "draft" }), null);
     expect(rendered).not.toContain('data-relationship-edit-open="true"');
     expect(rendered).not.toContain('data-edit-panel="stand-in"');
   });
 
   it("step 2 — the Aspect editor is drawn on a draft, with its add control", () => {
-    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
+    const rendered = html(viewOf({ status: "draft" }));
     expect(rendered).toContain('data-relationship-aspects="true"');
     expect(rendered).toContain('data-aspect-list="true"');
     expect(rendered).toContain('data-aspect-add="true"');
   });
 
-  it("step 3 — with no method on file, the plan door is drawn and the publish form is not", () => {
-    const rendered = html(viewOf({ status: "draft", hasMembership: false }));
-    expect(rendered).toContain('data-publish-gate="membership-required"');
-    expect(rendered).toContain(GATE_HEADING);
-    expect(rendered).toContain(`href="${PRICING_PATH}"`);
-    expect(rendered).not.toContain(PUBLISH_SUBMIT);
-  });
-
-  it("step 4 — with a method on file, the publish form and its button are drawn", () => {
-    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
+  /**
+   * #1140 — the third step used to be a *gate*: with no method on file, a band replacing the form.
+   * That band could never draw (`publishable()` is `draft|pending`, where the membership read already
+   * answers `writable: true`), so the state it asserted does not exist. What the funnel's third step
+   * is, is the form itself — drawn on the one draft shape the flow produces, with no gate above it.
+   */
+  it("step 3 — the publish form and its button are drawn, and no gate band stands above them", () => {
+    const rendered = html(viewOf({ status: "draft" }));
     expect(rendered).toContain(PUBLISH_SUBMIT);
     expect(rendered).toContain('id="publish-name"');
     expect(rendered).toContain('id="publish-email"');
-    expect(rendered).not.toContain('data-publish-gate="membership-required"');
+    expect(rendered).not.toContain("data-publish-gate");
   });
 
   it("says nothing about a read-only seat to the person who owns the writes", () => {
-    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
+    const rendered = html(viewOf({ status: "draft" }));
     expect(rendered).not.toContain('data-relationship-read-only="counterparty"');
     expect(rendered).not.toContain('data-relationship-read-only-open="relationships"');
   });
@@ -173,9 +168,7 @@ describe("#873 · the initiator's draft funnel", () => {
 
 describe("#873 · the counterparty's read-only screen has a way forward", () => {
   it("carries a real door to My Relationships, in the page's own words", () => {
-    const rendered = html(
-      viewOf({ status: "published", hasMembership: false, isInitiator: false }),
-    );
+    const rendered = html(viewOf({ status: "published", isInitiator: false }));
     expect(rendered).toContain('data-relationship-read-only="counterparty"');
     expect(rendered).toContain('data-relationship-read-only-open="relationships"');
     expect(rendered).toContain(`href="${RELATIONSHIPS_PATH}"`);
@@ -184,14 +177,12 @@ describe("#873 · the counterparty's read-only screen has a way forward", () => 
     expect(rendered).toContain(ALL_RELATIONSHIPS);
   });
 
-  it("stays read-only: no editor, no publish form, no plan gate", () => {
-    const rendered = html(
-      viewOf({ status: "published", hasMembership: false, isInitiator: false }),
-    );
+  it("stays read-only: no editor and no publish form", () => {
+    const rendered = html(viewOf({ status: "published", isInitiator: false }));
     expect(rendered).not.toContain('data-aspect-list="true"');
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
     expect(rendered).not.toContain('id="publish-name"');
-    expect(rendered).not.toContain('data-publish-gate="membership-required"');
+    expect(rendered).not.toContain("data-publish-gate");
   });
 
   it("draws the door on an unanswered draft-shaped read too — never a notice with no exit", () => {
@@ -200,7 +191,6 @@ describe("#873 · the counterparty's read-only screen has a way forward", () => 
     const rendered = html(
       viewOf({
         status: "published",
-        hasMembership: true,
         isInitiator: false,
         view: "invite-live",
       }),

@@ -83,7 +83,7 @@ import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detai
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { PRICING_PATH, RELATIONSHIPS_PATH, createInviteForPath } from "@/lib/flow/paths";
+import { RELATIONSHIPS_PATH, createInviteForPath } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 
@@ -176,7 +176,6 @@ export function RelationshipDetail({
   const statusCopy = sectionOf(copy, "status");
   const aspectCopy = sectionOf(copy, "aspects");
   const publishCopy = sectionOf(copy, "publish");
-  const publishGateCopy = sectionOf(copy, "publish-gate");
   const republishCopy = sectionOf(copy, "republish");
   const linkCopy = sectionOf(copy, "link");
   const closedCopy = sectionOf(copy, "closed");
@@ -206,20 +205,19 @@ export function RelationshipDetail({
 
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
   /**
-   * #912 — **where the pay modal is, and nothing else.** The band no longer opens a capture of its
-   * own: this is the pay walk's address (`createInviteForPath`, #794's two handles), and `null`
-   * when the relationship has no session — with no session there is no invitation for stage 5 to
-   * shape, so the band draws the copy that says so instead of a link that would bounce the reader
-   * back to stage 1.
+   * #912 — **where the pay modal is, and nothing else.** This screen never captures a card: this is
+   * the pay walk's address (`createInviteForPath`, #794's two handles), and `null` when the
+   * relationship has no session — with no session there is no invitation for stage 5 to shape, so
+   * the publish panel draws no door rather than a link that would bounce the reader back to stage 1.
    *
    * **#975 D10 (`t_90026133`) — the address is entered by a flow entry, not a document load.** This
    * page declares the create flow's `@flow` slot (`app/(mainlayout)/dashboard/relationships/
    * layout.tsx`), so a *soft* navigation to this address is intercepted and stage 5 renders as a
    * dialog over this relationship. A bare `<a>` is a document load: the interception never runs,
    * the reader loses the page they were reading, and the stage draws as a page whose `Cancel`
-   * leaves to the template library. Every door below is therefore a `FlowEntryLink` — the same one
-   * the list's card already used — which also remembers this page as the flow's origin, so the
-   * dialog's close returns here instead of to the library.
+   * leaves to the template library. The one door drawn to this address is therefore a
+   * `FlowEntryLink` — the same one the list's card already used — which also remembers this page as
+   * the flow's origin, so the dialog's close returns here instead of to the library.
    */
   const payHref =
     relationship.sessionRecordId === null
@@ -231,14 +229,6 @@ export function RelationshipDetail({
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
-  /**
-   * #690 / #1010 R2 — **the hard gate at publish.** A relationship may be published from its
-   * status, but not without a **live membership**: the plan on stage 4 is the soft prompt and this
-   * is the half that is not optional. When the membership is missing the publish band is not drawn
-   * at all — no disabled button, no form whose submit would be refused — and a band that says what
-   * to do is. A card is not a separate act any more: buying the membership is what puts one on file.
-   */
-  const membershipMissing = publishableNow && !relationship.hasMembership;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
 
@@ -344,18 +334,18 @@ export function RelationshipDetail({
    * still the payer's own click.
    *
    * #912 — **this screen no longer does that.** #748 made it a dialog here; #912 retires it, because
-   * a card capture in place is a second way to pay and the pay modal is the only one. The band draws
-   * a link to the modal (`payHref`) and nothing else: the plan card, Stripe's fields and the record
-   * of the method all live on the one surface that owns them — stage 5's walk, which mounts
-   * `components/billing/stripe-frame.tsx`.
+   * a card capture in place is a second way to pay and the pay modal is the only one. The publish
+   * panel draws a link to the modal (`payHref`) and nothing else: the plan card, Stripe's fields and
+   * the record of the method all live on the one surface that owns them — stage 5's walk, which
+   * mounts `components/billing/stripe-frame.tsx`.
    */
 
   /**
    * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
    * and both parties can read the report.
    *
-   * `payment-membership-required` is not a dead end and not an error: it carries the capture's url, so
-   * the screen prints the sentence and a working link rather than a button the person cannot get
+   * A refusal that names the fee is not a dead end and not an error: it carries the capture's url,
+   * so the screen prints the sentence and a working link rather than a button the person cannot get
    * past. A decline is a sentence too — the retry ladder is already running on the server.
    */
   function complete(): void {
@@ -566,63 +556,8 @@ export function RelationshipDetail({
               )}
             </DetailPanel>
           ) : null}
-          {membershipMissing ? (
-            /*
-             * #690 — the hard gate. Publishing needs a live membership, and the create flow only
-             * ever *asked* for a plan: a person who skipped the plans on stage 4 lands here, with no
-             * publish button and one door to the page that sells a tier.
-             *
-             * #912 — **that door is now the pay modal, not `/pricing`.** `/pricing` sells a
-             * subscription but does not open Checkout, so the band sent the payer to a page that
-             * could not resolve the thing it refused. The modal is the surface that takes the card
-             * — the same membership purchase stage 5 makes (#1010 R2) — and a draft that came
-             * through the flow has the session and the staged invitation it needs. A draft with no
-             * session cannot open it at all (`payHref === null`), so the pricing link stays as that
-             * case's door rather than being deleted from under it.
-             *
-             * #958 — **the pair, in the state that has nothing configured.** This is the band a
-             * relationship with no card on file draws, and the owner's rule is that both acts are
-             * decided in the modal: `Publish to Counterparty` *is* stage 5's Send, and
-             * `Invite Members` is the same screen a step earlier. So both are here and both go to
-             * `payHref` — the card draws the same pair to the same address (#913), and a band that
-             * offered only the invite read as if publishing lived somewhere else.
-             */
-            <DetailPanel
-              title={publishGateCopy.heading}
-              hooks={{ "data-publish-gate": "membership-required" }}
-            >
-              <p className={DETAIL_MUTED}>{sectionBody(publishGateCopy)}</p>
-              {payHref === null ? (
-                <a
-                  className="text-sm font-medium text-action underline underline-offset-4"
-                  href={PRICING_PATH}
-                  data-publish-gate-link="pricing"
-                >
-                  {itemLabel(publishGateCopy, "plans")}
-                </a>
-              ) : (
-                <div className="flex flex-wrap items-center gap-3">
-                  <FlowEntryLink
-                    className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                    href={payHref}
-                    data-publish-gate-link="pay-modal"
-                    data-invite-members="true"
-                  >
-                    {itemLabel(publishGateCopy, "invite-members")}
-                  </FlowEntryLink>
-                  <FlowEntryLink
-                    className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-                    href={payHref}
-                    data-publish-to-counterparty="true"
-                  >
-                    {itemLabel(publishGateCopy, "publish-to-counterparty")}
-                  </FlowEntryLink>
-                </div>
-              )}
-            </DetailPanel>
-          ) : null}
 
-          {publishableNow && relationship.hasMembership ? (
+          {publishableNow ? (
             <DetailPanel title={publishCopy.heading}>
               <p className={DETAIL_MUTED}>{sectionBody(publishCopy)}</p>
               {/*

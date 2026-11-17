@@ -195,6 +195,12 @@ const stub = vi.hoisted(() => {
     ) {
       return wrote;
     }
+    // #1115 — no trial is written by the create any more (the anchor is the Counterparty's
+    // acceptance), so this answer is only reached if a create starts granting one again. It stays
+    // so that regression shows up as a recorded statement rather than a stub crash.
+    if (sql.startsWith("INSERT INTO billing_subscription")) {
+      return { rows: [{ provider_subscription_id: `trial:${String(values[0])}` }], rowCount: 1 };
+    }
     throw new Error(`the stub client has no answer for: ${sql.slice(0, 80)}`);
   }
 
@@ -206,9 +212,8 @@ const stub = vi.hoisted(() => {
   async function rows<T>(text: string, values: readonly unknown[] = []): Promise<T[]> {
     calls.push({ text, values });
     const sql = narrow(text);
-    // #835 — the publish trial, written by `grantPublishTrial()`. Asked before the read below
-    // because this statement's `WHERE NOT EXISTS` also selects `FROM billing_subscription`, and
-    // a write must not be answered as a read. One row: the fixture grants the trial.
+    // #835 — the publish trial's own statement. Nothing in the flow calls it any more (#1115 moved
+    // the anchor to the acceptance), so this answer exists for the paths that still read it.
     if (sql.startsWith("INSERT INTO billing_subscription")) {
       return [{ provider_subscription_id: `trial:${String(values[0])}` }] as T[];
     }
@@ -428,42 +433,34 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * Create — the publish trial (#835)
+ * Create — no trial (#1115, spec D3: the anchor is the acceptance)
  * ------------------------------------------------------------------ */
 
 /**
- * A create that publishes opens the trial, on **both** publish paths.
+ * A create opens **no** trial.
  *
- * The draft path has granted it since #840 (`sendDraftInvitation`). The pre-#825 one-form create
- * publishes inside its own transaction and granted nothing — so the row it committed read
- * `lapsed` on the next membership read and the counterparty's claim was refused. #835 makes the
- * two paths agree: whichever write moves a relationship to `published` opens the week.
+ * #835 made the two publish paths agree by granting on each; #1115 first moved that to creation.
+ * The owner's correction moves it again, to the Counterparty's acceptance, because a draft and a
+ * pending invitation must consume no trial days. So the create writes no subscription row on either
+ * path — direct publish or draft — and `grantAcceptanceTrial()` is called from `claimInvite()`
+ * instead. `tests/trial-acceptance.test.ts` reads the statement; this suite is about identity
+ * binding and only needs to know the create stopped writing it.
  */
-describe("a create that publishes opens the trial", () => {
+describe("a create opens no trial (#1115, spec D3)", () => {
   function trialInserts() {
     return callsMatching(/^INSERT INTO billing_subscription/);
   }
 
-  it("grants it for the account that published, after the relationship is committed", async () => {
+  it("writes no subscription row, on the publishing path or the draft path", async () => {
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    expect(trialInserts()).toHaveLength(0);
 
-    const [grant] = trialInserts();
-    expect(grant).toBeDefined();
-    // After COMMIT, not inside the transaction: a trial that described a rolled-back relationship
-    // would be a paid week for nothing.
-    expect(onlyIndex(/^INSERT INTO billing_subscription/)).toBeGreaterThan(onlyIndex(/^COMMIT$/));
-    expect(grant.values[0]).toBe("account-avery");
-    // The entry paid tier — `PUBLISH_TRIAL_PLAN_ID`, the one whose entitlement plays both modes.
-    expect(grant.values[1]).toBe("basic");
-  });
-
-  it("writes none for a draft — the send is what publishes, and it grants there", async () => {
+    stub.reset();
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
-
     expect(trialInserts()).toHaveLength(0);
   });
 
-  it("writes none for a signed-out create — there is no account to hold a trial", async () => {
+  it("writes none for a signed-out create either — there is no account to hold a trial", async () => {
     await createInstanceFromTemplate(createInput({ viewerUserId: null }));
 
     expect(trialInserts()).toHaveLength(0);

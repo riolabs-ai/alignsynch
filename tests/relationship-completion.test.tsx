@@ -84,7 +84,6 @@ function viewOf(input: {
     template,
     aspectsEditable: false,
     publishable: false,
-    hasMembership: true,
     completion: input.gate,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
