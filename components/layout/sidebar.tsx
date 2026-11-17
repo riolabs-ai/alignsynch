@@ -43,11 +43,13 @@ import { LeavingLink } from "@/components/layout/leaving-link";
  *     page when the header's trigger opens it, never a column that pushes the content aside. The
  *     sheet is 250px — the expanded width — because a phone has the horizontal room for a panel
  *     and the labels are the point of opening it.
- *   - `768–1023px`: **an icon rail, 64px**, sticky, in the flow. This is the only width at which
+ *   - `768–1279px`: **an icon rail, 64px**, sticky, in the flow. This is the only width at which
  *     the label column genuinely does not fit; every row keeps `title` *and* `aria-label`
  *     (`NavRow`), so the icons stay usable with a pointer and readable by a screen reader.
- *   - `≥ 1024px` (`lg`): **expanded, 250px, labels visible** — the default. A 1024px laptop is a
- *     normal width for an admin dashboard, and labels are the context the dashboard is for.
+ *   - `≥ 1280px` (`xl`): **expanded, 250px, labels visible**. The v2 shell asked for the expanded
+ *     rail at `xl` rather than `lg` (#1129, DESIGN-NOTES §8 row 13): the content column it sits
+ *     beside is capped at 1440px, and a 1024px laptop now gets the icons plus the full width
+ *     instead of a 250px column eating a quarter of it.
  *
  * **The drawer is deliberate, and the width control is not.** Two earlier changes went in
  * opposite directions here: the desktop width toggle that narrowed the column to 70px and
@@ -99,7 +101,7 @@ export function railClassName(open: boolean, collapsed = false, notice = false):
     notice
       ? "md:visible md:sticky md:top-[var(--admin-notice-h)] md:bottom-auto md:z-auto md:h-[calc(100vh_-_var(--admin-notice-h)_-_4rem)] md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none"
       : "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
-    collapsed ? "lg:w-16" : "lg:w-[250px]",
+    collapsed ? "xl:w-16" : "xl:w-[250px]",
   );
 }
 
@@ -362,11 +364,11 @@ export function AppSidebar({
           className={cn(
             "relative flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2",
             /**
-             * The reader's own collapse narrows this row from `lg` too, so it keeps the 8px padding
-             * the `md` rail already draws: `lg:px-4` (32px) beside the 40px monogram window is 72px
+             * The reader's own collapse narrows this row from `xl` too, so it keeps the 8px padding
+             * the `md` rail already draws: `xl:px-4` (32px) beside the 40px monogram window is 72px
              * in a 64px column, and the mark spilled past the rail's trailing border by 16px.
              */
-            narrow ? "lg:justify-center lg:px-2" : "lg:justify-start lg:px-4",
+            narrow ? "xl:justify-center xl:px-2" : "xl:justify-start xl:px-4",
           )}
         >
           {/**
@@ -380,7 +382,7 @@ export function AppSidebar({
             href="/"
             label={copy.heading}
             className="flex justify-center items-center gap-2"
-            iconClassName={open ? undefined : narrow ? "hidden" : "hidden lg:inline"}
+            iconClassName={open ? undefined : narrow ? "hidden" : "hidden xl:inline"}
           >
             {mark ? (
               /**
@@ -418,7 +420,7 @@ export function AppSidebar({
                 <span
                   className={cn(
                     "h-7 w-10 shrink-0 overflow-hidden",
-                    open ? "hidden" : narrow ? "hidden md:block" : "hidden md:block lg:hidden",
+                    open ? "hidden" : narrow ? "hidden md:block" : "hidden md:block xl:hidden",
                   )}
                 >
                   <Image
@@ -437,7 +439,7 @@ export function AppSidebar({
                   height={mark.height}
                   className={cn(
                     "h-7 w-auto",
-                    open ? "block" : narrow ? "hidden" : "hidden lg:block",
+                    open ? "block" : narrow ? "hidden" : "hidden xl:block",
                   )}
                   priority
                 />
@@ -453,7 +455,7 @@ export function AppSidebar({
               <span
                 className={cn(
                   "text-xl font-bold",
-                  open ? "inline" : narrow ? "hidden" : "hidden lg:inline",
+                  open ? "inline" : narrow ? "hidden" : "hidden xl:inline",
                 )}
               >
                 {copy.heading}
@@ -563,11 +565,11 @@ export function AppSidebar({
             to. Two forms, one anchor each, from the same fixture (`AppVersion`'s `compact` item):
             the long form needs the 250px column, and an icon rail has 64px. Only the form the
             width shows is in the accessibility tree — the other is `display:none`. */}
-        <div className="border-t px-1 py-3 text-center lg:px-2">
-          <span className={open ? "hidden" : narrow ? "inline" : "lg:hidden"}>
+        <div className="border-t px-1 py-3 text-center xl:px-2">
+          <span className={open ? "hidden" : narrow ? "inline" : "xl:hidden"}>
             <AppVersion copy={copy} compact />
           </span>
-          <span className={open ? "inline" : narrow ? "hidden" : "hidden lg:inline"}>
+          <span className={open ? "inline" : narrow ? "hidden" : "hidden xl:inline"}>
             <AppVersion copy={copy} />
           </span>
         </div>
