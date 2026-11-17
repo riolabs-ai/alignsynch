@@ -23,10 +23,12 @@
  *                 started. Cannot make it `active`, `complete` or `expired`: those are consequences
  *                 of somebody else's act (the counterparty accepting, a payment succeeding or
  *                 failing), not buttons.
- *   counterparty  the invited member. **No status transition at all** — their act is acceptance,
- *                 which lives on `party`, and `published → active` is the *system*'s reaction to it.
- *                 Giving the counterparty a transition here would let an invitee publish, void or
- *                 complete somebody else's purchase.
+ *   counterparty  the invited member. Their **only** status transition is `active → complete`, the
+ *                 one that ends their own participation: after it the pair is closed for both, the
+ *                 answers stay readable, and nothing else on the row moves. They may not publish,
+ *                 void or (`#1135`) reopen: giving an invitee those edges would let them publish,
+ *                 void or re-sell somebody else's relationship. Acceptance itself is still on
+ *                 `party`, and `published → active` is the *system*'s reaction to it.
  *   admin         support (#503's repair path). May void from any live status, with a reason, and
  *                 force-close (`complete`) what will never run. May not publish or activate: an
  *                 operator repairs, they do not sell.
@@ -139,6 +141,12 @@ export const RELATIONSHIP_TRANSITIONS: readonly RelationshipTransition[] = [
   },
   {
     from: "published",
+    to: "draft",
+    actors: ["initiator"],
+    why: "cancel an invitation nobody has claimed: the link dies with the row and the draft stays, so the same Aspects can be invited again (#1135)",
+  },
+  {
+    from: "published",
     to: "active",
     actors: ["system"],
     why: "the counterparty accepted their seat and the subscription behind it is live",
@@ -164,8 +172,8 @@ export const RELATIONSHIP_TRANSITIONS: readonly RelationshipTransition[] = [
   {
     from: "active",
     to: "complete",
-    actors: ["system", "admin"],
-    why: "the subscription ended as intended — by the provider's event, or by an operator's force-close",
+    actors: ["system", "admin", "initiator", "counterparty"],
+    why: "the subscription ended as intended — by the provider's event, by an operator's force-close, or because either party left: a two-party relationship cannot run with one seat, so leaving closes Stage 6 for both and leaves the answers readable (#1135)",
   },
   {
     from: "active",
