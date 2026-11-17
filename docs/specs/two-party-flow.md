@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [v2.0 UI handoff bundles (index)](v2-bundles/README.md)
 
 <!-- docs-nav:end -->
 
@@ -226,6 +226,6 @@ assessment row makes `pnpm db:seed` refuse.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [v2.0 UI handoff bundles (index)](v2-bundles/README.md)
 
 <!-- docs-nav:end -->

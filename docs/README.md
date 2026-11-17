@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**148 documents in 9 sections.** Every page carries the same nav block, generated
+**183 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -41,7 +41,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 18 documents
-- [Specs & design briefs](#specs-design-briefs) — 44 documents
+- [Specs & design briefs](#specs-design-briefs) — 79 documents
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -142,6 +142,41 @@ What the product promises, written down before it was built.
 - [`specs/spec-help-center/README.md`](specs/spec-help-center/README.md) — **Help Center design spec (handoff)** — How do I preview the Help Center, and which three files make up the page?
 - [`specs/stages.md`](specs/stages.md) — **Stages** — What are Invited, Connected, Sharing and Aligned, and who decides each?
 - [`specs/two-party-flow.md`](specs/two-party-flow.md) — **The two-party flow** — How do two people get from an invitation to a sealed Gap?
+- [`specs/v2-bundles/README.md`](specs/v2-bundles/README.md) — **v2.0 UI handoff bundles (index)** — What are the eleven v2.0 ingest bundles, in what order are they built, and which owner decisions are still open?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/README.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/README.md) — **Create Relationship wizard v2 (handoff)** — How do I preview wizard Stages 1–5, and which files make up the bundle?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/IMPLEMENTATION-PROMPT.md) — **Create Relationship wizard v2 — implementation brief** — Which QuizHub components, tokens and fixtures does the wizard reuse, and what must not change?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/ASSET-SOURCES.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/ASSET-SOURCES.md) — **Create Relationship wizard v2 — asset sources** — Where did each file in the wizard bundle come from, and which copies must the build not use?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/README.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/README.md) — **Onboarding basics v2 (handoff)** — How do I preview the public catalog, the public template page, Pricing → template pick and the Counterparty join?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/AUDIENCE-AND-POSITIONING.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/AUDIENCE-AND-POSITIONING.md) — **Onboarding basics v2 — audience and positioning** — Who are the public pages written for, which claims are still placeholders, and which open conflict does the owner decide?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/IMPLEMENTATION-PROMPT.md) — **Onboarding basics v2 — implementation brief** — Which QuizHub components, tokens and fixtures do the public pages and the join flow reuse, and what must not change?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/ASSET-SOURCES.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/ASSET-SOURCES.md) — **Onboarding basics v2 — asset sources** — Where did each file in the onboarding bundle come from, and which of them are placeholders?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/README.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/README.md) — **Relationship Detail v2 (handoff)** — How do I preview every Relationship Detail state, in both roles?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/IMPLEMENTATION-PROMPT.md) — **Relationship Detail v2 — implementation brief** — Which rows and components does Relationship Detail reuse, and what does each state and role change?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md) — **Relationship Detail v2 — asset sources** — Where did each file in the Relationship Detail bundle come from?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/README.md`](specs/v2-bundles/04-spec-design-page-align-v2/README.md) — **Align (Stage 6) v2 (handoff)** — How do I preview Align, and what do the Soft and Full re-scores show?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/04-spec-design-page-align-v2/IMPLEMENTATION-PROMPT.md) — **Align (Stage 6) v2 — implementation brief** — How is Align scored and re-scored in code, and which components does it reuse?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/ASSET-SOURCES.md`](specs/v2-bundles/04-spec-design-page-align-v2/ASSET-SOURCES.md) — **Align (Stage 6) v2 — asset sources** — Where did each file in the Align bundle come from?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/README.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/README.md) — **Start and My Relationships v2 (handoff)** — How do I preview Start and My Relationships, including the empty and paused states?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/IMPLEMENTATION-PROMPT.md) — **Start and My Relationships v2 — implementation brief** — Which shell, cards and card kebabs does the v2 dashboard reuse, and what must not change?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md) — **Start and My Relationships v2 — asset sources** — Where did each file in the Start and My Relationships bundle come from?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/README.md`](specs/v2-bundles/06-spec-design-page-templates-v2/README.md) — **Templates in-app v2 (handoff)** — How do I preview the Library and My Templates tabs, the template page and the proposal?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/06-spec-design-page-templates-v2/IMPLEMENTATION-PROMPT.md) — **Templates in-app v2 — implementation brief** — Which components and rows do the Templates tabs, the template detail and the proposal reuse, and what must not change?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/ASSET-SOURCES.md`](specs/v2-bundles/06-spec-design-page-templates-v2/ASSET-SOURCES.md) — **Templates in-app v2 — asset sources** — Where did each file in the Templates in-app bundle come from?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/README.md`](specs/v2-bundles/07-spec-design-page-chat-v2/README.md) — **Chat v2 (handoff)** — How do I preview Chat in every relationship state?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/07-spec-design-page-chat-v2/IMPLEMENTATION-PROMPT.md) — **Chat v2 — implementation brief** — Which chat components does v2 reuse, and what changes per relationship state?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/ASSET-SOURCES.md`](specs/v2-bundles/07-spec-design-page-chat-v2/ASSET-SOURCES.md) — **Chat v2 — asset sources** — Where did each file in the Chat bundle come from?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/README.md`](specs/v2-bundles/08-spec-design-page-payment-v2/README.md) — **Payment v2 (handoff)** — How do I preview standalone billing in every state?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/08-spec-design-page-payment-v2/IMPLEMENTATION-PROMPT.md) — **Payment v2 — implementation brief** — Which billing components and routes does v2 reuse, and what must not change?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/ASSET-SOURCES.md`](specs/v2-bundles/08-spec-design-page-payment-v2/ASSET-SOURCES.md) — **Payment v2 — asset sources** — Where did each file in the Payment bundle come from?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/README.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/README.md) — **v2 design system (handoff)** — How do I preview the v2 tokens, the component sheet and the flow map?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/IMPLEMENTATION-PROMPT.md) — **v2 design system — implementation brief** — How do the v2 tokens, component sheet, shared modal/toast/kebab and flow map port into the app?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/ASSET-SOURCES.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/ASSET-SOURCES.md) — **v2 design system — asset sources** — Where did each file in the design-system bundle come from?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/README.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/README.md) — **Assessment (answer screen) v2 (handoff)** — How do I preview the answer screen, including the counter and resume states?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/IMPLEMENTATION-PROMPT.md) — **Assessment v2 — implementation brief** — Which answer-screen components and scale does v2 reuse, and what must not change?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/ASSET-SOURCES.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/ASSET-SOURCES.md) — **Assessment v2 — asset sources** — Where did each file in the Assessment bundle come from?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md) — **Account menu and Settings v2 (handoff)** — How do I preview the account menu and the Account Settings sections?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md) — **Account menu and Settings v2 — implementation brief** — Which settings sections does v2 carry, and which components do they reuse?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) — **Account menu and Settings v2 — asset sources** — Where did each file in the Account Settings bundle come from?
 - [`specs/ui-divergence.md`](specs/ui-divergence.md) — **Divergence table** — Where does each surface deliberately differ from its ancestor?
 - [`specs/ui-mapping.md`](specs/ui-mapping.md) — **Quiz-surface map** — Which quiz surface is this AlignSynch file a variation of?
 - [`specs/ui-ux-audit.md`](specs/ui-ux-audit.md) — **UI/UX audit** — What does the build follow, vary, or quietly diverge from in the purchased template?
