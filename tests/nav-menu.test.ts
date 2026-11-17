@@ -123,6 +123,7 @@ describe("the menu descriptor", () => {
       "/admin/billing",
       "/admin/broadcast",
       "/admin/docs",
+      "/admin/permissions",
       "/admin/audit",
     ]);
   });
@@ -198,6 +199,9 @@ describe("the ladder decides the rows", () => {
     "/admin/billing",
     "/admin/broadcast",
     "/admin/docs",
+    // #1126 — the CRUD & Permissions matrix, directly after Docs: the docs say how the product
+    // works, this says which role may do what.
+    "/admin/permissions",
     "/admin/audit",
   ];
 
@@ -278,9 +282,9 @@ describe("the ladder decides the rows", () => {
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
-    // #901's docs row survived the move; #1095 removed the growth row, so eight rows in the
-    // operator group.
-    expect(ADMIN_GROUP).toHaveLength(8);
+    // #901's docs row survived the move, #1095 removed the growth row, and #1126 added the CRUD &
+    // Permissions row directly after Docs, so nine rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(9);
   });
 
   /**
@@ -304,8 +308,9 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    // #920 added one operator row and #1095 removed it again, so the two staff rungs carry 15.
-    expect(counts).toEqual([5, 6, 15, 15]);
+    // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
+    // row, so the two staff rungs carry 16 rather than 15.
+    expect(counts).toEqual([5, 6, 16, 16]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

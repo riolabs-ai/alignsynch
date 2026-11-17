@@ -345,6 +345,13 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "admin-docs", label: "Docs" },
           /**
+           * #1126 — the CRUD & Permissions matrix, the second reference row. It sits directly after
+           * Docs because the pair is one idea: the docs say how the product works, this says which
+           * role may do what. The label is the issue's own words, not abbreviated to one word like
+           * the rest of the group, because "CRUD & Permissions" is the name the v2 spec uses.
+           */
+          { id: "admin-permissions", label: "CRUD & Permissions" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,

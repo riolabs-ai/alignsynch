@@ -195,6 +195,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-docs",
     budget: 0,
   },
+  // #1126 — the CRUD & Permissions matrix. Budget 0 from the first commit: the status vocabulary,
+  // the nine column names, the counts' captions, the failure panel, the eleven P0 gaps and the six
+  // role × action rules are `data/pages/admin-permissions.ts`, so the next literal written in
+  // `permissions-console.tsx` is a red build. Attribution is the component subdirectory, not the
+  // whole `components/admin` domain, because `/admin/review` already owns that number.
+  "/admin/permissions": {
+    page: "app/(mainlayout)/admin/permissions/page.tsx",
+    dirs: ["components/admin/permissions"],
+    fixture: "data/pages/admin-permissions",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is
