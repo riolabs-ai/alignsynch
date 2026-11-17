@@ -84,9 +84,16 @@ export const COLUMNS = ["version", "date", "commit", "reason"];
  * @typedef {{ version: string, date: string, commit: string, reason: string, line: number }} Row
  */
 
-/** `1.20.0`, `v1.20.0` → `1.20.0`; anything else → null. */
+/**
+ * `1.20.0`, `v1.20.0` → `1.20.0`; a candidate keeps its suffix (`2.0.0-rc1` → `2.0.0-rc1`, never
+ * `2.0.0`); anything else → null.
+ *
+ * The suffix is part of the version, not decoration: a release candidate that ships without a sweep
+ * is deferred under its own number, and a rule that stripped `-rc1` would let a `2.0.0` row vouch for
+ * a candidate the tree never released.
+ */
 export function bareVersion(value) {
-  const match = /^v?(\d+\.\d+\.\d+)$/.exec(String(value).trim());
+  const match = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(String(value).trim());
   return match === null ? null : match[1];
 }
 
