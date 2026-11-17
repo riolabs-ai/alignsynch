@@ -130,6 +130,8 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },
   { path: "/dashboard/templates/[id]", mode: "column" },
+  /* #1130 — the proposal form is a two-up (form + its two asides), like the template page above it. */
+  { path: "/dashboard/templates/[id]/propose", mode: "column" },
   { path: "/dashboard/user", mode: "column" },
   { path: "/settings", mode: "column" },
   /**

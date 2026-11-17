@@ -642,9 +642,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
+      "One Templates page, two tabs (#620, #1130): Library is the shelf a member can start a relationship from — a featured template, a category filter with counts (All / Family / Couples / Friends / Work / Home), a search, and cards carrying the shelf chip, the Aspect count and the plan's one price — and My Templates is the copies they own, each opening its own page plus the blank and clone bands.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the Library, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value — and the pre-#1130 `catalogue` — on the Library). The filter and search are `?filter=` and `?q=` over the rows already read, never a second query: the category is the relationship type's (`data/template-categories.ts`), not the record's. Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the Library and `listMemberLibrary(userId)` for My Templates — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<slug>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -652,9 +652,19 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "One private template's editor: the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
+      "One of the member's own templates, in two modes at one address (#1130): the bare page draws the template — its Aspects on the locked 1–5 band, About, Used In, Share It With Others (Propose to Library) and the retire band (Archive, Restore, Delete Permanently only when unused) — and `?edit=1` is the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
     notes:
-      '`band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`), so the editor\'s props are a convenience and not the gate.',
+      'The editor half is `band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`) and in `readMyTemplate()`, so the editor\'s props are a convenience and not the gate. The delete control is a neutral ×, and a template any relationship was created from passes no `onDelete` at all — the store would refuse it, so the band says "archive only" instead of offering a control that cannot succeed.',
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/templates/[id]/propose",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Propose a Template: a member's own template offered to the admin-curated Library as a reviewed request — name, category, who it is for, an optional note and a required consent box.",
+    notes:
+      '`#1130`. One route, one form (`components/dashboard/template-proposal-form.tsx`) and one aside that lists what is shared and what is never shared. The action (`proposeToLibrary`) validates with `lib/member/proposal.ts::validateProposal` and writes **nothing durable**: the review queue behind a proposal is undecided (crud-matrix "Conflicts: Propose to Library"), so the sent panel says the queue is not open rather than implying a reviewer. It cannot publish — there is no path from this action to a `record` or a `template_version` write, and consent must be the boolean `true`, never a field\'s presence.',
   },
   {
     kind: "route",

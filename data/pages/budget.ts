@@ -313,6 +313,14 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/dashboard-template-editor",
     budget: 0,
   },
+  // #1130 — Propose a Template. The form is `components/dashboard/template-proposal-form.tsx` and every
+  // word of it, including the two asides that say what is and is never shared, is the fixture's.
+  "/dashboard/templates/[id]/propose": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/propose/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/dashboard-template-proposal",
+    budget: 0,
+  },
   "/dashboard/relationships": {
     page: "app/(mainlayout)/dashboard/relationships/page.tsx",
     dirs: ["components/dashboard"],
