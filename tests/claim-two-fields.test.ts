@@ -17,8 +17,10 @@
  *      not enough on its own once the seat binds to an account.
  *   3. **The screen shows two fields and nothing else.** No password, no card, no plan, no price —
  *      measured on the rendered markup, and on the module graph of the screen and its route.
- *   4. **The counterparty never buys anything.** The claim's transaction writes no subscription
- *      row of any kind, and nothing on this path reaches the billing module.
+ *   4. **The counterparty never buys anything — and the acceptance is what opens the Initiator's
+ *      week.** The claim's transaction writes no checkout and no obligation of the claimer's; the
+ *      one subscription row it may write is the **Initiator's** trial (`grantAcceptanceTrial`, spec
+ *      D3: the week starts when the Counterparty accepts). Nothing on this path reaches a card.
  *   5. **A dead link is a sentence, never a 500.** `expired` / `unknown` draw their band, and the
  *      band already tells the reader to ask for another one.
  *
@@ -227,10 +229,10 @@ describe("the claim screen", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * 4. The claim's transaction — the seat, and nothing anybody bought
+ * 4. The claim's transaction — the seat, and the Initiator's week
  * ------------------------------------------------------------------ */
 
-describe("claimInvite writes a seat and never a subscription", () => {
+describe("claimInvite binds a seat and opens the Initiator's trial — and buys nothing", () => {
   /**
    * The claim's own region of the store: from `export async function claimInvite` to the next
    * exported function. Read as source because the statement list is the contract — the live
@@ -260,12 +262,35 @@ describe("claimInvite writes a seat and never a subscription", () => {
     expect(region.indexOf("INSERT INTO party")).toBeLessThan(region.lastIndexOf("COMMIT"));
   });
 
-  it("writes no subscription row of any kind — the counterparty never buys", () => {
+  it("opens the trial here (#1115, spec D3) — in the transaction, through the one writer", () => {
     const region = claimRegion();
 
-    expect(region).not.toMatch(/billing_subscription/i);
-    expect(region).not.toMatch(/grant(Creation|Publish)Trial/);
+    // The acceptance is the anchor: a draft and a pending invitation consume no trial days, so the
+    // week opens in the transaction that gives the relationship its second seat. It goes through
+    // `grantAcceptanceTrial()` — the account-keyed writer — and not through a statement of its own,
+    // so a replayed claim or a second accepted relationship cannot write a second row.
+    expect(region).toContain("grantAcceptanceTrial(sqlOf(client)");
+    expect(region.indexOf("BEGIN")).toBeLessThan(
+      region.indexOf("grantAcceptanceTrial(sqlOf(client)"),
+    );
+    expect(region.indexOf("grantAcceptanceTrial(sqlOf(client)")).toBeLessThan(
+      region.lastIndexOf("COMMIT"),
+    );
+    // Never keyed to the claimer: the Counterparty joins a pair that is already paid for (US-2).
+    expect(region).toMatch(/SELECT initiator_user_id FROM relationship/);
+    expect(region).not.toMatch(/userId: claimerUserId/);
+  });
+
+  it("still buys nothing — no checkout, no obligation, no card", () => {
+    const region = claimRegion();
+
+    // The one row this path may write is the Initiator's trial, above. What must stay absent is
+    // everything that would make the claim a purchase: a payment obligation, a checkout, a plan.
     expect(region).not.toMatch(/payment_obligation/i);
+    expect(region).not.toMatch(/checkout|stripe|payment_method/i);
+    // The retired anchors stay retired: the claim is the *only* user of a trial writer, so neither
+    // the creation nor the publish writer may appear in it.
+    expect(region).not.toMatch(/grant(Creation|Publish)Trial/);
   });
 
   it("takes the two posted fields and the token, and nothing else that names a person", () => {

@@ -85,7 +85,7 @@ import {
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeRelationshipCount } from "@/lib/db/billing";
+import { activeRelationshipCount, grantAcceptanceTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import { openPaymentObligation, type PaymentSql } from "@/lib/db/relationship-payment";
 import {
@@ -1122,6 +1122,40 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
         "UPDATE session SET state = 'active' WHERE record_id = $1 AND state = 'draft'",
         [invite.session_record_id],
       );
+      // #1115 / spec D3 — **the week opens here, and only here.**
+      //
+      // The owner's rule is the acceptance: a draft and a pending invitation consume no trial days,
+      // and the pair is *connected* the moment this transaction gives it a second seat. So the grant
+      // runs beside that seat, after the relationship is `active` — an acceptance that commits has a
+      // week, and a week never exists without one. It is deliberately the last of the acceptance's
+      // writes: everything above is what makes the claim true, and the row is what the week is.
+      //
+      // Its failure is the claim's failure, on purpose. `membershipOf()` reads an `active`
+      // relationship with no entitling subscription as **lapsed** (precisely because this write
+      // makes the row and the week one fact), so a claim that committed with a failed grant would
+      // hand the pair a read-only relationship. A rolled-back claim is the honest answer — the
+      // person retries the link and nothing was consumed.
+      //
+      // **The row is the Initiator's**, not the claimer's: the Counterparty joins a pair that is
+      // already paid for and never buys anything (spec US-2), so the account the product will charge
+      // is the account whose week starts. `nothing-written` is the ordinary second relationship —
+      // the account already holds an entitling subscription, so it inherits that clock rather than
+      // opening a second week (one week per account, D3), and a replayed claim cannot restart it.
+      const grantee = await client.query<{ initiator_user_id: string | null }>(
+        "SELECT initiator_user_id FROM relationship WHERE id = $1",
+        [relationshipId],
+      );
+      const trialUserId = grantee.rows[0]?.initiator_user_id ?? null;
+      // A relationship with no Initiator account (a signed-out create) has nobody to key a week to.
+      // The seat is still bound: the claim is not the payer's write, and refusing it would make the
+      // invitation the first thing to stop working.
+      if (trialUserId !== null) {
+        await grantAcceptanceTrial(sqlOf(client), {
+          userId: trialUserId,
+          relationshipId,
+          now,
+        });
+      }
       // The relationship's own mirror of the seat, bound in the same transaction. `party` is the
       // fact (`party_session_user_key` makes one account one seat) and this column is what the
       // console and the demo harness read back; nothing in the product wrote it until now, so a
