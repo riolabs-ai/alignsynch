@@ -74,6 +74,67 @@ const config: Config = {
         pale: "hsl(var(--pale))",
         mark: "hsl(var(--mark))",
         deep: "hsl(var(--deep))",
+        /**
+         * The v2.0 product roles (#1120) — ported 1:1 from
+         * `docs/specs/v2-bundles/09-spec-design-system-tokens-v2/js/tw-config.js`, whose values
+         * are the `:root` block in `app/globals.css`. `deep` above stays the brand record's
+         * `#156898`; `deep-calm` is the prototype's `--deep` and a separate token.
+         *
+         * They carry no surface yet (that is each surface card's diff), so every one of them is
+         * unused by the tree today — exposed here so a card that draws a party tint, a status
+         * chip or a scale step has a class to name and no reason to type a hex.
+         */
+        "deep-calm": "hsl(var(--deep-calm))",
+        initiator: {
+          DEFAULT: "hsl(var(--initiator))",
+          ink: "hsl(var(--initiator-ink))",
+          solid: "hsl(var(--initiator-solid))",
+          tint: "hsl(var(--initiator-tint))",
+          line: "hsl(var(--initiator-line))",
+        },
+        counterparty: {
+          DEFAULT: "hsl(var(--counterparty))",
+          ink: "hsl(var(--counterparty-ink))",
+          solid: "hsl(var(--counterparty-solid))",
+          tint: "hsl(var(--counterparty-tint))",
+          line: "hsl(var(--counterparty-line))",
+        },
+        /** Purpose surfaces: progress (`status`) and payment/membership (`billing`). */
+        status: {
+          DEFAULT: "hsl(var(--status))",
+          line: "hsl(var(--status-line))",
+          chip: "hsl(var(--status-chip))",
+        },
+        billing: {
+          DEFAULT: "hsl(var(--billing))",
+          line: "hsl(var(--billing-line))",
+          chip: "hsl(var(--billing-chip))",
+          ink: "hsl(var(--billing-ink))",
+        },
+        /** The three Gap statuses — `-mark` draws the vivid bar/dot/edge, DEFAULT is the ink. */
+        synch: {
+          DEFAULT: "hsl(var(--synch))",
+          tint: "hsl(var(--synch-tint))",
+          mark: "hsl(var(--synch-mark))",
+        },
+        "small-gap": {
+          DEFAULT: "hsl(var(--small-gap))",
+          tint: "hsl(var(--small-gap-tint))",
+          mark: "hsl(var(--small-gap-mark))",
+        },
+        gap: {
+          DEFAULT: "hsl(var(--gap))",
+          tint: "hsl(var(--gap-tint))",
+          mark: "hsl(var(--gap-mark))",
+        },
+        /** The locked 1–5 answer scale: 1 warm apricot → 5 sage. Track only. */
+        scale: {
+          "1": "hsl(var(--scale-1))",
+          "2": "hsl(var(--scale-2))",
+          "3": "hsl(var(--scale-3))",
+          "4": "hsl(var(--scale-4))",
+          "5": "hsl(var(--scale-5))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -103,6 +164,20 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      /**
+       * The v2 layout measures (#1120, from the same `tw-config.js`): the content cap the design
+       * system draws every page inside is 1440px, and the four grids the shared surfaces use —
+       * the two-column shell, the detail page's aside, the five answer-scale cells and the
+       * answer-row. Additive: nothing in the tree names them yet.
+       */
+      maxWidth: { content: "90rem" },
+      gridTemplateColumns: {
+        shell: "20rem minmax(0, 1fr)",
+        detail: "minmax(0, 1fr) 20rem",
+        scale: "repeat(5, minmax(0, 1fr))",
+        answer: "7rem minmax(0, 1fr) auto",
+        "answer-sm": "minmax(0, 1fr) auto",
       },
       keyframes: {
         "accordion-down": {
