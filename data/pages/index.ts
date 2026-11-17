@@ -60,6 +60,7 @@ import { dashboardSupportPageCopy } from "./dashboard-support";
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
 import { dashboardRelationshipsPageCopy } from "./dashboard-relationships";
 import { dashboardTemplateEditorPageCopy } from "./dashboard-template-editor";
+import { dashboardTemplateProposalPageCopy } from "./dashboard-template-proposal";
 import { dashboardTemplatesPageCopy } from "./dashboard-templates";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
@@ -151,6 +152,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/relationships/[id]": dashboardRelationshipDetailPageCopy,
   "/dashboard/templates": dashboardTemplatesPageCopy,
   "/dashboard/templates/[id]": dashboardTemplateEditorPageCopy,
+  "/dashboard/templates/[id]/propose": dashboardTemplateProposalPageCopy,
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,

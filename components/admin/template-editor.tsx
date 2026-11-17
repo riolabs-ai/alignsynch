@@ -167,8 +167,12 @@ export const CATALOGUE_BAND = "catalogue" as const;
  * The delete's rule is **not** here. `deleteMyTemplate()` refuses a template a relationship was
  * created from or one that was published, and writes nothing when it refuses; the dialog below is a
  * confirmation that names what it would destroy, never the guard.
+ *
+ * **The delete control is a neutral ×**, never a red button: the destructive tone the palette forbids
+ * is also the tone that makes a reversible retire look like an emergency. The mark is a copy item
+ * (`delete-mark`), so no component spells the glyph and the label stays the owner's words.
  */
-function RetireBand({
+export function RetireBand({
   copy,
   title,
   status,
@@ -234,9 +238,11 @@ function RetireBand({
             <Button
               type="button"
               variant="ghost"
+              className="gap-2"
               data-template-delete-trigger
               disabled={pending || onDelete === undefined}
             >
+              <span aria-hidden="true">{itemLabel(copy, "delete-mark")}</span>
               {itemLabel(copy, "delete")}
             </Button>
           </AlertDialogTrigger>

@@ -330,11 +330,15 @@ describe("no surface declares a chip of its own", () => {
 });
 
 describe("the surfaces render through it", () => {
-  it("the template shelf draws the template mark tinted and its facts neutral", () => {
+  it("the template shelf draws the template's shelf tinted and its second chip neutral", () => {
+    /*
+     * A card carries one chip unless its row has more than one fact to state, so the neutral tone is
+     * proved on a card that has two — the primitive's contract is "the first chip is the tint, the
+     * rest are neutral", and a one-chip card would leave the second half of that unproved.
+     */
+    const card = catalogueCard(dashboardTemplatesPageCopy, templateRow);
     const html = renderToStaticMarkup(
-      createElement(TemplateShelf, {
-        cards: [catalogueCard(dashboardTemplatesPageCopy, templateRow)],
-      }),
+      createElement(TemplateShelf, { cards: [{ ...card, chips: [card.chips[0], "My Copy"] }] }),
     );
     expect(html).toContain(toneClasses("tint"));
     expect(html).toContain(toneClasses("neutral"));

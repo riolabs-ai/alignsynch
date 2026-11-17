@@ -205,6 +205,12 @@ describe("the marketing surfaces keep navigating", () => {
       .sort();
     expect(importers).toEqual([
       "components/assessment-flow/template-card.tsx",
+      /*
+       * #1130 — a My Template's own page draws `Create Relationship` as the same door: it is the same
+       * template the Library shelf opens, so a document load here would lose the interception for the
+       * one entry a member is most likely to take.
+       */
+      "components/dashboard/my-template-detail.tsx",
       "components/dashboard/relationship-cards.tsx",
       /*
        * #975 D10 — a relationship's own screen draws the same doors its card does (the publish gate's
