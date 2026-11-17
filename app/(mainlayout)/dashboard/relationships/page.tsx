@@ -22,7 +22,7 @@
 import type { Metadata } from "next";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
-import { RelationshipsList } from "@/components/dashboard/relationships-list";
+import { RelationshipsList, stateFilterOf } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -43,8 +43,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function MemberRelationshipsPage() {
+export default async function MemberRelationshipsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
+  /**
+   * `?filter=` is the chip's address (#1129): the bundle deep-links `?filter=paused`, and a
+   * filter that lives only in `useState` cannot be sent to anyone or survive a reload. The value
+   * is normalised where the chips are declared (`stateFilterOf`), so an unknown word is `All`
+   * rather than an empty grid.
+   */
+  const initialFilter = stateFilterOf((await searchParams).filter);
 
   let rows: readonly MemberRelationshipRow[] = [];
   let templates: readonly RelationshipStartTemplate[] = [];
@@ -98,6 +109,7 @@ export default async function MemberRelationshipsPage() {
         summaries={summaries}
         templates={templates}
         unreadable={unreadable}
+        initialFilter={initialFilter}
       />
     </StageColumn>
   );
