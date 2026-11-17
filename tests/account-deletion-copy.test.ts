@@ -18,7 +18,7 @@
  *                  one is a runtime throw in `itemLabel`, on the one screen where an unexplained
  *                  failure is least acceptable.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -166,5 +166,50 @@ describe("what the copy says is retained (§6)", () => {
     expect(step).toContain("UPDATE news_signup");
     expect(step).toContain("email");
     expect(step).not.toContain("DELETE FROM news_signup");
+  });
+});
+
+/**
+ * The same claim in the **design artifact** `/settings` ports (bundle 11).
+ *
+ * The fixture above is what a person reads and it is §5 verbatim; the artifact is what the next
+ * implementer copies from, so it has to say the same thing. Bundle 11 drew the delete card as
+ * "removes your account within 30 days", and its prototype answered a confirmed deletion with
+ * "Deletion scheduled. Sign in within 30 days to cancel." — a grace period §5 forbids and
+ * `lib/account/purge.ts` has no machinery to honour. The owner's ruling is that the copy changes
+ * to match the product, so both sentences are pinned here rather than left to the next reader.
+ *
+ * Every bundle ships the same `js/proto.js`, so the walk covers the copies instead of the
+ * account-settings one alone: a copy that keeps the window is a window the next bundle inherits.
+ */
+describe("the design artifact's delete-account copy (bundle 11)", () => {
+  const BUNDLES = new URL("../docs/specs/v2-bundles/", import.meta.url);
+  const CARD = "11-spec-design-page-account-settings-v2";
+  const bundles = readdirSync(BUNDLES).filter((name) =>
+    existsSync(new URL(`${name}/js/proto.js`, BUNDLES)),
+  );
+
+  it("draws the immediate sentence, and the control keeps the bundle's name", () => {
+    const html = readFileSync(new URL(`${CARD}/settings.html`, BUNDLES), "utf8");
+    expect(html).toContain("<span>Delete Account</span>");
+    const card = html.slice(html.indexOf('id="del-title"'));
+    const body = normalise(card.slice(0, card.indexOf("</p>")));
+    expect(body).toContain("removes your account immediately.");
+    expect(body).not.toMatch(/\bwithin \d+ days?\b/i);
+  });
+
+  it("confirms a deletion with no window and no cancel-by-signing-in, in every copy", () => {
+    expect(bundles.length, "no bundle carries js/proto.js").toBeGreaterThanOrEqual(10);
+    for (const name of bundles) {
+      const proto = readFileSync(new URL(`${name}/js/proto.js`, BUNDLES), "utf8");
+      const start = proto.indexOf("[data-act='delete-account']");
+      expect(start, `${name}: no delete-account control`).toBeGreaterThan(-1);
+      const block = proto.slice(start, start + 700);
+      expect(block, `${name}: the confirmation`).toContain("cannot be restored.");
+      expect(block, `${name}: a deletion window`).not.toMatch(/\bwithin \d+ days?\b/i);
+      expect(block, `${name}: a cancel-by-signing-in promise`).not.toMatch(
+        /sign in .{0,40}to cancel/i,
+      );
+    }
   });
 });
