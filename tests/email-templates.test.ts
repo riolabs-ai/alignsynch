@@ -478,6 +478,31 @@ describe("the register", () => {
       expect(item.render().text.split("\n")[0]).toBe(item.document().subject);
     }
   });
+
+  it("hands #1 its third argument, so the register carries the asset lookup and not only the facts", () => {
+    // `EmailTemplate.document()` is `(facts, body?, options?)`. Twelve entries ignore both extra
+    // arguments; #1 reads the third — `ReleaseNoteOptions`, the lookup that decides whether a
+    // named surface really has a committed figure (#1169). Asserted through the **registered**
+    // entry, because a type that admitted the argument and then dropped it would typecheck and
+    // still send a note whose figures were never checked.
+    const figuresOf = (document: EmailDocument): readonly EmailImage[] =>
+      document.blocks.filter((block): block is EmailImage => block.kind === "image");
+
+    const asSent = figuresOf(releaseNoteTemplate.document(RELEASE));
+    const withSurface = figuresOf(
+      releaseNoteTemplate.document(RELEASE, undefined, {
+        surfaceAssets: { added: "/og/release-default.png" },
+      }),
+    );
+
+    // The hero is the one figure the entry itself earns; the second arrives only because the
+    // caller's lookup said which file draws this surface.
+    expect(asSent.map((figure) => figure.src)).toEqual(["/og/email-banner.png"]);
+    expect(withSurface.map((figure) => figure.src)).toEqual([
+      "/og/email-banner.png",
+      "/og/release-default.png",
+    ]);
+  });
 });
 
 describe("the reminder's due window is a pure function of the stored instant", () => {

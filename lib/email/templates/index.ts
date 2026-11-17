@@ -38,7 +38,11 @@ import type { EmailClass, EmailDocument, RenderedEmail } from "@/lib/email/band"
 import { renderEmail } from "@/lib/email/band";
 import type { EmailBodySpec } from "@/lib/email/body";
 import type { EmailOverride } from "@/lib/email/override";
-import { releaseNoteDocument, type ChangelogSection } from "@/lib/email/release-note";
+import {
+  releaseNoteDocument,
+  type ChangelogSection,
+  type ReleaseNoteOptions,
+} from "@/lib/email/release-note";
 import {
   INVITATION_BODY,
   invitationDocument,
@@ -137,8 +141,16 @@ export interface EmailTemplate<Facts> {
    * what an admin edits is `content/email-bodies.md`'s paragraph and not the product behaviour
    * written around it (#1138 requirement 8: there is no separate HTML field and no second body).
    * A template with no `body` spec ignores the argument; the save path refuses to give it one.
+   *
+   * `options` is the register's second axis and it is **optional for every entry, because only
+   * one template reads it**: #1 draws a figure per surface that really has an asset under
+   * `public/`, so its builder takes the asset lookup (`ReleaseNoteOptions`). The other twelve
+   * draw no asset and ignore it — which is why it lives here as one shared optional parameter
+   * rather than as a cast on #1 or a fifth field that a builder could not be handed. The type is
+   * "what any registered builder may be handed", so `renderTemplate()` keeps forwarding the body
+   * it has and a caller that needs the note's figures passes them where they are read.
    */
-  readonly document: (facts: Facts, body?: string) => EmailDocument;
+  readonly document: (facts: Facts, body?: string, options?: ReleaseNoteOptions) => EmailDocument;
 }
 
 /**
@@ -185,14 +197,22 @@ export function reachesCounterparty(recipient: EmailRecipient): boolean {
   return recipient === "counterparty" || recipient === "both";
 }
 
-/** #1 — the stakeholder release note, registered from its own module. */
+/**
+ * #1 — the stakeholder release note, registered from its own module.
+ *
+ * The second argument is the admin's override body, which #1 never takes (it has no `body` spec
+ * and `recipient: "operator"` keeps it off the templates page), so the registered `document` maps
+ * the register's third argument — the asset lookup (#1169) — straight into
+ * `releaseNoteDocument()`'s second. That is the whole difference between the two signatures, and
+ * it is expressed once, here, rather than by moving the builder's options or casting the entry.
+ */
 export const releaseNoteTemplate: EmailTemplate<ChangelogSection> = {
   id: "stakeholder-release-note",
   numeral: 1,
   emailClass: "transactional",
   recipient: "operator",
   subject: (section) => releaseNoteDocument(section).subject,
-  document: releaseNoteDocument,
+  document: (section, _body, options) => releaseNoteDocument(section, options),
 };
 
 /** #2 — the counterparty invitation, minted with the invite on create (and on re-invite). */
