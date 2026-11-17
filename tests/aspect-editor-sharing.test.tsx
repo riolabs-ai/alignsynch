@@ -75,7 +75,6 @@ test("the dashboard draws the same row anatomy, with add and remove", () => {
     <AspectList
       copy={dashboardRelationshipDetailPageCopy}
       wordsSection={ASPECT_EDITOR_SECTION}
-      validationSection={null}
       aspects={[ROW]}
       addRemove
       save={async () => ({ ok: true })}
