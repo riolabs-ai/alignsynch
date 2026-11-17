@@ -1863,3 +1863,40 @@ export async function republishRelationship(
 export async function readMemberSubscription(userId: string): Promise<Subscription | null> {
   return readActiveSubscription(userId);
 }
+
+/**
+ * The Payment surface's facts (#1132) — every relationship the member is party to, and the two
+ * account-level rows a panel's state is a function of.
+ *
+ * **Why this is here and not in the page.** `trialExtendedAt` is read by a private helper of this
+ * module (`readExtensionClaimedAt`), whose rule is subtle on purpose: the free week is claimed
+ * through a `plan_grant` row keyed to the **initiating** account, and an operator's `plan.comp` is
+ * a different `kind` that must not consume it. Re-deriving that query in the route would be the
+ * second copy of a rule that decides whether a button is drawn, so the read stays where the rule
+ * lives and the page gets plain facts.
+ *
+ * `listMyRelationships()` reads the account's subscription once for the whole list; this reads it
+ * again for the row the panels' countdown and card facts come from. Two reads, deliberately: the
+ * first decides each row's `membership`, the second is handed to `billingViewOf()` unchanged, and a
+ * payment landing between them can only make one of them newer — never disagree, because neither
+ * writes.
+ *
+ * The *derivation* is not here. `lib/billing/payment-view.ts::billingViewOf()` turns these facts
+ * into panels, and it is pure, so the surface's table of states is a unit test.
+ */
+export interface MemberBillingFacts {
+  readonly rows: readonly MemberRelationshipRow[];
+  readonly subscription: Subscription | null;
+  readonly trialExtendedAt: Date | null;
+  readonly now: Date;
+}
+
+export async function readBillingFacts(
+  userId: string,
+  now: Date = new Date(),
+): Promise<MemberBillingFacts> {
+  const rows = await listMyRelationships(userId, now);
+  const subscription = await readActiveSubscription(userId);
+  const trialExtendedAt = await readExtensionClaimedAt(userId);
+  return { rows, subscription, trialExtendedAt, now };
+}

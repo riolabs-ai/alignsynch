@@ -47,6 +47,33 @@ export function relationshipPath(relationshipId: string): string {
 }
 
 /**
+ * `/dashboard/chat` — the member's chat: one thread per relationship (#1131).
+ *
+ * **Not `/chat`.** That address is the *quiz* product's conversations and is gated to that brand
+ * (`app/(mainlayout)/chat/page.tsx` calls `requireQuizProduct()`, #300), so on the AlignSynch build
+ * — the only build whose relationships there are to talk about — it answers 404. The v2 bundle names
+ * this address (`IMPLEMENTATION-PROMPT.md`: "Target: `/dashboard/chat` and
+ * `/dashboard/chat?relationship=<id>`… confirm in `lib/flow/paths.ts`") and every other member
+ * surface in this wave is a child of `/dashboard`, so the constant is the one place both are
+ * decided.
+ */
+export const CHAT_PATH = `${OVERVIEW_PATH}/chat`;
+
+/**
+ * One thread, as an address: `/dashboard/chat?relationship=<id>`.
+ *
+ * A query, not a segment — the opening line of the chat surface is the list, and a thread is the
+ * *selection* inside it. It is also what makes the mobile back chevron a plain link to
+ * `CHAT_PATH`, with no history to unwind and no route of its own to keep in the manifest.
+ *
+ * The id is the **relationship's**, never a session's: a relationship has one shared chat and its
+ * rounds are cycles inside it (`content/chat.ts`).
+ */
+export function chatThreadPath(relationshipId: string): string {
+  return `${CHAT_PATH}?relationship=${encodeURIComponent(relationshipId)}`;
+}
+
+/**
  * `/assessments` — the **assessment sessions** this signed-in account is a party to (#877).
  *
  * Plural, and a sibling of `/dashboard/relationships` and `/dashboard/templates`: the three are
@@ -61,7 +88,6 @@ export const MY_ASSESSMENTS_PATH = "/assessments";
 
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";
-
 /**
  * The id the stage card's heading carries, so the card can be the labelled region and
  * `StageTitleFocus` can move focus to it (#1123).
@@ -140,7 +166,7 @@ export const PUBLIC_HELP_PATH = "/help";
 /**
  * `/templates` — the template **namespace**, not a page.
  *
- * It answers a permanent 308 to `/relationship-types` (`next.config.mjs`): the public catalogue
+ * It answers a permanent 308 to `/relationship-templates` (`next.config.mjs`): the public catalogue
  * that used to own this address is a *taxonomy* and has moved to its own noun (#794), and the
  * library that does belong under this one sits a level in at `RELATIONSHIP_TEMPLATES_PATH`.
  * `tests/route-redirects.test.ts` fails any `permanent: true` row whose static `source` is also a
@@ -188,42 +214,111 @@ export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 export const TEMPLATE_LIBRARY_TAB_PATH = `${TEMPLATE_LIBRARY_PATH}?tab=library`;
 
 /**
- * `/relationship-types` — one relationship *type*'s public page (#794).
+ * `/dashboard/payment` — the member's billing surface (#1132).
  *
- * The reachable half of `TEMPLATES_PATH`: the *taxonomy* of relationship types the shop sells,
- * one page per purchasable type, and no session needed. It is in `(marketing)` — wordmark, no
- * sidebar — because a stranger is who it is for.
+ * One page for both parties, and the role is derived from the rows rather than from the address: an
+ * account that has initiated a relationship reads its trial panels, and one that was only ever
+ * invited reads the coverage band. The bundle draws no rail row for it
+ * (`docs/specs/v2-bundles/08-spec-design-page-payment-v2/payment.html`), so nothing in the shell
+ * links here yet — the inbound link arrives with the surfaces whose bundles do link `payment.html`
+ * (Start and Account Settings).
  *
- * **Since #905 this is not the catalogue.** The public catalogue answers at
- * `TEMPLATE_CATALOGUE_PATH`; this constant is the namespace the type pages and their worked
- * examples live in, and the address the #889 catalogue composition is retained at as a variation
- * (`app/(marketing)/relationship-types/page.tsx`).
+ * A literal, not an import: this module is imported by `"use client"` components.
  */
-export const RELATIONSHIP_TYPES_PATH = "/relationship-types";
+export const PAYMENT_PATH = `${OVERVIEW_PATH}/payment`;
 
 /**
- * `/relationship-templates` — the public catalogue of templates (#905).
+ * `/relationship-templates` — the public catalogue of templates, and **the one public address**
+ * (#905, consolidated in #1127).
  *
  * The door the shared header's `Templates` row, the footer's catalogue link and every "start with
- * a template" action point at: the V2 catalogue, which lists the taxonomy by group and links each
- * type to its page under `RELATIONSHIP_TYPES_PATH`. It is a separate constant from
- * `RELATIONSHIP_TEMPLATES_PATH` (`/templates/relationship`, the member's library) on purpose —
- * two surfaces, two nouns, and a reader should not have to guess which one a link means.
+ * a template" action point at: the catalogue, which lists the taxonomy and links each type to its
+ * own page **under this same path**. It is a separate constant from `RELATIONSHIP_TEMPLATES_PATH`
+ * (`/templates/relationship`, the member's library) on purpose — two surfaces, two nouns, and a
+ * reader should not have to guess which one a link means.
+ *
+ * **#1127 retired the second catalogue address.** `/relationship-types` used to serve a page of
+ * its own (the `#889` shop composition, from `#794` until `#1040`) *and* be the namespace a type's
+ * page and its worked example lived in, so the public catalogue was reachable at two addresses
+ * that rendered the same model. A catalogue at two addresses is two pages to keep in step and two
+ * entries for a search engine; there is now one, and `/relationship-types` answers a `308` for
+ * itself, for `/<id>` and for `/<id>/demo` (`next.config.mjs`). `RELATIONSHIP_TYPES_PATH` is
+ * **deleted rather than aliased** (the #794/#1109 doctrine): an alias would let a new caller keep
+ * spelling the retired noun, and the two addresses would drift back apart a card later.
  */
 export const TEMPLATE_CATALOGUE_PATH = "/relationship-templates";
 
 /**
- * One relationship type's public page — `/relationship-types/<id>`.
+ * The catalogue's own shelf anchor — where a "Start Free" or a plan card lands (#1127).
  *
- * Addressed by the taxonomy's own `id` (`data/relationship-types.ts`), never by a record handle:
- * a type is a row in a fixture, not a record in the database.
+ * The catalogue is one page with the shelf part-way down it, so a door that means "pick a template"
+ * names the shelf rather than the top of the hero. It is spelled here because three surfaces author
+ * it (`/pricing`'s two doors, the public header's primary, the closing band) and the fragment is the
+ * one part of the address a caller cannot see is wrong.
  */
-export function relationshipTypePath(typeId: string): string {
-  return `${RELATIONSHIP_TYPES_PATH}/${typeId}`;
+const CATALOGUE_SHELF = `${TEMPLATE_CATALOGUE_PATH}#catalog`;
+
+/**
+ * `/pricing` → the catalogue, carrying the plan the reader chose (#1127).
+ *
+ * **Every `/pricing` action takes this door, and none of them reaches a checkout.** The v2 spec's
+ * call is that a plan is *chosen* on `/pricing` and *sold* nowhere: the reader lands on the
+ * catalogue with their choice in the address, picks a template, and the wizard carries it to
+ * stage 5's plan line. The plan ids on both ends are the billing fixture's own tiers
+ * (`data/billing-plans.ts`), so the query cannot name a tier the product does not sell.
+ *
+ * The interval rides beside the tier because `billing_plan` keys on the pair — a carried tier
+ * without its interval cannot be priced, and defaulting one here is how a yearly card would quietly
+ * carry a monthly price.
+ *
+ * Pass nothing for the general door (`Start Free`, the closing band): no plan is carried, and the
+ * catalogue renders no banner.
+ */
+export function pricingCataloguePath(choice?: {
+  readonly planId: string;
+  readonly interval: string;
+}): string {
+  if (choice === undefined) return CATALOGUE_SHELF;
+  const query = new URLSearchParams({
+    from: "pricing",
+    plan: choice.planId,
+    interval: choice.interval,
+  });
+  return `${TEMPLATE_CATALOGUE_PATH}?${query.toString()}#catalog`;
 }
 
 /**
- * One relationship type's worked example — `/relationship-types/<id>/demo`.
+ * A carried plan, as a query string appended to a catalogue link — `?from=pricing&plan=…&interval=…`
+ * or `""` when nothing was carried.
+ *
+ * The chain is one query read three times: `/pricing` writes it, the catalogue's banner names the
+ * tier and its cards keep the pair on their own links, and the template page hangs it on the
+ * `Create Relationship` action so stage 1 can write it into the flow's cookie. A craft
+ * `?plan=` never survives — callers validate with `planIntentFromSearch()` before calling this.
+ */
+export function carriedPlanQuery(intent: { planId: string; interval: string } | null): string {
+  if (intent === null) return "";
+  return new URLSearchParams({
+    from: "pricing",
+    plan: intent.planId,
+    interval: intent.interval,
+  }).toString();
+}
+
+/**
+ * One relationship type's public page — `/relationship-templates/<id>`.
+ *
+ * Addressed by the taxonomy's own `id` (`data/relationship-types.ts`), never by a record handle:
+ * a type is a row in a fixture, not a record in the database. It sits under the catalogue's own
+ * path since #1127, which is what makes "the catalogue" one noun: `/relationship-templates` is the
+ * list and `/relationship-templates/<id>` is one row of it.
+ */
+export function relationshipTypePath(typeId: string): string {
+  return `${TEMPLATE_CATALOGUE_PATH}/${typeId}`;
+}
+
+/**
+ * One relationship type's worked example — `/relationship-templates/<id>/demo`.
  *
  * A **child of the type's public page**, not a segment of its own: the example is the taxonomy
  * row's own finished report, so a reader who lands on the example is one address below the type

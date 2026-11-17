@@ -56,13 +56,14 @@
  * if"). The server refuses an unpaid send on its own, in `sendDraftInvitation()` — the UI gate is
  * the courtesy, not the enforcement.
  *
- * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the
- * fixture's handles (`one`, `unlimited`), which key its copy; a checkout is named by a
- * `billing_plan` row (`basic`, `principal`). This module used to post the handle and fall back to
- * `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was invisible to
- * the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a plan this
- * product sells*, and the card frame never mounted. `PLAN_BILLING_TIER` in
- * `data/pages/assessment-create.ts` is the one map between the two, beside the prices it produces.
+ * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the plan
+ * catalogue's handles (`single`, `family`, `annual`), which key its copy; a checkout is named by a
+ * `billing_plan` row (`basic`, `principal`) at an interval. This module used to post the handle and
+ * fall back to `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was
+ * invisible to the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a
+ * plan this product sells*, and the card frame never mounted. `data/membership-plans.ts` holds the
+ * one row per plan — its tier, its interval and its amount — and `membershipPlan()` is how this
+ * module reads it.
  *
  * **It moves focus like a step, not like a page.** The reveal puts focus on the step's first
  * control — `data-panel-first` — so a screen reader follows the walk; on the card step that target
@@ -83,7 +84,7 @@ import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import type { CarriedPlan } from "@/lib/flow/plan-intent";
 import { relationshipPath, sendInvitationPath } from "@/lib/flow/paths";
-import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
+import { membershipPlan } from "@/data/membership-plans";
 import { PlanChoices, type PlanId } from "./plan-choices";
 import { StripeFrame } from "@/components/billing/stripe-frame";
 
@@ -241,7 +242,7 @@ export function InviteWalk({
   /** The plan's own words from the fixture, or the tier the account already holds (#870). */
   function planLabel(picked: PlanId | null): string {
     if (picked === null) return planIncluded?.name ?? itemLabel(shortCopy(copy), "none");
-    return `${itemLabel(plans, picked)} · ${itemLabel(plans, `${picked}-price`)}${itemLabel(plans, "per")}`;
+    return `${itemLabel(plans, picked)} · ${itemLabel(plans, `${picked}-price`)}${itemLabel(plans, `${picked}-interval`)}`;
   }
 
   /**
@@ -271,16 +272,23 @@ export function InviteWalk({
       setRefusal(itemLabel(flow, "card-refused"));
       return;
     }
-    const planId = PLAN_BILLING_TIER[picked];
+    const chosen = membershipPlan(picked);
+    if (chosen === null || chosen === undefined) {
+      setRefusal(itemLabel(flow, "card-refused"));
+      return;
+    }
     setStarting(true);
     try {
       /**
-       * **The interval is the one the reader chose on `/pricing`** (#1043), carried with the tier.
-       * It defaults to `month` only when nothing was carried, which is the walk's own history: one
-       * monthly membership, both parties. A yearly choice must not be quietly re-billed monthly, so
-       * the carried interval is handed to the server as it arrived.
+       * **The interval is the row's own, unless `/pricing` carried one** (#1043, #1127). The three
+       * plans are (tier, interval) pairs — Single Annual is `basic` billed yearly — so the row
+       * decides the unit: it defaults to the plan's interval rather than to `month`, which would
+       * quietly re-bill an annual plan monthly. A carried interval still wins, because it is the one
+       * the reader chose on `/pricing`.
        */
-      const answer = await checkout.onStart({ planId, interval: carriedPlan?.interval ?? "month" });
+      const planId = chosen.tier;
+      const interval = carriedPlan?.interval ?? chosen.interval;
+      const answer = await checkout.onStart({ planId, interval });
       if (!answer.ok) {
         setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
         return;

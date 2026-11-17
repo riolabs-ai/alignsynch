@@ -29,6 +29,7 @@ import { fillLabel } from "@/lib/page-copy";
 import type { RelationshipCardState } from "@/lib/member/start";
 import { Check, Equal, Flag } from "lucide-react";
 import Link from "next/link";
+import { CardMenu, type CardMenuData } from "./card-menu";
 
 /** One Aspect's verdict under its own Setting — the three words the legend counts. */
 export type AspectMark = "in-synch" | "small-gap" | "gap";
@@ -106,9 +107,16 @@ function initialsOf(name: string): string {
 export function RelationshipCard({
   view,
   labels,
+  menu,
 }: {
   view: RelationshipCardView;
   labels: RelationshipCardLabels;
+  /**
+   * The kebab (#1134) — absent on Start, where the card is a preview of two rows and the surface is
+   * a landing rather than a place to act. Every word and every writer arrives in this object, so the
+   * card stays word-free and a page that mounts no menu draws no control.
+   */
+  menu?: CardMenuData;
 }) {
   const chipWord: Record<RelationshipCardState, string> = {
     live: labels.live,
@@ -161,6 +169,7 @@ export function RelationshipCard({
         <Chip variant="neutral" data-relationship-status={view.state}>
           {chipWord[view.state]}
         </Chip>
+        {menu === undefined ? null : <CardMenu data={menu} />}
       </div>
 
       <div className="flex-1 px-4">

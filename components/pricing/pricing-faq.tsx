@@ -128,21 +128,21 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
     : faqCategories;
 
   return (
-    <section className="py-20 bg-slate-50 dark:bg-slate-900/50">
-      <div className="marketing-container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            {copy.body}
-          </p>
+    <section className="border-t bg-background" aria-labelledby="pricing-faq-title">
+      <div className="mx-auto w-full max-w-content px-4 py-10 lg:px-6">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-2xl font-bold tracking-tight text-primary" id="pricing-faq-title">
+            {copy.heading}
+          </h2>
+          <p className="mt-1 text-base text-foreground">{copy.body}</p>
 
-          <div className="mt-8 max-w-md mx-auto">
+          <div className="mt-6 max-w-md">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
               <Input
                 type="search"
                 placeholder={itemLabel(copy, "search-placeholder")}
-                className="pl-10"
+                className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -150,21 +150,23 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <div className="mx-auto mt-8 max-w-3xl">
           {filteredFaqs.map((category) => (
             <div key={category.name} className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">{category.name}</h3>
-              <Accordion type="single" collapsible className="space-y-4">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-deep">
+                {category.name}
+              </h3>
+              <Accordion type="single" collapsible className="space-y-2">
                 {category.questions.map((faq, index) => (
                   <AccordionItem
                     key={index}
                     value={`${category.name}-${index}`}
-                    className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm"
+                    className="rounded-lg border bg-card"
                   >
-                    <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-slate-50 dark:hover:bg-slate-700/50 font-medium text-left">
+                    <AccordionTrigger className="px-4 py-4 text-left text-base font-semibold text-primary hover:no-underline">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-2 text-slate-600 dark:text-slate-300">
+                    <AccordionContent className="px-4 pb-4 pt-0 text-sm text-foreground">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
@@ -174,15 +176,15 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
           ))}
 
           {filteredFaqs.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-slate-500 dark:text-slate-400">
+            <div className="py-8">
+              <p className="text-sm text-muted-foreground">
                 {fillLabel(itemLabel(copy, "no-results"), { query: searchQuery })}
               </p>
-              <p className="mt-2">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {itemLabel(copy, "no-results-hint")}{" "}
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="text-action hover:text-action/80"
+                  className="font-medium text-action hover:underline"
                 >
                   {itemLabel(copy, "clear-search")}
                 </button>
@@ -191,15 +193,15 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
           )}
         </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-slate-600 dark:text-slate-400">
+        <div className="mx-auto mt-10 max-w-3xl">
+          <p className="text-sm text-muted-foreground">
             {itemLabel(copy, "contact-prompt")} {/*
              * The contact link is the form, not a mailbox (owner, 2026-11-02). This anchor used to
              * print `brand.supportEmail` behind a mail link; `/help` is the one contact path on the
              * public site now, and it stores the message before mailing it, so a visitor without a
              * mail client is not left with a link that does nothing.
              */}
-            <Link href="/help" className="text-action hover:text-action/80 font-medium">
+            <Link href="/help" className="font-medium text-action hover:underline">
               {itemLabel(copy, "contact-link")}
             </Link>
           </p>

@@ -33,6 +33,7 @@
  */
 import { z } from "zod";
 import { BILLING_INTERVALS, type BillingInterval } from "@/data/billing-plans";
+import { membershipPlanFor } from "@/data/membership-plans";
 import { PLAN_BILLING_TIER, type PlanRowId } from "@/data/pages/assessment-create";
 
 /**
@@ -117,16 +118,20 @@ export function parsePlanIntent(raw: string | undefined): PlanIntent | null {
 }
 
 /**
- * The plan row a carried tier is drawn by — `PLAN_BILLING_TIER` read backwards.
+ * The plan row a carried intent is drawn by — the catalogue read backwards.
  *
- * `null` when the map prices no row at that tier, which is the state a map edited on one side only
- * produces; stage 5 then draws nothing preselected rather than guessing a row.
+ * The exact (tier, interval) pair is matched first: `basic/year` is **Single Annual**, not Single,
+ * so a yearly carry cannot land on the monthly row and quietly post a monthly price. A tier whose
+ * yearly interval no plan claims — the unclaimed Family Annual key — falls back to the plan for that
+ * tier, and the carried interval is handed to the checkout unchanged, which is what keeps a
+ * `/pricing` choice from being silently re-billed.
+ *
+ * `null` when the catalogue names no plan at that tier, which is the state a map edited on one side
+ * only produces; stage 5 then draws nothing preselected rather than guessing a row.
  */
-export function planRowFor(tier: PaidPlanTier): PlanRowId | null {
-  const entry = (Object.entries(PLAN_BILLING_TIER) as [PlanRowId, PaidPlanTier][]).find(
-    ([, mapped]) => mapped === tier,
-  );
-  return entry === undefined ? null : entry[0];
+export function planRowFor(tier: PaidPlanTier, interval?: BillingInterval): PlanRowId | null {
+  const row = membershipPlanFor(tier, interval);
+  return row === null ? null : row.id;
 }
 
 /** What stage 5 needs from a carried intent: the row to preselect, and the two facts behind it. */
@@ -137,6 +142,6 @@ export interface CarriedPlan extends PlanIntent {
 /** A carried intent resolved to a row, or `null` when no row is drawn for its tier. */
 export function carriedPlanOf(intent: PlanIntent | null): CarriedPlan | null {
   if (intent === null) return null;
-  const row = planRowFor(intent.planId);
+  const row = planRowFor(intent.planId, intent.interval);
   return row === null ? null : { ...intent, row };
 }

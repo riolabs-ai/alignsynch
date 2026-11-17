@@ -32,6 +32,7 @@
  *   unreadable the database did not answer
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
 
 /**
  * The id of the shared Aspect editor's section on this page.
@@ -49,6 +50,16 @@ export const ASPECT_EDITOR_SECTION = "aspect-editor";
  * section through this constant and the words through its items, never a literal (E23).
  */
 export const RELATIONSHIP_EDIT_SECTION = "edit";
+
+/**
+ * The id of the live Aspects band's section on this page (#1133).
+ *
+ * Stage 6 is running, so the panel draws the two sentences and **no writing control** — the
+ * pencils, the Add and the drag are gone, and `saveAspects` refuses the write inside its own
+ * transaction even if one came back. The page names the section through this constant for the
+ * same E23 reason as the two above.
+ */
+export const ASPECTS_LIVE_SECTION = "aspects-live";
 
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
@@ -314,6 +325,29 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         },
       ],
     },
+    /**
+     * The Aspect drawer (#1133), shared vocabulary from `content/aspect-drawer.ts` — the same sheet
+     * Stage 3 and a My Template's Edit open, mounted here for a `draft`/`pending` relationship.
+     */
+    aspectDrawerSection(),
+    {
+      /**
+       * The live Aspects band (#1133) — Stage 6 is running, so **no control on this panel writes**.
+       *
+       * The two sentences are the owner's rule and the bundle's reason, in that order: the rule
+       * (`Changes are proposed and agreed by both of you.`) is the issue's own wording, and the
+       * state (`Aspects are locked while Stage 6 is live.`) is
+       * `03-spec-design-page-relationship-detail-v2`. Together they answer the question a person
+       * asks when the pencils are gone: *why can't I edit this*.
+       */
+      id: ASPECTS_LIVE_SECTION,
+      heading: "Aspects are Locked",
+      items: [
+        { id: "locked-now", label: "Aspects are locked while Stage 6 is live." },
+        { id: "rule", label: "Changes are proposed and agreed by both of you." },
+      ],
+    },
+
     {
       id: "publish",
       heading: "Publish",

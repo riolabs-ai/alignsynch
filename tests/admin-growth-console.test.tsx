@@ -78,8 +78,13 @@ test("the console renders four bands over the committed model", () => {
     );
   }
 
-  // The solved ARR, formatted as money — the number the whole model exists to produce.
-  assert.ok(html.includes("$2,999,895"), "the final ARR is drawn");
+  // The solved ARR, formatted as money — the number the whole model exists to produce. Derived from
+  // the committed model rather than typed: the figure moves whenever a plan price does (#1127), and
+  // a hardcoded dollar amount turns a price change into a failure in a console that never changed.
+  const finalArr = `$${Math.round(model.totals.finalArrCents / 100).toLocaleString("en-US", {
+    maximumFractionDigits: 0,
+  })}`;
+  assert.ok(html.includes(finalArr), "the final ARR is drawn");
 
   // The invoice table: a row per plan and the total, with the final month named.
   const finalMonth = model.months.at(-1);
