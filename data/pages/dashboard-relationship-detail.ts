@@ -81,6 +81,15 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     /** #706 — the viewer's own seat, from their party row. */
     { id: "role-initiator", label: "Initiator" },
     { id: "role-counterparty", label: "Counterparty" },
+    {
+      /**
+       * #1124 — what the tab strip says when the fixture hands it no sections at all. E40 gives an
+       * empty list an explicit bordered block, and this is the sentence that block carries: a
+       * binding nobody can read, said out loud rather than drawn as blank space.
+       */
+      id: "tabs-empty",
+      label: "This relationship has no sections to open — support can repair the binding.",
+    },
   ],
   sections: [
     {
@@ -803,6 +812,119 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
+      ],
+    },
+    {
+      /**
+       * #1124 — **the six-tab layer, and it is the whole of the content column.**
+       *
+       * The sections below this one are its panels: the record is one page with six views of it,
+       * not six pages. The labels are the owner's words from the approved bundle
+       * (`docs/specs/v2-bundles/03-spec-design-page-relationship-detail-v2/`), in the bundle's
+       * order, and the `heading` is the tablist's accessible name rather than a drawn heading —
+       * the layer never prints it.
+       */
+      id: "tabs",
+      heading: "Relationship sections",
+      items: [
+        { id: "discussion", label: "Discussion" },
+        { id: "aspects", label: "Aspects" },
+        { id: "members", label: "Members" },
+        { id: "details", label: "Details" },
+        { id: "settings", label: "Settings" },
+        { id: "payment", label: "Payment" },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Discussion panel.
+       *
+       * **The thread has no model yet** (#921 owns it), so the panel draws what the read can
+       * support: the heading and one honest empty state. It is not a fake composer and it is not
+       * a comment box that would write nowhere — the layer ships the tab, and the thread lands
+       * when the model does.
+       */
+      id: "discussion",
+      heading: "Relationship Discussion",
+      body: "One thread for the two of you, beside the Aspects you are answering.",
+      items: [{ id: "empty", label: "Nothing has been said here yet." }],
+    },
+    {
+      /**
+       * #1124 — the Members panel: the two seats, and what has happened to the invitation.
+       *
+       * Read from the relationship itself — the initiator's name, the Counterparty's seat, and
+       * the invitation row — so a draft (no seat bound) says so instead of drawing two blanks.
+       * The owner-named labels are the bundle's: `(You)` marks the viewer, and `Invitation
+       * History` is the subheading.
+       */
+      id: "members",
+      heading: "Members",
+      items: [
+        { id: "you", label: "(You)" },
+        { id: "seat-empty", label: "Not joined yet" },
+        { id: "history", label: "Invitation History" },
+        { id: "no-invite", label: "No invitation has been sent yet." },
+        { id: "sent", label: "Invite sent {date}." },
+        { id: "expires", label: "The link stops working {date}." },
+        { id: "claimed", label: "The other person has joined." },
+        { id: "revoked", label: "An operator revoked the link." },
+      ],
+    },
+    {
+      /** #1124 — the Details panel: the record's own facts, then its timeline. */
+      id: "details",
+      heading: "Relationship Information",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "invitation", label: "Invitation" },
+        { id: "seat", label: "Your Seat" },
+        { id: "timeline", label: "Timeline" },
+        { id: "created", label: "Created {date}." },
+        { id: "published", label: "Published {date}." },
+        { id: "trial-started", label: "7-day free trial started {date}." },
+        { id: "empty-timeline", label: "Nothing has happened to this relationship yet." },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Settings panel: the two values the assessment was configured with, and the
+       * one sentence about when a change takes effect. The values are read; the editor that
+       * writes them is the relationship's own edit panel (#623), so this panel never grows a
+       * second one.
+       */
+      id: "settings",
+      heading: "Assessment Settings",
+      items: [
+        { id: "mode", label: "Mode" },
+        { id: "setting", label: "Alignment Tolerance" },
+        { id: "next-round", label: "Changes apply from the next round." },
+        {
+          id: "by-starter",
+          label: "The person who started this relationship sets these.",
+        },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Payment panel, and the no-leak rule is the whole design.
+       *
+       * The Initiator reads the membership and its trial; the Counterparty reads one sentence
+       * and nothing else — no plan, no price, no card, no countdown. Billing itself is #1132's
+       * surface; this panel mirrors the facts the relationship already carries and adds no
+       * control, so there is exactly one place money is decided.
+       */
+      id: "payment",
+      heading: "Relationship Membership",
+      items: [
+        { id: "membership", label: "Membership" },
+        { id: "billing-owner", label: "Billing Owner" },
+        { id: "you", label: "You" },
+        { id: "open", label: "Running" },
+        { id: "lapsed", label: "Read-only" },
+        { id: "trial-ends", label: "Trial ends {date}." },
+        { id: "no-trial", label: "No trial is running." },
+        { id: "covered", label: "{name} covers this relationship. You’re never charged." },
       ],
     },
     {

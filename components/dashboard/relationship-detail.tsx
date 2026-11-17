@@ -6,6 +6,12 @@
  * `/dashboard/relationships/[id]` — one relationship, from draft to a live invitation (#533 phase 2),
  * re-cast onto the shared record detail shell by #795.
  *
+ * **#1124 — the content column is a six-tab layer.** Discussion · Aspects · Members · Details ·
+ * Settings · Payment, in the approved bundle's order, hash-addressable (`#aspects`) and driven by
+ * `relationship-tabs.tsx`; the five panels this page did not already draw come from
+ * `relationship-panels.tsx`. The shell's regions are unchanged — band, facts, actions, content —
+ * and no write moved: the layer decides which section of the record is in front, nothing else.
+ *
  * **One shell with the template page, two declared axes.** `components/assessment-flow/
  * record-detail-shell.tsx` draws the identity band, the facts card, the back link and the section
  * order; this file supplies only what a *relationship* says — exactly as the template page supplies
@@ -53,6 +59,14 @@
  */
 import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
 import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
+import {
+  DetailsPanel,
+  DiscussionPanel,
+  MembersPanel,
+  PaymentPanel,
+  SettingsPanel,
+} from "@/components/dashboard/relationship-panels";
+import { RelationshipTabs } from "@/components/dashboard/relationship-tabs";
 import {
   DetailBand,
   DetailFacts,
@@ -216,6 +230,7 @@ export function RelationshipDetail({
   copy,
   relationship,
   editTrigger,
+  settings,
   onSaveAspects,
   onPublish,
   onRepublish,
@@ -242,6 +257,16 @@ export function RelationshipDetail({
    * (`editState` absent or `closed`) passes no node at all, which is how it stays honest.
    */
   editTrigger?: ReactNode;
+  /**
+   * #1124 — **the Settings tab's two values**, read by the page from the relationship's own edit
+   * state (`readRelationshipEditState()`, #623) and passed down rather than imported: the module
+   * that reads them reaches Postgres, and a `"use client"` value-import of it is E34's failure
+   * mode (#228).
+   *
+   * Absent is a fact, not a gap — a Counterparty, or a relationship the read refuses to open for
+   * editing, gets the panel's sentence about who sets these instead of two invented defaults.
+   */
+  settings?: { readonly mode: string; readonly setting: string };
   onSaveAspects: (payload: {
     relationshipId?: string;
     record?: unknown;
@@ -343,6 +368,13 @@ export function RelationshipDetail({
   const hygieneCopy = sectionOf(copy, "hygiene");
   const closeCopy = sectionOf(copy, "close");
   const abandonCopy = sectionOf(copy, "abandon");
+  /**
+   * #1124 — the tab strip's own words. `tabs` is the fixture's order, unfiltered: the six sections
+   * are the record's, so every seat sees all six and the seat decides what is *inside* a panel,
+   * never whether the panel exists.
+   */
+  const tabCopy = sectionOf(copy, "tabs");
+  const tabs = (tabCopy.items ?? []).map((item) => ({ id: item.id, label: item.label }));
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -1051,6 +1083,123 @@ export function RelationshipDetail({
       ? null
       : fillLabel(itemLabel(pauseCopy, "added"), { instant: formatDate(extensionEndsAt) });
 
+  /**
+   * #1124 — **the tab layer's six panels**, assembled here because five of them read this
+   * component's copy and one of them *is* the Aspects section the page already owned.
+   *
+   * The Aspects panel is that section unchanged — same `AspectList`, same two writes, same
+   * refusal sentences — so editing an Aspect is still this page's business and not a tab's. The
+   * other five are drawn by `relationship-panels.tsx` from the same read the screen already has,
+   * and none of them writes: the writes this screen owns did not move, and the ones it does not
+   * own yet (#921's thread, #1135's invitation hygiene) are not faked behind a tab.
+   */
+  const panels: Readonly<Record<string, ReactNode>> = {
+    discussion: <DiscussionPanel copy={copy} />,
+    aspects: (
+      <DetailSection
+        title={aspectCopy.heading}
+        body={sectionBody(aspectCopy)}
+        hooks={{ "data-relationship-aspects": "true" }}
+      >
+        {editable ? (
+          <div className="mt-4 space-y-4">
+            <AspectList
+              copy={copy}
+              wordsSection={ASPECT_EDITOR_SECTION}
+              validationSection={null}
+              aspects={aspectDrafts}
+              addRemove
+              onChange={mirrorAspects}
+              save={persistAspects}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => save("draft")}
+                disabled={pending}
+              >
+                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-draft")}
+              </Button>
+              <Button type="button" onClick={() => save("pending")} disabled={pending}>
+                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-pending")}
+              </Button>
+              {aspectsOutcome?.ok === true ? (
+                <p data-aspects-saved={aspectsOutcome.actionId} className="text-sm">
+                  {fillLabel(itemLabel(aspectCopy, "saved"), {
+                    status: aspectsOutcome.status,
+                    actionId: aspectsOutcome.actionId,
+                  })}
+                </p>
+              ) : null}
+              {aspectsRefusal === null ? null : (
+                <p
+                  data-aspects-refusal={aspectsOutcome?.ok === false ? aspectsOutcome.code : ""}
+                  className="text-sm"
+                >
+                  {aspectsRefusal}
+                </p>
+              )}
+            </div>
+            {aspectsOutcome !== null &&
+            !aspectsOutcome.ok &&
+            aspectsOutcome.problems !== undefined ? (
+              <ul data-aspects-problems className="space-y-1 text-sm">
+                {aspectsOutcome.problems.map((problem) => (
+                  <li key={`${problem.path}:${problem.message}`}>
+                    <span className="font-mono">{problem.path}</span>
+                    {": "}
+                    {problem.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : (
+          <ol className="mt-4 grid gap-3">
+            {aspects.map((aspect, index) => (
+              <li
+                key={aspect.id ?? `row-${String(index + 1)}`}
+                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
+                className="rounded-lg border border-border bg-card p-6"
+              >
+                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
+                <p className={`mt-2 ${DETAIL_MUTED}`}>
+                  <span className="font-medium text-foreground">
+                    {itemLabel(aspectCopy, "left")}
+                  </span>
+                  <span aria-hidden className="mx-1.5">
+                    —
+                  </span>
+                  {aspect.leftValue}
+                </p>
+                <p className={DETAIL_MUTED}>
+                  <span className="font-medium text-foreground">
+                    {itemLabel(aspectCopy, "right")}
+                  </span>
+                  <span aria-hidden className="mx-1.5">
+                    —
+                  </span>
+                  {aspect.rightValue}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </DetailSection>
+    ),
+    members: <MembersPanel copy={copy} relationship={relationship} />,
+    details: (
+      <DetailsPanel
+        copy={copy}
+        relationship={relationship}
+        invitationSentence={viewSentence(relationship.view)}
+      />
+    ),
+    settings: <SettingsPanel copy={copy} settings={settings} />,
+    payment: <PaymentPanel copy={copy} relationship={relationship} />,
+  };
+
   return (
     <RecordDetailShell
       scope="relationship"
@@ -1715,100 +1864,23 @@ export function RelationshipDetail({
         )}
       </DetailPanel>
 
-      {/* The Aspects: the initiator's editor while the relationship is `draft`/`pending`, and the
-          frozen list for everyone else — a counterparty answers against these words, so the screen
-          that invites them shows them. */}
-      <DetailSection
-        title={aspectCopy.heading}
-        body={sectionBody(aspectCopy)}
-        hooks={{ "data-relationship-aspects": "true" }}
-      >
-        {editable ? (
-          <div className="mt-4 space-y-4">
-            <AspectList
-              copy={copy}
-              wordsSection={ASPECT_EDITOR_SECTION}
-              validationSection={null}
-              aspects={aspectDrafts}
-              addRemove
-              onChange={mirrorAspects}
-              save={persistAspects}
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => save("draft")}
-                disabled={pending}
-              >
-                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-draft")}
-              </Button>
-              <Button type="button" onClick={() => save("pending")} disabled={pending}>
-                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-pending")}
-              </Button>
-              {aspectsOutcome?.ok === true ? (
-                <p data-aspects-saved={aspectsOutcome.actionId} className="text-sm">
-                  {fillLabel(itemLabel(aspectCopy, "saved"), {
-                    status: aspectsOutcome.status,
-                    actionId: aspectsOutcome.actionId,
-                  })}
-                </p>
-              ) : null}
-              {aspectsRefusal === null ? null : (
-                <p
-                  data-aspects-refusal={aspectsOutcome?.ok === false ? aspectsOutcome.code : ""}
-                  className="text-sm"
-                >
-                  {aspectsRefusal}
-                </p>
-              )}
-            </div>
-            {aspectsOutcome !== null &&
-            !aspectsOutcome.ok &&
-            aspectsOutcome.problems !== undefined ? (
-              <ul data-aspects-problems className="space-y-1 text-sm">
-                {aspectsOutcome.problems.map((problem) => (
-                  <li key={`${problem.path}:${problem.message}`}>
-                    <span className="font-mono">{problem.path}</span>
-                    {": "}
-                    {problem.message}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ) : (
-          <ol className="mt-4 grid gap-3">
-            {aspects.map((aspect, index) => (
-              <li
-                key={aspect.id ?? `row-${String(index + 1)}`}
-                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
-                className="rounded-lg border border-border bg-card p-6"
-              >
-                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
-                <p className={`mt-2 ${DETAIL_MUTED}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "left")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.leftValue}
-                </p>
-                <p className={DETAIL_MUTED}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "right")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.rightValue}
-                </p>
-              </li>
-            ))}
-          </ol>
-        )}
-      </DetailSection>
+      {/*
+        #1124 — **the six-tab layer.** The five sections this page grew up with (where it stands,
+        the Aspects) are joined by the four the approved bundle draws (Members, Details, Settings,
+        Payment) and the Discussion thread's honest empty state, and the whole set is behind one
+        strip: Discussion · Aspects · Members · Details · Settings · Payment.
+
+        Nothing above this line moved. The shell still draws the band, the facts card and the
+        working panels in the same order, and the writes this screen owns — Aspects, publish,
+        reissue, complete, the Counterparty's fork — are still where they were; the layer only
+        decides which section of the record is in front, and it says so in the URL (`#aspects`).
+      */}
+      <RelationshipTabs
+        label={tabCopy.heading ?? ""}
+        emptyLabel={pageItemOf(copy, "tabs-empty").label}
+        tabs={tabs}
+        panels={panels}
+      />
     </RecordDetailShell>
   );
 }

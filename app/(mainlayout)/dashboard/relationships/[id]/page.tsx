@@ -131,6 +131,17 @@ export default async function MemberRelationshipPage({
           copy={dashboardRelationshipDetailPageCopy}
           relationship={view}
           /*
+            #1124 — **the Settings tab's two values.** Read from the same edit state the panel
+            trigger uses (#623), so the tab and the editor cannot disagree about what the
+            relationship is configured with. `undefined` when the read could not answer — the
+            tab then says who owns these rather than printing two defaults nobody chose.
+          */
+          settings={
+            editState === undefined
+              ? undefined
+              : { mode: editState.mode, setting: editState.setting }
+          }
+          /*
             #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
             render inline in the 320 px actions rail, so the detail and its editor described the
             same relationship side by side. Now the rail carries one control and the panel is
