@@ -363,6 +363,14 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "admin-permissions", label: "CRUD & Permissions" },
           /**
+           * #1138 — the transactional-mail override editor. It sits after the two reference rows
+           * because it is the same kind of thing: the docs say how the product works, CRUD says who
+           * may do it, and this says what it writes to a person. The label is the issue's own title,
+           * and it is two words where the rest of the group is one — "Email Templates" is the name
+           * #1138 uses and renaming it here would be the screen disagreeing with its card.
+           */
+          { id: "admin-email-templates", label: "Email Templates" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,

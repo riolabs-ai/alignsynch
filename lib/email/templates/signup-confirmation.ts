@@ -42,12 +42,15 @@ export interface SignupConfirmationFacts {
   readonly address: string;
 }
 
-export function signupConfirmationDocument(facts: SignupConfirmationFacts): EmailDocument {
+export function signupConfirmationDocument(
+  facts: SignupConfirmationFacts,
+  body?: string,
+): EmailDocument {
   return {
     subject: SIGNUP_CONFIRMATION_SUBJECT,
     preheader: `The list holds ${facts.address}.`,
     blocks: [
-      ...bodyBlocks(SIGNUP_CONFIRMATION_BODY, { address: facts.address }),
+      ...bodyBlocks(SIGNUP_CONFIRMATION_BODY, { address: facts.address }, body),
       { kind: "paragraph", text: `The address on the list is ${facts.address}.` },
       {
         kind: "paragraph",

@@ -42,17 +42,21 @@ export function invitationSubject(facts: InvitationFacts): string {
   return `${facts.inviter} invited you to a ${facts.template} assessment`;
 }
 
-export function invitationDocument(facts: InvitationFacts): EmailDocument {
+export function invitationDocument(facts: InvitationFacts, body?: string): EmailDocument {
   return {
     subject: invitationSubject(facts),
     preheader: `${facts.inviter} invited ${facts.counterparty} to answer ${facts.template}.`,
     blocks: [
-      ...bodyBlocks(INVITATION_BODY, {
-        inviter: facts.inviter,
-        counterparty: facts.counterparty,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        INVITATION_BODY,
+        {
+          inviter: facts.inviter,
+          counterparty: facts.counterparty,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `${facts.inviter} has started an assessment called ${facts.template} and invited ${facts.counterparty} to answer it.`,

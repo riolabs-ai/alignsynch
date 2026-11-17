@@ -83,14 +83,15 @@ function isAdminView(path: string): boolean {
 }
 
 describe("the admin console's shared column", () => {
-  it("exists — twenty-five pages today, and every one of them is a page module", () => {
+  it("exists — twenty-seven pages today, and every one of them is a page module", () => {
     // Eighteen from #717's wave, plus the documentation hub and one document (#892), plus the
     // growth console (#920) and the brand and audience profile (#906), plus the features index and
-    // the release shelf (#893), plus the CRUD & Permissions matrix (#1126). The count is a floor on
-    // the walk, not a list: the two cases below derive the pages and hold each one to the rule, so a
-    // twenty-sixth page inherits it.
+    // the release shelf (#893), plus the CRUD & Permissions matrix (#1126), plus the transactional-
+    // mail register and one template's editor (#1138). The count is a floor on the walk, not a
+    // list: the two cases below derive the pages and hold each one to the rule, so a
+    // twenty-eighth page inherits it.
     const pages = adminPages();
-    expect(pages.length).toBe(25);
+    expect(pages.length).toBe(27);
   });
 
   it("is what every admin page renders inside", () => {

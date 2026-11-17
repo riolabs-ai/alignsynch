@@ -63,19 +63,30 @@ function calendarDate(instant: Date): string {
   return instant.toISOString().slice(0, 10);
 }
 
-export function trialEndedPausedDocument(facts: TrialEndedPausedFacts): EmailDocument {
+/**
+ * The document. `body` is the admin's published or draft body text when there is one (#1138) —
+ * it replaces this template's markdown section, never the sentences written around it.
+ */
+export function trialEndedPausedDocument(
+  facts: TrialEndedPausedFacts,
+  body?: string,
+): EmailDocument {
   const ended = calendarDate(facts.endedAt);
   return {
     subject: TRIAL_ENDED_PAUSED_SUBJECT,
     preheader: `The trial on ${facts.template} ended on ${ended}. Nothing was deleted.`,
     blocks: [
-      ...bodyBlocks(TRIAL_ENDED_PAUSED_BODY, {
-        recipient: facts.recipient,
-        template: facts.template,
-        ended_on: ended,
-        link: facts.link,
-        plans_link: facts.plansLink,
-      }),
+      ...bodyBlocks(
+        TRIAL_ENDED_PAUSED_BODY,
+        {
+          recipient: facts.recipient,
+          template: facts.template,
+          ended_on: ended,
+          link: facts.link,
+          plans_link: facts.plansLink,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the trial on ${facts.template} ended on ${ended}.`,
