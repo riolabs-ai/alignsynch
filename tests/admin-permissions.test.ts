@@ -1,22 +1,25 @@
 /**
  * `/admin/permissions` (#1126) — the gates, the honest failure state, and the parse behind them.
  *
- * Four claims, and each one is the thing the issue's acceptance line asks for:
+ * Five claims, and each one is the thing the issue's acceptance line asks for:
  *
  *   1. **The gates run in `/admin/docs` order.** `requireAdminProduct()` is the capability, and it
  *      closes before a session is read; then `requireAdmin({ next: "/admin/permissions" })` through
  *      the **real** policy — a member is refused with Next's own `notFound()` (never a redirect,
  *      never a 403), and a signed-out visitor is sent to `/login?next=/admin/permissions`.
- *   2. **A source that is absent is a panel, not an empty table.** The matrix file does not exist on
- *      this tree yet, so the rendered page names `docs/specs/v2-prototype/crud-matrix.md`, says an
- *      owner supplies it, and draws no `<table>` at all. The eleven P0 gaps and the six role ×
+ *   2. **A source that is absent is a panel, not an empty table.** With the reader stubbed to
+ *      "there is no file", the rendered page names `docs/specs/v2-prototype/crud-matrix.md`, says
+ *      an owner supplies it, and draws no `<table>` at all. The eleven P0 gaps and the six role ×
  *      action rules still render: they are #1126's own text, not the source's rows.
- *   3. **A source that parses becomes rows and honest figures.** With the reader stubbed to a real
- *      15-row-shaped document, every header figure comes from `countsOf()` over the cells — so
- *      "counts match the source file" is a property of the code, not of a copied number.
- *   4. **Read-only, and the filter is the address.** The served markup carries no form, no input and
- *      no button; each filter is a `Link` whose href round-trips through `parseCrudFilter`, and the
- *      facets combine.
+ *   3. **The committed source renders every row it carries.** With the **real** reader — #1158
+ *      committed the matrix at that path — the page draws 169 `data-cell` rows, the source's own
+ *      eight columns, and a counts band whose figures are `countsOf()`'s over that file.
+ *   4. **A stub that parses becomes rows and honest figures.** Every header figure comes from
+ *      `countsOf()` over the cells, so "counts match the source file" is a property of the code,
+ *      not of a copied number.
+ *   5. **Read-only, and the filter is the address.** The served markup carries no form, no input
+ *      and no button; each filter is a `Link` whose href round-trips through `parseCrudFilter`, and
+ *      the facets combine.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,20 +37,34 @@ const gate = vi.hoisted(() => ({
 /** The capability switch, flipped by the capability case and reset by every other. */
 const capability = vi.hoisted(() => ({ adminProduct: true }));
 
+/** The nine columns a stubbed source names; the committed file names eight (see the real case). */
+const STUB_COLUMNS = [
+  "object",
+  "action",
+  "role",
+  "prototype",
+  "selector",
+  "upstream",
+  "mvp",
+  "rationale",
+  "priority",
+] as const;
+
 /**
- * The matrix the page reads. `null` is the tree's own state today (no source file), which is the
- * failure panel; a list is a source that parsed.
+ * The matrix the page reads. `null` is "no source file" — the failure panel; a list is a source
+ * that parsed; `undefined` hands the page the **real** reader and the committed file.
  */
 const source = vi.hoisted(() => ({
   cells: null as
     | null
+    | undefined
     | {
         object: string;
         action: string;
         role: string;
         prototype: "covered" | "hinted" | "missing" | "n/a";
         selector: string;
-        upstream: "exists" | "not-found" | "conflict";
+        upstream: "exists" | "not-found" | "conflict" | "n/a";
         mvp: string;
         rationale: string;
         priority: "P0" | "P1" | "P2" | "Won't" | "none";
@@ -106,19 +123,20 @@ vi.mock("@/lib/auth/require-role", async (importOriginal) => {
   };
 });
 
-/** The reader, switched by `source.cells`: absent (the tree's state) or a parsed matrix. */
+/** The reader, switched by `source.cells`: absent, a stubbed matrix, or the real committed file. */
 vi.mock("@/lib/admin/crud-matrix-file", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/admin/crud-matrix-file")>();
   const matrix = await import("@/lib/admin/crud-matrix");
   return {
     ...real,
-    readCrudMatrix: () => {
+    readCrudMatrix: (path?: string) => {
+      if (source.cells === undefined) return real.readCrudMatrix(path);
       if (source.cells === null) {
         throw new matrix.CrudMatrixUnreadable(
           `${matrix.CRUD_MATRIX_PATH} is not present in this tree, so there is no matrix to read`,
         );
       }
-      return source.cells;
+      return { cells: source.cells, columns: [...STUB_COLUMNS] };
     },
   };
 });
@@ -191,7 +209,7 @@ describe("/admin/permissions — the gate", () => {
   });
 });
 
-describe("/admin/permissions — the source that is not there yet", () => {
+describe("/admin/permissions — a source that is absent", () => {
   it("names the missing file, says an owner supplies it, and draws no table", async () => {
     gate.role = "admin";
     capability.adminProduct = true;
@@ -397,5 +415,63 @@ describe("/admin/permissions — a source that parses", () => {
     // Only the matrix's own table: the conflicts panel says so in a sentence instead of drawing
     // a header row with nothing under it.
     expect(html.match(/<table/g) ?? []).toHaveLength(1);
+  });
+});
+
+describe("/admin/permissions — the committed source (#1158)", () => {
+  /** The file's own numbers, read here through the real reader rather than typed into a fixture. */
+  async function fromFile() {
+    const real = await vi.importActual<typeof import("@/lib/admin/crud-matrix-file")>(
+      "@/lib/admin/crud-matrix-file",
+    );
+    return real.readCrudMatrix();
+  }
+
+  it("draws every one of the file's rows, with the source's own eight columns", async () => {
+    gate.role = "admin";
+    capability.adminProduct = true;
+    source.cells = undefined;
+
+    const document = await fromFile();
+    const html = await render();
+
+    // Every cell the file carries is on the page — the acceptance line, as a count.
+    expect(html.match(/data-cell=/g) ?? []).toHaveLength(document.cells.length);
+    expect(document.cells.length).toBe(169);
+    expect(html).toContain("169 cells");
+    expect(html).toContain("169 of 169 cells shown");
+    // The counts band is the file's, not a sentence: the applicable figure is derived too.
+    expect(html).toContain(
+      `${document.cells.filter((cell) => cell.prototype !== "n/a").length} applicable`,
+    );
+    // Eight columns, the ones the header names — no invented ninth, and no failure panel.
+    const matrixTable = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
+    expect(matrixTable.match(/<th /g) ?? []).toHaveLength(document.columns.length);
+    expect(document.columns).toHaveLength(8);
+    expect(matrixTable).toContain(">Rationale<");
+    expect(matrixTable).not.toContain(">Priority<");
+    expect(html).not.toContain("data-matrix-unreadable");
+
+    source.cells = null;
+  });
+
+  it("narrows the committed matrix through the address, and says how much it shows", async () => {
+    gate.role = "admin";
+    source.cells = undefined;
+
+    const document = await fromFile();
+    const expected = document.cells.filter((cell) => cell.role === "Visitor").length;
+    const { default: Page } = await import("@/app/(mainlayout)/admin/permissions/page");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const html = renderToStaticMarkup(
+      (await Page({ searchParams: Promise.resolve({ role: "Visitor" }) })) as ReactElement,
+    );
+
+    expect(expected).toBeGreaterThan(0);
+    expect(expected).toBeLessThan(document.cells.length);
+    expect(html.match(/data-cell=/g) ?? []).toHaveLength(expected);
+    expect(html).toContain(`${expected} of 169 cells shown`);
+
+    source.cells = null;
   });
 });
