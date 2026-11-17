@@ -26,10 +26,26 @@
  * boundary and a page hands down the instant it decided to render.
  */
 
-/** The three ways an invitation reads, from the Initiator's seat. */
-export const INVITE_STATES = ["unclaimed", "expired", "claimed", "revoked"] as const;
+/** The five ways an invitation reads, from the Initiator's seat. */
+export const INVITE_STATES = ["unclaimed", "expired", "claimed", "declined", "revoked"] as const;
 
 export type InviteDisplayState = (typeof INVITE_STATES)[number];
+
+/**
+ * The `revoked_by` marker the Counterparty's own "Decline the invitation" writes (#1125).
+ *
+ * **A decline is terminal like a revocation and is not one.** Both make the link dead, and the two
+ * are different news to the Initiator: an operator withdrew a link, a person they invited said no.
+ * The row already has the two columns a decision needs (`revoked_at`, `revoked_by`), so a decline
+ * is that write with the recipient's own marker in the second column — no new column, no second
+ * dead-link concept, and the sentence the Initiator reads is chosen from who acted rather than
+ * guessed from when it happened.
+ *
+ * A plain word, not an account id, because an operator's revocations write their own account id
+ * there (`lib/admin/relationship-ops.ts`); no account id can equal this string, so the two writers
+ * can never be confused for one another.
+ */
+export const COUNTERPARTY_DECLINED_BY = "counterparty";
 
 /** The two columns the state is a function of, plus the one an operator writes (#503). */
 export interface InviteFacts {
@@ -44,22 +60,32 @@ export interface InviteFacts {
    * could act do not carry it, and "absent" is `false`. Every production read selects the column.
    */
   readonly revoked?: boolean;
+  /**
+   * `revoked_by = 'counterparty'` — the person the invitation was sent to declined it (#1125).
+   *
+   * Read **instead of** inferring a decline from the revocation: both write `revoked_at`, and only
+   * the second column says who ended the link. Absent means "not the Counterparty", which is every
+   * row an operator revoked and every row written before a decline could be recorded.
+   */
+  readonly declined?: boolean;
 }
 
 /**
- * `claimed`, else `revoked`, else `expired` once the clock has reached `expires_at`, else
- * `unclaimed`.
+ * `claimed`, else `declined`, else `revoked`, else `expired` once the clock has reached
+ * `expires_at`, else `unclaimed`.
  *
  * `<=` and not `<`: the invitation is dead **at** `expires_at`, the same instant the claim path
  * refuses (`claimInvite`), so a screen never presents a link the claim would reject.
  *
- * `revoked` outranks `expired` because it names *why* — an operator ended the invitation, and the
- * date it would have expired is not the fact an operator reading the row needs. It sits **after**
- * `claimed`: a seat somebody took is not un-taken by a later revocation, and `claimInvite()` refuses
- * to revoke a claimed invitation in the first place.
+ * `declined` and `revoked` both outrank `expired` because they name *why* — a person said no, or an
+ * operator ended the invitation, and the date it would have expired is not the fact a reader needs.
+ * They sit **after** `claimed`: a seat somebody took is not un-taken by a later decline, and
+ * `claimInvite()` refuses to touch a claimed invitation in the first place. `declined` sits before
+ * `revoked` because the two are the same write and only the actor tells them apart (#1125).
  */
 export function inviteStateOf(invite: InviteFacts, now: Date): InviteDisplayState {
   if (invite.claimed) return "claimed";
+  if (invite.declined === true) return "declined";
   if (invite.revoked === true) return "revoked";
   return invite.expiresAt.getTime() <= now.getTime() ? "expired" : "unclaimed";
 }

@@ -41,6 +41,15 @@ export type JoinNoticeOutcome = MailOutcome | "no-such-instance" | "no-address";
  */
 export async function sendJoinNotice(input: {
   readonly instanceRecordId: string;
+  /**
+   * #1125 — an optional suggestion the Counterparty attached to their acceptance.
+   *
+   * It travels **here** because this is the one channel that reaches the Initiator, and it is the one
+   * the join's own sentence describes ("Sent to {initiator} with your acceptance"). `aspect` is the
+   * Aspect's id, or `all` for the whole list; both are the Counterparty's words, and this module does
+   * not interpret them — the template prints them, and nothing writes an Aspect.
+   */
+  readonly suggestion?: { readonly aspect: string; readonly text: string } | undefined;
   readonly base?: string;
   readonly fetchImpl?: typeof fetch;
 }): Promise<JoinNoticeOutcome> {
@@ -69,6 +78,7 @@ export async function sendJoinNotice(input: {
     inviter: recipient.name,
     template: facts.title,
     link: instanceLink(facts.instanceRecordId, input.base),
+    ...(input.suggestion === undefined ? {} : { suggestion: input.suggestion }),
   });
 
   return sendMail(

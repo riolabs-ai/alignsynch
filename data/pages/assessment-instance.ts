@@ -83,6 +83,19 @@ export const inviteBandSection: PageCopySection = {
       label:
         "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
     },
+    /**
+     * #503 and #1125 — the two ways an invitation is ended by somebody rather than by the clock, and
+     * they are two sentences because they are two facts. `revoked` is an operator's decision (the
+     * console withdrew the link); `declined` is the reply the Counterparty's own "Decline the
+     * invitation" writes (`revoked_by = 'counterparty'`, `lib/flow/invite-state.ts`). The Initiator
+     * reads which one happened, and neither sentence blames them.
+     */
+    { id: "revoked", label: "This invitation was withdrawn before it was used." },
+    {
+      id: "declined",
+      label:
+        "{counterparty} declined the invitation. The link no longer works — start a new relationship when you are ready.",
+    },
     // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
     // live one, so the panel says the old link dies rather than leaving the Initiator to
     // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal

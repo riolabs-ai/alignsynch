@@ -19,7 +19,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
-import { ClaimForm } from "@/components/assessment-flow/claim-form";
+import { JoinAcceptStep } from "@/components/assessment-flow/join-accept-step";
+import { JoinAccountStep } from "@/components/assessment-flow/join-account-step";
+import { JoinInviteStep } from "@/components/assessment-flow/join-invite-step";
 import { InviteView } from "@/components/assessment-flow/invite-view";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
@@ -151,13 +153,14 @@ describe("the invite fixture carries every band the page can ask for", () => {
     }
   });
 
-  it("names the party being joined, and the two fields that say who is joining", () => {
-    const claim = sectionOf(invitePageCopy, "claim");
-    expect(itemLabel(claim, "join")).toContain("{counterparty}");
-    expect(itemLabel(claim, "join")).toContain("the Counterparty");
-    // #1115 task 4 — the confirmation checkbox is retired; the fields are the statement.
-    expect(itemLabel(claim, "name").length).toBeGreaterThan(0);
-    expect(itemLabel(claim, "email").length).toBeGreaterThan(0);
+  it("names the two fields that say who is joining, on the step that asks for them", () => {
+    const account = sectionOf(invitePageCopy, "account");
+    // #1115 task 4 — the confirmation checkbox is retired; the two fields are the statement.
+    expect(itemLabel(account, "name").length).toBeGreaterThan(0);
+    expect(itemLabel(account, "email").length).toBeGreaterThan(0);
+    // #1125 — and they are asked on `Join`, the second of the three steps.
+    expect(itemLabel(sectionOf(invitePageCopy, "steps"), "2")).toBe("Join");
+    expect(sectionOf(invitePageCopy, "accept").heading).toBe("Accept the Invitation");
   });
 
   it("has an answering-party band on the instance screen for both roles", () => {
@@ -180,6 +183,16 @@ function preview(over: Partial<InvitePreview> = {}): InvitePreview {
     counterpartyName: "Rowan",
     templateTitle: "Relationship Basics",
     viewerRole: null,
+    relationshipTitle: "Staying Close",
+    templateSummary: "Relationship Basics, answered by Avery and Rowan.",
+    mode: "basic",
+    setting: "soft",
+    aspects: [
+      {
+        id: "aspect-contact",
+        prompt: "How does how often you are in touch compare to what each wants?",
+      },
+    ],
     ...over,
   };
 }
@@ -188,20 +201,30 @@ function inviteMarkup(input: Parameters<typeof InviteView>[0]): string {
   return renderToStaticMarkup(createElement(InviteView, input));
 }
 
-function claimMarkup(input: {
-  refusal?: "email-mismatch" | "unconfirmed" | "already-bound";
+function stepMarkup(input: {
+  step: "invite" | "account" | "accept";
+  refusal?: "email-mismatch" | "already-bound";
 }): string {
+  const copy = invitePageCopy;
+  const token = "token-1";
+  const base = { copy, preview: preview(), token };
+  if (input.step === "invite") return renderToStaticMarkup(createElement(JoinInviteStep, base));
+  if (input.step === "account") {
+    return renderToStaticMarkup(
+      createElement(JoinAccountStep, {
+        ...base,
+        ...(input.refusal === undefined ? {} : { refusal: input.refusal }),
+      }),
+    );
+  }
   return renderToStaticMarkup(
-    createElement(ClaimForm, {
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
+    createElement(JoinAcceptStep, {
+      ...base,
+      details: { name: "Rowan", email: "rowan@example.test" },
       ...(input.refusal === undefined ? {} : { refusal: input.refusal }),
     }),
   );
 }
-
-const CLAIM_CONTROL = "Accept and answer";
 
 describe("the invitation's refusal bands", () => {
   it("refuses the Initiator their own invitation, and offers no control that would take it", () => {
@@ -221,7 +244,7 @@ describe("the invitation's refusal bands", () => {
       preview: preview({ viewerRole: "counterparty" }),
     });
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
-    expect(html).not.toContain(CLAIM_CONTROL);
+    expect(html).not.toContain('data-primary-action="accept"');
   });
 
   it("does not repeat the token's own state as a second refusal", () => {
@@ -236,50 +259,61 @@ describe("the invitation's refusal bands", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The claim screen — two fields, one form (#1115 task 4)
+ * The join's three steps — one primary each, and the claim last (#1125)
  * ------------------------------------------------------------------ */
 
-describe("the counterparty's claim screen", () => {
-  it("is one screen: the flow's shell, the flow's rail, and this stage", () => {
-    const html = claimMarkup({});
-    // #825 — the rail is the flow's five stages, and this screen is Account (stage 4).
-    expect(html).toContain('data-stage-shell="true"');
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain('data-step-state="current"');
-    // The old three-step addressing is gone: no Back/Continue pair, no step links.
-    expect(html).not.toContain('href="/invite/token-1?step=');
+describe("the counterparty's join", () => {
+  it("step 1 invites: one primary that moves to step 2, and a decline that claims nothing", () => {
+    const html = stepMarkup({ step: "invite" });
+    // One primary action, and it addresses the next step rather than posting a claim.
+    expect(html).toContain('data-primary-action="join"');
+    expect(html).toContain('href="/invite/token-1?step=2"');
+    expect(html).not.toContain('action="/invite/token-1/claim"');
+    // The quiet control is a POST: a prefetched link must not end somebody's invitation.
+    expect(html).toContain('action="/invite/token-1/decline"');
+    expect(html).toContain("Not for you? Decline the invitation");
   });
 
-  it("asks for the name and the address, and nothing else", () => {
-    const html = claimMarkup({});
+  it("step 1 says who is being joined, who pays, and what the two of them will answer", () => {
+    const html = stepMarkup({ step: "invite" });
+    expect(html).toContain("Avery invited you to align on Staying Close");
+    expect(html).toContain("You’re never charged.");
+    expect(html).toContain("Avery covers this relationship.");
+    expect(html).toContain("The 1 Aspects");
+    expect(html).toContain("How It Works");
+    expect(html).toContain("Alignment Tolerance");
+  });
+
+  it("step 2 asks for two fields and posts them to the carrier", () => {
+    const html = stepMarkup({ step: "account" });
     expect(html).toContain('name="name"');
     expect(html).toContain('name="email"');
     expect(html).toContain('value="Rowan"');
-    // No account gate, no password, no confirmation checkbox: the fields are the statement.
+    expect(html).toContain('action="/invite/token-1/join"');
     expect(html).not.toContain('type="password"');
     expect(html).not.toContain('name="confirm"');
     expect(html).not.toContain('href="/login?next=');
     expect(html).not.toContain('href="/register?next=');
   });
 
-  it("posts both fields to the claim endpoint on one screen", () => {
-    const html = claimMarkup({});
+  it("step 3 is the one acceptance: the carried fields, the claim, and the suggestion", () => {
+    const html = stepMarkup({ step: "accept" });
     expect(html).toContain('action="/invite/token-1/claim"');
     expect(html).toContain('method="post"');
-    expect(html).toContain(CLAIM_CONTROL);
+    expect(html).toContain('data-primary-action="accept"');
+    expect(html).toContain('name="name" value="Rowan"');
+    expect(html).toContain('name="email" value="rowan@example.test"');
+    expect(html).toContain("Accept Invitation");
+    // The bundle's optional suggestion, collapsed, and it edits nothing.
+    expect(html).toContain("<details");
+    expect(html).toContain("Suggest a Change to the Aspects");
+    expect(html).toContain("The Aspects stay as they are unless they change them.");
   });
 
-  it("says who is being joined and who pays, and never asks the counterparty to", () => {
-    const html = claimMarkup({});
-    expect(html).toContain("You are joining as Rowan, the Counterparty.");
-    expect(html).toContain("Accepting costs you nothing");
-  });
-
-  it("draws the store's refusal sentence above the form that can retry it", () => {
-    const html = claimMarkup({ refusal: "email-mismatch" });
+  it("draws the store's refusal sentence beside the acceptance that can retry it", () => {
+    const html = stepMarkup({ step: "accept", refusal: "email-mismatch" });
     expect(html).toContain('role="alert"');
     expect(html).toContain("this invitation was sent to a different address");
-    expect(html).toContain('action="/invite/token-1/claim"');
   });
 });
 

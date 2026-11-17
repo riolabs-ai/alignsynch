@@ -48,6 +48,13 @@ export const assessmentSentPageCopy: PageCopy = zPageCopy.parse({
         { id: "claimed", label: "Accepted — {counterparty} claimed the invitation" },
         { id: "expired", label: "Expired — the invitation ran out before it was claimed" },
         { id: "revoked", label: "Withdrawn — the invitation was cancelled before it was used" },
+        /**
+         * #1125 — the Counterparty said no. Its own state, next to `revoked`, because the two are
+         * one write (`revoked_at`, `revoked_by`) and two facts: an operator withdrew the link, or the
+         * person the relationship was for declined it. The Sent screen is where the Initiator learns
+         * which, and it is the same sentence the instance's invitation band prints.
+         */
+        { id: "declined", label: "Declined — {counterparty} said no thanks" },
         { id: "none", label: "Not sent — no invitation was created for this relationship yet" },
         /**
          * The band's **fallback** row (#998), and the only item here that is not a state.

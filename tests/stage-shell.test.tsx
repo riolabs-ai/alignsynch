@@ -8,11 +8,16 @@
  *
  *   1. **Rendered.** The create step — the one stage that exists today — draws the five names, the
  *      "Stage 1 of 5" line and one current entry, and its markup carries no `mx-auto`.
- *   2. **Structural.** The three flow screens the issue names as the defect
- *      (`create-relationship.tsx:146`, `accept-session.tsx:151`, `counterparty-wizard.tsx:79`) each
- *      render `StageColumn` and none of them centres a column of its own. Two of the three have no
- *      component test of their own (they need a live database to mount), and a screenshot cannot
- *      see an absent class — the source is where the rule is legible for all three.
+ *   2. **Structural.** The flow screens the issue names as the defect
+ *      (`create-relationship.tsx:146`, `accept-session.tsx:151`) each render `StageColumn` and none
+ *      of them centres a column of its own. They have no component test of their own (they need a
+ *      live database to mount), and a screenshot cannot see an absent class — the source is where
+ *      the rule is legible for both.
+ *
+ *      **The Counterparty's join is not one of them any more (#1125).** The bundle draws it as a
+ *      page column of its own — `mx-auto max-w-3xl` for the invitation, `max-w-md` for the account —
+ *      under a three-dot stepper rather than the five-stage rail, so it is deliberately outside this
+ *      rule and is asserted by `tests/counterparty-join.test.tsx` instead.
  *
  * `StageColumn` itself is asserted for the same two properties: a max width, and no `mx-auto` —
  * the left edge is `main`'s padding and nothing else.
@@ -40,12 +45,10 @@ vi.mock("next/navigation", () => ({
 /** The five names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735, #825). */
 const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"];
 
-/** The three flow screens #687 names as centred, with the line each one centred on. */
+/** The flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [
   "components/assessment-flow/create-relationship.tsx",
   "components/assessment-flow/accept-session.tsx",
-  // #1115 task 4 — the wizard is retired; the claim is one screen, and it renders the column.
-  "components/assessment-flow/claim-form.tsx",
 ];
 
 function source(path: string): string {

@@ -38,7 +38,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
 }));
 
-import { ClaimForm } from "@/components/assessment-flow/claim-form";
+import { JoinAccountStep } from "@/components/assessment-flow/join-account-step";
 import { invitePageCopy } from "@/data/pages/invite";
 import {
   CLAIM_REFUSALS,
@@ -47,7 +47,7 @@ import {
   claimEmailOf,
   confirmationMatches,
 } from "@/lib/flow/claim";
-import { claimPath, invitePath } from "@/lib/flow/paths";
+import { claimPath, joinDetailsPath } from "@/lib/flow/paths";
 import type { InvitePreview } from "@/lib/flow/store";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -66,18 +66,15 @@ const PREVIEW: InvitePreview = {
   counterpartyName: "Rowan",
   templateTitle: "Relationship Basics",
   viewerRole: null,
+  relationshipTitle: "Staying Close",
+  templateSummary: "Relationship Basics, answered by Avery and Rowan.",
+  mode: "basic",
+  setting: "soft",
+  aspects: [
+    { id: "aspect-contact", prompt: "How does how often you are in touch compare to what each wants?" },
+    { id: "aspect-roles", prompt: "How much do old roles still decide how you treat each other?" },
+  ],
 };
-
-function html(overrides: { refusal?: (typeof CLAIM_REFUSALS)[number] } = {}): string {
-  return renderToStaticMarkup(
-    createElement(ClaimForm, {
-      copy: invitePageCopy,
-      preview: PREVIEW,
-      token: TOKEN,
-      ...(overrides.refusal === undefined ? {} : { refusal: overrides.refusal }),
-    }),
-  );
-}
 
 function textOf(markup: string): string {
   return markup
@@ -162,18 +159,28 @@ describe("the claim's refusals", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * 3. The screen — two fields, one form, nothing to pay
+ * 3. The screen — two fields on `Join`, one form, nothing to pay
  * ------------------------------------------------------------------ */
 
-describe("the claim screen", () => {
+describe("the join's account step", () => {
   /** Every control the person can type into, in document order. */
   function inputs(markup: string): readonly string[] {
     return [...markup.matchAll(/<(input|textarea|select)\b[^>]*>/g)].map((match) => match[0]);
   }
 
+  function accountHtml(problem?: string): string {
+    return renderToStaticMarkup(
+      createElement(JoinAccountStep, {
+        copy: invitePageCopy,
+        preview: PREVIEW,
+        token: TOKEN,
+        ...(problem === undefined ? {} : { problem }),
+      }),
+    );
+  }
+
   it("renders exactly two fields: the name and the email", () => {
-    const markup = html();
-    const fields = inputs(markup);
+    const fields = inputs(accountHtml());
 
     // One checkbox would be a third control, so the confirmation is the name field itself.
     expect(fields).toHaveLength(2);
@@ -183,39 +190,44 @@ describe("the claim screen", () => {
   });
 
   it("prefills the name the invitation carries, so one field is left to type", () => {
-    expect(html()).toContain('value="Rowan"');
+    expect(accountHtml()).toContain('value="Rowan"');
   });
 
-  it("posts both fields to the claim endpoint, as a POST", () => {
-    const markup = html();
+  it("posts both fields to the carrier, as a POST — not to the claim", () => {
+    const markup = accountHtml();
 
-    expect(markup).toContain(`action="${claimPath(TOKEN)}"`);
+    expect(markup).toContain(`action="${joinDetailsPath(TOKEN)}"`);
     expect(markup).toContain('method="post"');
-    expect(markup).not.toContain(invitePath(TOKEN) + "?step=");
+    // Step 2 carries the pair; the claim is step 3's single write (`join-accept-step.tsx`).
+    expect(markup).not.toContain(`action="${claimPath(TOKEN)}"`);
   });
 
   it("asks for no password, no card, no plan and no price", () => {
-    const markup = html();
+    const markup = accountHtml();
     const text = textOf(markup);
 
-    for (const forbidden of ['type="password"', "card", "cvc", "expiry", "billing"]) {
+    // Markup: no password control and no card-shaped field. `bg-card` is a class and not a control,
+    // so the words are checked against the text the reader sees.
+    for (const forbidden of ['type="password"', "cvc", "expiry", "billing", "cc-number"]) {
       expect(markup.toLowerCase()).not.toContain(forbidden);
     }
-    expect(text).not.toMatch(/\$\d|per month|\/mo\b|plan\b/i);
+    expect(text).not.toMatch(/\$\d|per month|\/mo\b|\bcard\b|\bplan\b|\btrial\b/i);
   });
 
-  it("draws the refusal it came back with, beside the form that can retry it", () => {
-    const markup = html({ refusal: "email-mismatch" });
+  it("draws the carrier's own refusal beside the form that can retry it", () => {
+    const text = textOf(accountHtml("email"));
 
-    expect(markup).toContain('role="alert"');
-    expect(textOf(markup)).toContain("resend");
+    expect(text).toContain("missing something");
   });
 
   it("imports no billing, plan or payment module — the graph, not the markup", () => {
     // The rendered check above can only see what a signed-out claim draws; a payment component
-    // imported but conditionally hidden would pass it. This reads the module's own imports.
+    // imported but conditionally hidden would pass it. This reads each module's own imports.
     for (const file of [
-      "components/assessment-flow/claim-form.tsx",
+      "components/assessment-flow/join-invite-step.tsx",
+      "components/assessment-flow/join-account-step.tsx",
+      "components/assessment-flow/join-accept-step.tsx",
+      "components/assessment-flow/join-stepper.tsx",
       "app/(mainlayout)/invite/[token]/page.tsx",
     ]) {
       const text = source(file);

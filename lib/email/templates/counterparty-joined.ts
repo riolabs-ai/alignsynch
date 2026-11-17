@@ -37,6 +37,16 @@ export interface JoinedFacts {
   readonly template: string;
   /** The instance's own screen; no token, because the recipient already holds their seat. */
   readonly link: string;
+  /**
+   * #1125 — what the Counterparty suggested about the Aspects, when they suggested anything.
+   *
+   * **A message the joiner chose to send, printed as one.** The join's third step offers an optional
+   * "Suggest a Change to the Aspects"; this template is where it lands, because the acceptance notice
+   * is the one message the Initiator receives at that moment and the step's own sentence promises it
+   * ("Sent to {initiator} with your acceptance"). It is quoted, never applied: nothing writes an
+   * Aspect from here, and the note under it says so.
+   */
+  readonly suggestion?: { readonly aspect: string; readonly text: string } | undefined;
 }
 
 /** `{{name}} joined — your assessment can start` — the spec's subject, filled. */
@@ -64,6 +74,17 @@ export function joinedDocument(facts: JoinedFacts): EmailDocument {
         kind: "paragraph",
         text: "Your answers stay hidden from each other until you have both answered and accepted the session.",
       },
+      // #1125 — the acceptance's optional suggestion, when there is one. Last, because it is the one
+      // paragraph that is the joiner's words rather than the product's, and because nothing above it
+      // depends on it.
+      ...(facts.suggestion === undefined
+        ? []
+        : [
+            {
+              kind: "paragraph" as const,
+              text: `${facts.joiner} also suggested a change to the Aspects: “${facts.suggestion.text}”. The Aspects stay as they are unless you change them.`,
+            },
+          ]),
     ],
   };
 }
