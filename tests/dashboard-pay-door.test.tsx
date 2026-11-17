@@ -17,9 +17,16 @@
  *     built by `createInviteForPath`) and its `data-flow-entry` marker. A path written into this test
  *     from memory would prove only that the test agrees with itself.
  *
+ * #1140 — **this file used to assert two doors, and the surviving one carries both facts.** The
+ * membership gate band drew `Publish to Counterparty` and a second `Invite Members`; the band was
+ * unreachable (`publishable()` is `draft|pending`, where `membershipOf()` already answers
+ * `writable: true`) and it has been deleted. The publish panel's own `Invite Members`
+ * (`data-invite-members`) is now the only door drawn from `payHref`, so the soft-navigation
+ * assertion moved onto it rather than dying with the band.
+ *
  * `payHref === null` — a draft with **no session** — is asserted unchanged (#912): that shape has no
- * stage 5 to open, so the band draws the pricing link instead of a control that would bounce the
- * reader to stage 1. It is the case a fix must not resurrect.
+ * stage 5 to open, so no door into it is drawn at all, and the publish form is still drawn. It is
+ * the case a fix must not resurrect.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -37,8 +44,9 @@ vi.mock("next/link", () => ({
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
 import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
-import { PRICING_PATH, createInviteForPath } from "@/lib/flow/paths";
+import { createInviteForPath } from "@/lib/flow/paths";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const template = assessments[0];
 if (template === undefined) throw new Error("data/assessments.ts carries no template to draw");
@@ -47,6 +55,11 @@ if (template === undefined) throw new Error("data/assessments.ts carries no temp
 const SESSION = "session-abc123";
 /** The address the pay walk answers, built by the product's own path helper. */
 const PAY_PATH = createInviteForPath(template.slug, SESSION);
+/** The publish panel's submit, from the fixture — the control that must survive a missing session. */
+const PUBLISH_SUBMIT = itemLabel(
+  sectionOf(dashboardRelationshipDetailPageCopy, "publish"),
+  "submit",
+);
 
 /** One draft of this account's, with the two facts this row is about. */
 function viewOf(sessionRecordId: string | null): MemberRelationshipView {
@@ -71,8 +84,6 @@ function viewOf(sessionRecordId: string | null): MemberRelationshipView {
     template,
     aspectsEditable: true,
     publishable: true,
-    // No card on file: this is the publish gate, which is the band that draws the pay doors.
-    hasMembership: false,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -116,41 +127,37 @@ describe("the payment step, opened from the relationship", () => {
   it("enters the pay address as a flow entry, so stage 5 renders over this page and not instead of it", () => {
     const rendered = html(viewOf(SESSION));
 
-    for (const marker of [
-      'data-publish-gate-link="pay-modal"',
-      'data-publish-to-counterparty="true"',
-    ]) {
-      const door = anchorWith(rendered, marker);
-      // The address, from the page itself: both #794 handles, the slug in the path and the session
-      // in `?instance=`.
-      expect(door, marker).toContain(`href="${PAY_PATH}"`);
-      // And the fact that makes it a dialog: only `FlowEntryLink` carries the marker, and only a
-      // soft navigation is intercepted by the `@flow` slot. A bare `<a>` here was the defect.
-      expect(door, marker).toContain('data-flow-entry="true"');
-      // The door names itself to the dialog, so closing can hand focus back to the same control
-      // after the underlying page re-renders.
-      expect(door, marker).toContain(`data-flow-entry-id="${PAY_PATH}"`);
-    }
+    const door = anchorWith(rendered, 'data-invite-members="true"');
+    // The address, from the page itself: both #794 handles, the slug in the path and the session in
+    // `?instance=`.
+    expect(door).toContain(`href="${PAY_PATH}"`);
+    // And the fact that makes it a dialog: only `FlowEntryLink` carries the marker, and only a soft
+    // navigation is intercepted by the `@flow` slot. A bare `<a>` here was the defect.
+    expect(door).toContain('data-flow-entry="true"');
+    // The door names itself to the dialog, so closing can hand focus back to the same control after
+    // the underlying page re-renders.
+    expect(door).toContain(`data-flow-entry-id="${PAY_PATH}"`);
   });
 
-  it("keeps the same door on the panel below the gate, so neither half is a navigation", () => {
-    // The published-with-membership panel draws the other `Invite Members` from the same `payHref`.
-    const rendered = html({ ...viewOf(SESSION), hasMembership: true, publishable: true });
-    const door = anchorWith(rendered, 'data-invite-members="true"');
-    expect(door).toContain(`href="${PAY_PATH}"`);
-    expect(door).toContain('data-flow-entry="true"');
+  it("draws exactly one door to the pay walk — the publish panel's, not a band's", () => {
+    const rendered = html(viewOf(SESSION));
+    const entries = rendered.match(/data-flow-entry="true"/g) ?? [];
+    expect(entries).toHaveLength(1);
+    // And the publish form it sits above is the surface the draft actually owns.
+    expect(rendered).toContain(PUBLISH_SUBMIT);
   });
 });
 
 describe("a draft with no session", () => {
-  it("draws no door into stage 5 at all — the pricing link is that case's exit (#912)", () => {
+  it("draws no door into stage 5 at all, and still draws the publish form", () => {
     const rendered = html(viewOf(null));
 
     // Nothing points at the pay walk: there is no session for stage 5 to read.
     expect(rendered).not.toContain("/create/invite");
     expect(rendered).not.toContain("data-flow-entry");
-    // And the band still draws the door it did before this row.
-    const pricing = anchorWith(rendered, 'data-publish-gate-link="pricing"');
-    expect(pricing).toContain(`href="${PRICING_PATH}"`);
+    expect(rendered).not.toContain('data-invite-members="true"');
+    // The suppression is the door's, not the panel's: the form and its submit are still drawn.
+    expect(rendered).toContain(PUBLISH_SUBMIT);
+    expect(rendered).toContain('id="publish-name"');
   });
 });
