@@ -118,7 +118,12 @@ import {
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, itemOf, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { RELATIONSHIPS_PATH, createInviteForPath, reportPath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIPS_PATH,
+  answerSheetPath,
+  createInviteForPath,
+  reportPath,
+} from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { useState, useTransition, type ReactNode } from "react";
@@ -975,6 +980,54 @@ export function RelationshipDetail({
     ...(membershipFact === null ? [] : [membershipFact]),
   ];
 
+  /**
+   * #1128 — **the Next Step while the relationship is answering, and the door #1128 says was
+   * missing.**
+   *
+   * The bundle draws one Next Step per state, and the state a live session is in before both
+   * sheets are sealed is *answer it*: `Start Your First Assessment` with the three-minute promise,
+   * one button into `/assessment/instances/[id]/answer`. The verb is the reader's own answered
+   * count (`viewerAnswered`, read from their `opinion` rows), so a return visit says `Continue`.
+   *
+   * It is drawn instead of the pause panel, never beside it (`paused` wins). A sealed sheet still
+   * gets it: the answer screen is the one that decides whether it draws the sheet or the record, and
+   * a reader who wants their own answers should not have to guess a URL to find them.
+   */
+  const assessmentCopy = sectionOf(copy, "assessment");
+  const answerHref =
+    relationship.sessionRecordId === null ? null : answerSheetPath(relationship.sessionRecordId);
+  const answered = relationship.viewerAnswered ?? 0;
+  const assessmentPanel =
+    paused || relationship.closed || answerHref === null ? null : (
+      <section
+        data-next-step-assessment={answered > 0 ? "continue" : "start"}
+        className={`space-y-3 ${DETAIL_CARD}`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip variant="soft">{itemLabel(assessmentCopy, "next-step")}</Chip>
+        </div>
+        <h2 className="text-base font-semibold">
+          {itemLabel(assessmentCopy, answered > 0 ? "continue-heading" : "start-heading")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {fillLabel(itemLabel(assessmentCopy, "body"), { count: relationship.aspectCount })}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {fillLabel(itemLabel(assessmentCopy, "progress"), {
+            answered,
+            count: relationship.aspectCount,
+          })}
+        </p>
+        <a
+          href={answerHref}
+          data-start-assessment="true"
+          className="inline-flex h-9 items-center gap-2 rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+        >
+          {itemLabel(assessmentCopy, answered > 0 ? "continue" : "start")}
+        </a>
+      </section>
+    );
+
   /*
    * #1121 — **the pause block, above the facts card in the rail.**
    *
@@ -1241,6 +1294,7 @@ export function RelationshipDetail({
       facts={
         <>
           {/* #1121 — the pause block first, then the facts card: the bundle's aside order. */}
+          {assessmentPanel}
           {pausePanel}
           <DetailFacts
             facts={factRows}
