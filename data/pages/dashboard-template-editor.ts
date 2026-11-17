@@ -20,6 +20,7 @@
  *   unreadable  the database did not answer
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
 
 export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
   heading: "Your template",
@@ -68,6 +69,12 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "new-aspect", label: "New Aspect" },
       ],
     },
+    /**
+     * The Aspect drawer (#1133) — the same shared vocabulary Stage 3 and a relationship's Aspects
+     * tab read (`content/aspect-drawer.ts`). On this page it replaces the per-Aspect accordion:
+     * each row's pencil opens the sheet, and `Add an Aspect` opens it empty.
+     */
+    aspectDrawerSection(),
     {
       id: "preview",
       heading: "As the other person sees it",

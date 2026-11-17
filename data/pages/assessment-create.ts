@@ -31,6 +31,7 @@
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 import { formatCurrency } from "../../content/core";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
 import { billingPlan } from "../billing-plans";
 import type { PaidPlanId } from "../billing-prices";
 import { lifecycleStageSection } from "./lifecycle";
@@ -615,6 +616,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "back", label: "Back" },
       ],
     },
+    /**
+     * The Aspect drawer (#1133) — the shared vocabulary, spread in from `content/aspect-drawer.ts`
+     * because the same drawer opens here, on a relationship's Aspects tab and in a My Template's
+     * Edit. The row no longer expands in place; the pencil and `Add an Aspect` open this sheet.
+     */
+    aspectDrawerSection(),
     {
       /**
        * The one band a server-side refusal draws (#688).
