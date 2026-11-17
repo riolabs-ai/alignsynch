@@ -598,6 +598,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/dashboard/payment",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The member's Payment page: one panel per relationship they initiated — Status, the trial's end or the pause, the price after the trial, and the card — with Add a Card, Continue Setup or Get 7 More Days Free as its actions; the account's Payment Method, Billing History and How Trials Work beside it; and a Counterparty's view that is one sentence and no money.",
+    notes:
+      "Every state is derived (`lib/billing/payment-view.ts`): the week from `trialStateOf()` over the account's live subscription, the pause from `pauseOf()` (#1121), the invitation from the row, and the price from `data/billing-plans.ts` Basic's `monthlyCents` — the prototype's `$9.99` is fixture data and is not ported. Panels are drawn only for relationships the viewer **initiated**, so the Counterparty's render holds no price, trial, card or extension to leak; a relationship they were invited into contributes one coverage band. The free week is offered only while `pauseOf()` says it is available — the claim is a `plan_grant` row, so the button is absent, not disabled, once used. The extension's write is #1121's own server action (`claimExtensionAction`), not a second one.",
+  },
+  {
+    kind: "route",
     surface: "/dashboard/relationships",
     status: "db",
     templates: ["quizhub", "alignsynch"],
@@ -1061,12 +1071,12 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   {
     kind: "domain",
     surface: "components/billing",
-    status: "mock",
+    status: "db",
     templates: ["alignsynch"],
     capability:
-      "The provider's frame, and only the frame: `stripe-frame.tsx` mounts Stripe's embedded checkout for a client secret a server minted, draws the caption that sits under the mount point until the iframe lands, and reports completion or failure upward.",
+      "The money surfaces: `stripe-frame.tsx` mounts the provider's embedded checkout for a client secret a server minted, and `payment-view.tsx` draws the member's Payment page — one trial panel per relationship, the account's Payment Method, Billing History and How Trials Work, and the Counterparty's one coverage sentence.",
     notes:
-      "Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.",
+      "`stripe-frame.tsx` — `The provider's frame, and only the frame.` Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits. `payment-view.tsx` (#1132) is `db` for the domain's status since it landed: it reads no row itself — every panel is derived from rows the page passes in (`lib/billing/payment-view.ts`) — but the module it renders is reachable from `lib/member/relationships.ts`, so the domain is no longer the read-nothing `mock` it was when the frame was alone.",
   },
   {
     kind: "domain",

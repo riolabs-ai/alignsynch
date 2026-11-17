@@ -85,6 +85,10 @@ const STATIC_ROUTES = [
   // because a `[id]` segment filed as a static route matches only its own literal spelling and
   // every real `/dashboard/relationships/<id>` link would read as a 404 to `data:check` E10.
   "/dashboard/relationships",
+  // #1132 — the member's billing surface: one trial panel per relationship, and a Counterparty
+  // view that carries no price. Reached by its address until the bundles that link it (Start,
+  // Account Settings) land; the bundle draws no rail row, so the shell does not gain one here.
+  "/dashboard/payment",
   "/dashboard/templates",
   "/dashboard/user",
   "/demo",

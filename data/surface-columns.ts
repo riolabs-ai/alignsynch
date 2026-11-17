@@ -137,6 +137,8 @@ const rows: readonly SurfaceColumn[] = [
    * mode table's `bleed` reason names — is a different route, and it keeps its own row below.
    */
   { path: "/dashboard/chat", mode: "column" },
+  // #1132 — the billing surface: the same left edge as the detail screen it is a sibling of.
+  { path: "/dashboard/payment", mode: "column" },
   { path: "/dashboard/support", mode: "column" },
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },
