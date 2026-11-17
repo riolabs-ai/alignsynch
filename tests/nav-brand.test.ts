@@ -20,9 +20,14 @@
  * `href`s out of it. The stubbed capability is not asserted as a *fixed* value anywhere: the
  * admin branch is proven by constructing the viewer a role model will one day hand back.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+
+/** Repo root — this file reads two modules' source for claims about where a fragment lives. */
+const ROOT = join(__dirname, "..");
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
@@ -219,16 +224,6 @@ describe("the alignment brand's menu is alignment destinations", () => {
    * marked departure, and a rail with none has nothing to mark).
    */
   it("points every in-page anchor still in the chrome at a band the front page emits", () => {
-    const model = alignmentHome(
-      alignSynchBrand,
-      alignSynchHomeCopy,
-      assessments,
-      assessmentInstances,
-      ALIGN_SYNCH_FEATURED_SLUG,
-    );
-    const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
-    const ids = [...home.matchAll(/id="([^"]*)"/g)].map((match) => match[1]);
-
     // The rail links no anchor at all any more, which is the change this card made.
     expect(hrefs.filter((href) => href.startsWith("/#"))).toEqual([]);
     // …and no row is a route the marketing group serves, either: Support, How it works and
@@ -238,11 +233,18 @@ describe("the alignment brand's menu is alignment destinations", () => {
     }
 
     const anchors = footerHrefs("alignsynch").filter((href) => href.startsWith("/#"));
-    // Guard the guard: at least one anchor, or the loop below proves nothing.
-    expect(anchors.length).toBeGreaterThan(0);
-    for (const anchor of anchors) {
-      expect(ids).toContain(anchor.slice(2));
+    // #1127 — the chrome scrolls no band on the front page any more. `How It Works` was the last
+    // one, and the one public chrome now points it at the band the catalogue itself emits
+    // (`/relationship-templates#how`), so the rule moves with it: what is left here is the claim
+    // that the chrome names no `/#` band, and that every `#` it does name is the catalogue's — a
+    // fragment on the page that owns it.
+    expect(anchors).toEqual([]);
+    for (const href of footerHrefs("alignsynch").filter((row) => row.includes("#"))) {
+      expect(href.startsWith("/relationship-templates#")).toBe(true);
     }
+    expect(
+      readFileSync(join(ROOT, "components/marketing/relationship-catalogue.tsx"), "utf8"),
+    ).toContain('id="how"');
   });
 });
 
@@ -434,7 +436,9 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
       // stands directly above Help — the column used to be these five minus Home and Pricing.
       "/",
       "/relationship-templates",
-      "/#questions",
+      // #1127 — the public chrome's How It Works row reads the catalogue's own band. It used to
+      // scroll the front page (`/#questions`), which the one marketing shell no longer draws.
+      "/relationship-templates#how",
       "/pricing",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
@@ -451,7 +455,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     expect(hrefs.slice(0, 5)).toEqual([
       "/",
       "/relationship-templates",
-      "/#questions",
+      "/relationship-templates#how",
       "/pricing",
       "/help",
     ]);
