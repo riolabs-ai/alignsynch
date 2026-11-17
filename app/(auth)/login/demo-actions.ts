@@ -34,7 +34,8 @@ import {
   destinationFor,
 } from "@/lib/auth/demo-accounts";
 import { NOT_SEEDED, PIN_REJECTED, UNLOCK_EXPIRED, signInRefused } from "@/lib/auth/demo-failure";
-import { DEMO_ROLE_FIELD, type DemoRoleState } from "@/lib/auth/demo-form";
+import { DEMO_NEXT_FIELD, DEMO_ROLE_FIELD, type DemoRoleState } from "@/lib/auth/demo-form";
+import { signInDestination } from "@/lib/auth/next-path";
 import { demoMode } from "@/lib/auth/demo-mode";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { neonAuth } from "@/lib/auth/server";
@@ -109,5 +110,22 @@ export async function signInAsDemoRole(
 
   // `redirect()` throws a control-flow signal, so it is the last statement and never inside a
   // `try`: a caught redirect is a block that silently stays on the buttons.
-  redirect(destinationFor(role));
+  //
+  // #1187 — **the round trip finishes where it started.** `?next=` is the half of the request the
+  // browser brought with it: a signed-out POST to the create flow's stage 4 answers
+  // `303 → loginPathFor(createCommitPath(slug))`, and a role button that answered with
+  // `destinationFor(role)` signed the person in and dropped them on the role's own home
+  // (`/admin/instances` for this account) with the relationship they had just described stranded
+  // behind a draft cookie nothing read. So the requested path wins when it is one this build
+  // ships, and the role's destination is the **fallback** — absent, unsafe, or a surface this
+  // build does not render.
+  //
+  // The value is re-validated here for the same reason `startGoogleSignIn` re-validates its own:
+  // a server action is a public endpoint, so `next` is whatever a client posted, never the
+  // string the page drew. `signInDestination` is the page's own two questions — same-site, then
+  // shipped-here — so a crafted post can only ever land on this build's own pages.
+  const requested = formData.get(DEMO_NEXT_FIELD);
+  redirect(
+    signInDestination(typeof requested === "string" ? requested : null, destinationFor(role)),
+  );
 }
