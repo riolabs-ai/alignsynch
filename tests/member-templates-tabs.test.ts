@@ -68,26 +68,32 @@ const mineRow = {
 };
 
 describe("the tab is the URL", () => {
-  it("reads ?tab=mine, and lands every other value — including none — on the catalogue", () => {
+  it("reads ?tab=mine, and lands every other value — including none and the old name — on the Library", () => {
     expect(templatesTabOf("mine")).toBe("mine");
-    expect(templatesTabOf("catalogue")).toBe("catalogue");
-    expect(templatesTabOf(undefined)).toBe("catalogue");
-    expect(templatesTabOf("")).toBe("catalogue");
-    expect(templatesTabOf("nonsense")).toBe("catalogue");
-    expect(templatesTabOf(["mine", "catalogue"])).toBe("mine");
+    expect(templatesTabOf("library")).toBe("library");
+    // #1130 renamed the shelf `Library`; a bookmark naming the old value must still open it.
+    expect(templatesTabOf("catalogue")).toBe("library");
+    expect(templatesTabOf(undefined)).toBe("library");
+    expect(templatesTabOf("")).toBe("library");
+    expect(templatesTabOf("nonsense")).toBe("library");
+    expect(templatesTabOf(["mine", "library"])).toBe("mine");
   });
 
-  it("writes the catalogue as the bare path, and the second tab as a query", () => {
-    expect(templatesTabPath("catalogue")).toBe("/dashboard/templates");
+  it("writes the Library as the bare path, and the second tab as a query", () => {
+    expect(templatesTabPath("library")).toBe("/dashboard/templates");
     expect(templatesTabPath("mine")).toBe("/dashboard/templates?tab=mine");
   });
 
-  it("draws both tabs as links, with aria-current on the one being read", () => {
-    const html = renderToStaticMarkup(createElement(TemplateTabs, { copy, current: "mine" }));
+  it("draws both tabs as links with a count pill, and aria-current on the one being read", () => {
+    const html = renderToStaticMarkup(
+      createElement(TemplateTabs, { copy, current: "mine", counts: { library: 8, mine: 3 } }),
+    );
     expect(html).toContain('href="/dashboard/templates"');
     expect(html).toContain('href="/dashboard/templates?tab=mine"');
-    expect(html).toContain("Relationship Templates");
+    expect(html).toContain("Library");
     expect(html).toContain("My Templates");
+    expect(html).toContain(">8<");
+    expect(html).toContain(">3<");
     expect((html.match(/aria-current="page"/g) ?? []).length).toBe(1);
   });
 });
@@ -117,6 +123,19 @@ describe("the catalogue card", () => {
     expect(untaxonomied.meta).toContain(PLAN_LINE);
   });
 
+  it("files the card on the shelf its relationship type names", () => {
+    // The category is the type's (`data/template-categories.ts`), never the record's: the card says
+    // the shelf a person would look on, and a starter the taxonomy does not carry says `Template`.
+    expect(card.chips).toEqual(["Work"]);
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "brother-sister" }).chips).toEqual([
+      "Family",
+    ]);
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "spouses" }).chips).toEqual(["Couples"]);
+    expect(catalogueCard(copy, { ...catalogueRow, slug: "hoa-board-owner" }).chips).toEqual([
+      "Home",
+    ]);
+  });
+
   it("offers the owner's two actions, and never the word instance", () => {
     const html = renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }));
     expect(html).toContain("View Details");
@@ -128,9 +147,9 @@ describe("the catalogue card", () => {
     expect(card.create?.href).toBe("/templates/relationship/staff-manager/create");
   });
 
-  it("marks the card as a template and seeds its cover from the slug", () => {
+  it("marks the card's shelf and seeds its cover from the slug", () => {
     const html = renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }));
-    expect(html).toContain("Template");
+    expect(html).toContain("Work");
     // The muted wash is an inline `linear-gradient` at the seed's hue, not a covered image.
     expect(html).toMatch(/background-image:linear-gradient\(/);
     expect(html).toContain("SM");
@@ -150,7 +169,7 @@ describe("one statement about money per screen, and they agree (#796)", () => {
   });
 
   it("describes the card's figure as the plan's, not the relationship's", () => {
-    const body = sectionBody(sectionOf(copy, "catalogue"));
+    const body = sectionBody(sectionOf(copy, "library"));
     // The old sentence quoted the card as "the price of the relationship it opens", which is the
     // claim the template detail refuses one click later.
     expect(body).not.toContain("price of the relationship it opens");
@@ -186,11 +205,12 @@ describe("what My Templates may contain", () => {
 });
 
 describe("a My Templates card", () => {
-  it("says the row is Yours, and opens the private editor", () => {
+  it("says the row is My Copy, and opens the template's own page", () => {
     const card = mineCard(copy, mineRow);
     const html = renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }));
-    expect(html).toContain("Yours");
+    expect(html).toContain("My Copy");
     expect(card.detail.href).toBe("/dashboard/templates/record-mine");
+    expect(card.detail.label).toBe("Open");
     expect(html).toContain("used in 2 relationships");
     expect(html).toContain("Create Relationship");
   });
@@ -201,7 +221,7 @@ describe("a My Templates card", () => {
     // authorship now, so every row this card is handed is the member's own.
     const card = mineCard(copy, { ...mineRow, relationshipCount: 0 });
     expect(card.chips).not.toContain("Adopted");
-    expect(card.chips).toContain("Yours");
+    expect(card.chips).toContain("My Copy");
     expect(card.detail.href.startsWith("/dashboard/templates/")).toBe(true);
     expect(renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }))).toContain(
       "Not used yet",
