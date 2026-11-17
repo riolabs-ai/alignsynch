@@ -674,7 +674,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/pricing` — **live**
   - capability: Plan comparison read from billing_plan: every sellable tier's action opens the template catalogue carrying that tier and interval, the viewer's own plan marked, an FAQ and a closing CTA. Nothing on this page starts a checkout (#1043) — the plan is chosen here and sold inside the create flow's last stage.
   - components: `components/pricing`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/quiz-discussions` — **fixture**
   - capability: Every discussion thread across quizzes, with each quiz's comment count and result beside it.
