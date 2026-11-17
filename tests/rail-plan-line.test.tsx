@@ -60,7 +60,9 @@ function railHtml(input: {
       problem: null,
       problemLink: null,
       ...(input.planIntent === undefined ? {} : { planIntent: input.planIntent }),
-      ...(input.carried === undefined || input.carried === null ? {} : { carriedPlan: input.carried }),
+      ...(input.carried === undefined || input.carried === null
+        ? {}
+        : { carriedPlan: input.carried }),
     }),
   );
 }
@@ -90,6 +92,10 @@ describe("the rail states the plan after the trial (#1127)", () => {
   it("prints one row per catalogue plan without inventing a fourth", () => {
     // The three approved plans are the catalogue's; a rail naming anything else would be a plan
     // nobody sells. This also pins that the line reads the *name* field rather than the tier.
-    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual(["Single", "Family", "Single Annual"]);
+    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual([
+      "Single",
+      "Family",
+      "Single Annual",
+    ]);
   });
 });

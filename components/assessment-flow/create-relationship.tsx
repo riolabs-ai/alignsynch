@@ -580,8 +580,7 @@ export function CreateRelationship({
     "",
   ];
   const railPlanName: string | null = (() => {
-    const carried =
-      carriedPlan ?? (planIntent === undefined ? null : carriedPlanOf(planIntent));
+    const carried = carriedPlan ?? (planIntent === undefined ? null : carriedPlanOf(planIntent));
     return carried === null ? null : (membershipPlan(carried.row)?.name ?? null);
   })();
   const summary: WizardRailSummaryRow[] = [
