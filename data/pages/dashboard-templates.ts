@@ -128,6 +128,44 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "relationships", label: "used in {count} relationships" },
       ],
     },
+    /**
+     * The card's kebab (#1134). One `More actions` trigger on every card; the rows behind it are
+     * the tab's, and both lists are bundle 06's own words — a Library card offers the two things a
+     * catalogue row can do, a My Template offers the three that act on a row you own.
+     */
+    {
+      id: "menu",
+      items: [
+        { id: "more", label: "More actions for {title}" },
+        { id: "create", label: "Create Relationship" },
+        { id: "save-copy", label: "Save a Copy" },
+        { id: "edit", label: "Edit" },
+        { id: "duplicate", label: "Duplicate" },
+        { id: "archive", label: "Archive" },
+      ],
+    },
+    /** What a menu write says when it lands — the bundle's three toasts, verbatim. */
+    {
+      id: "menu-notices",
+      items: [
+        { id: "save-copy", label: "Saved {title} to My Templates" },
+        { id: "duplicate", label: "Duplicated {title}" },
+        { id: "archive", label: "Archived {title}" },
+      ],
+    },
+    /**
+     * `?tab=mine&new=<id>` — where `Save a Copy` lands (#1134).
+     *
+     * The bundle's toast carries a `View` link to that address rather than navigating; the issue
+     * asks the copy to *open*, so the confirmation is drawn on arrival instead and the link it
+     * carries is the copy's own page.
+     */
+    {
+      id: "copied",
+      heading: "Saved to My Templates",
+      body: "{title} is yours. Open it to edit its words or its Aspects.",
+      items: [{ id: "view", label: "View" }],
+    },
     {
       id: "library",
       heading: "Library",

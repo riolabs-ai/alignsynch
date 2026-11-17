@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **96** — 60 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 373 files under `components/`, 364 of them `.tsx`
+- component domains: **43** — 374 files under `components/`, 365 of them `.tsx`
 - route handlers: **30** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 75 · **db** 39 · **live** 8 · **prototype** 1
 - templates: Both templates 52 · AlignSynch 43 · QuizHub 42 · No template yet 2
@@ -120,7 +120,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/dashboard/relationships` — **db**
   - capability: My Relationships (#1129): every relationship this member is a party to, drawn as the v2 card — one state word, the five-mark alignment bar and one action — behind five filter chips in the card's own vocabulary (All · Stage 6 Live · Waiting on Invite · Draft · Paused), with a search over the relationship's own title and the other party's name, a sort over the rows in hand, and the create band that copies a template into a new relationship's own record.
   - components: `components/assessment-flow`, `components/dashboard`, `components/ui`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/member-alignments.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/template-library.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/member-alignments.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/template-library.ts`, `lib/db/template-versions.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Reads `listMyRelationships(user.userId)` (both seats: the rows this account started and the rows it was invited into) plus `readMemberAlignments(user.userId)` for the bar, so the card here and the card on `/dashboard` are one projection (`components/dashboard/relationship-card-model.ts`) over one verdict (`content/gaps.ts`). The five chips are `lib/member/start.ts::cardStateOf`'s four words plus All — a stored `pending` prints as Draft, `complete` as Stage 6 Live, and `void` is drawn on neither screen (#503). Create is the only write on the page; Aspects belong to the detail screen.
 
 - `/dashboard/relationships/[id]` — **db**
@@ -757,7 +757,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (27): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `my-template-detail.tsx`, `my-template-retire.tsx`, `recent-quizzes.tsx`, `relationship-aspects-note.tsx`, `relationship-card-model.ts`, `relationship-card.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationship-panels.tsx`, `relationship-tabs.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `start-page.tsx`, `start-view.ts`, `template-gallery.tsx`, `template-proposal-form.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (28): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `card-menu.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `my-template-detail.tsx`, `my-template-retire.tsx`, `recent-quizzes.tsx`, `relationship-aspects-note.tsx`, `relationship-card-model.ts`, `relationship-card.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationship-panels.tsx`, `relationship-tabs.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `start-page.tsx`, `start-view.ts`, `template-gallery.tsx`, `template-proposal-form.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (7): `/assessments`, `/dashboard`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`, `/dashboard/templates/[id]`, `/dashboard/templates/[id]/propose`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
