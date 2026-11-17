@@ -8,9 +8,9 @@
  * two equal: a marketing page that ships without a row here is a red build, and so is a row
  * with no page.
  *
- * `*` is a prefix: `/support/articles/*` owns every article slug, and `/relationship-types/*`
- * covers both the type pages and the worked example one segment below them. Everything else is
- * exact (`routeOfHref` strips a query or a fragment first, so `/#templates` is `/`).
+ * `*` is a prefix: `/support/articles/*` owns every article slug, and
+ * `/relationship-templates/*` covers both a type's page and the worked example one segment below
+ * it (both live under the catalogue's own path since #1127).
  */
 export const LEAVING_ROUTES: readonly string[] = [
   "/",
@@ -18,8 +18,7 @@ export const LEAVING_ROUTES: readonly string[] = [
   "/pricing",
   "/privacy",
   "/relationship-templates",
-  "/relationship-types",
-  "/relationship-types/*",
+  "/relationship-templates/*",
   "/support/articles/*",
   "/terms",
   "/welcome",

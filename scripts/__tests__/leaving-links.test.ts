@@ -337,12 +337,16 @@ describe("routePatterns", () => {
   });
 
   it("widens a page nested under a dynamic segment to the same prefix, once", () => {
-    // `/relationship-types/[slug]/demo` is a marketing page one level below a dynamic one. It has
-    // to reach the table, and it can only reach it as the prefix its parent already owns: a
+    // `/relationship-templates/[slug]/demo` is a marketing page one level below a dynamic one. It
+    // has to reach the table, and it can only reach it as the prefix its parent already owns: a
     // literal row would name a URL no reader can be at.
     assert.deepEqual(
-      routePatterns(["/", "/relationship-types/[slug]", "/relationship-types/[slug]/demo"]),
-      ["/", "/relationship-types/*"],
+      routePatterns([
+        "/",
+        "/relationship-templates/[slug]",
+        "/relationship-templates/[slug]/demo",
+      ]),
+      ["/", "/relationship-templates/*"],
     );
   });
 });
@@ -384,15 +388,11 @@ describe("the real tree", () => {
       "/help",
       "/pricing",
       "/privacy",
-      // #905 — the catalogue answers at `/relationship-templates`; `/relationship-types` is the
-      // retained #889 variation and the namespace the type pages live in (`/templates` is a 308
-      // to the catalogue, and the library is `/templates/relationship` inside the app shell).
+      // #905 — the catalogue answers at `/relationship-templates`, and since #1127 a type's own
+      // page and its worked example live under it too (`/relationship-types` is a 308).
       "/relationship-templates",
-      "/relationship-types",
-      "/relationship-types/[slug]",
-      // The worked example, one segment below the type it belongs to — a public page, so it has
-      // to appear here or `routePatterns` would never widen it into the table.
-      "/relationship-types/[slug]/demo",
+      "/relationship-templates/[slug]",
+      "/relationship-templates/[slug]/demo",
       "/support/articles/[slug]",
       "/terms",
       "/welcome",

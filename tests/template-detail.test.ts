@@ -35,7 +35,7 @@ import { test, vi } from "vitest";
  */
 vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
-import { generateStaticParams } from "@/app/(marketing)/relationship-types/[slug]/page";
+import { generateStaticParams } from "@/app/(marketing)/relationship-templates/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
 import { TemplatesPageView } from "@/components/templates/templates-page";
 import { formatCurrency } from "@/content/core";
@@ -51,7 +51,7 @@ import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
 import {
-  RELATIONSHIP_TYPES_PATH,
+  TEMPLATE_CATALOGUE_PATH,
   createRelationshipPath,
   relationshipTypeDemoPath,
 } from "@/lib/flow/paths";
@@ -240,10 +240,10 @@ test("every catalogue card carries its own detail href, and the directory render
   assert.equal(cards.length, purchasableRelationshipTypes.length);
   for (const card of cards) {
     assert.equal(card.slug, card.id);
-    assert.equal(card.detail, `${RELATIONSHIP_TYPES_PATH}/${card.id}`);
-    // #794 — the public catalogue moved out of the template noun: `/templates` is the template
-    // namespace now (a 308 to the catalogue), so a card's address is a *type*'s.
-    assert.equal(card.detail, `/relationship-types/${card.id}`);
+    assert.equal(card.detail, `${TEMPLATE_CATALOGUE_PATH}/${card.id}`);
+    // #1127 — the catalogue and a type's own page are one noun: a card links under the
+    // catalogue's path, and `/relationship-types/<id>` is a 308 to it.
+    assert.equal(card.detail, `/relationship-templates/${card.id}`);
     assert.ok(html.includes(`href="${card.detail}"`), `the directory does not link ${card.detail}`);
   }
 });

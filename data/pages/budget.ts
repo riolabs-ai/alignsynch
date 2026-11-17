@@ -500,23 +500,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/relationship-types` — the retained #889 catalogue variation, and the namespace a type's own
-   * page lives in (#794, retained by #905).
-   *
-   * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
-   * chrome, the five strings a card repeats and the counted catalogue sentence are all
-   * `data/pages/templates.ts`, so the next literal written in `components/templates/**` or in the
-   * page module is a red build. The cards themselves are `lib/template-catalogue.ts` over
-   * `data/relationship-types.ts` — records, not words.
-   */
-  "/relationship-types": {
-    page: "app/(marketing)/relationship-types/page.tsx",
-    dirs: ["components/templates"],
-    fixture: "data/pages/templates",
-    budget: 0,
-  },
-  /**
-   * `/relationship-types/[slug]` — one type, the page the directory's card titles link to.
+   * `/relationship-templates/[slug]` — one type, the page the catalogue's card titles link to.
    *
    * Budget 0 from the first commit, like every surface this tree adds: the hero's heading frame,
    * the two descriptor headings, the Aspects band's heading and legend, the price line and the
@@ -524,9 +508,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    * the descriptor sentences and every Aspect come from `data/relationship-types.ts` through
    * `lib/template-detail.ts` — records, not words. Attribution is reachability, so this row
    * counts `components/templates/template-detail.tsx` and nothing else in the directory.
+   *
+   * It moved under the catalogue's own path in #1127 (`/relationship-types/[slug]` is a 308);
+   * nothing else about the surface changed.
    */
-  "/relationship-types/[slug]": {
-    page: "app/(marketing)/relationship-types/[slug]/page.tsx",
+  "/relationship-templates/[slug]": {
+    page: "app/(marketing)/relationship-templates/[slug]/page.tsx",
     dirs: ["components/templates"],
     fixture: "data/pages/templates-detail",
     budget: 0,

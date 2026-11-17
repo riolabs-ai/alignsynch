@@ -92,7 +92,7 @@ describe("the template chips are the taxonomy", () => {
 
     expect(hrefs.length).toBe(purchasableTypesByGroup().reduce((n, g) => n + g.types.length, 0));
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    for (const href of hrefs) expect(href.startsWith("/relationship-types/")).toBe(true);
+    for (const href of hrefs) expect(href.startsWith("/relationship-templates/")).toBe(true);
   });
 
   test("the two nested targets are the ones the hero cards jump to", () => {

@@ -140,7 +140,7 @@ export const PUBLIC_HELP_PATH = "/help";
 /**
  * `/templates` — the template **namespace**, not a page.
  *
- * It answers a permanent 308 to `/relationship-types` (`next.config.mjs`): the public catalogue
+ * It answers a permanent 308 to `/relationship-templates` (`next.config.mjs`): the public catalogue
  * that used to own this address is a *taxonomy* and has moved to its own noun (#794), and the
  * library that does belong under this one sits a level in at `RELATIONSHIP_TEMPLATES_PATH`.
  * `tests/route-redirects.test.ts` fails any `permanent: true` row whose static `source` is also a
@@ -178,42 +178,40 @@ export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 
 /**
- * `/relationship-types` — one relationship *type*'s public page (#794).
- *
- * The reachable half of `TEMPLATES_PATH`: the *taxonomy* of relationship types the shop sells,
- * one page per purchasable type, and no session needed. It is in `(marketing)` — wordmark, no
- * sidebar — because a stranger is who it is for.
- *
- * **Since #905 this is not the catalogue.** The public catalogue answers at
- * `TEMPLATE_CATALOGUE_PATH`; this constant is the namespace the type pages and their worked
- * examples live in, and the address the #889 catalogue composition is retained at as a variation
- * (`app/(marketing)/relationship-types/page.tsx`).
- */
-export const RELATIONSHIP_TYPES_PATH = "/relationship-types";
-
-/**
- * `/relationship-templates` — the public catalogue of templates (#905).
+ * `/relationship-templates` — the public catalogue of templates, and **the one public address**
+ * (#905, consolidated in #1127).
  *
  * The door the shared header's `Templates` row, the footer's catalogue link and every "start with
- * a template" action point at: the V2 catalogue, which lists the taxonomy by group and links each
- * type to its page under `RELATIONSHIP_TYPES_PATH`. It is a separate constant from
- * `RELATIONSHIP_TEMPLATES_PATH` (`/templates/relationship`, the member's library) on purpose —
- * two surfaces, two nouns, and a reader should not have to guess which one a link means.
+ * a template" action point at: the catalogue, which lists the taxonomy and links each type to its
+ * own page **under this same path**. It is a separate constant from `RELATIONSHIP_TEMPLATES_PATH`
+ * (`/templates/relationship`, the member's library) on purpose — two surfaces, two nouns, and a
+ * reader should not have to guess which one a link means.
+ *
+ * **#1127 retired the second catalogue address.** `/relationship-types` used to serve a page of
+ * its own (the `#889` shop composition, from `#794` until `#1040`) *and* be the namespace a type's
+ * page and its worked example lived in, so the public catalogue was reachable at two addresses
+ * that rendered the same model. A catalogue at two addresses is two pages to keep in step and two
+ * entries for a search engine; there is now one, and `/relationship-types` answers a `308` for
+ * itself, for `/<id>` and for `/<id>/demo` (`next.config.mjs`). `RELATIONSHIP_TYPES_PATH` is
+ * **deleted rather than aliased** (the #794/#1109 doctrine): an alias would let a new caller keep
+ * spelling the retired noun, and the two addresses would drift back apart a card later.
  */
 export const TEMPLATE_CATALOGUE_PATH = "/relationship-templates";
 
 /**
- * One relationship type's public page — `/relationship-types/<id>`.
+ * One relationship type's public page — `/relationship-templates/<id>`.
  *
  * Addressed by the taxonomy's own `id` (`data/relationship-types.ts`), never by a record handle:
- * a type is a row in a fixture, not a record in the database.
+ * a type is a row in a fixture, not a record in the database. It sits under the catalogue's own
+ * path since #1127, which is what makes "the catalogue" one noun: `/relationship-templates` is the
+ * list and `/relationship-templates/<id>` is one row of it.
  */
 export function relationshipTypePath(typeId: string): string {
-  return `${RELATIONSHIP_TYPES_PATH}/${typeId}`;
+  return `${TEMPLATE_CATALOGUE_PATH}/${typeId}`;
 }
 
 /**
- * One relationship type's worked example — `/relationship-types/<id>/demo`.
+ * One relationship type's worked example — `/relationship-templates/<id>/demo`.
  *
  * A **child of the type's public page**, not a segment of its own: the example is the taxonomy
  * row's own finished report, so a reader who lands on the example is one address below the type

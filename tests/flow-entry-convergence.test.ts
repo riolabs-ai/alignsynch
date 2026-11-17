@@ -186,7 +186,7 @@ describe("the marketing surfaces keep navigating", () => {
     }
     // A marketing action still **navigates** — it is a link, not the intercepted dialog — but since
     // #1042 its destination is the flow's stage 1 for every viewer rather than the sign-up form.
-    expect(source("app/(marketing)/relationship-types/page.tsx")).toContain("startViewer(");
+    expect(source("app/(marketing)/relationship-templates/page.tsx")).toContain("startViewer(");
     expect(source("lib/start-path.ts")).toContain("createRelationshipPath(typeId)");
     expect(source("lib/start-path.ts")).not.toContain("registerPathFor");
   });

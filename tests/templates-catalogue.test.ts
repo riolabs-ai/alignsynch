@@ -58,7 +58,7 @@ import {
   purchasableTypesByGroup,
   type RelationshipType,
 } from "@/data/relationship-types";
-import { RELATIONSHIP_TYPES_PATH, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
+import { TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { catalogueDetailPath } from "@/lib/template-catalogue";
 import { visitorOf } from "@/lib/start-path";
@@ -237,9 +237,10 @@ describe("the endpoint and the screen", () => {
     expect(pageHtml).not.toContain('id="relationship-templates"');
   });
 
-  it("answers at the catalogue's endpoint, which is not the type namespace", () => {
+  it("answers at the catalogue's one public endpoint", () => {
+    // #1127 retired the second address: `/relationship-types` is a 308 here, so the catalogue has
+    // one endpoint and a type's own page is a row under it.
     expect(TEMPLATE_CATALOGUE_PATH).toBe("/relationship-templates");
-    expect(RELATIONSHIP_TYPES_PATH).toBe("/relationship-types");
   });
 
   it("points its own menu at bands this page emits", () => {

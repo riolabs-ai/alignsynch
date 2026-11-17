@@ -196,7 +196,7 @@ describe("the legacy redirects", () => {
         .slice(0, 1)
         .map((e) => destinationOf(e, (matcherFor(e.source)(path) || { params: {} }).params));
 
-    expect(hits("/templates/spouses")).toEqual(["/relationship-types/spouses"]);
+    expect(hits("/templates/spouses")).toEqual(["/relationship-templates/spouses"]);
     expect(hits("/templates/relationship")).toEqual(["/dashboard/templates"]);
     expect(hits("/templates/relationship/new")).toEqual(["/dashboard/templates?tab=mine"]);
     expect(hits("/templates/relationship/spouses")).toEqual(["/relationship-templates"]);
@@ -251,7 +251,7 @@ describe("the legacy redirects", () => {
     ["/templates/relationship/new", "/dashboard/templates?tab=mine"],
     ["/templates/relationship/spouses", "/relationship-templates"],
     ["/templates", "/relationship-templates"],
-    ["/templates/spouses", "/relationship-types/spouses"],
+    ["/templates/spouses", "/relationship-templates/spouses"],
   ];
 
   it("answers every old address in the #794 table with a permanent 308", () => {
@@ -319,11 +319,12 @@ describe("the legacy redirects", () => {
     "/templates/relationship/[slug]/create/aspects",
     "/templates/relationship/[slug]/create/commit",
     "/templates/relationship/[slug]/create/invite",
-    "/relationship-types",
-    "/relationship-types/[slug]",
-    // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
-    // claim a source here that would shadow it.
     "/relationship-templates",
+    "/relationship-templates/[slug]",
+    // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
+    // claim a source here that would shadow it. #1127 moved a type's own page and its worked
+    // example under the same path, and retired `/relationship-types` with three 308 rows.
+    "/relationship-templates/[slug]/demo",
   ] as const;
 
   const NEW_HANDLERS = [
@@ -391,7 +392,7 @@ describe("the legacy redirects", () => {
 
     for (const type of relationshipTypes) {
       const oldPath = `${DEMO_OLD_ROOT}/${type.id}`;
-      const expected = `/relationship-types/${type.id}/demo`;
+      const expected = `/relationship-templates/${type.id}/demo`;
       const entry = demoRedirectFor(oldPath);
 
       if (!entry) {
@@ -415,8 +416,45 @@ describe("the legacy redirects", () => {
    * `app/`, so asserting the pattern here is asserting the page exists.
    */
   it("points the old demo address at a live page", () => {
-    expect(ROUTE_PATTERNS).toContain("/relationship-types/[slug]/demo");
-    expect(matchRoute(routeManifest, "/relationship-types/staff-manager/demo")).toBeTruthy();
+    expect(ROUTE_PATTERNS).toContain("/relationship-templates/[slug]/demo");
+    expect(matchRoute(routeManifest, "/relationship-templates/staff-manager/demo")).toBeTruthy();
+  });
+
+  /**
+   * #1127 — **the retired catalogue address, all three shapes.**
+   *
+   * `/relationship-types` used to be a page *and* the namespace a type's page and its worked example
+   * lived in, so the public catalogue answered at two doors. Jaden's call is that
+   * `/relationship-templates` is the address. The rows are asserted here rather than only in the
+   * table above because this is the shape the issue's acceptance names: a curl of each old address
+   * must answer 308 with the matching new location, and the bare row must not swallow the two
+   * children.
+   */
+  it("retires /relationship-types with three permanent rows, children first", () => {
+    const retired: [string, string][] = [
+      ["/relationship-types", "/relationship-templates"],
+      ["/relationship-types/staff-manager", "/relationship-templates/staff-manager"],
+      [
+        "/relationship-types/staff-manager/demo",
+        "/relationship-templates/staff-manager/demo",
+      ],
+    ];
+
+    for (const [oldPath, expected] of retired) {
+      const entry = demoRedirectFor(oldPath);
+      expect(entry, `${oldPath} → no row matches`).toBeDefined();
+      if (entry === undefined) continue;
+      expect(statusOf(entry), `${oldPath} must answer 308`).toBe(308);
+      expect(redirectedTo(entry, oldPath)).toBe(expected);
+    }
+
+    // The bare row is last, so the two-segment demo address is answered by its own row and not
+    // substituted into the bare one (`/relationship-templates/<id>/demo` would become a 404 if the
+    // bare row matched first and produced `/relationship-templates/staff-manager/demo` a segment
+    // late).
+    const bare = redirects.findIndex((entry) => entry.source === "/relationship-types/:slug");
+    const demo = redirects.findIndex((entry) => entry.source === "/relationship-types/:slug/demo");
+    expect(bare).toBeGreaterThan(demo);
   });
 
   it("does not catch a path below the old demo address — the row is one segment", () => {

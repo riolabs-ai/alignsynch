@@ -923,27 +923,17 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/relationship-types",
-    status: "fixture",
-    templates: ["quizhub", "alignsynch"],
-    capability:
-      "The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. `/pricing`, a type's own page and its `/demo` sheet are public, and since #1042 all 27 start actions are the create flow's stage 1 for every viewer — the template in the path, no `/register` detour and no session-shaped action.",
-    notes:
-      "**Retained as a landing variation since #905, and the composition the canonical door renders again since #1040**: `/relationship-templates` is the catalogue's endpoint and, since #1040, renders this same #889 composition on both builds — one screen at two addresses, from one model. Nothing links this page as the catalogue; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` was what every card linked from #867 until #1042 — the account first, the wizard after — and asking somebody with an account to make one was the defect #979 names. Since #1042 the cards link the flow's stage 1 directly (`/templates/relationship/<slug>/create`), for a visitor and a member alike: stage 1 renders without a session (#690) and the account is stage 4 of that same wizard, on the draft. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
-  },
-  {
-    kind: "route",
-    surface: "/relationship-types/[slug]",
+    surface: "/relationship-templates/[slug]",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
       "One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No clock and no app tables, and since #1042 no session read either: the one start action is the create flow's stage 1 for every viewer, carrying this template in the path, so the page is prerenderable per slug again (#979 removed the member-shaped action; #1042 removed the visitor's `/register` detour).",
     notes:
-      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand.",
+      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand. It moved under the catalogue's own path in #1127 (`/relationship-types/[slug]` is a 308): the list and one row of it are one noun, and there is no second catalogue address for a card to link at.",
   },
   {
     kind: "route",
-    surface: "/relationship-types/[slug]/demo",
+    surface: "/relationship-templates/[slug]/demo",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
