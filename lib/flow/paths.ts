@@ -175,18 +175,18 @@ export const PUBLIC_HELP_PATH = "/help";
 export const TEMPLATES_PATH = "/templates";
 
 /**
- * `/templates/relationship` — **the create flow's namespace** since #1109, not a page.
+ * `/templates/relationship` — a **retired namespace** (#1109), and no page answers under it.
  *
- * A child of `TEMPLATES_PATH` because a template **is** a thing, and `assessment` is a record
- * *kind* a template is not (#794): the URL's parent names what the child is. What lives under it
- * now is the flow that starts a relationship from a template — `…/[slug]/create` and its four
- * stages — plus the one POST endpoint that flow posts to (`…/[slug]/status`).
+ * It was the create flow's namespace from #794 until #1109: `/templates/relationship/<slug>/create`
+ * and its four stages, plus the one POST endpoint that flow posted to. Both moved — the stages are
+ * `/dashboard/templates/<slug>/create…` and the endpoint is `/dashboard/templates/<slug>/status`,
+ * because a member's templates live in the dashboard and a flow addressed from a retired noun is a
+ * flow with two homes.
  *
- * **The library itself moved to the dashboard.** `/templates/relationship`, `…/new` and
- * `…/[slug]` were retired in #1109: a member's templates are `/dashboard/templates[?tab=mine]` and
- * one of them is `/dashboard/templates/<id>`, and the three old addresses answer a 308 from
- * `next.config.mjs`. So this constant is no longer aliased to the library (`TEMPLATE_LIBRARY_PATH`
- * below names that), and only the flow's own paths are built from it.
+ * What is left is `relationshipTemplatePath()` below, which still builds this prefix for the
+ * "open the template" links a card and a relationship row draw; those addresses answer a **308** to
+ * the public catalogue from `next.config.mjs`, and the stage paths answer their own 308 to the
+ * dashboard (see `createRelationshipPath()`). Nothing new should be built on this constant.
  */
 export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 
@@ -349,9 +349,15 @@ export function relationshipTemplatePath(slug: string): string {
   return `${RELATIONSHIP_TEMPLATES_PATH}/${slug}`;
 }
 
-/** The archive/unarchive endpoint — a POST, so a GET never changes a template's state. */
+/**
+ * The archive/unarchive endpoint — a POST, so a GET never changes a template's state.
+ *
+ * `/dashboard/templates/<slug>/status` since #1109, under the same segment the flow's stages use: the
+ * endpoint is posted to by stage 1's refusal band, and the template noun it addresses is the
+ * dashboard's now that `/templates/relationship` is retired.
+ */
 export function templateStatusPath(slug: string): string {
-  return `${relationshipTemplatePath(slug)}/status`;
+  return `${TEMPLATE_LIBRARY_PATH}/${slug}/status`;
 }
 
 /**
@@ -460,15 +466,23 @@ export function reportPath(instanceRecordId: string): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create` — the create step (#409, R1-E).
+ * `/dashboard/templates/[slug]/create` — the create step (#409, R1-E), at its dashboard address
+ * since #1109.
  *
- * A child of the template's own address rather than a sibling, so the template being copied is
- * the route's own fact and the form's payload cannot name a different one. The segment is the
- * record's **slug** (#794); the form still posts the record's **id** in `templateRecordId`,
- * because that is what the writer keys on.
+ * A child of the template's own address rather than a sibling, so the template being copied is the
+ * route's own fact and the form's payload cannot name a different one. The segment is the record's
+ * **slug** (#794); the form still posts the record's **id** in `templateRecordId`, because that is
+ * what the writer keys on.
+ *
+ * **It moved with #1109, and the old address answers a 308.** `/templates/relationship/<slug>/create`
+ * was this path while `/templates/relationship` was the member's library; the library is
+ * `/dashboard/templates` now, and a flow that starts where the library lives is one noun instead of
+ * two. `next.config.mjs` carries the five stage redirects, so a bookmark lands on the stage it named.
+ * The stage modules themselves are `components/flow/template-create/**` — out of `app/`, so the
+ * address could move without the component knowing.
  */
 export function createRelationshipPath(templateSlug: string): string {
-  return `${relationshipTemplatePath(templateSlug)}/create`;
+  return `${TEMPLATE_LIBRARY_PATH}/${templateSlug}/create`;
 }
 
 /**
@@ -498,7 +512,7 @@ export function blankRelationshipPath(): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create/mode` — stage 2 of the create flow (#688).
+ * `/dashboard/templates/[slug]/create/mode` — stage 2 of the create flow (#688).
  *
  * A child of the create path rather than a query parameter (`?step=mode`) because the flow is
  * a sequence of stages, not one screen with a switch: slice 3 adds `…/create/aspects` and
@@ -510,7 +524,7 @@ export function createModePath(templateSlug: string): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create/aspects` — stage 3 of the create flow (#689).
+ * `/dashboard/templates/[slug]/create/aspects` — stage 3 of the create flow (#689).
  *
  * The third sibling, exactly as the docstring above predicted: a stage that can be deep-linked,
  * reloaded and cached by its own address. It reads the draft stages 1 and 2 wrote, so opening it
@@ -521,7 +535,7 @@ export function createAspectsPath(templateSlug: string): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create/commit` — stage 4 of the create flow, **Account** (#825).
+ * `/dashboard/templates/[slug]/create/commit` — stage 4 of the create flow, **Account** (#825).
  *
  * The address kept its name and changed its job, because the job was always this one: it is the
  * screen where the relationship is **committed** — written to the database as a `draft` — and it is
@@ -541,7 +555,7 @@ export function createCommitPath(templateSlug: string): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create/invite` — stage 5 of the create flow, **Invite** (#825).
+ * `/dashboard/templates/[slug]/create/invite` — stage 5 of the create flow, **Invite** (#825).
  *
  * Stage 4 wrote the relationship as a draft; this is where it either goes out or does not. The
  * address names the stage, not the act: `commit` above is where the commit happens, `invite` is

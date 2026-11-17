@@ -17,7 +17,7 @@
  * monthly figure with unlimited relationships, and which plan an account holds is chosen when a
  * relationship is ready to complete, never on this shelf (#619, #796). So the Library card's one
  * number is **one month of Basic**, read from that fixture — the same chip
- * `/templates/relationship` prints, so the two shelves cannot disagree about the figure.
+ * `/dashboard/templates` prints, so the two shelves cannot disagree about the figure.
  * `data/relationship-types.ts::RELATIONSHIP_PRICE_CENTS` predates the pricing rewrite and is never
  * quoted: a per-relationship price is a promise the completion step would not honour.
  *
@@ -133,10 +133,11 @@ export function categoryLabelOf(copy: PageCopy, slug: string): string | null {
 /**
  * A Library card: what this account may start a relationship from.
  *
- * `View Details` opens the template's own screen (`/templates/relationship/<slug>`), which is the page
- * that lists its Aspects; `Create Relationship` opens the create step under the same handle, which is
- * the shipped flow — the Library never says "start an instance", because a relationship is what a
- * person starts and a session is what a published relationship opens.
+ * `View Details` opens the template's own screen (`/dashboard/templates/<id>`), which is the page
+ * that lists its Aspects; `Create Relationship` opens the create step under the same handle
+ * (`/dashboard/templates/<slug>/create`), which is the shipped flow — the Library never says
+ * "start an instance", because a relationship is what a person starts and a session is what a
+ * published relationship opens.
  *
  * The chips are bundle 06's three, in its order: the shelf, the Aspect count, and how long the
  * answers take (`Family` · `5 Aspects` · `About 3 Minutes`). The meta line keeps #796's one price —

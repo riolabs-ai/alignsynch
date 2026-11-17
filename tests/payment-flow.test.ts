@@ -226,7 +226,7 @@ describe("stage 5 — the walk is paid for by a subscription, not by `writable`"
 
   it("the invite stage gates the walk on `subscriptionLive`, never on `paymentArmed`", () => {
     const page = readFileSync(
-      join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+      join(process.cwd(), "components/flow/template-create/invite.tsx"),
       "utf8",
     );
     // #1115 narrows the returning state to a **paid** row: `subscriptionLive` is true for the

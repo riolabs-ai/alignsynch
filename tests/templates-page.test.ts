@@ -39,7 +39,6 @@ import { formatCurrency } from "@/content/core";
 import { billingPlan } from "@/data/billing-plans";
 import { EXCLUDED_TYPE_IDS, REALMS, relationshipTypes } from "@/data/relationship-types";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { signInDestination } from "@/lib/auth/next-path";
 import { ROUTE_PATTERNS } from "@/content/routes";
 import {
   OVERVIEW_PATH,
@@ -290,11 +289,11 @@ describe("every action on the page is public", () => {
    */
   it("sends every card to a create step this build actually ships", () => {
     // The stage-1 route is in the manifest (E7 checks it in both directions), and every card's
-    // address is one session of that pattern.
-    expect(ROUTE_PATTERNS).toContain("/templates/relationship/[slug]/create");
+    // address is one session of that pattern. The segments are the dashboard's since #1109.
+    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[id]/create");
     for (const card of cards) {
-      expect(card.start).toMatch(/^\/templates\/relationship\/[a-z-]+\/create$/);
-      expect(card.start).toBe(`/templates/relationship/${card.id}/create`);
+      expect(card.start).toMatch(/^\/dashboard\/templates\/[a-z-]+\/create$/);
+      expect(card.start).toBe(`/dashboard/templates/${card.id}/create`);
     }
   });
 
@@ -313,23 +312,24 @@ describe("every action on the page is public", () => {
    * screen, which renders without a session), `/pricing`, each type's own page, two demo sheets,
    * the front page's `#questions` band, and its own anchors.
    *
-   * **A `/templates/relationship/<slug>/create` href is public; the `/templates/` *library* is
-   * not.** Since #1042 the create intent goes straight to the wizard, so `/^\/templates/` cannot be
-   * a blanket forbidden prefix any more — it is narrowed to the library and its own screens, and
-   * the allowed create shape is asserted positively.
+   * **A create door is public; the dashboard and the `/templates/` *library* are not.** Since #1042
+   * the create intent goes straight to the wizard, whose stage 1 renders without a session (#690 —
+   * the account is stage 4, not a gate). #1109 then moved that address under the dashboard, so the
+   * blanket `/dashboard` rule is narrowed to everything **except** the one flow shape, which is
+   * asserted positively instead.
    */
-  it("links no dashboard route, no library screen and no other create form", () => {
+  it("links no gated dashboard route, no library screen and no other create form", () => {
     expect(hrefs.length).toBeGreaterThan(0);
     const forbidden = [
-      /^\/dashboard/,
+      // The flow's stage 1 is the only `/dashboard` address a visitor may meet; everything else
+      // behind that prefix is a signed-in screen (`requireRole`, a session read, or the editor).
+      /^\/dashboard(?!\/templates\/[a-z-]+\/create$)/,
       /^\/assessment\//,
       /^\/settings/,
       /^\/admin/,
-      // #794 — the template *library* and a template's own page are signed-in screens.
-      /^\/templates\/relationship$/, // the library
-      /^\/templates\/relationship\/[a-z-]+$/, // one template's page
-      /^\/templates\/relationship\/new$/, // authoring a template
-      /^\/templates\/(?!relationship\/[a-z-]+\/create$)/, // anything else under /templates/
+      // #794 — the template *library* and a template's own page are signed-in screens. The
+      // namespace is retired now (#1109), so a link here would be a 308 off the page's own model.
+      /^\/templates\//,
     ];
     for (const href of hrefs) {
       for (const pattern of forbidden) {
@@ -339,7 +339,7 @@ describe("every action on the page is public", () => {
     for (const href of hrefs) {
       const path = href.split("?")[0];
       expect(
-        /^\/templates\/relationship\/[a-z-]+\/create$/.test(path) ||
+        /^\/dashboard\/templates\/[a-z-]+\/create$/.test(path) ||
           path === "/pricing" ||
           path === "/#questions" ||
           path === "#catalogue" ||
@@ -349,7 +349,7 @@ describe("every action on the page is public", () => {
         href,
       ).toBe(true);
       // The create door carries no query at all — the template is in the path (#1042).
-      if (/^\/templates\//.test(path)) expect(href).toBe(path);
+      if (/^\/dashboard\/templates\//.test(path)) expect(href).toBe(path);
     }
     // Every card's action is actually on the page.
     for (const card of cards) expect(hrefs).toContain(card.start);

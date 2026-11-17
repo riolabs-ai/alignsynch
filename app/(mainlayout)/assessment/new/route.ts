@@ -21,7 +21,7 @@ import {
   createModePath,
   createRelationshipPath,
   sessionPath,
-  RELATIONSHIP_TEMPLATES_PATH,
+  TEMPLATE_LIBRARY_PATH,
 } from "@/lib/flow/paths";
 import { loginPathFor } from "@/lib/auth/paths";
 import {
@@ -62,7 +62,7 @@ function refusalTarget(
   const slug = templateSlug.trim();
   const back =
     slug === ""
-      ? RELATIONSHIP_TEMPLATES_PATH
+      ? TEMPLATE_LIBRARY_PATH
       : fromDraft
         ? createCommitPath(slug)
         : createRelationshipPath(slug);
@@ -81,10 +81,7 @@ function refusalTarget(
  */
 function fieldTarget(request: Request, templateSlug: string, field: string, reason: string): URL {
   const slug = templateSlug.trim();
-  const target = new URL(
-    slug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(slug),
-    request.url,
-  );
+  const target = new URL(slug === "" ? TEMPLATE_LIBRARY_PATH : createModePath(slug), request.url);
   target.searchParams.set("problem", reason);
   target.searchParams.set("field", field);
   return target;

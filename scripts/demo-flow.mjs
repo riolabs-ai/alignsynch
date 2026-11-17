@@ -156,7 +156,7 @@ const WIDTH = 1440;
 const VIEWPORT_HEIGHT = 900;
 
 const TEMPLATE_SLUG = "relationship-basics";
-const CREATE = `/templates/relationship/${TEMPLATE_SLUG}/create`;
+const CREATE = `/dashboard/templates/${TEMPLATE_SLUG}/create`;
 
 /** The persona's own words. Fixed strings, so two runs produce the same transcript. */
 const PERSONA = {

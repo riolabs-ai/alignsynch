@@ -7,7 +7,7 @@
  * catalogue (`/v1/templates`) and the dashboard library (`/v1/[persona]/templates`) both draw it,
  * and the only difference between the two is the action row the surface owns. This module is the
  * same decision for the app's two catalogue surfaces — `/assessment` (pick a template, then create
- * a session from it) and `/templates/relationship` (the catalogue: open, use, duplicate, archive) —
+ * a session from it) and `/dashboard/templates` (the catalogue: open, use, duplicate, archive) —
  * so a card looks the same wherever a person meets a template, and neither surface re-implements
  * one.
  *
@@ -29,7 +29,7 @@
  *
  * **`Create Relationship` is a door, never a write (#957).** The primary action is an anchor to
  * `createRelationshipPath(template.slug)` — stage 1 of the one create flow — so this card is the
- * *single* create path on both surfaces that draw it (`/assessment` and `/templates/relationship`).
+ * *single* create path on both surfaces that draw it (`/assessment` and `/dashboard/templates`).
  * `/assessment` used to add a form beside it that posted straight to the create endpoint and
  * published the relationship in one press; that form is deleted, and because the door lives here,
  * the two surfaces cannot drift back apart without deleting this anchor.
@@ -283,7 +283,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
         {createable(template) ? (
           /*
            * The door, and it opens the flow **in place** (#979 B). This card is drawn by
-           * `/assessment` and `/templates/relationship`, and both segments declare the intercepted
+           * `/assessment` and `/dashboard/templates`, and both segments declare the intercepted
            * route that turns that address into the flow's dialog over them — `FlowEntryLink` is the
            * soft navigation and the remembered origin the dialog needs, in one component, so the
            * two surfaces cannot be mounted differently. A bare `<a>` here would be a document load:

@@ -176,7 +176,7 @@ describe("the shelf is what the platform serves", () => {
   });
 
   it("counts the flow's blank start as a served template too", () => {
-    // `/templates/relationship/blank-template/create` is the closing band's action (#1042) and the
+    // `/dashboard/templates/blank-template/create` is the closing band's action (#1042) and the
     // address `tests/blank-start.test.ts` pins; it is a create link like any card's.
     expect(isPlatformTemplate("blank-template")).toBe(true);
   });

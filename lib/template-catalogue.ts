@@ -105,7 +105,7 @@ export const START_PATH = REGISTER_PATH;
  * shelf — and a surface that authored its own destination is how the three-door split happened.
  * `createRelationshipPath()` is `lib/flow/paths.ts`'s; neither is spelled here.
  *
- * It is **not** a promise the route cannot keep: `/templates/relationship/<id>/create` renders for
+ * It is **not** a promise the route cannot keep: `/dashboard/templates/<id>/create` renders for
  * a signed-out visitor (#690), so the destination is a screen whether or not the person has an
  * account yet, and the draft they type there survives the sign-in at stage 4.
  */

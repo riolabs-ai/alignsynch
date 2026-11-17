@@ -71,9 +71,9 @@ describe("the platform's blank template is a start, not an offer nobody can take
 
 describe("the blank start's address", () => {
   it("is the blank template's stage 1, and it is in the route manifest", () => {
-    expect(blankRelationshipPath()).toBe(`${relationshipTemplatePath(BLANK_TEMPLATE_SLUG)}/create`);
-    expect(blankRelationshipPath()).toBe("/templates/relationship/blank-template/create");
-    expect(ROUTE_PATTERNS).toContain("/templates/relationship/[slug]/create");
+    expect(blankRelationshipPath()).toBe(createRelationshipPath(BLANK_TEMPLATE_SLUG));
+    expect(blankRelationshipPath()).toBe("/dashboard/templates/blank-template/create");
+    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[id]/create");
   });
 
   it("is a different address from a named template's, so the two starts cannot be confused", () => {

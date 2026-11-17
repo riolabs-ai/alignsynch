@@ -162,7 +162,7 @@ describe("the start band", () => {
   it("opens the flow's own address for the chosen template", () => {
     // The band holds slugs because the flow's URL carries the slug (#794), never the record id.
     expect(createRelationshipPath("member-config-abc123")).toBe(
-      "/templates/relationship/member-config-abc123/create",
+      "/dashboard/templates/member-config-abc123/create",
     );
     const html = renderToStaticMarkup(
       createElement(RelationshipStart, { copy: dashboardRelationshipsPageCopy, templates }),

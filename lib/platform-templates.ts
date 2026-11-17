@@ -5,7 +5,7 @@
  * ## The defect this module closes
  *
  * `/relationship-templates` drew its cards straight from `data/relationship-types.ts` (the
- * taxonomy) while `/templates/relationship/<slug>/create` resolved from the **database**
+ * taxonomy) while `/dashboard/templates/<slug>/create` resolved from the **database**
  * (`readLibraryTemplate`). Two sources, no check: production's catalogue advertised 27 create
  * links and 25 of them answered 404, because only the four fixture-era template rows had ever
  * been written there. The demo served them all, so nothing local could see it.

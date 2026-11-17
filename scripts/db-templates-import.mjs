@@ -5,7 +5,7 @@
  * ## Why this exists instead of `pnpm db:seed`
  *
  * The catalogue at `/relationship-templates` advertises every purchasable relationship type, and
- * each card's action is `/templates/relationship/<slug>/create`, which resolves the template from
+ * each card's action is `/dashboard/templates/<slug>/create`, which resolves the template from
  * the **database** (`readLibraryTemplate`). Production had only ever received the four fixture-era
  * template rows, so 25 of the 27 advertised create links answered 404 — the demo served them all,
  * which is why nobody saw it.

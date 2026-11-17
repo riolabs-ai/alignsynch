@@ -31,11 +31,7 @@ import {
   PLAN_INTENT_COOKIE,
   PLAN_INTENT_COOKIE_MAX_AGE,
 } from "@/lib/flow/session";
-import {
-  createModePath,
-  createRelationshipPath,
-  RELATIONSHIP_TEMPLATES_PATH,
-} from "@/lib/flow/paths";
+import { createModePath, createRelationshipPath, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
@@ -49,8 +45,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!step.ok) {
     // A post that named no template has no screen to return to; the library lists what can be
     // copied, which is the honest answer to "start over".
-    const back =
-      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createRelationshipPath(templateSlug);
+    const back = templateSlug === "" ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(templateSlug);
     const target = new URL(back, request.url);
     target.searchParams.set("problem", step.problem.reason);
     target.searchParams.set("field", step.problem.field);
@@ -58,7 +53,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (templateRecordId === "") {
-    return NextResponse.redirect(new URL(RELATIONSHIP_TEMPLATES_PATH, request.url), 303);
+    return NextResponse.redirect(new URL(TEMPLATE_LIBRARY_PATH, request.url), 303);
   }
 
   const jar = await cookies();
@@ -94,7 +89,7 @@ export async function POST(request: Request): Promise<Response> {
 
   return NextResponse.redirect(
     new URL(
-      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(templateSlug),
+      templateSlug === "" ? TEMPLATE_LIBRARY_PATH : createModePath(templateSlug),
       request.url,
     ),
     303,

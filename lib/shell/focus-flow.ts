@@ -37,15 +37,16 @@
 export const FOCUS_FLOW_PATTERNS: readonly (readonly string[])[] = [
   // The member's own template: the console's editor in its `private` band.
   ["dashboard", "templates", "*"],
-  // The five-stage create wizard, under the template noun: `assessment` is a record kind, and a
-  // template is not one (#794).
+  // The five-stage create wizard, at the dashboard address it shares with the library since #1109
+  // (`/dashboard/templates/<slug>/create`). It was `["templates", "relationship", "*", "create"]`
+  // while the flow hung off the retired template noun; the segments are the dashboard's now, and
+  // the wizard is still a job with an end — which is what makes it a flow with an exit of its own.
   //
-  // #1109 — the *authoring form* was the second entry here (`/templates/relationship/new`). It
-  // retired with its page: a template is authored on the dashboard's templates tab now, in the
-  // blank band and the copy band, and neither is a job with an end of its own — the tab is a place
-  // you work from, with the rail as the way back. So the form is not a flow and the flow is the
-  // wizard, which is still one.
-  ["templates", "relationship", "*", "create"],
+  // #1109 also retired the *authoring form* that used to be the second entry here
+  // (`/templates/relationship/new`): a template is authored on the dashboard's templates tab now,
+  // in the blank band and the copy band, and neither is a job with an end of its own — the tab is a
+  // place you work from, with the rail as the way back. So the form is not a flow and the wizard is.
+  ["dashboard", "templates", "*", "create"],
 ];
 
 /** Where the header's one explicit exit goes. The workspace, not the marketing site. */

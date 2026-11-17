@@ -353,7 +353,7 @@ export function templatesPage(
    * The purchasable types this build can actually open, in taxonomy order (#1099).
    *
    * A type whose template the platform does not serve is **not drawn**: its card's action is
-   * `/templates/relationship/<id>/create`, and advertising an address the create route answers with
+   * `/dashboard/templates/<id>/create`, and advertising an address the create route answers with
    * a 404 is how production promised 27 templates and served 2. The set is the served one, so the
    * page cannot claim a template that is not there — and
    * `tests/catalogue-served-templates.test.ts` fails the build when the two sets drift, so the

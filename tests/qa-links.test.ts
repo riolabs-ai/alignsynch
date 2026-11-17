@@ -57,8 +57,8 @@ describe("routeForPagePath", () => {
     expect(routeForPagePath("app/(mainlayout)/assessment/[slug]/page.tsx")).toBe(
       "/assessment/[slug]",
     );
-    expect(routeForPagePath("app/(mainlayout)/templates/relationship/[slug]/create/page.tsx")).toBe(
-      "/templates/relationship/[slug]/create",
+    expect(routeForPagePath("app/(mainlayout)/dashboard/templates/[id]/create/page.tsx")).toBe(
+      "/dashboard/templates/[id]/create",
     );
   });
 
@@ -73,10 +73,10 @@ describe("routeForPagePath", () => {
 
   it("answers null for a slot's page and an intercepted one — neither adds an address (#979 B)", () => {
     // The flow's dialog lives in `@flow` and intercepts the stage routes: the browser stays on
-    // `/templates/relationship/[slug]/create/…`, which those stage pages already own. A QA list that
+    // `/dashboard/templates/[id]/create/…`, which those stage pages already own. A QA list that
     // invented five more rows for the same screens would be pointing at nothing.
     const slot =
-      "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/mode/page.tsx";
+      "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/mode/page.tsx";
     expect(routeForPagePath(slot)).toBeNull();
     expect(
       routeForPagePath("app/(mainlayout)/dashboard/relationships/@flow/default.tsx"),
@@ -85,9 +85,9 @@ describe("routeForPagePath", () => {
       routeForPagePath("app/(mainlayout)/dashboard/relationships/@flow/loading.tsx"),
     ).toBeNull();
     // The route it intercepts is still the stage's own, and still a route.
-    expect(
-      routeForPagePath("app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx"),
-    ).toBe("/templates/relationship/[slug]/create/mode");
+    expect(routeForPagePath("app/(mainlayout)/dashboard/templates/[id]/create/mode/page.tsx")).toBe(
+      "/dashboard/templates/[id]/create/mode",
+    );
   });
 });
 
@@ -333,8 +333,13 @@ describe("authClassFor", () => {
   it("lets the longest prefix win, so an exception beats the group above it", () => {
     expect(authClassFor("/support").auth).toBe("member");
     expect(authClassFor("/support/articles/[slug]").auth).toBe("public");
-    expect(authClassFor("/templates/relationship/[slug]").auth).toBe("member");
-    expect(authClassFor("/templates/relationship/[slug]/create").auth).toBe("public");
+    // #1109 — the flow's stage 1 is public *inside* the member dashboard's prefix, which is the
+    // exception this case exists for; its four stages inherit it, and the editor beside them does
+    // not. The retired `/templates/relationship` noun has no row left to classify: a request for it
+    // is a 308 to the dashboard or the public catalogue, not a screen.
+    expect(authClassFor("/dashboard/templates/[id]/create").auth).toBe("public");
+    expect(authClassFor("/dashboard/templates/[id]/create/aspects").auth).toBe("public");
+    expect(authClassFor("/dashboard/templates").auth).toBe("member");
     expect(authClassFor("/assessment/instances").auth).toBe("member");
     expect(authClassFor("/assessment/instances/[instanceId]/answer").auth).toBe("public");
   });

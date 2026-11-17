@@ -604,6 +604,13 @@ const knownIds = new Set<string>([
   ...tipRecords.map((article) => article.slug),
   ...kbRecords.map((article) => article.id),
   ...categoryTable.map((row) => row.slug),
+  // #1109 — a template is a record too, and `/dashboard/templates/[id]/create…` carries its
+  // **slug** in a segment Next names `[id]` (the create branch shares the editor's segment name,
+  // because Next refuses two dynamic names at one level). Both halves are listed: the editor
+  // addresses the row by `record.id`, the flow addresses the same position by `record.slug`, so a
+  // link whose value is neither still fails here — which is what this set is for.
+  ...activeAssessmentRecords.map((template) => template.id),
+  ...activeAssessmentRecords.map((template) => template.slug),
 ]);
 
 for (const issue of checkContactRefs(contacts))
