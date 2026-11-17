@@ -48,6 +48,7 @@ function render(): string {
       hasPassword: false,
       savePassword: async () => ({ kind: "saved" }) as never,
       deleteAccount: async () => ({ kind: "deleted" }) as never,
+      brandId: "alignsynch",
     }),
   );
 }
