@@ -184,9 +184,19 @@ describe("the marketing surfaces keep navigating", () => {
         "FlowEntryLink",
       );
     }
-    // A marketing action still **navigates** — it is a link, not the intercepted dialog — but since
+    // A marketing action still **navigates** — it is a link, not the intercepted dialog — and since
     // #1042 its destination is the flow's stage 1 for every viewer rather than the sign-up form.
-    expect(source("app/(marketing)/relationship-templates/page.tsx")).toContain("startViewer(");
+    // #1127 moved the *catalogue's* own actions one step earlier in the same walk: the v2 hero's
+    // "Browse Templates" and "Start With the Most Popular" open a template's own public page, and it
+    // is that page whose one action is `startPathFor()` — stage 1, carrying the template. Both are
+    // navigations, neither mounts the door, and the stage-1 address is still the only door.
+    const catalogue = source("app/(marketing)/relationship-templates/page.tsx");
+    expect(catalogue).toContain("relationshipTypePath(");
+    expect(catalogue).not.toContain("startViewer(");
+    expect(source("app/(marketing)/relationship-templates/[slug]/page.tsx")).toContain(
+      "TemplateDetail",
+    );
+    expect(source("lib/template-detail.ts")).toContain("startPathFor(");
     expect(source("lib/start-path.ts")).toContain("createRelationshipPath(typeId)");
     expect(source("lib/start-path.ts")).not.toContain("registerPathFor");
   });
