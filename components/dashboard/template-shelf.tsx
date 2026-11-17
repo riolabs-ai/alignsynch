@@ -29,6 +29,7 @@
  * paints light text without also painting a coloured fill.
  */
 import { Chip } from "@/components/ui/badge";
+import { CardMenu } from "@/components/dashboard/card-menu";
 import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
@@ -41,6 +42,9 @@ import {
   CARD_TITLE,
   type TemplateShelfCard,
 } from "@/lib/member/card";
+import type { CardMenuWrite, CardMenuWriteId, TemplateMenuWords } from "@/lib/member/card-menu";
+import { templateMenuOf } from "@/lib/member/card-menu";
+import type { MenuRefusal } from "@/lib/member/menu-copy";
 import {
   TEMPLATE_TABS,
   type LibraryFilter,
@@ -273,8 +277,29 @@ export function TemplateSearch({
   );
 }
 
+/** Everything the kebab on a template card needs, all resolved by the page that mounts the shelf. */
+export interface TemplateShelfMenu {
+  readonly words: TemplateMenuWords;
+  readonly notices: Partial<Record<CardMenuWriteId, string>>;
+  readonly refusals: readonly MenuRefusal[];
+  readonly fallbackRefusal: string;
+  /** The `"use server"` writers, keyed by the row that performs them (#1134). */
+  readonly writes: Partial<Record<CardMenuWriteId, CardMenuWrite>>;
+  /** Where `Save a Copy` lands: the base of `?tab=mine&new=`. */
+  readonly landNewAt: string;
+}
+
 /** Every card of one tab, in one grid. `cards.length === 0` is the caller's panel, not a hole. */
-export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }) {
+export function TemplateShelf({
+  cards,
+  tab,
+  menu,
+}: {
+  cards: readonly TemplateShelfCard[];
+  /** Which tab the grid is — a Library card's kebab is not a My Template's (#1134). */
+  tab?: TemplateTab;
+  menu?: TemplateShelfMenu;
+}) {
   return (
     <ul data-template-shelf className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
@@ -285,12 +310,33 @@ export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }
             </span>
           </div>
           <div className="flex flex-1 flex-col gap-3 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              {card.chips.map((chip, index) => (
-                <Chip key={chip} variant={index === 0 ? "tint" : "neutral"}>
-                  {chip}
-                </Chip>
-              ))}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {card.chips.map((chip, index) => (
+                  <Chip key={chip} variant={index === 0 ? "tint" : "neutral"}>
+                    {chip}
+                  </Chip>
+                ))}
+              </div>
+              {menu === undefined || tab === undefined ? null : (
+                <CardMenu
+                  data={{
+                    label: fillLabel(menu.words.more, { title: card.title }),
+                    entries: templateMenuOf(menu.words, tab, {
+                      id: card.id,
+                      detailHref: card.detail.href,
+                      createHref: card.create === null ? null : card.create.href,
+                    }),
+                    payload: { templateId: card.id },
+                    title: card.title,
+                    notices: menu.notices,
+                    refusals: menu.refusals,
+                    fallbackRefusal: menu.fallbackRefusal,
+                    writes: menu.writes,
+                    landNewAt: menu.landNewAt,
+                  }}
+                />
+              )}
             </div>
             <Link href={card.detail.href} className={CARD_TITLE}>
               {card.title}

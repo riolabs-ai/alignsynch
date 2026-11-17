@@ -55,6 +55,7 @@ import {
   mineCard,
   searchRowsOf,
   shelfRowsOf,
+  TEMPLATE_TABS,
   templatesTabOf,
   templatesTabPath,
   libraryFilterPath,
@@ -66,10 +67,15 @@ import {
   type ClonableTemplate,
   type MemberTemplateRow,
 } from "@/lib/member/templates";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { clonePublic, createPrivate } from "./actions";
+import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { refusalsOf, templateMenuNotices, templateMenuWords } from "@/lib/member/menu-copy";
+import type { TemplateShelfMenu } from "@/components/dashboard/template-shelf";
+import { archivePrivate, clonePublic, createPrivate } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+/** The two tab values, from the one declaration — a JSX attribute is copy, and `"mine"` is not copy. */
+const [LIBRARY_TAB, MINE_TAB] = TEMPLATE_TABS;
 
 export const metadata: Metadata = {
   title: dashboardTemplatesPageCopy.heading,
@@ -80,6 +86,7 @@ type TemplatesParams = {
   readonly tab?: string | string[];
   readonly filter?: string | string[];
   readonly q?: string | string[];
+  readonly new?: string | string[];
 };
 
 /** One query value as the string a person typed. Arrays (a repeated key) take the first entry. */
@@ -129,6 +136,31 @@ export default async function MemberTemplatesPage({
   const owned = mine.map((row) => mineCard(copy, row));
   const proposeHref = templatesTabPath("mine");
 
+  /**
+   * The card kebab (#1134): one object for both tabs, because the rows it draws are the tab's and
+   * the words, notices and writers are the page's. `save-copy` and `duplicate` are the same writer —
+   * `clonePublicTemplate()` behind `clonePublic` — which is what the issue's `Must not add a new copy
+   * writer` asks for: a Library copy and a duplicate of your own are one write, two rows.
+   */
+  const refusalCopy = refusalsOf(sectionOf(copy, "refusals"), "failed");
+  const menu: TemplateShelfMenu = {
+    words: templateMenuWords(copy),
+    notices: templateMenuNotices(copy),
+    refusals: refusalCopy.refusals,
+    fallbackRefusal: refusalCopy.fallback,
+    writes: { "save-copy": clonePublic, duplicate: clonePublic, archive: archivePrivate },
+    landNewAt: `${templatesTabPath("mine")}&new=`,
+  };
+
+  /**
+   * `?new=<id>` is where `Save a Copy` lands. The card the copy made is in `owned` (the read above ran
+   * after the write), so the confirmation names a row that is really there — and a `?new=` that names
+   * nothing draws no band rather than a claim about a template this account does not hold.
+   */
+  const newId = queryOf(params.new);
+  const newCopy = newId === "" ? undefined : owned.find((card) => card.id === newId);
+  const copyNotice = newCopy === undefined ? null : sectionOf(copy, "copied");
+
   return (
     <StageColumn>
       <div className="space-y-6">
@@ -175,7 +207,11 @@ export default async function MemberTemplatesPage({
                   }}
                 />
               ) : (
-                <TemplateShelf cards={shelved.map((row) => catalogueCard(copy, row))} />
+                <TemplateShelf
+                  cards={shelved.map((row) => catalogueCard(copy, row))}
+                  tab={LIBRARY_TAB}
+                  menu={menu}
+                />
               )}
               {/* The proposal door. A proposal is made from one of your own templates, so the
                 control opens the tab that holds them rather than a form with nothing behind it. */}
@@ -202,6 +238,28 @@ export default async function MemberTemplatesPage({
           <TemplateShelfNotice section={sectionOf(copy, "unreadable")} reason={unreadable} />
         ) : (
           <div className="space-y-4">
+            {copyNotice === null || newCopy === undefined ? null : (
+              /* `role="status"`: the copy arrived by a navigation, so this is the confirmation on arrival
+                 rather than a toast that is gone before a screen reader reaches it. */
+              <div
+                role="status"
+                data-template-copied={newCopy.id}
+                className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {copyNotice.heading}
+                </p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  {fillLabel(sectionBody(copyNotice), { title: newCopy.title })}
+                </p>
+                <Link
+                  href={newCopy.detail.href}
+                  className="mt-3 inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  {itemLabel(copyNotice, "view")}
+                </Link>
+              </div>
+            )}
             <TemplateShelfHeading section={sectionOf(copy, "mine")} />
             {owned.length === 0 ? (
               <TemplateShelfNotice
@@ -212,7 +270,7 @@ export default async function MemberTemplatesPage({
                 }}
               />
             ) : (
-              <TemplateShelf cards={owned} />
+              <TemplateShelf cards={owned} tab={MINE_TAB} menu={menu} />
             )}
             {/* The two ways to start a template. They are the shipped bands — `showList={false}`
               keeps only those, because the shelf above already lists the rows. */}
