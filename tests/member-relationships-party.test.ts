@@ -132,6 +132,9 @@ beforeEach(() => {
     // #1121 — the one free week's claim, read through the relationships the account initiated. No
     // grant in this fixture: every relationship here is on its first (and only) trial.
     if (sql.includes("FROM plan_grant g")) return [{ extended_at: null }];
+    // #1135 — the Counterparty's own removal request, read from the audit log. Nobody has asked in
+    // this fixture, so the log has no row for it.
+    if (sql.includes("FROM admin_action")) return [];
     throw new Error(`unexpected statement: ${sql}`);
   });
 });
