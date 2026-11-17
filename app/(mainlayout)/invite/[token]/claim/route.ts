@@ -126,7 +126,9 @@ export async function POST(
   // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
   await sendJoinNotice({
     instanceRecordId: result.instanceRecordId,
-    ...(suggestionText === "" ? {} : { suggestion: { aspect: suggestionAspect, text: suggestionText } }),
+    ...(suggestionText === ""
+      ? {}
+      : { suggestion: { aspect: suggestionAspect, text: suggestionText } }),
   }).catch((error: unknown) => {
     console.error(
       "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",

@@ -54,7 +54,8 @@ const JOIN_MODULES = [
 const JOIN_SECTIONS = ["steps", "invitation", "account", "accept", "declined"] as const;
 
 /** Words that must not reach the invitee, as whole words, at any case. */
-const FORBIDDEN = /\b(price|pricing|plan|plans|trial|trials|card|cards|billing|invoice|checkout|subscription|upgrade|extension|paid|pay|payment)\b/i;
+const FORBIDDEN =
+  /\b(price|pricing|plan|plans|trial|trials|card|cards|billing|invoice|checkout|subscription|upgrade|extension|paid|pay|payment)\b/i;
 
 function strings(section: PageCopySection): string[] {
   const found: string[] = [];

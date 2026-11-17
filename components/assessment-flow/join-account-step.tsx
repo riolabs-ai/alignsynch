@@ -72,7 +72,9 @@ export function JoinAccountStep({
     <div className="space-y-4">
       <FormSurface data-join-account className="p-5 lg:p-6">
         <h1 className="text-xl font-bold tracking-tight text-primary">{account.heading}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{fillLabel(account.body ?? "", values)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {fillLabel(account.body ?? "", values)}
+        </p>
 
         {problemLabel === undefined ? null : (
           <p

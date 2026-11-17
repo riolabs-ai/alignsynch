@@ -34,13 +34,7 @@ function initialsOf(name: string): string {
     .join("");
 }
 
-export function JoinPartyCards({
-  copy,
-  preview,
-}: {
-  copy: PageCopy;
-  preview: InvitePreview;
-}) {
+export function JoinPartyCards({ copy, preview }: { copy: PageCopy; preview: InvitePreview }) {
   const invitation = sectionOf(copy, "invitation");
   const parties = [
     {

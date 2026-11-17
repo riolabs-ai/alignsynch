@@ -71,7 +71,10 @@ const PREVIEW: InvitePreview = {
   mode: "basic",
   setting: "soft",
   aspects: [
-    { id: "aspect-contact", prompt: "How does how often you are in touch compare to what each wants?" },
+    {
+      id: "aspect-contact",
+      prompt: "How does how often you are in touch compare to what each wants?",
+    },
     { id: "aspect-roles", prompt: "How much do old roles still decide how you treat each other?" },
   ],
 };

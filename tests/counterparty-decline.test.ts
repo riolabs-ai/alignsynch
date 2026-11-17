@@ -70,9 +70,15 @@ describe("the step-2 carrier", () => {
     expect(decodeJoinDetails("not-json")).toBeNull();
     expect(decodeJoinDetails(Buffer.from("{}").toString("base64url"))).toBeNull();
     expect(
-      decodeJoinDetails(Buffer.from(JSON.stringify({ name: "R", email: "a@b.c", plan: "x" })).toString("base64url")),
+      decodeJoinDetails(
+        Buffer.from(JSON.stringify({ name: "R", email: "a@b.c", plan: "x" })).toString("base64url"),
+      ),
     ).toBeNull();
-    expect(decodeJoinDetails(Buffer.from(JSON.stringify({ name: "  ", email: "a@b.c" })).toString("base64url"))).toBeNull();
+    expect(
+      decodeJoinDetails(
+        Buffer.from(JSON.stringify({ name: "  ", email: "a@b.c" })).toString("base64url"),
+      ),
+    ).toBeNull();
   });
 
   it("names its cookie after the token's hash, never after the token", () => {
@@ -121,9 +127,9 @@ describe("a decline is a withdrawal with an actor", () => {
   });
 
   it("sits behind `claimed`: a seat that exists cannot be declined away", () => {
-    expect(
-      inviteStateOf({ claimed: true, expiresAt: EXPIRES_AT, declined: true }, NOW),
-    ).toBe("claimed");
+    expect(inviteStateOf({ claimed: true, expiresAt: EXPIRES_AT, declined: true }, NOW)).toBe(
+      "claimed",
+    );
   });
 
   it("outranks `expired`: the person's answer is the fact worth naming", () => {
@@ -139,7 +145,8 @@ describe("a decline is a withdrawal with an actor", () => {
   it("writes the instant and the marker together, and nothing else", () => {
     const store = source("lib/flow/store.ts");
     const start = store.indexOf("export async function declineInvite(");
-    const end = store.indexOf("* End a session", start) === -1 ? store.indexOf("\n}\n", start) : start;
+    const end =
+      store.indexOf("* End a session", start) === -1 ? store.indexOf("\n}\n", start) : start;
     const region = store.slice(start, end === -1 ? undefined : end + 3);
 
     // One write, both columns: the instant makes the link dead, the marker makes the reason readable.
@@ -148,7 +155,9 @@ describe("a decline is a withdrawal with an actor", () => {
     // The transaction takes the claim's own lock, so a decline and a claim cannot both win.
     expect(region).toContain("FOR UPDATE");
     // And it never creates what it declines: no party, no session, no invitation row, no trial.
-    expect(region).not.toMatch(/INSERT INTO (party|assessment_instance|session_record|subscription)/);
+    expect(region).not.toMatch(
+      /INSERT INTO (party|assessment_instance|session_record|subscription)/,
+    );
     expect(region).not.toMatch(/grantAcceptanceTrial|trial_ends_at/i);
     // Every refusal rolls back rather than leaving a half-written row.
     expect(region.match(/ROLLBACK/g)?.length).toBeGreaterThanOrEqual(4);

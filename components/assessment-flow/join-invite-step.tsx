@@ -85,7 +85,9 @@ export function JoinInviteStep({
           <h1 className="text-2xl font-bold tracking-tight text-primary">
             {fillLabel(invitation.heading ?? "", values)}
           </h1>
-          <p className="text-base text-foreground">{fillLabel(itemLabel(invitation, "how"), values)}</p>
+          <p className="text-base text-foreground">
+            {fillLabel(itemLabel(invitation, "how"), values)}
+          </p>
           {preview.templateSummary === null ? null : (
             <figure className="rounded-md border-l-4 border-initiator bg-initiator-tint px-3 py-2.5">
               <blockquote className="text-sm leading-6 text-foreground">
