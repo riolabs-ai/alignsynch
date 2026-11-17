@@ -215,8 +215,14 @@ describe("the rendered stage sentence", () => {
     const html = render({ rows: complete });
     expect(html).toContain('data-stage="sharing"');
     expect(html).toContain("Sharing — the report is open to both of you.");
-    // This fixture's numbers are not aligned, so the word appears nowhere at all.
-    expect(html).not.toContain("Aligned");
+    // The **ladder** never claims Aligned on this fixture, whose numbers are not: the word is the
+    // verdict's, and the stage element carries `sharing`. Read off the stage element rather than
+    // the whole document since #1122 — the v2 Align surface prints its own "N of M Aspects
+    // Aligned" count and its "Aligned N" filter, and neither is the stage saying it.
+    expect(html).not.toContain('data-stage="aligned"');
+    const stageSentence = html.match(/<p data-stage="sharing"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "";
+    expect(stageSentence).toContain("Sharing");
+    expect(stageSentence).not.toContain("Aligned");
   });
 
   it("draws exactly one stage element, and no stepper of any shape", () => {

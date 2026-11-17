@@ -234,44 +234,127 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     /**
-     * #692 — stage 6, **Align**: the Alignment, Aspect by Aspect.
+     * #1122 — stage 6, **Align**, ported from the v2.0 bundle
+     * (`docs/specs/v2-bundles/04-spec-design-page-align-v2/align.html`).
      *
-     * The artifact of record (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`,
-     * `s10.*`) draws this as the relationship's own Gap card: one row per Aspect, both sheets
-     * side by side, the difference between them. The words are the owner's, narrowed to the three
-     * sentences this screen needs — the two verdicts are stated per Aspect *and* once for the
-     * relationship, because a couple reads the row first and the total second, and neither is a
-     * **composite metric**: the glossary's own grep (`docs/specs/ux-report.md`, acceptance 5) forbids
-     * a "Total Gap", so this band counts Gaps over the Setting and never adds them up.
+     * The surface is "Where You Agree, and Where You Differ": a Soft/Full **Alignment
+     * Tolerance** that re-scores in place, a summary that counts the Aspects each tolerance
+     * accepts, and one numbered card per Aspect carrying both parties' answers on the locked
+     * 1–5 scale. Every word below is the bundle's, verbatim — the two exceptions are sentences
+     * the *build* has to derive because the prototype hardcoded them for its demo sheet:
      *
-     * The two verdict sentences are deliberately worded differently from the report's own band
-     * (`data/pages/assessment-relationship-report.ts`): the report answers "are we aligned", this
-     * band answers "how much of it is over the line here", and a sentence copied between two
-     * fixtures is the drift `data/pages/lifecycle.ts` exists to stop. The glossary's vocabulary —
-     * `Aligned`, the four Opinion names, the eight Gap names, `Soft`/`Full` — is *not* here: it is
-     * authored once in `content/`, and this fixture is only the page's own prose.
+     *   headline-soft / headline-full   the prototype writes "Two Aspects need a conversation"
+     *                                   over Marcus and Elena's five Aspects; here the two
+     *                                   counts are placeholders.
+     *   next-step-body                  the prototype names its widest Gap in prose; this names
+     *                                   the Aspect the numbers actually picked.
+     *   waiting-heading / waiting-body  the prototype never draws this state. The card requires
+     *                                   it: before both parties have answered and accepted,
+     *                                   Align shows a waiting sentence and **no** alignment — a
+     *                                   zeroed summary on an unfinished sheet would be the
+     *                                   product claiming agreement nobody gave.
+     *
+     * The glossary's own vocabulary — `Soft`/`Full`, `Feel`/`Wish` — is *not* here: it is
+     * authored once in `content/assessment.ts`, and this fixture is only the page's own prose.
+     * Nor is `In Synch`, `Small Gap` or `Gap` **redefined**: the three `chip-*` / `segment-*` /
+     * `verdict-*` rows spell *the tolerance's qualifier* on top of those words, which is the one
+     * thing #1122 changes about them ("Small Gap · Not OK under Full").
      */
     {
       id: "alignment",
-      heading: "Alignment",
-      body: "Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+      heading: "Where You Agree, and Where You Differ",
+      body: "Both answers on every Aspect, side by side. Start with the widest Gap.",
       items: [
-        { id: "scope", label: "Lives in the dashboard" },
-        { id: "sheets", label: "The two sheets" },
-        { id: "difference", label: "Difference" },
-        { id: "gap", label: "Gap" },
-        { id: "scale", label: "Scale {min}–{max}" },
-        { id: "within", label: "Within the {setting} Setting" },
-        { id: "over", label: "{count} over the {setting} Setting" },
-        { id: "unscored", label: "Not answered" },
-        { id: "in-synch", label: "In Synch" },
-        { id: "no-gap", label: "No Gap is measurable on this Aspect — nothing was subtracted." },
-        { id: "verdict-aligned", label: "Every Gap here meets the {setting} Setting." },
+        { id: "eyebrow", label: "Stage 6 · Align" },
+        { id: "live-badge", label: "Live" },
+        { id: "tolerance-label", label: "Alignment Tolerance" },
+        { id: "tolerance-note-soft", label: "A Small Gap (1 step) counts as aligned." },
+        { id: "tolerance-note-full", label: "Only In Synch (0 steps) counts as aligned." },
+        { id: "summary", label: "Summary" },
+        { id: "summary-count", label: "{aligned} of {total}" },
+        { id: "summary-count-unit", label: "Aspects Aligned" },
         {
-          id: "verdict-unmet",
-          label: "{count} of the {measured} Gaps here exceed the {setting} Setting.",
+          id: "headline-soft",
+          label:
+            "You agree on more than you differ. {talk} of {total} Aspects need a conversation.",
         },
-        { id: "report-link", label: "Read every Gap on the report" },
+        {
+          id: "headline-full",
+          label:
+            "Under Full, every difference counts. {talk} of {total} Aspects need a conversation, {oneStep} of them only by one step.",
+        },
+        { id: "legend-synch", label: "In Synch" },
+        { id: "legend-small", label: "Small Gap" },
+        { id: "legend-gap", label: "Gap" },
+        { id: "chip-synch", label: "In Synch" },
+        { id: "chip-small", label: "Small Gap" },
+        { id: "chip-gap", label: "Gap" },
+        { id: "chip-ok", label: "· OK" },
+        { id: "chip-not-ok", label: "· Not OK under Full" },
+        { id: "segment-synch", label: "In Synch" },
+        { id: "segment-small-ok", label: "Small Gap · OK" },
+        { id: "segment-small-tight", label: "Small Gap · Not OK" },
+        { id: "segment-gap", label: "Gap" },
+        { id: "next-step", label: "Next Step" },
+        { id: "next-step-body", label: "{aspect} is the widest Gap: {steps} steps apart." },
+        { id: "next-step-body-one", label: "{aspect} is the widest Gap: 1 step apart." },
+        {
+          id: "next-step-body-aligned",
+          label: "Nothing to talk about: every Aspect aligns under {tolerance}.",
+        },
+        { id: "start-conversation", label: "Start the Conversation" },
+        { id: "aspect-list-heading", label: "Aspect by Aspect" },
+        { id: "aspects-aligned", label: "{count} Aligned" },
+        { id: "how-to-read", label: "How to Read a Gap" },
+        { id: "read-opinions", label: "Each line is one Opinion." },
+        {
+          id: "read-opinions-body",
+          label:
+            "Feel is how it is now; Wish is how each wants it. Both of you answer on the same 1–5 scale.",
+        },
+        { id: "read-markers", label: "Markers show who said what." },
+        {
+          id: "read-markers-body",
+          label:
+            "{initiator} sits above the line, {counterparty} below. The shaded band between them is the Gap, counted in steps.",
+        },
+        { id: "read-status", label: "Status follows your Alignment Tolerance." },
+        {
+          id: "read-status-body",
+          label:
+            "0 steps is In Synch. 1 step is a Small Gap (OK under Soft). 2 or more is a Gap worth talking about.",
+        },
+        { id: "filter-label", label: "Filter Aspects" },
+        { id: "filter-all", label: "All {total}" },
+        { id: "filter-talk", label: "To Talk About {talk}" },
+        { id: "filter-aligned", label: "Aligned {aligned}" },
+        { id: "party-initiator", label: "{name} · Initiator" },
+        { id: "party-counterparty", label: "{name} · Counterparty" },
+        { id: "row-feel-note", label: "How It Is Now" },
+        { id: "row-wish-note", label: "How Each Wants It" },
+        { id: "steps-apart-one", label: "1 Step Apart" },
+        { id: "steps-apart", label: "{steps} Steps Apart" },
+        { id: "same-answer", label: "Same answer" },
+        {
+          id: "row-image",
+          label:
+            "{opinion}: {initiator} {initiatorScore}, {counterparty} {counterpartyScore} of {max} ({leftValue} to {rightValue}). Gap {steps}.",
+        },
+        { id: "reading", label: "Reading:" },
+        { id: "reading-apart", label: "{initiator} and {counterparty} are {steps} apart here." },
+        { id: "reading-aligned", label: "{initiator} and {counterparty} answered the same." },
+        { id: "verdict-synch", label: "Aligned under either Alignment Tolerance." },
+        { id: "verdict-small-ok", label: "Under Soft, this counts as aligned." },
+        { id: "verdict-small-tight", label: "Under Full, this needs a conversation." },
+        { id: "verdict-gap", label: "Worth a conversation." },
+        { id: "discuss", label: "Discuss" },
+        { id: "waiting-heading", label: "Waiting on {other}" },
+        {
+          id: "waiting-body",
+          label:
+            "Nothing on this screen is scored until both of you have answered and accepted, so no alignment is drawn yet — not a zero, not a blank bar.",
+        },
+        { id: "waiting-note", label: "Still to answer and accept: {names}." },
       ],
     },
     /**

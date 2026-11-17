@@ -176,13 +176,14 @@ function acceptFormAction(html) {
 }
 
 /**
- * The Alignment rows of one Aspect on the relationship screen (#692).
+ * The Alignment rows of one Aspect on the relationship screen (#692, re-read for #1122).
  *
- * The completed screen draws one `data-alignment-gap-kind` row per Gap the Aspect has, and each
- * row prints the two Opinions it subtracts beside the number, so this reads the numbers off the
- * markup instead of parsing a sentence — the same discipline the old `data-feel-gap` attributes
- * carried. Returns `[[kind, gap], …]` in glossary order; `[]` when the Aspect is not drawn (the
- * report is still locked, or the id is not on the page).
+ * The v2 surface draws one `data-alignment-row` line per **Opinion pair it shows** — Feel and
+ * Wish — and each line carries the Gap it computed between the two parties' answers
+ * (`data-alignment-gap`). The eight glossary kinds are still what the model computes; the Align
+ * screen draws the two cross-party rows the bundle draws, and the prediction kinds are read on
+ * the report page (`/report`) instead. Returns `[[kind, gap], …]` in draw order; `[]` when the
+ * Aspect is not drawn (the report is still locked, or the id is not on the page).
  */
 function alignmentGaps(html, itemId) {
   const start = html.indexOf(`data-alignment-aspect="${itemId}"`);
@@ -190,7 +191,7 @@ function alignmentGaps(html, itemId) {
   const next = html.indexOf('data-alignment-aspect="', start + 1);
   const section = html.slice(start, next === -1 ? undefined : next);
   return [
-    ...section.matchAll(/data-alignment-gap-kind="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
+    ...section.matchAll(/data-alignment-row="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
   ].map((match) => [match[1], Number(match[2])]);
 }
 
@@ -2008,30 +2009,20 @@ async function main() {
   const advReport = await advInitiator.get(advPath);
   const advRow = alignmentGaps(advReport.html, TIME);
   check(
-    "the Advanced report draws all eight Gap kinds (#219)",
-    advRow.length === 8 &&
-      gapOfKind(advRow, "feel") === 3 &&
-      gapOfKind(advRow, "wish") === 2 &&
-      gapOfKind(advRow, "initiator") === 3 &&
-      gapOfKind(advRow, "counterparty") === 2 &&
-      // A prediction against the other party's actual: Initiator Think 4 vs Counterparty
-      // Feel 5 → 1; Initiator Guess 1 vs Counterparty Wish 3 → 2; Counterparty Think 3 vs
-      // Initiator Feel 2 → 1; Counterparty Guess 4 vs Initiator Wish 5 → 1.
-      gapOfKind(advRow, "initiator-think") === 1 &&
-      gapOfKind(advRow, "initiator-guess") === 2 &&
-      gapOfKind(advRow, "counterparty-think") === 1 &&
-      gapOfKind(advRow, "counterparty-guess") === 1,
+    "the Advanced report draws the two cross-party rows the Align surface carries (#1122)",
+    advRow.length === 2 && gapOfKind(advRow, "feel") === 3 && gapOfKind(advRow, "wish") === 2,
     `${advRow.length} rows: ${advRow.map(([kind, gap]) => `${kind} ${gap}`).join(" · ")}`,
   );
+  // The prediction kinds are still *computed* (`content/gaps.ts` reads all eight off the same
+  // pairs) and still printed on the report page; the v2 Align card draws no Think/Guess row, so
+  // its absence here is the surface's shape rather than a lost number (#1128 owns that screen).
   const advGapAttributes = (advReport.html.match(/data-alignment-gap="/g) ?? []).length;
   check(
-    "every Aspect carries eight Gaps (5 × 8)",
-    advGapAttributes === ASPECT_IDS.length * 8,
+    "every Aspect carries its two drawn rows (5 × 2)",
+    advGapAttributes === ASPECT_IDS.length * 2,
     `${advGapAttributes} gap attributes`,
   );
-  note(
-    `rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
-  );
+  note(`rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2`);
 
   /* 11. a template the member authored is usable (#870) -------------- */
   // The report the card came from: the owner wrote a template in the app, walked four stages with
