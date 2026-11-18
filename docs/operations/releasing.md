@@ -84,8 +84,8 @@ every refusal, and it prints the milestone name the number implies, so the miles
 the number rather than edited by hand and then reconciled. A typed version is refused outright; the
 one exit is `--override <version> --reason "<why>"`, which prints a banner and writes it into the
 entry, so a declared override is a public artefact. It refuses to run at all inside a dispatched
-worker (`HERMES_KANBAN_TASK` set) and `--execute` needs an interactive TTY — a cut is one actor, and
-a card is not it.
+worker (`HERMES_KANBAN_TASK` set) and `--execute` needs an interactive TTY **or** a committed
+approval artifact — a cut is one actor, and a card is not it.
 
 ### 3. CHANGELOG entry, at that version
 
@@ -214,6 +214,39 @@ of running it.
 proven: it re-checks the seven values, refuses outside an interactive TTY, asks for the version to be
 typed back, and then runs exactly `bash scripts/release.sh --tag-only <v>` — the composition is the
 point, so `--tag-only` keeps its #1041 record step and its refusal of a stale record.
+
+**A cut with no TTY runs on an approval, not a flag.** When `--execute` finds no terminal it reads
+`docs/releases/<candidate>.approval.json` — a file a human writes and commits to `main`:
+
+```json
+{
+  "version": "1.22.0",
+  "commit": "<40-hex sha that is on origin/main>",
+  "approved_by": "<github login>",
+  "approved_at": "<ISO-8601>",
+  "url": "https://github.com/riolabs-ai/alignsynch/issues/<n>#issuecomment-<id>",
+  "reason": "optional one line"
+}
+```
+
+It tags only when that approval covers **this** cut: the `version` is the candidate, `commit` is
+`git rev-parse HEAD` **and** HEAD is `origin/main`, `git status --short` is empty, `approved_by` is a
+person (not `riolabs-ai`, `alignsynch` or a `[bot]` account) and `url` is an issue, pull request or
+comment on this repository. Each failure is refused by name with both sides of the disagreement, and
+a dirty tree is a refusal rather than a warning because the gate checks the tree. The keys are
+strict — an unknown key is an error, not a comment — and `version` is written without the leading
+`v` (either spelling is accepted on read). On success it prints `pre-approved by <login> at <url>
+for commit <sha>` and runs the same `--tag-only`.
+
+**The artifact is the owner's act.** No mode, flag or side effect of `--prepare`, `--check` or
+`--execute` writes it: a self-issued approval is not an approval, and its value is that it is a
+reviewed diff naming a person. There is no `--approved-by` / `--approval` flag — an unknown argument
+is a usage error. After the tag exists the cut appends the approval to
+`data/health/release-approvals.json` (`node scripts/release-record.mjs approval …`, read it back with
+`pnpm release:approvals`), so which approval covered which tag survives the transcript. That file is
+committed with the health record. The published note itself is the `CHANGELOG.md` entry byte for
+byte, so it cannot carry a post-hoc approval without changing the tag path — the ledger and the
+banner are the audit trail.
 
 Then the release mail — with the key hydrated at call time, because a spawned shell has no
 `RESEND_API_KEY`:
