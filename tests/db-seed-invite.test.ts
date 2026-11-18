@@ -13,8 +13,9 @@
  *
  *   1. the bundle carries invitations at all — a dataset that stops inviting has to fail here
  *      rather than quietly narrow this test to nothing;
- *   2. every session whose lifecycle says an invitation went out (and only those) resolves to
- *      exactly one address, in the demo domain, without throwing;
+ *   2. every session resolves to exactly one address, in the demo domain, without throwing —
+ *      **a draft included** (#1196): the product writes the invitation in the relationship's own
+ *      transaction, so every seeded relationship carries one and every one names somebody;
  *   3. a seat a demo identity owns names that identity — the persona signs in with it, so the
  *      invitation has to name the mailbox a person can actually take the seat from;
  *   4. a seat nobody on this machine owns names the counterparty's own fixture address, and
@@ -38,10 +39,12 @@ const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
 /** The bundle's sessions, through the model — a bundle that drifts fails here, not in a seed. */
 const sessions = zAssessmentSession.array().parse(bundle.payload.sessions);
 
-/** The sessions that carry an invitation, which is what makes `inviteEmailFor` run at all. */
-const invited = sessions
-  .map((session) => ({ session, lifecycle: seededLifecycleOf(session) }))
-  .filter(({ lifecycle }) => lifecycle.invite !== "none");
+/** The sessions, each with the lifecycle the seed writes from — every one of them carries an
+ * invitation since #1196, so this is the population `inviteEmailFor` runs over. */
+const invited = sessions.map((session) => ({
+  session,
+  lifecycle: seededLifecycleOf(session),
+}));
 
 const personaByName = new Map(DEMO_ACCOUNTS.map((account) => [account.name, account]));
 
@@ -105,13 +108,21 @@ describe("the seeded bundle's invitations", () => {
     expect(() => inviteEmailFor(orphan as never)).not.toThrow(TypeError);
   });
 
-  it("asks the question of the lifecycle, so a draft's absent invitation is not a missing address", () => {
-    const drafts = sessions.filter((session) => seededLifecycleOf(session).invite === "none");
-    // A draft never had a link (the seed deletes the row instead of writing one), so these
-    // sessions are deliberately *not* in `invited` — that is what makes the filter above a
-    // statement about the dataset rather than about every row in the file.
+  it("invites a draft too — the create writes the row, so a draft's address is not missing (#1196)", () => {
+    // #1079 had the seed *delete* a draft's invitation ("nothing sent, so no link"), which put three
+    // seeded drafts in a state the product never creates: `createSessionFromTemplate` writes the row
+    // in the relationship's own transaction, so stage 5's Send has a token to reissue. A draft is
+    // therefore in `invited` like every other lifecycle, and its address resolves — the filter this
+    // replaced is the assertion that used to encode the opposite.
+    const drafts = invited.filter(({ lifecycle }) => lifecycle.invite === "created");
     expect(drafts.length).toBeGreaterThan(0);
-    expect(invited.some(({ session }) => drafts.includes(session))).toBe(false);
+    for (const { session } of drafts) {
+      expect(inviteEmailFor(session)).toMatch(/^[^@\s]+@[^@\s]+$/);
+    }
+    // And no lifecycle has gone back to "no invitation at all": every word in the table writes one,
+    // so the retired `none` cannot reappear without failing here.
+    const WORDS = ["created", "sent", "claimed"];
+    expect(invited.every(({ lifecycle }) => WORDS.includes(lifecycle.invite))).toBe(true);
   });
   it("counts the rows a seed installs, not the rows the bundle authors", () => {
     // `#1079`'s census: 31 relationships over 56 party rows and 205 answers. The authored bundle

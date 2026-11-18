@@ -71,8 +71,11 @@ line, so a green gate never claims to have verified something it did not run.
 
 - unknown paths resolve to **code** — a new top-level directory cannot buy a shortcut;
 - `AGENTS.md` is prose but it is **config**: it changes what every future card runs;
-- an empty diff, or no `GATE_REF` to diff against, resolves to **code**: "I could not tell what
-  changed" is never evidence that a change is cheap;
+- no `GATE_REF` to diff against, a detached HEAD, an unmerged index, or a tree standing on the
+  base branch itself resolves to **code**: "I could not tell what changed" is never evidence that
+  a change is cheap;
+- a **known-empty** diff — a clean tree on a branch that has not diverged — resolves to **docs**:
+  no step can see a change, so nothing is bought by depth (#1000);
 - `GATE_LANE=full bash scripts/verify.sh` forces the code lane — after a dependency bump, a `tsconfig`
   change, or any diff you do not trust the classifier with. Any other `GATE_LANE` value is an error,
   not a silent `auto`.
