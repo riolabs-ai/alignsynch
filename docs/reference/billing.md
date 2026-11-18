@@ -103,6 +103,10 @@ prints the `billing_event` count, the subscription row and the entitlement befor
 wrote. Card payments in test mode move no money; the card is `4242 4242 4242 4242`, any future date,
 any CVC.
 
+`docs/qa/release-2.0.0-rc1.1/billing-checkout.md` is that proof **run on production** (#1053): the
+session the deployment minted, the mode it reports, the return URL, the rows the delivered webhook
+wrote, the decline path, and the stage-4 `500` that stopped the relationship half of the run.
+
 ## The pricing page — one list, and a real checkout (card 3)
 
 `/pricing` is request-time (`export const dynamic = "force-dynamic"`), because two of its facts
