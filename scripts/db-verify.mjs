@@ -196,6 +196,15 @@
  *       mirrors it, the account purge nulls it — `grep -rn counterparty_user_id lib scripts`). A
  *       count of active sessions whose relationship mirror is NULL is printed beside the census, as
  *       a report and never a failure, for exactly that reason.
+ *   V34 the ledger is level with the code (#1205): every `db/migrations/*.sql` file has a
+ *       `schema_migrations` row. This is the **last** check in this script because it names the
+ *       cause of everything above when a deployment is behind: on 2026-11-18 production's ledger
+ *       stopped at `0039`, so `session.state` (`0041`) did not exist and `POST /assessment/new`
+ *       answered an empty-body 500 — the INSERT's `42703` was nobody's named failure, and every
+ *       check that reads a column added by an unapplied file fails with a missing-column read
+ *       instead of the migration's name. The comparison is `scripts/db-schema.mjs`'s
+ *       (`pnpm db:schema`), not a second copy, so the release runbook's read-only check and this
+ *       one cannot disagree about which files are pending.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  * V32 is the one check that reports without failing, and it says so in its own output line.
@@ -205,6 +214,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { allowlistedAdminProblems } from "./db-admin-allowlist.mjs";
+import { ledgerProblems, ledgerSummary, migrationFiles } from "./db-schema.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -895,6 +905,18 @@ async function main() {
       `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`,
     );
     const present = tables.map((row) => row.tablename);
+
+    // V34's input, read once here rather than at the verdict: the ledger is a single cheap query,
+    // and the comparison itself runs as the last check (below) so its line sits under the findings
+    // it explains. A branch with **no** ledger table at all (42P01) is a database nothing has been
+    // migrated onto, which is "every file is pending" — not an empty check.
+    let appliedMigrations = [];
+    try {
+      const { rows: ledger } = await client.query("SELECT name FROM schema_migrations");
+      appliedMigrations = ledger.map((row) => row.name);
+    } catch (error) {
+      if (error?.code !== "42P01") throw error;
+    }
     const missing = CONTENT_TABLES.filter((table) => !present.includes(table));
     for (const table of missing)
       fail("V1", `public.${table} does not exist — run \`pnpm db:migrate\``);
@@ -2299,6 +2321,31 @@ async function main() {
       );
       for (const problem of reviewIssueProblems(issueRows)) {
         fail(problem.code, problem.message);
+      }
+    }
+
+    /* V34 — the ledger is level with the code (#1205), and it is the **last** check on purpose.
+     *
+     * Every check above reads columns and tables the migrations create. When a deployment is behind,
+     * the first symptom used to be an unreadable one: `session.state` did not exist on production
+     * (the ledger stopped at 0039), so the create's INSERT raised `42703` and
+     * `POST /assessment/new` answered an empty-body 500 with nothing naming a migration. A check
+     * that says "0041 was never applied" turns that into one line an operator can act on.
+     *
+     * The comparison is `scripts/db-schema.mjs`'s, not a copy: `pnpm db:schema` is the read-only
+     * check the release runbook runs before anything reads the branch, and this is the same
+     * function over the same table, so the two cannot disagree about which files are pending.
+     */
+    const migrationReport = ledgerProblems(migrationFiles(), appliedMigrations);
+    const ledgerLine = ledgerSummary(migrationReport);
+    if (migrationReport.pending.length === 0) {
+      console.log(`  · schema: ${ledgerLine} — the ledger is level with db/migrations`);
+    } else {
+      for (const file of migrationReport.pending) {
+        fail(
+          "V34",
+          `db/migrations/${file} has never been applied to this database — the code reads columns this branch does not have, so a create answers 500 at request time: run \`pnpm db:migrate\` (or \`pnpm db:schema\` to list them without writing)`,
+        );
       }
     }
 
