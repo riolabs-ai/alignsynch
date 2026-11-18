@@ -79,8 +79,59 @@ export interface EmailVerbatim {
   readonly lines: readonly string[];
 }
 
+/**
+ * A committed picture (#1169 lane B).
+ *
+ * **The text carries it, and the HTML draws it from that line.** An image block contributes
+ * `![alt](src)` — plus a markdown image title for its caption — to the plain text, so the text half
+ * of the mail always says a picture was there and what it showed; `htmlFromText()` reads that line
+ * back and draws the `<img>`. The intrinsic size is *not* in the line: it is the block's, and
+ * `renderEmail()` hands the blocks to the parser as `figures`, the same way the brand mark reaches
+ * the header. That keeps the parser a pure function of (text, chrome) while making a wrong or
+ * missing size a refusal rather than a squashed picture.
+ *
+ * Blocks come from `lib/email/blocks.ts::emailImage()`, never hand-built: that helper is where
+ * "the file exists under `public/`" is checked, and it is the only place that reads the tree.
+ */
+export interface EmailImage {
+  readonly kind: "image";
+  /** Root-relative, a real file under `public/`. Never a `data:` URL, never a remote host. */
+  readonly src: string;
+  /** What the picture shows. Required and non-empty: a release note carries no decorative image. */
+  readonly alt: string;
+  /** The drawn width in px, an integer. */
+  readonly width: number;
+  /** The drawn height in px, an integer. */
+  readonly height: number;
+  /** A line under the picture, drawn as text so it is in both halves of the mail. */
+  readonly caption?: string;
+}
+
+/**
+ * A table the entry carries (#1169 lane B) — **text, never a computed figure**.
+ *
+ * A release note may show a table because `CHANGELOG.md` prints one, and the mail copies it. It may
+ * not show one because the renderer joined two fixtures: no value in this mail originates anywhere
+ * but the entry or `data/brand.ts`, so a table that disagrees with its source entry must be a
+ * mistake a human made, not arithmetic a template did.
+ */
+export interface EmailTable {
+  readonly kind: "table";
+  /** The table's name, rendered above it and repeated in the plain text. Required. */
+  readonly caption: string;
+  readonly columns: readonly string[];
+  /** Every row has exactly `columns.length` cells — checked by `emailTable()`. */
+  readonly rows: readonly (readonly string[])[];
+}
+
 /** One block of the body. */
-export type EmailBlock = EmailHeading | EmailParagraph | EmailList | EmailVerbatim;
+export type EmailBlock =
+  | EmailHeading
+  | EmailParagraph
+  | EmailList
+  | EmailVerbatim
+  | EmailImage
+  | EmailTable;
 
 /** The document a caller hands `renderEmail()`. */
 export interface EmailDocument {
@@ -168,6 +219,65 @@ function verbatimLines(block: EmailVerbatim): string[] {
 }
 
 /**
+ * The text an `image` block contributes: `![alt](src)`, with the caption as the markdown title.
+ *
+ * Markdown image syntax rather than an invented line shape, because it is the one spelling that
+ * says "a picture is here and this is what it shows" in a client that cannot draw one. The alt is
+ * checked here as well as in `emailImage()`, because `composeText()` is public: an alt carrying `]`
+ * would end the alt early and hand the parser a different sentence than the one that was written.
+ */
+function imageLine(block: EmailImage): string {
+  const alt = plainInline(block.alt);
+  if (alt === "" || alt.includes("]")) {
+    throw new Error('an email image needs alt text, and it must not contain "]"');
+  }
+  if (!block.src.startsWith("/")) {
+    throw new Error(`an email image's src must be root-relative — got "${block.src}"`);
+  }
+  const caption =
+    block.caption === undefined ? "" : ` "${plainInline(block.caption).replace(/"/g, "'")}"`;
+  return `![${alt}](${block.src}${caption})`;
+}
+
+/** A pipe table's row: `| a | b |`, with a literal pipe in a cell escaped so the row still splits. */
+function tableRow(cells: readonly string[]): string {
+  return `| ${cells.map((cell) => plainInline(cell).replace(/\|/g, "\\|")).join(" | ")} |`;
+}
+
+/**
+ * The text a `table` block contributes: its caption, then a markdown pipe table.
+ *
+ * Markdown again, and for a second reason: the header separator row is what tells a reader (and a
+ * markdown-capable client) which line is the header, so the plain text carries the same structure
+ * the HTML draws without a second convention to document.
+ */
+function tableLines(block: EmailTable): string[] {
+  if (block.columns.length === 0) {
+    throw new Error("an email table needs at least one column");
+  }
+  if (block.caption.trim() === "") {
+    throw new Error(
+      "an email table needs a caption — a table with no name is a figure nobody can cite",
+    );
+  }
+  for (const [index, row] of block.rows.entries()) {
+    if (row.length !== block.columns.length) {
+      // `emailTable()` refuses this first; `composeText()` is public, and a ragged row in the text
+      // draws a table whose columns no longer line up in every client.
+      throw new Error(
+        `an email table's row ${index + 1} has ${row.length} cell(s); the table has ${block.columns.length} columns`,
+      );
+    }
+  }
+  return [
+    `Table: ${plainInline(block.caption)}`,
+    tableRow(block.columns),
+    `| ${block.columns.map(() => "---").join(" | ")} |`,
+    ...block.rows.map(tableRow),
+  ];
+}
+
+/**
  * The plain-text body — the master copy.
  *
  * Structure, in order: the subject as the title, the preheader as the lead, then one blank line per
@@ -202,6 +312,12 @@ export function composeText(document: EmailDocument, options: EmailOptions): str
         // that happens is the markdown flattening every line gets — plain text has no bold.
         lines.push(...verbatimLines(block).map((line) => plainInline(line)), "");
         break;
+      case "image":
+        lines.push(imageLine(block), "");
+        break;
+      case "table":
+        lines.push(...tableLines(block), "");
+        break;
     }
   }
 
@@ -224,7 +340,19 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** The header band's lockup: the brand mark, sized from its own intrinsic ratio, or its name. */
+/** The shell's maximum column width, and the content width inside its gutters. */
+const COLUMN_WIDTH = 560;
+const COLUMN_PADDING = 28;
+
+/**
+ * The width a figure may be drawn at: the column less its two gutters.
+ *
+ * Exported because the picture is sized where it is *built* (`lib/email/blocks.ts`) and drawn here,
+ * and a second copy of this number is how a banner ends up 6 px wider than the column it sits in.
+ */
+export const MAIL_CONTENT_WIDTH = COLUMN_WIDTH - COLUMN_PADDING * 2;
+
+/** The shell's chrome, from the two numbers above, so the column is declared once. */
 function headerBand(origin: string): string {
   const mark = brandMark(brand.logo);
   if (mark === undefined) {
@@ -241,17 +369,94 @@ function headerBand(origin: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:4px;"><tr><td style="padding:10px 14px;"><img src="${escapeHtml(src)}" alt="${escapeHtml(brand.name)}" width="${width}" height="${height}" style="display:block;border:0;outline:none;text-decoration:none;width:${width}px;height:${height}px;"></td></tr></table>`;
 }
 
+/** `![alt](src)` or `![alt](src "caption")` — the one line `composeText` writes for an image block. */
+const IMAGE_LINE = /^!\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/;
+
+/** One cell of a pipe row: split on unescaped pipes, unescape the ones a cell really contains. */
+function tableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.trim().replace(/\\\|/g, "|"));
+}
+
+/** A pipe row that is markdown's header separator (`| --- | --- |`), which is drawn, never printed. */
+function isSeparatorRow(cells: readonly string[]): boolean {
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+/**
+ * A figure: the picture inside a table cell, with its size as attributes *and* inline style.
+ *
+ * The cell is what stops Outlook's Word renderer adding the baseline gap an inline `<img>` picks up
+ * when it sits beside text, `display:block;border:0` is the same fix restated where a client would
+ * otherwise draw a link border, and `max-width:100%` keeps a 1120 px banner inside a 390 px phone
+ * without a second asset. The caption is text — the same sentence the plain text carries.
+ */
+function imageHtml(
+  figure: EmailImage,
+  alt: string,
+  caption: string | undefined,
+  origin: string,
+): string {
+  const src = figure.src.startsWith("http") ? figure.src : `${origin}${figure.src}`;
+  const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="${figure.width}" height="${figure.height}" style="display:block;border:0;outline:none;text-decoration:none;width:${figure.width}px;height:${figure.height}px;max-width:100%;border-radius:4px;">`;
+  const line =
+    caption === undefined
+      ? ""
+      : `<p style="margin:6px 0 0;font-size:12px;line-height:1.5;color:#5b6470;">${escapeHtml(caption)}</p>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td style="padding:0;">${img}${line}</td></tr></table>`;
+}
+
+/**
+ * A table: the entry's own caption, header row and cells, with every style inline.
+ *
+ * `<caption>` is deliberately not used — the Word renderer most Outlook users run places it
+ * inconsistently — so the caption is a paragraph above the table, and it is the same string the
+ * plain text printed.
+ */
+function tableHtml(caption: string, rows: readonly (readonly string[])[]): string {
+  const header = rows[0] ?? [];
+  const body = rows.slice(1);
+  const th = header
+    .map(
+      (cell) =>
+        `<th align="left" style="padding:8px 10px;border-bottom:1px solid #d8dde3;font-size:12px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#37474F;">${escapeHtml(cell)}</th>`,
+    )
+    .join("");
+  const tr = body
+    .map(
+      (row) =>
+        `<tr>${row
+          .map(
+            (cell) =>
+              `<td align="left" style="padding:8px 10px;border-bottom:1px solid #eef0f2;font-size:14px;line-height:1.5;color:#363d49;">${escapeHtml(cell)}</td>`,
+          )
+          .join("")}</tr>`,
+    )
+    .join("");
+  return `<p style="margin:0 0 8px;font-size:13px;line-height:1.5;font-weight:600;color:#37474F;">${escapeHtml(caption)}</p>\n<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;width:100%;border-collapse:collapse;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
+}
+
 /**
  * The HTML body, **from the plain text**.
  *
  * The parse is the text's own shape: `## ` is a heading, `- ` is a bullet, `---` is the footer rule,
- * a blank line ends a paragraph, and everything else is prose. The first paragraph is the title and
- * the second is the lead — the two lines `composeText` writes first — so the HTML cannot drift from
- * the text without the text changing first.
+ * `![alt](src)` is a picture, `Table: caption` followed by pipe rows is a table, a blank line ends a
+ * paragraph, and everything else is prose. The first paragraph is the title and the second is the
+ * lead — the two lines `composeText` writes first — so the HTML cannot drift from the text without
+ * the text changing first.
+ *
+ * `figures` supplies the intrinsic size of each picture, keyed by `src`; it is the one input the
+ * text cannot carry and does not need to (the sentence is the alt, the size is the file's). An
+ * image line with no figure behind it is refused, because a picture drawn without a size is a
+ * layout the client guesses at.
  */
 export function htmlFromText(
   text: string,
-  options: { preheader?: string; origin?: string } = {},
+  options: { preheader?: string; origin?: string; figures?: readonly EmailImage[] } = {},
 ): string {
   const origin = options.origin ?? `https://${brand.domain}`;
   const lines = text.replace(/\n+$/, "").split("\n");
@@ -262,6 +467,8 @@ export function htmlFromText(
   let paragraph: string[] = [];
   let list: string[] = [];
   let paragraphs = 0;
+  let tableCaption: string | undefined;
+  let tableRows: string[][] = [];
 
   const flushParagraph = (): void => {
     if (paragraph.length === 0) return;
@@ -296,22 +503,61 @@ export function htmlFromText(
     list = [];
   };
 
+  const flushTable = (): void => {
+    if (tableCaption === undefined) return;
+    const rows = tableRows.filter((cells) => !isSeparatorRow(cells));
+    const target = inFooter ? footer : body;
+    if (rows.length > 0) target.push(tableHtml(tableCaption, rows));
+    tableCaption = undefined;
+    tableRows = [];
+  };
+
   for (const raw of lines) {
     const line = raw.replace(/[ \t]+$/, "");
+    const image = IMAGE_LINE.exec(line);
+    if (image) {
+      flushParagraph();
+      flushList();
+      flushTable();
+      const alt = image[1] ?? "";
+      const src = image[2] ?? "";
+      const figure = options.figures?.find((candidate) => candidate.src === src);
+      if (figure === undefined) {
+        throw new Error(
+          `htmlFromText: no intrinsic size for ${src} — pass the image block in \`figures\``,
+        );
+      }
+      (inFooter ? footer : body).push(imageHtml(figure, alt, image[3], origin));
+      continue;
+    }
+    if (line.startsWith("Table: ")) {
+      flushParagraph();
+      flushList();
+      flushTable();
+      tableCaption = line.slice("Table: ".length);
+      continue;
+    }
+    if (tableCaption !== undefined && line.startsWith("|")) {
+      tableRows.push(tableCells(line));
+      continue;
+    }
     if (line === "---") {
       flushParagraph();
       flushList();
+      flushTable();
       inFooter = true;
       continue;
     }
     if (line === "") {
       flushParagraph();
       flushList();
+      flushTable();
       continue;
     }
     if (line.startsWith("## ")) {
       flushParagraph();
       flushList();
+      flushTable();
       const target = inFooter ? footer : body;
       target.push(
         `<h2 style="margin:24px 0 12px;font-size:15px;line-height:1.4;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#37474F;">${escapeHtml(line.slice(3))}</h2>`,
@@ -320,14 +566,17 @@ export function htmlFromText(
     }
     if (line.startsWith("- ")) {
       flushParagraph();
+      flushTable();
       list.push(line.slice(2));
       continue;
     }
     flushList();
+    flushTable();
     paragraph.push(line);
   }
   flushParagraph();
   flushList();
+  flushTable();
 
   const preheader = options.preheader?.trim();
   const hidden = preheader
@@ -346,10 +595,10 @@ export function htmlFromText(
 ${hidden}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef0f2;">
 <tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-<tr><td style="background:#37474F;padding:24px 28px;">${headerBand(origin)}</td></tr>
-<tr><td style="padding:28px;">${body.join("\n")}</td></tr>
-<tr><td style="background:#f4f5f6;padding:20px 28px;font-size:12px;line-height:1.6;color:#5b6470;">${footer.join("\n")}</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${COLUMN_WIDTH}px;background:#ffffff;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<tr><td style="background:#37474F;padding:24px ${COLUMN_PADDING}px;">${headerBand(origin)}</td></tr>
+<tr><td style="padding:${COLUMN_PADDING}px;">${body.join("\n")}</td></tr>
+<tr><td style="background:#f4f5f6;padding:20px ${COLUMN_PADDING}px;font-size:12px;line-height:1.6;color:#5b6470;">${footer.join("\n")}</td></tr>
 </table>
 </td></tr>
 </table>
@@ -367,6 +616,13 @@ function titleOf(text: string): string {
 /** Compose the text, then derive the HTML from it. The whole contract of this module, in 5 lines. */
 export function renderEmail(document: EmailDocument, options: EmailOptions): RenderedEmail {
   const text = composeText(document, options);
-  const html = htmlFromText(text, { preheader: document.preheader, origin: options.origin });
+  // The one input the text does not carry: each picture's intrinsic size, by `src`. It travels with
+  // the blocks — like the brand mark above — and never becomes a second copy of a sentence.
+  const figures = document.blocks.filter((block): block is EmailImage => block.kind === "image");
+  const html = htmlFromText(text, {
+    preheader: document.preheader,
+    origin: options.origin,
+    figures,
+  });
   return { text, html };
 }
