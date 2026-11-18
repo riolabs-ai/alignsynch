@@ -109,14 +109,14 @@ export class OpRefused extends Error {
 }
 
 /** The party's row id in an audit target: the `party` PK is (`session_record_id`, `role`). */
-function partyTargetId(instanceRecordId: string, role: PartyRole): string {
-  return `${instanceRecordId}:${role}`;
+function partyTargetId(sessionRecordId: string, role: PartyRole): string {
+  return `${sessionRecordId}:${role}`;
 }
 
 /** What an operator is repairing, and why. `actorUserId` comes from the session. */
 export interface RepairRequest {
   readonly actorUserId: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** Why, when the caller has one. Optional since #732: `act()` records `NULL` otherwise. */
   readonly reason?: string;
 }
@@ -154,9 +154,9 @@ async function repair<T>(
  * Clear one seat's unlock mark, so the "complete since you last looked" marker shows again.
  *
  * `party.unlock_seen_at` is a mark and not a clock (`lib/flow/state.ts`): NULL means "this party
- * has never opened a complete instance", and the instance page sets it on the first open. The
+ * has never opened a complete session", and the session page sets it on the first open. The
  * repair is therefore a clear, and the card calls it "the V11 repair made a button" because V11 is
- * the rule that a mark may only exist on a complete instance — a mark that is set on an instance
+ * the rule that a mark may only exist on a complete session — a mark that is set on a session
  * that is *not* complete is a row `db:verify` names, and clearing it is the manual transaction
  * operators have been pasting into a console.
  *
@@ -171,17 +171,17 @@ export async function unlockParty(
   return repair(
     request,
     "party.unlock",
-    { table: "party", id: partyTargetId(request.instanceRecordId, request.role) },
+    { table: "party", id: partyTargetId(request.sessionRecordId, request.role) },
     async (sql) => {
       const found = await sql.query<{ unlock_seen_at: Date | null }>(
         `SELECT unlock_seen_at FROM party
           WHERE session_record_id = $1 AND role = $2
           FOR UPDATE`,
-        [request.instanceRecordId, request.role],
+        [request.sessionRecordId, request.role],
       );
       const row = found.rows[0];
       if (row === undefined) {
-        throw new OpRefused("no-such-party", `no ${request.role} holds a seat on that instance`);
+        throw new OpRefused("no-such-party", `no ${request.role} holds a seat on that session`);
       }
       if (row.unlock_seen_at === null) {
         throw new OpRefused(
@@ -194,7 +194,7 @@ export async function unlockParty(
         `UPDATE party SET unlock_seen_at = NULL
           WHERE session_record_id = $1 AND role = $2
           RETURNING unlock_seen_at`,
-        [request.instanceRecordId, request.role],
+        [request.sessionRecordId, request.role],
       );
       return {
         before: { role: request.role, unlockSeenAt: row.unlock_seen_at.toISOString() },
@@ -268,7 +268,7 @@ export async function resendInvite(
   const result = await repair<{ email: string; expiresAt: string; resentCount: number }>(
     request,
     "invite.resend",
-    { table: "session_invite", id: request.instanceRecordId },
+    { table: "session_invite", id: request.sessionRecordId },
     async (sql) => {
       const found = await sql.query<{
         email: string;
@@ -284,11 +284,11 @@ export async function resendInvite(
            JOIN session ai ON ai.record_id = iv.session_record_id
           WHERE iv.session_record_id = $1
           FOR UPDATE OF iv, ai`,
-        [request.instanceRecordId],
+        [request.sessionRecordId],
       );
       const invite = found.rows[0];
       if (invite === undefined) {
-        throw new OpRefused("no-invite", "that instance has no invitation to reissue");
+        throw new OpRefused("no-invite", "that session has no invitation to reissue");
       }
       if (invite.voided_at !== null) {
         throw new OpRefused(
@@ -316,12 +316,7 @@ export async function resendInvite(
                 resent_count = resent_count + 1
           WHERE session_record_id = $1
           RETURNING expires_at, resent_count`,
-        [
-          request.instanceRecordId,
-          hashToken(token),
-          email ?? invite.email,
-          expiresAt.toISOString(),
-        ],
+        [request.sessionRecordId, hashToken(token), email ?? invite.email, expiresAt.toISOString()],
       );
       const after = written.rows[0];
       if (after === undefined) {
@@ -371,7 +366,7 @@ export async function revokeInvite(
   return repair(
     request,
     "invite.revoke",
-    { table: "session_invite", id: request.instanceRecordId },
+    { table: "session_invite", id: request.sessionRecordId },
     async (sql) => {
       const found = await sql.query<{
         claimed_at: Date | null;
@@ -381,11 +376,11 @@ export async function revokeInvite(
         `SELECT claimed_at, expires_at, revoked_at FROM session_invite
           WHERE session_record_id = $1
           FOR UPDATE`,
-        [request.instanceRecordId],
+        [request.sessionRecordId],
       );
       const invite = found.rows[0];
       if (invite === undefined) {
-        throw new OpRefused("no-invite", "that instance has no invitation to revoke");
+        throw new OpRefused("no-invite", "that session has no invitation to revoke");
       }
       if (invite.claimed_at !== null) {
         throw new OpRefused(
@@ -404,7 +399,7 @@ export async function revokeInvite(
         `UPDATE session_invite SET revoked_at = now(), revoked_by = $2
           WHERE session_record_id = $1
           RETURNING revoked_at`,
-        [request.instanceRecordId, request.actorUserId],
+        [request.sessionRecordId, request.actorUserId],
       );
       return {
         before: { claimedAt: null, expiresAt: invite.expires_at.toISOString(), revokedAt: null },
@@ -423,7 +418,7 @@ export async function revokeInvite(
  * End a session, terminally, **without touching what the two people wrote**.
  *
  * No `opinion`, `party`, `step` or `session_invite` row is deleted or rewritten: a void changes
- * one column pair on `session`, and `instanceStatusOf()` answers `voided` before it reads a count.
+ * one column pair on `session`, and `sessionStatusOf()` answers `voided` before it reads a count.
  * Both write paths refuse a voided session (`submitAnswers`, `acceptSession`), so "nobody can keep
  * answering" is enforced where the answers would land, and the report's rows stay readable for an
  * operator after the fact.
@@ -435,11 +430,11 @@ export async function voidSession(
   return repair(
     request,
     "session.void",
-    { table: "session", id: request.instanceRecordId },
+    { table: "session", id: request.sessionRecordId },
     async (sql) => {
       const found = await sql.query<{ voided_at: Date | null }>(
         "SELECT voided_at FROM session WHERE record_id = $1 FOR UPDATE",
-        [request.instanceRecordId],
+        [request.sessionRecordId],
       );
       const session = found.rows[0];
       if (session === undefined) {
@@ -456,7 +451,7 @@ export async function voidSession(
         `UPDATE session SET voided_at = now(), voided_by = $2
           WHERE record_id = $1
           RETURNING voided_at`,
-        [request.instanceRecordId, request.actorUserId],
+        [request.sessionRecordId, request.actorUserId],
       );
       return {
         before: { voidedAt: null },
@@ -485,7 +480,7 @@ export interface ForcedAcceptance {
  *
  * **The seat must have answered every Aspect.** `sheet-incomplete` is the same rule the party
  * faces ("a sheet is accepted whole"), and it is what keeps this operation from being a way to
- * complete an instance nobody filled in: `instanceStatusOf()` still needs both answered counts to
+ * complete a session nobody filled in: `sessionStatusOf()` still needs both answered counts to
  * reach its Aspect count, so an acceptance written over a blank sheet would produce a `complete`
  * status with no report — a state the model cannot draw.
  *
@@ -500,7 +495,7 @@ export async function forceCloseSeat(
   return repair(
     request,
     "instance.force-close",
-    { table: "party", id: partyTargetId(request.instanceRecordId, request.role) },
+    { table: "party", id: partyTargetId(request.sessionRecordId, request.role) },
     async (sql) => {
       const found = await sql.query<{
         accepted_at: Date | null;
@@ -520,11 +515,11 @@ export async function forceCloseSeat(
            JOIN session ai ON ai.record_id = p.session_record_id
           WHERE p.session_record_id = $1 AND p.role = $2
           FOR UPDATE OF p, ai`,
-        [request.instanceRecordId, request.role],
+        [request.sessionRecordId, request.role],
       );
       const seat = found.rows[0];
       if (seat === undefined) {
-        throw new OpRefused("no-such-party", `no ${request.role} holds a seat on that instance`);
+        throw new OpRefused("no-such-party", `no ${request.role} holds a seat on that session`);
       }
       if (seat.voided_at !== null) {
         throw new OpRefused(
@@ -550,7 +545,7 @@ export async function forceCloseSeat(
             SET accepted_at = now(), impersonated_by = $3
           WHERE session_record_id = $1 AND role = $2 AND accepted_at IS NULL
           RETURNING accepted_at, impersonated_by`,
-        [request.instanceRecordId, request.role, request.actorUserId],
+        [request.sessionRecordId, request.role, request.actorUserId],
       );
       const after = written.rows[0];
       if (after === undefined) {

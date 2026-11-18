@@ -35,7 +35,7 @@ vi.mock("next/navigation", () => ({
 
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
 import { assessments } from "@/data/assessments";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import { relationshipType } from "@/data/relationship-types";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
@@ -256,9 +256,9 @@ describe("the relationship detail draws the connection state", () => {
  * 3. The other screen in the owner's sentence
  * ------------------------------------------------------------------ */
 
-describe("the instance screen already says which side the assessment waits on", () => {
+describe("the session screen already says which side the assessment waits on", () => {
   it("names the counterparty in the invited sentence", () => {
-    const stage = assessmentInstancePageCopy.sections?.find((section) => section.id === "stage");
+    const stage = assessmentSessionPageCopy.sections?.find((section) => section.id === "stage");
     expect(stage).toBeDefined();
     const invited = stage?.items?.find((item) => item.id === "invited");
     expect(invited?.label).toContain("waiting for {counterparty}");

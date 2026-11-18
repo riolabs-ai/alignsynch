@@ -8,7 +8,7 @@
  * `/dashboard/relationships`, `/dashboard/help`, `/assessment/instances`,
  * `/assessment/instances/[instanceId]`, `/my-quizzes` and `/settings` had **no page-level wrapper
  * at all**, and the centring was drawn inside the views — `dashboard-page.tsx`,
- * `relationship-cards.tsx`, `quiz-statistics.tsx`, `instance-view.tsx`, `report-view.tsx`,
+ * `relationship-cards.tsx`, `quiz-statistics.tsx`, `session-view.tsx`, `report-view.tsx`,
  * `stage-shell.tsx`, `invite-view.tsx`, `template-shelf.tsx` — so three pages had three different
  * left edges and a fourth changed its edge at `md`.
  *
@@ -121,6 +121,8 @@ const rows: readonly SurfaceColumn[] = [
   // column table is a wide *element* inside the column, and it scrolls in its own container rather
   // than widening the page — the reading measure is the console family's, not the table's.
   { path: "/admin/permissions", mode: "column" },
+  { path: "/admin/email-templates", mode: "column" },
+  { path: "/admin/email-templates/[id]", mode: "column" },
   { path: "/admin/review", mode: "column" },
   { path: "/admin/templates", mode: "column" },
   { path: "/admin/templates/[id]", mode: "column" },
@@ -178,11 +180,15 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/assessment/instances/[instanceId]/report", mode: "column" },
   { path: "/assessment/instances/[instanceId]/sent", mode: "column" },
   { path: "/invite/[token]", mode: "column" },
-  { path: "/templates/relationship/[slug]/create", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/aspects", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/commit", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/invite", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/mode", mode: "column" },
+  // #1109 — the create flow, at the dashboard address it shares with the member's template library.
+  // The segment is `[id]` and the value a `/create` URL carries is a template **slug**: Next refuses
+  // two dynamic segment names at one level, so the flow lives under the editor's `[id]` segment
+  // rather than beside it. See `app/(mainlayout)/dashboard/templates/[id]/create/page.tsx`.
+  { path: "/dashboard/templates/[id]/create", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/aspects", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/commit", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/invite", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/mode", mode: "column" },
 
   // ── Authoring. ──────────────────────────────────────────────────────────────────────────────
   { path: "/my-quizzes", mode: "column" },

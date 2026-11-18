@@ -4,7 +4,7 @@
  * **Two shelves, one type.** `/dashboard/templates` lists templates and `/assessment/instances`
  * lists relationships, and until this module existed each built its own card: the template shelf
  * resolved its words in `lib/member/shelf.ts` while the relationship list assembled `N of M`, a
- * percentage and `toFixed(1)` **inside the render** (`my-instances.tsx`). A derived figure in JSX
+ * percentage and `toFixed(1)` **inside the render** (`my-sessions.tsx`). A derived figure in JSX
  * is invisible to every check the repo has — `E22` fires on a rendered literal, `E23` counts copy,
  * and neither can see `${completed} of ${opened}` — so the arithmetic could drift, or be rounded
  * two ways on two surfaces, with nothing red. It lives here now: a component prints what a card
@@ -39,10 +39,10 @@ import { DEMO_NOW_ISO, formatDate, formatRelative } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { STAGE_LABELS } from "@/content/stages";
 import type { RelationshipCard } from "@/lib/db/assessments";
-import { instancePath } from "@/lib/flow/paths";
+import { sessionPath } from "@/lib/flow/paths";
 import type { FlowStage } from "@/lib/flow/stage";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
-import type { MyInstanceState, UnlockMark } from "@/lib/flow/state";
+import type { MySessionState, UnlockMark } from "@/lib/flow/state";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /**
@@ -105,8 +105,8 @@ export const CARD_ACTIONS =
  */
 export interface RelationshipMemberCard {
   readonly relationshipId: string;
-  /** The latest session — the card's link target, and the `data-instance` hook. */
-  readonly instanceRecordId: string;
+  /** The latest session — the card's link target, and the `data-session` hook. */
+  readonly sessionRecordId: string;
   /**
    * The ladder rung this relationship is on, or `null` for a never-sent draft (#975).
    *
@@ -116,7 +116,7 @@ export interface RelationshipMemberCard {
    */
   readonly stage: FlowStage | null;
   readonly stageLabel: string;
-  readonly state: MyInstanceState;
+  readonly state: MySessionState;
   readonly unlock: UnlockMark;
   /** The template this relationship was copied from — the card's first chip. */
   readonly templateTitle: string;
@@ -317,18 +317,18 @@ export function relationshipCard(copy: PageCopy, row: RelationshipCard): Relatio
           label: itemLabel(sectionOf(copy, "invite"), row.inviteState),
         };
   return {
-    id: row.instanceRecordId,
+    id: row.sessionRecordId,
     slug: row.slug,
     title: row.name,
     summary: null,
     chips: [row.templateTitle],
 
     meta: metaOf(row, copy),
-    detail: { href: instancePath(row.instanceRecordId), label: itemLabel(card, "view") },
+    detail: { href: sessionPath(row.sessionRecordId), label: itemLabel(card, "view") },
     create: null,
     relationship: {
       relationshipId: row.relationshipId,
-      instanceRecordId: row.instanceRecordId,
+      sessionRecordId: row.sessionRecordId,
       stage: row.stage,
       // #975 — a draft has no rung (`row.stage` is `null`), so the cover draws the word the
       // fixture owns instead of borrowing `Invited` from the ladder. The stage words for a sent

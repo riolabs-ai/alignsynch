@@ -30,7 +30,7 @@ import { describe, expect, it } from "vitest";
 import { ChatThread, type ChatThreadMessageView } from "@/components/chat/thread";
 import type { AlignmentSetting, Assessment, PartyRole } from "@/content/assessment";
 import type { ChatSender, ChatThread as ChatThreadRecord } from "@/content/chat";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { chatThreadFor } from "@/data/chat-threads";
 import { chatPageCopy } from "@/data/pages/chat";
 import { assessments } from "@/data/assessments";
@@ -44,7 +44,7 @@ import {
   chatThreadWritable,
   unreadCountOf,
 } from "@/lib/chat/thread";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -52,7 +52,7 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-chat-v2";
+const INSTANCE_ID = "session-chat-v2";
 const RELATIONSHIP_ID = `relationship-${INSTANCE_ID}`;
 const ACCEPTED_AT = new Date("2026-11-08T09:00:00.000Z");
 const ASPECTS = template.items.length;
@@ -99,7 +99,7 @@ function opinionsFor(role: PartyRole): OpinionRow[] {
 }
 
 function screenWith(setting: AlignmentSetting = "soft") {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
       id: INSTANCE_ID,
       slug: "relationship-basics-chat",
@@ -111,7 +111,7 @@ function screenWith(setting: AlignmentSetting = "soft") {
     },
     items,
     options: [],
-    instance: {
+    session: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
       relationship_id: RELATIONSHIP_ID,
@@ -295,10 +295,10 @@ function threadWith(input: {
       state: input.state,
       messages: input.messages ?? VIEWER_MESSAGES,
       tags: input.tags ?? softTags,
-      alignHrefBase: "/assessment/instances/instance-chat-v2",
+      alignHrefBase: "/assessment/instances/session-chat-v2",
       withLine: "With Rowan",
       listHref: "/dashboard/chat",
-      openHref: "/dashboard/relationships/relationship-instance-chat-v2",
+      openHref: "/dashboard/relationships/relationship-session-chat-v2",
       payHref: input.payHref ?? null,
       waitingHeading: "Chat Opens When Rowan Joins",
       waitingBody: "The invitation is open until Nov 21, 2026.",
@@ -310,7 +310,7 @@ const liveHtml = threadWith({ state: "live" });
 const waitingHtml = threadWith({ state: "waiting" });
 const pausedHtml = threadWith({
   state: "paused",
-  payHref: "/assessment/new/template/instance/pay",
+  payHref: "/assessment/new/template/session/pay",
 });
 
 describe("chat v2 — live, waiting and paused are three different screens", () => {
@@ -334,7 +334,7 @@ describe("chat v2 — live, waiting and paused are three different screens", () 
     expect(liveHtml).toContain(">Small Gap<");
     // The door lands on the Aspect the message named, on the Align surface — the anchor
     // `alignment-view.tsx` already draws for its numbered card.
-    expect(liveHtml).toContain(`href="/assessment/instances/instance-chat-v2#aspect-${step1}"`);
+    expect(liveHtml).toContain(`href="/assessment/instances/session-chat-v2#aspect-${step1}"`);
     // The sender's name is on every line: "You" for the reader, the other seat's real name else.
     expect(liveHtml).toContain(">Rowan<");
   });
@@ -418,10 +418,10 @@ describe("chat v2 — live, waiting and paused are three different screens", () 
         state: "live",
         messages: [],
         tags: softTags,
-        alignHrefBase: "/assessment/instances/instance-chat-v2",
+        alignHrefBase: "/assessment/instances/session-chat-v2",
         withLine: "With Rowan",
         listHref: "/dashboard/chat",
-        openHref: "/dashboard/relationships/relationship-instance-chat-v2",
+        openHref: "/dashboard/relationships/relationship-session-chat-v2",
         payHref: null,
         waitingHeading: "Chat Opens When Rowan Joins",
         waitingBody: "The invitation is open until Nov 21, 2026.",
@@ -450,6 +450,6 @@ describe("chat v2 — the surface's words live in the fixture", () => {
     expect(liveHtml).toContain('aria-label="Send"');
     expect(liveHtml).toContain(">You<");
     // The Align surface's own copy is untouched: this surface reads the report, it does not draw it.
-    expect(assessmentInstancePageCopy.heading).toBeTruthy();
+    expect(assessmentSessionPageCopy.heading).toBeTruthy();
   });
 });

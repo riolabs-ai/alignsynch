@@ -17,7 +17,7 @@
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { assessmentInstanceFromRows, type OptionRow } from "@/lib/db/rows";
+import { assessmentSessionFromRows, type OptionRow } from "@/lib/db/rows";
 import { editRelationship, readRelationshipEditState } from "@/lib/member/relationship-edit";
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
@@ -213,7 +213,7 @@ live("the edit writer", () => {
       "SELECT session_record_id, role, name, submitted_at, accepted_at, impersonated_by FROM party WHERE session_record_id = $1",
       [sessionId],
     );
-    const { rows: session } = await pool.query(
+    const { rows: sessionRows } = await pool.query(
       "SELECT record_id, template_record_id, relationship_id, mode, alignment_setting AS setting, name FROM session WHERE record_id = $1",
       [sessionId],
     );
@@ -221,17 +221,17 @@ live("the edit writer", () => {
       "SELECT session_record_id, role, item_id, feel, wish, think, guess FROM opinion WHERE session_record_id = $1 ORDER BY role, item_id",
       [sessionId],
     );
-    const instance = assessmentInstanceFromRows({
+    const session = assessmentSessionFromRows({
       record: records[0],
       items,
       options: [] as OptionRow[],
-      instance: session[0],
+      session: sessionRows[0],
       parties,
       opinions: opinionRows,
     });
-    expect(instance.items.map((item) => item.id)).toEqual(["a1"]);
-    expect(instance.title).toBe("Avery & Rowan, second pass");
-    expect(instance.parties.map((party) => party.opinions.length)).toEqual([1, 1]);
+    expect(session.items.map((item) => item.id)).toEqual(["a1"]);
+    expect(session.title).toBe("Avery & Rowan, second pass");
+    expect(session.parties.map((party) => party.opinions.length)).toEqual([1, 1]);
 
     // And an edited row leaves one audit entry that names what it discarded.
     const { rows: audit } = await pool.query<{

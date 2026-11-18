@@ -284,7 +284,7 @@ describe("completing a relationship cannot charge", () => {
 
   it("gates the Gap on the membership, never on the card the deleted capture wrote", () => {
     /*
-     * `instanceStatusOf()` is where `awaiting_payment` is decided, and the projection is what feeds
+     * `sessionStatusOf()` is where `awaiting_payment` is decided, and the projection is what feeds
      * it. With the capture deleted nothing can write `relationship_payment.method_captured_at` any
      * more, so a projection that still read that row would shut every sealed sheet for ever — the
      * exact regression deleting the fee could leave behind. The publish gate and the claim already

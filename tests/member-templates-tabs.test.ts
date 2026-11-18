@@ -11,7 +11,7 @@
  *   2. **The catalogue card carries one price, and it is the plan's** — Basic's monthly figure read
  *      from `data/billing-plans.ts`, never a per-relationship charge (#796) — plus the two
  *      owner-named actions; neither tab
- *      says "instance": a relationship is what a person starts; an instance is what publishing one
+ *      says "session": a relationship is what a person starts; an session is what publishing one
  *      opens and is never a word on this screen.
  *   3. **"My Templates" says whose row it is** — the chip is `Yours` or `Adopted`, and the detail
  *      link differs with it, because editing somebody else's template is not a thing this build
@@ -58,7 +58,7 @@ const catalogueRow = {
   status: "published" as const,
   createdAt: "2026-10-29T12:00:00.000Z",
   aspectCount: 5,
-  instanceCount: 2,
+  sessionCount: 2,
   authorship: "built-in" as const,
 };
 
@@ -153,15 +153,15 @@ describe("the catalogue card", () => {
     expect(catalogueCard(copy, { ...catalogueRow, slug: "hoa-board-owner" }).chips[0]).toBe("Home");
   });
 
-  it("offers the owner's two actions, and never the word instance", () => {
+  it("offers the owner's two actions, and never the word session", () => {
     const html = renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }));
     expect(html).toContain("View Details");
     expect(html).toContain("Create Relationship");
-    expect(html.toLowerCase()).not.toContain("instance");
+    expect(html.toLowerCase()).not.toContain("session");
     // Both actions point into the shipped flow, under this template's own **slug** — `record.id`
     // is the storage handle and never appears in a URL (#794).
     expect(html).toContain('href="/templates/relationship/staff-manager"');
-    expect(card.create?.href).toBe("/templates/relationship/staff-manager/create");
+    expect(card.create?.href).toBe("/dashboard/templates/staff-manager/create");
   });
 
   it("marks the card's shelf and seeds its cover from the slug", () => {

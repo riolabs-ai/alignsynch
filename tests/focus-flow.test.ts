@@ -41,7 +41,7 @@ describe("the focused flows", () => {
       // #794 — the create wizard moved under the template noun. #1109 retired the authoring form
       // that used to sit beside it: authoring happens on the dashboard's templates tab now, in the
       // blank and copy bands, and that tab is a list page, not a flow with an exit of its own.
-      "/templates/relationship/abc123/create",
+      "/dashboard/templates/abc123/create",
     ]) {
       expect(isFocusedFlow(pathname), pathname).toBe(true);
     }
@@ -58,7 +58,7 @@ describe("the focused flows", () => {
     // Its list page was never a flow, and stays exactly that.
     expect(isFocusedFlow("/dashboard/relationships")).toBe(false);
     // The five-stage create wizard is still a flow, header and back control intact (#870 owns it).
-    expect(isFocusedFlow("/templates/relationship/avery/create")).toBe(true);
+    expect(isFocusedFlow("/dashboard/templates/avery/create")).toBe(true);
     // And no pattern names a relationship at all, so the rule cannot return in silence.
     expect(FOCUS_FLOW_PATTERNS.some((pattern) => pattern.includes("relationships"))).toBe(false);
   });

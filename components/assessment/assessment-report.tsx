@@ -2,11 +2,11 @@
  * template-ancestor: none — approved #336
  *
  * The assessment report, drawn — the read-only half of `/assessment/[slug]`, and the report
- * the instance screen draws once both parties have submitted (#274).
+ * the session screen draws once both parties have submitted (#274).
  *
  * Every number on this screen is an expression over the view model
  * (`lib/assessment-report.ts`): the scores are the fixture's, the eight Gaps are
- * `content/gaps.ts`'s pairs, one `gapOf()` each, and the verdict is `instanceAlignment()` over
+ * `content/gaps.ts`'s pairs, one `gapOf()` each, and the verdict is `sessionAlignment()` over
  * the very rows drawn below it. Nothing here is typed in, nothing here can be edited, and
  * there is no state to submit — the component is a server component with no `"use client"`,
  * because a screen that only reads has no handlers to run.
@@ -18,7 +18,7 @@
  * `<table>` with a `<caption>`, a `<th scope="col">` per column and a `<th scope="row">` naming
  * the Gap — so a screen reader announces the row as a row ("Feel Gap — Noor Feel 3 vs Iris
  * Feel 4 — 1"), which is the pair structure a flat list of divs cannot carry. A group with no
- * present kind is **not drawn**: a Basic instance has no prediction and therefore no third
+ * present kind is **not drawn**: a Basic session has no prediction and therefore no third
  * table, never an empty one (`groupsIn`).
  *
  * **The Gap is always a number in text.** A row prints `0`…`4` as text, and a 0 also prints
@@ -28,16 +28,16 @@
  * the bar's length and its tick.
  *
  * **The tick is the Setting, drawn once.** Every bar carries a tick at the widest Gap the
- * instance's Setting tolerates — 1 for Soft ("Small Gap (1) OK"), 0 for Full ("No Gap OK") —
+ * session's Setting tolerates — 1 for Soft ("Small Gap (1) OK"), 0 for Full ("No Gap OK") —
  * read from the projection's `settingLimit`, never from a second copy of
- * `SETTING_GAP_LIMITS`. Without it, a Full instance's all-zero report is a row of empty bars
+ * `SETTING_GAP_LIMITS`. Without it, a Full session's all-zero report is a row of empty bars
  * with no way to tell "nothing to report" from "the bar did not render".
  *
  * **Text:** the words are `data/pages/assessment-report.ts`, except the three group headings
  * (the specification's own vocabulary, authored once in `content/gaps.ts`) and the kind
  * labels (`GAP_KIND_LABELS`). This component imports its fixture rather than taking it as a
- * prop because two routes draw it — `/assessment/[slug]` and the complete instance screen —
- * and both are owed the same words; the route that owns the *instance's* bands still passes
+ * prop because two routes draw it — `/assessment/[slug]` and the complete session screen —
+ * and both are owed the same words; the route that owns the *session's* bands still passes
  * its own fixture down, and this one is not that fixture.
  *
  * The filled notch is `bg-action`, not the purple 600 step (issue #187): this is the screen a
@@ -207,7 +207,7 @@ function GapBar({
         className="absolute inset-y-0 w-0.5 bg-gray-900 dark:bg-gray-100"
         // The tick sits *on* the value's edge at limit 0 and *inside* the fill above it, so it
         // is drawn after the fill and in the page's ink: a tick the fill could swallow would
-        // make a Soft instance look like a Full one at a glance.
+        // make a Soft session look like a Full one at a glance.
         style={{ left: limit === 0 ? "0" : `calc(${widthOf(limit)} - 1px)` }}
       />
     </span>
@@ -350,7 +350,7 @@ function GapTable({
  *
  * It is the first thing under the title because that is the question a couple opens the report
  * with — not "what is the Initiator Guess Gap on housework". "Aligned" appears **only** here:
- * the instance screen's stage sentence stops at Sharing, because the verdict is a property of
+ * the session screen's stage sentence stops at Sharing, because the verdict is a property of
  * the numbers and a stage is a property of who has acted (`docs/specs/ux-stages.md`).
  */
 function VerdictBand({ report }: { report: AssessmentReport }) {
@@ -394,7 +394,7 @@ function VerdictBand({ report }: { report: AssessmentReport }) {
 
 /**
  * One Aspect: what is asked, the two Values that name the band's ends, and one table per
- * group it has — two on a Basic instance, three on an Advanced one.
+ * group it has — two on a Basic session, three on an Advanced one.
  */
 function AspectRow({ row, limit, setting }: { row: AspectReportRow; limit: Gap; setting: string }) {
   // `data-<kind>-gap`, one attribute per Gap this Aspect actually has, in glossary order:

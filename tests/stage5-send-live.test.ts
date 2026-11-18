@@ -23,12 +23,25 @@
  * **It leaves nothing behind.** Every row is created under a `probe-send-…` id and deleted in
  * `afterAll`. No seeded relationship is read or written.
  *
+ * **The fixture writes the invitation row the send reissues (#1183).** `sendDraftInvitation()` mints
+ * the outgoing token through `resendInvite()` (`lib/flow/store.ts:1710`), whose first act is a
+ * `FOR UPDATE` read of `session_invite`; a relationship with no row there answers `no-invite`
+ * (`lib/flow/resend.ts:103`), which the send maps to `no-invitation` (`lib/flow/store.ts:1720`).
+ * Every path that creates a draft in the product writes that row in the same transaction —
+ * `createSessionFromTemplate` at `lib/flow/store.ts:795` (the email and the Counterparty's name
+ * come from the create form) and the member dashboard's next round at
+ * `lib/member/relationships.ts:1583` — so the row is part of the state stage 5's Send is pressed
+ * in, and a fixture without it builds a state the product never creates. The third case below
+ * pins that refusal, so this file names the gate it has to satisfy instead of depending on it
+ * silently.
+ *
  *     DATABASE_URL=<branch url> pnpm exec vitest run tests/stage5-send-live.test.ts
  */
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { sendDraftInvitation } from "@/lib/flow/store";
+import { hashToken, INVITE_TTL_MS } from "@/lib/flow/tokens";
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
 const live = databaseUrl === "" ? describe.skip : describe;
@@ -41,12 +54,21 @@ const created: string[] = [];
 const payerIds: string[] = [];
 
 /**
- * A draft relationship with a live session and two seats — the state stage 5's Send is pressed in.
+ * A draft relationship with a live session, two seats and the invitation row the send reissues —
+ * the state stage 5's Send is pressed in.
  *
  * `status = 'draft'` on purpose: the send's own gate is `canTransition(status, "published")`, and a
  * published row would be refused before the query under test ever ran.
+ *
+ * The `session_invite` row is not decoration (#1183): the send mints the outgoing token by
+ * reissuing that row, so a draft without one is answered `no-invitation` and nothing is sent. The
+ * product writes the row when it creates the draft, not when it sends it, which is why the fixture
+ * writes it here — `invitation: false` is kept for the third case, which proves the refusal.
  */
-async function draftRelationship(suffix: string): Promise<string> {
+async function draftRelationship(
+  suffix: string,
+  options: { readonly invitation?: boolean } = {},
+): Promise<string> {
   const relationshipId = `${TAG}-${suffix}`;
   const templateId = `${relationshipId}-template`;
   const versionId = `${relationshipId}-version`;
@@ -86,6 +108,26 @@ async function draftRelationship(suffix: string): Promise<string> {
      VALUES ($1, 'initiator', 'Init', $2), ($1, 'counterparty', 'Counter', NULL)`,
     [sessionId, payerId],
   );
+  /**
+   * The invitation, written the way `createSessionFromTemplate` writes it (`lib/flow/store.ts:795`):
+   * the Counterparty's address and name from the create form, a hashed token, and a seven-day
+   * window off the same `INVITE_TTL_MS` the product uses. Unclaimed, never reissued — the original
+   * link of a draft nobody has opened.
+   */
+  if (options.invitation !== false) {
+    await pool.query(
+      `INSERT INTO session_invite
+         (session_record_id, email, counterparty_name, token_hash, created_at, expires_at, initiator_email)
+       VALUES ($1, $2, 'Counter', $3, $4, $5, 'init@probe.test')`,
+      [
+        sessionId,
+        "counter@probe.test",
+        hashToken(`${sessionId}-invite`),
+        NOW.toISOString(),
+        new Date(NOW.getTime() + INVITE_TTL_MS).toISOString(),
+      ],
+    );
+  }
   return relationshipId;
 }
 
@@ -133,7 +175,10 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
     // The subscription rows the fixture wrote — and any a send granted, which it must not.
     await pool.query("DELETE FROM billing_subscription WHERE user_id LIKE $1", [`${TAG}-%`]);
     for (const id of created) {
-      // Children first: payment, party, session, version, then the two records.
+      // Children first: invite, payment, party, session, version, then the two records.
+      await pool.query("DELETE FROM session_invite WHERE session_record_id = $1", [
+        `${id}-session`,
+      ]);
       await pool.query("DELETE FROM party WHERE session_record_id = $1", [`${id}-session`]);
       await pool.query("DELETE FROM session WHERE record_id = $1", [`${id}-session`]);
       await pool.query("DELETE FROM relationship_payment WHERE relationship_id = $1", [id]);
@@ -156,7 +201,7 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
     // #911 gate it answered `no-payment-method`. Both are the defects a real schema and a real
     // function catch and a stub cannot.
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: payerId,
       now: NOW,
     });
@@ -172,7 +217,7 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
     const relationshipId = await draftRelationship("paid");
     await liveMembership(`${relationshipId}-payer`);
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });
@@ -180,5 +225,25 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
 
     // The one row is the fixture's: the send neither duplicates nor replaces it.
     expect(await subscriptionRows(`${relationshipId}-payer`)).toBe(1);
+  });
+
+  /**
+   * #1183 — the refusal the first two cases were red for, named so it cannot go unnamed again.
+   *
+   * A draft with no `session_invite` row answers `no-invitation`, and that is correct: the token a
+   * send mails is the one `resendInvite()` mints onto that row, so there is nothing to mail and no
+   * address to mail it to. What this case fixes in place is the *reason* — the first two cases were
+   * failing on this code, not on money and not on the schema, and a future reader who sees them red
+   * again should check the fixture's invitation row before suspecting the send.
+   */
+  it("answers no-invitation for a draft that has no invitation row — the state the fixture must not build", async () => {
+    const relationshipId = await draftRelationship("no-invite", { invitation: false });
+    const result = await sendDraftInvitation({
+      sessionRecordId: `${relationshipId}-session`,
+      viewerUserId: `${relationshipId}-payer`,
+      now: NOW,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.ok === false ? result.code : "ok").toBe("no-invitation");
   });
 });

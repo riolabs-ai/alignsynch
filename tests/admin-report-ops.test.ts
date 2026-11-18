@@ -11,7 +11,7 @@
  *   - **every operation is one audited write**: `BEGIN → SELECT role → (the reads) → INSERT
  *     admin_action → COMMIT`, with nothing written outside the transaction and nothing written at
  *     all when the operation is refused.
- *   - **an incomplete instance has no report to regenerate**, and the refusal leaves no row.
+ *   - **an incomplete session has no report to regenerate**, and the refusal leaves no row.
  *
  * The fake is deliberately not a SQL engine: it answers the statements this code sends, keyed by
  * the fragment that identifies each one, and records everything else. That is enough to prove the
@@ -19,9 +19,9 @@
  */
 import { describe, expect, test } from "vitest";
 
-import { zAssessmentInstance } from "@/content/assessment";
-import type { AssessmentInstance } from "@/content/assessment";
-import { assessments, assessmentInstances } from "@/data/assessments";
+import { zAssessmentSession } from "@/content/assessment";
+import type { AssessmentSession } from "@/content/assessment";
+import { assessments, assessmentSessions } from "@/data/assessments";
 import type { ActSql } from "@/lib/admin/act";
 import {
   REPORT_OP_REFUSALS,
@@ -35,10 +35,10 @@ import type { ScreenReaders } from "@/lib/db/assessments";
 import { REPORT_FORMAT } from "@/lib/report/document";
 import type { ScreenQueryRow } from "@/lib/db/assessments";
 
-const INSTANCE = assessmentInstances[0];
-if (INSTANCE === undefined) throw new Error("data/assessments.ts carries no instance");
-const TEMPLATE = assessments.find((candidate) => candidate.id === INSTANCE.templateId);
-if (TEMPLATE === undefined) throw new Error(`no template "${INSTANCE.templateId}"`);
+const SESSION = assessmentSessions[0];
+if (SESSION === undefined) throw new Error("data/assessments.ts carries no session");
+const TEMPLATE = assessments.find((candidate) => candidate.id === SESSION.templateId);
+if (TEMPLATE === undefined) throw new Error(`no template "${SESSION.templateId}"`);
 
 const ACTOR = "auth-operator";
 const REASON = "customer asked for the report again";
@@ -50,27 +50,27 @@ const RECORDED_AT = new Date("2026-11-03T12:00:00.000Z");
  * The fixture rows
  * ------------------------------------------------------------------ */
 
-/** The screen row the loader would hand `screenFromRow()` for the fixture instance. */
-function screenRow(instance: AssessmentInstance): ScreenQueryRow {
-  const template = assessments.find((candidate) => candidate.id === instance.templateId);
-  if (template === undefined) throw new Error(`no template "${instance.templateId}"`);
+/** The screen row the loader would hand `screenFromRow()` for the fixture session. */
+function screenRow(session: AssessmentSession): ScreenQueryRow {
+  const template = assessments.find((candidate) => candidate.id === session.templateId);
+  if (template === undefined) throw new Error(`no template "${session.templateId}"`);
   return {
     record: {
-      id: instance.id,
-      slug: instance.slug,
-      record_type: instance.type,
-      status: instance.status,
-      date: instance.date,
-      title: instance.title,
-      summary: instance.summary,
+      id: session.id,
+      slug: session.slug,
+      record_type: session.type,
+      status: session.status,
+      date: session.date,
+      title: session.title,
+      summary: session.summary,
     },
-    template_record_id: instance.templateId,
-    mode: instance.mode,
-    alignment_setting: instance.setting,
-    name: instance.name ?? null,
-    relationship_id: `relationship-${instance.id}`,
-    items: instance.items.map((item, position) => ({
-      record_id: instance.id,
+    template_record_id: session.templateId,
+    mode: session.mode,
+    alignment_setting: session.setting,
+    name: session.name ?? null,
+    relationship_id: `relationship-${session.id}`,
+    items: session.items.map((item, position) => ({
+      record_id: session.id,
       item_id: item.id,
       position,
       prompt: item.prompt,
@@ -79,16 +79,16 @@ function screenRow(instance: AssessmentInstance): ScreenQueryRow {
       right_value: item.rightValue,
     })),
     options: [],
-    parties: instance.parties.map((party) => ({
-      session_record_id: instance.id,
+    parties: session.parties.map((party) => ({
+      session_record_id: session.id,
       role: party.role,
       name: party.name,
       submitted_at: null,
       accepted_at: party.acceptedAt ?? RECORDED_AT,
     })),
-    opinions: instance.parties.flatMap((party) =>
+    opinions: session.parties.flatMap((party) =>
       party.opinions.map((answer) => ({
-        session_record_id: instance.id,
+        session_record_id: session.id,
         role: party.role,
         item_id: answer.itemId,
         feel: answer.opinions.feel,
@@ -188,16 +188,16 @@ class FakeDb {
       return { rows: [this.statusRow()] as unknown as R[] };
     }
 
-    // The screen row (instance + template).
+    // The screen row (session + template).
     if (/ai\.template_record_id/i.test(head) && /AS template_payload/i.test(head)) {
-      return { rows: [screenRow(INSTANCE)] as unknown as R[] };
+      return { rows: [screenRow(SESSION)] as unknown as R[] };
     }
 
     // One seat's submission.
     if (/json_build_object/i.test(head) && /FROM party p/i.test(head)) {
       if (!this.seatExists) return { rows: [] };
       const role = String(values[1]);
-      const party = INSTANCE.parties.find((entry) => entry.role === role);
+      const party = SESSION.parties.find((entry) => entry.role === role);
       if (party === undefined) return { rows: [] };
       return {
         rows: [
@@ -208,7 +208,7 @@ class FakeDb {
             answers: party.opinions.map((answer) => ({
               item_id: answer.itemId,
               prompt:
-                INSTANCE.items.find((item) => item.id === answer.itemId)?.prompt ?? answer.itemId,
+                SESSION.items.find((item) => item.id === answer.itemId)?.prompt ?? answer.itemId,
               left_value: "low",
               right_value: "high",
               feel: answer.opinions.feel,
@@ -239,9 +239,9 @@ class FakeDb {
     throw new Error(`FakeDb has no answer for: ${head.slice(0, 120)}`);
   }
 
-  /** The counts `instanceStatusOf()` reads, in the shape `readReportStatus()` maps. */
+  /** The counts `sessionStatusOf()` reads, in the shape `readReportStatus()` maps. */
   private statusRow(): Record<string, unknown> {
-    const aspects = INSTANCE.items.length;
+    const aspects = SESSION.items.length;
     const answered = this.complete ? aspects : Math.max(0, aspects - 1);
     return {
       voided_at: this.voided ? RECORDED_AT : null,
@@ -296,11 +296,11 @@ describe("regenerating a report", () => {
     const db = new FakeDb();
 
     const first = await regenerateReport(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
       deps(db),
     );
     const second = await regenerateReport(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
       deps(db),
     );
 
@@ -319,23 +319,23 @@ describe("regenerating a report", () => {
     const db = new FakeDb();
 
     const result = await regenerateReport(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
       deps(db),
     );
 
     expect(result.after.json_sha256).toBe(
       sha256Of(`${JSON.stringify(result.after.document, null, 2)}\n`),
     );
-    expect(zAssessmentInstance.safeParse(result.after.document.record).success).toBe(true);
+    expect(zAssessmentSession.safeParse(result.after.document.record).success).toBe(true);
   });
 
-  test("an incomplete instance is refused, and no audit row is written", async () => {
+  test("an incomplete session is refused, and no audit row is written", async () => {
     const db = new FakeDb();
     db.complete = false;
 
     await expect(
       regenerateReport(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+        { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
         deps(db),
       ),
     ).rejects.toBeInstanceOf(ReportOpRefused);
@@ -350,7 +350,7 @@ describe("regenerating a report", () => {
 
     await expect(
       regenerateReport(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+        { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
         deps(db),
       ),
     ).rejects.toMatchObject({ reason: "voided" });
@@ -362,7 +362,7 @@ describe("regenerating a report", () => {
 
     // The regenerate band posts no reason now. The reissue still runs, still writes its audit row,
     // and the row records that nobody stated why rather than inventing a sentence.
-    await regenerateReport({ actorUserId: ACTOR, instanceRecordId: INSTANCE.id }, deps(db));
+    await regenerateReport({ actorUserId: ACTOR, sessionRecordId: SESSION.id }, deps(db));
 
     expect(db.audits).toHaveLength(1);
     expect(db.audits[0]?.action).toBe("report.regenerate");
@@ -375,7 +375,7 @@ describe("regenerating a report", () => {
 
     await expect(
       regenerateReport(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: REASON },
+        { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: REASON },
         deps(db),
       ),
     ).rejects.toMatchObject({ reason: "role-too-low" });
@@ -394,7 +394,7 @@ describe("reading a party's submission", () => {
     db.role = "support";
 
     const result = await readSubmission(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "", role: "initiator" },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "", role: "initiator" },
       deps(db),
     );
 
@@ -403,13 +403,13 @@ describe("reading a party's submission", () => {
     expect(db.audits[0]).toMatchObject({
       action: "read_submission",
       target_table: "party",
-      target_id: `${INSTANCE.id}:initiator`,
+      target_id: `${SESSION.id}:initiator`,
       before: null,
     });
     // A read is a click, and it is still recorded — no reason was posted, so the store composes
     // the action's own description rather than leaving the row blank.
     expect(db.audits[0]?.reason).toContain("party submission");
-    expect(result.submission.answers).toHaveLength(INSTANCE.items.length);
+    expect(result.submission.answers).toHaveLength(SESSION.items.length);
     expect(result.recordedAt).toBe(RECORDED_AT.toISOString());
   });
 
@@ -419,7 +419,7 @@ describe("reading a party's submission", () => {
 
     await expect(
       readSubmission(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "", role: "initiator" },
+        { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "", role: "initiator" },
         deps(db),
       ),
     ).rejects.toMatchObject({ reason: "role-too-low" });
@@ -435,7 +435,7 @@ describe("reading a party's submission", () => {
 
     await expect(
       readSubmission(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "", role: "counterparty" },
+        { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "", role: "counterparty" },
         deps(db),
       ),
     ).rejects.toMatchObject({ reason: "no-such-party" });
@@ -466,7 +466,7 @@ describe("exporting the report", () => {
     const exported = await exportReport(
       {
         actorUserId: ACTOR,
-        instanceRecordId: INSTANCE.id,
+        sessionRecordId: SESSION.id,
         reason: "report exported as json from the report screen",
         format: "json",
       },
@@ -480,16 +480,16 @@ describe("exporting the report", () => {
     expect((JSON.parse(exported.json) as { format: string }).format).toBe(REPORT_FORMAT);
   });
 
-  test("two exports of the same instance are byte-identical", async () => {
+  test("two exports of the same session are byte-identical", async () => {
     const db = new FakeDb();
     db.role = "support";
 
     const first = await exportReport(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "export one", format: "json" },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "export one", format: "json" },
       deps(db),
     );
     const second = await exportReport(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "export two", format: "json" },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "export two", format: "json" },
       deps(db),
     );
 
@@ -508,7 +508,7 @@ describe("every operation is act()'s write", () => {
     db.role = "support";
 
     await readSubmission(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "", role: "initiator" },
+      { actorUserId: ACTOR, sessionRecordId: SESSION.id, reason: "", role: "initiator" },
       deps(db),
     );
 

@@ -114,7 +114,7 @@ export type CheckoutHandlers = {
 
 export function InviteWalk({
   copy,
-  instanceRecordId,
+  sessionRecordId,
   relationshipId,
   paid,
   onPaid,
@@ -130,7 +130,7 @@ export function InviteWalk({
    * `POST /assessment/instances/<id>/send` takes. It is not the relationship: the send posts to the
    * session's own address and the walk lands on the relationship's.
    */
-  instanceRecordId: string;
+  sessionRecordId: string;
   /** The relationship stage 4 wrote. The membership covers it, so the send's gate is one fact. */
   relationshipId: string;
   /** The membership is already live — the returning state, or the walk just finished. */
@@ -395,7 +395,7 @@ export function InviteWalk({
     setSendRefusal(null);
     setSending(true);
     try {
-      const response = await fetch(sendInvitationPath(instanceRecordId), {
+      const response = await fetch(sendInvitationPath(sessionRecordId), {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
         // The endpoint reads no body, and it must not be given one: the identity is the session and
@@ -430,7 +430,7 @@ export function InviteWalk({
         type="button"
         data-pay-action="send"
         /* The endpoint it POSTs to, so a render says which write this control makes. */
-        data-send-endpoint={sendInvitationPath(instanceRecordId)}
+        data-send-endpoint={sendInvitationPath(sessionRecordId)}
         /* The stage's marker since #825, kept: this *is* the send, wherever it is drawn. */
         data-create-send="true"
         data-panel-first="true"

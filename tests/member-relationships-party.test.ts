@@ -153,7 +153,7 @@ describe("listMyRelationships lists every relationship the viewer is a party to"
 
     const [statement] = statements;
     expect(statement).toBeDefined();
-    // The seat binding, reached through the session — the rule `lib/db/my-instances.ts` follows.
+    // The seat binding, reached through the session — the rule `lib/db/my-sessions.ts` follows.
     expect(statement?.sql).toContain("FROM session vs");
     expect(statement?.sql).toContain("p.user_id = $1");
     expect(statement?.sql).toContain("OR EXISTS");

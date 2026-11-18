@@ -50,16 +50,20 @@ function calendarDate(instant: Date): string {
   return instant.toISOString().slice(0, 10);
 }
 
-export function trialEndingDocument(facts: TrialEndingFacts): EmailDocument {
+export function trialEndingDocument(facts: TrialEndingFacts, body?: string): EmailDocument {
   return {
     subject: TRIAL_ENDING_SUBJECT,
     preheader: `Your trial ends on ${calendarDate(facts.trialEndsAt)}.`,
     blocks: [
-      ...bodyBlocks(TRIAL_ENDING_BODY, {
-        recipient: facts.recipient,
-        trial_ends_on: calendarDate(facts.trialEndsAt),
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        TRIAL_ENDING_BODY,
+        {
+          recipient: facts.recipient,
+          trial_ends_on: calendarDate(facts.trialEndsAt),
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the trial on your account ends on ${calendarDate(facts.trialEndsAt)}.`,

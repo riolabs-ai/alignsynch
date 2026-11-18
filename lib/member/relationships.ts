@@ -44,7 +44,7 @@
  *
  * **Nothing is created at publish that phase 3 has to undo.** The session (the assessment round) and
  * its record copy come into being in the publish transaction, from the **version the relationship is
- * bound to** — not from the working copy — because that is what `db:verify` V4 compares an instance
+ * bound to** — not from the working copy — because that is what `db:verify` V4 compares a session
  * against and what every party-facing read draws. `published_at`, in `0030`'s words, is "when the
  * invite went out and the initiator's own session opened"; this is the statement that makes that
  * sentence true.
@@ -184,7 +184,7 @@ export interface MemberRelationshipRow {
    * (`readLibraryTemplate` takes a slug or an id, and #794 says the URL carries the slug).
    *
    * Carried on the row because the draft CTAs are on a **client** component and the pay modal's
-   * address is `createInviteForPath(slug, instanceRecordId)` from `lib/flow/paths.ts` — a pure
+   * address is `createInviteForPath(slug, sessionRecordId)` from `lib/flow/paths.ts` — a pure
    * module. Building the address from `templateId` instead would put a storage handle in the URL,
    * which is the one thing #794 retired.
    */
@@ -202,6 +202,16 @@ export interface MemberRelationshipRow {
   /** The assessment round that exists once the relationship is published; `null` before. */
   readonly sessionRecordId: string | null;
   readonly aspectCount: number;
+  /**
+   * #1128 — how many of this round's Aspects **this reader** has answered, from their own `opinion`
+   * rows. It decides one word: `Continue Assessment` rather than `Start Assessment` on the Next Step
+   * panel, which is the issue's own sentence ("and 'Continue Assessment' once started").
+   *
+   * Optional for the reason `pause` and `hygiene` are: a view literal written before this field
+   * existed carries no count, and the screen then says `Start`, which is true for a reader who has
+   * answered nothing. `readMyRelationship()` and the list always fill it.
+   */
+  readonly viewerAnswered?: number;
   /** The invitation, when one exists. `null` is "not sent yet" (or a defect, see `view`). */
   readonly invite: {
     readonly claimed: boolean;
@@ -256,6 +266,8 @@ interface RelationshipQueryRow {
   readonly initiator_user_id: string | null;
   /** The viewer's own seat in `party`, or `null` for a draft (no session exists to hold one). */
   readonly viewer_role: string | null;
+  /** #1128 — the viewer's own answered Aspect count in the latest round (0 for a draft). */
+  readonly viewer_answered?: number;
   readonly created_at: Date | string;
   readonly published_at: Date | string | null;
   /** #533 phase 3 — the lapse, when the row records one (`0032`). */
@@ -293,7 +305,7 @@ interface RelationshipQueryRow {
  * **Membership and permission are two predicates, deliberately.** `VIEWER_IS_PARTY` decides which
  * rows a reader sees: the account that started the relationship, **or** any account bound to one of
  * its seats — `party.user_id`, reached through `session.relationship_id`, which is the rule
- * `lib/db/my-instances.ts` follows. The initiator half is not a permission leaking into the list; it
+ * `lib/db/my-sessions.ts` follows. The initiator half is not a permission leaking into the list; it
  * is what keeps a **draft** visible, because a draft has no session and therefore no `party` row to
  * bind anybody (#706).
  *
@@ -306,14 +318,16 @@ interface RelationshipQueryRow {
  * several and the list is about the relationship, not one cycle. The invitation hangs off that
  * session, so a draft has none.
  */
-const VIEWER_ROLE = `(
+const VIEWER_SEAT = `(
     SELECT p.role
       FROM session vs
       JOIN party p ON p.session_record_id = vs.record_id
      WHERE vs.relationship_id = rel.id AND p.user_id = $1
      ORDER BY vs.round DESC
      LIMIT 1
-  ) AS viewer_role`;
+  )`;
+
+const VIEWER_ROLE = `${VIEWER_SEAT} AS viewer_role`;
 
 /** Who may see the row. `$1` is the viewer, in both statements below. */
 const VIEWER_IS_PARTY = `(
@@ -385,6 +399,15 @@ const RELATIONSHIP_COLUMNS = `
   -- template read identically and the draft a creator had just named could not be found by name.
   sr.title AS relationship_title,
   s.record_id AS session_record_id,
+  -- #1128 — how many Aspects the viewer has answered in the latest round, so the Next Step can
+  -- offer "Continue Assessment" rather than "Start Assessment". A count, never a score: the blind
+  -- rule is a property of the party read, and this statement only counts rows of the viewer's own.
+  (
+    SELECT count(*)::int
+      FROM opinion o
+     WHERE o.session_record_id = s.record_id
+       AND o.role = COALESCE(${VIEWER_SEAT}, 'initiator')
+  ) AS viewer_answered,
   -- #936 — the count is of the Aspects this relationship **holds**, and for a relationship the
   -- flow created those live on the session's copy (s.record_id), not on the template it names.
   (SELECT count(*)::int FROM item i WHERE i.record_id = COALESCE(s.record_id, t.id)) AS aspect_count,
@@ -537,6 +560,7 @@ function relationshipOf(
     publishedAt: row.published_at === null ? null : instantOf(row.published_at),
     sessionRecordId: row.session_record_id,
     aspectCount: Number(row.aspect_count),
+    viewerAnswered: Number(row.viewer_answered ?? 0),
     invite,
     counterpartyName: row.counterparty_name,
     initiatorName: row.initiator_name,
@@ -717,14 +741,14 @@ export interface InvitationHygiene {
  *   the member write   `createRelationship()` copies the member's template into a **private
  *                      `record`** and points `relationship.template_id` at it. No session exists
  *                      yet, so that copy is the relationship's own Aspect list.
- *   the flow           `createInstanceFromTemplate()` copies the version into the **instance
+ *   the flow           `createSessionFromTemplate()` copies the version into the **session
  *                      record** (`session.record_id`) and keeps `template_id` naming the template
  *                      it was copied from — V23 requires the pin to be a version *of that
- *                      template*, so `template_id` cannot move. The instance copy is the list.
+ *                      template*, so `template_id` cannot move. The session copy is the list.
  *
  * Every reader on the relationship screen used `template_id`, which is only ever right for the
  * first. For a relationship the flow created it is the shared template itself, so an Aspect the
- * creator added at stage 3 — written to the instance copy, and present in the session the pair
+ * creator added at stage 3 — written to the session copy, and present in the session the pair
  * answers — was simply not in the list the detail screen drew. That is #936: saved, never shown.
  *
  * The rule is one line: the session's copy when there is a session, the private copy otherwise.
@@ -1080,7 +1104,7 @@ export async function snapshotVersion(
  * copied the template itself, and the relationships list called it — writing a relationship with no
  * session and no seats, which meant the dashboard card's `Invite Members` had no pay modal to open
  * and publishing it had no invitation to mint. The create flow's modal is the one writer
- * (`lib/flow/store.ts::createInstanceFromTemplate`), because stage 4 is where the session and the
+ * (`lib/flow/store.ts::createSessionFromTemplate`), because stage 4 is where the session and the
  * staged invitation are written and stage 5 is what sends them.
  */
 
@@ -1243,7 +1267,7 @@ export async function saveAspects(
          *
          * For the member write, `template_id` is the private copy and `template_version` rows hang
          * off it, so a save writes the next version and repins — V4 compares the session's copy to
-         * it. For a relationship the flow created, the list lives on the instance copy and the pin
+         * it. For a relationship the flow created, the list lives on the session copy and the pin
          * names a version of the *template*; writing this list as a version of that template would
          * publish one member's private words to everyone who copies it (#502b), so the pin stays
          * where it is. That copy is an authored one (#699) — `session.aspects_authored_at` is what

@@ -9,13 +9,13 @@
  *   Value      two per Aspect — a Left Value (the low/left/min end, notch 1) and a
  *              Right Value (the high/right/max end, notch 5).
  *   Opinion    four per Aspect per party, each a score 1..5: Feel, Wish, Think, Guess.
- *   Mode       two — Basic asks Feel & Wish, Advanced asks all four. An instance
+ *   Mode       two — Basic asks Feel & Wish, Advanced asks all four. A session
  *              **records** its mode (fixed at creation, checked below), so a Basic
  *              sheet and an Advanced one can never be compared by accident.
  *
- * A template holds Aspects and has no parties. An **instance** is a template copied
+ * A template holds Aspects and has no parties. A **session** is a template copied
  * and given parties — the glossary's Create (Template > Relationship) — so the
- * opinions live on the instance, next to the copy of the Aspects they answer.
+ * opinions live on the session, next to the copy of the Aspects they answer.
  *
  * The eight gap *types* — Feel, Wish, Initiator and Counterparty (Basic), plus Initiator
  * Think, Initiator Guess, Counterparty Think and Counterparty Guess (Advanced) — are
@@ -23,7 +23,7 @@
  * compare a party's Think or Guess against the **other** party's Feel or Wish, never
  * against that other party's prediction. This file stays the shape of the content and the
  * one Gap function it shares with every other record (`gapOf` in `content/record.ts`).
- * The **Setting** (Soft/Full) is modelled below — a per-instance lens over the Gaps, and
+ * The **Setting** (Soft/Full) is modelled below — a per-session lens over the Gaps, and
  * never a Gap of its own. The four **relationship** stages are derived in `content/stages.ts`;
  * the specification's A–D account states are a different ladder — billing, out of scope — and
  * the Coach is not modelled anywhere yet.
@@ -78,8 +78,8 @@ export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
 export const ADVANCED_OPINION_KINDS = ["think", "guess"] as const;
 
 /**
- * The two modes an instance is played in. A mode is the **whole** play: Basic asks Feel
- * and Wish on every Aspect, Advanced asks all four. An instance is one mode, fixed at
+ * The two modes a session is played in. A mode is the **whole** play: Basic asks Feel
+ * and Wish on every Aspect, Advanced asks all four. A session is one mode, fixed at
  * creation — half of Advanced is not a mode, and neither is a sheet that switches.
  */
 export const zAssessmentMode = z.enum(["basic", "advanced"]);
@@ -116,7 +116,7 @@ export const MODE_LABELS: Record<AssessmentMode, string> = {
  *
  * A setting is a **lens over the Gaps, never a Gap**: it decides what counts as aligned,
  * changes no number, and is not one of the eight gap kinds. The comparison that reads it
- * lives in `content/gaps.ts` (`gapMeetsSetting`, `instanceAlignment`), so the verdict is
+ * lives in `content/gaps.ts` (`gapMeetsSetting`, `sessionAlignment`), so the verdict is
  * derived from the opinion rows on every read and never stored — no `aligned` column,
  * exactly as there is no `gap` column.
  */
@@ -160,7 +160,7 @@ export const DEFAULT_ALIGNMENT_SETTING: AlignmentSetting = "soft";
 /**
  * One party's opinions for one Aspect: two to four, each a score 1..5.
  *
- * Feel and Wish are required because Basic is the floor — every instance that was
+ * Feel and Wish are required because Basic is the floor — every session that was
  * ever played has them. Think and Guess are optional and come together. Modelling the
  * four as four named fields rather than a tag/value list is what makes "two to four"
  * and "no duplicates" unrepresentable-otherwise instead of invariants to check.
@@ -234,14 +234,14 @@ export const zAssessment = zAssessmentObject.superRefine(uniqueItemIds);
 export type Assessment = z.infer<typeof zAssessmentObject>;
 
 /* ------------------------------------------------------------------ *
- * Instance — a template copied and given parties
+ * Session — a template copied and given parties
  * ------------------------------------------------------------------ */
 
 export const zPartyRole = z.enum(["initiator", "counterparty"]);
 
 export type PartyRole = z.infer<typeof zPartyRole>;
 
-/** One party's opinions on one Aspect of the instance. */
+/** One party's opinions on one Aspect of the session. */
 export const zAspectOpinions = z
   .object({
     /** The Aspect's id — an Aspect is this template's Item. */
@@ -258,11 +258,11 @@ export const zParty = z
     name: z.string().min(1),
     /**
      * When this seat submitted its answers — the Initiator's or the Counterparty's own instant,
-     * never the instance's. Absent means "we do not know when", which is every row written before
+     * never the session's. Absent means "we do not know when", which is every row written before
      * `db/migrations/0011_console_columns.sql` and every seat that has not answered yet.
      *
      * It is **not** the status. Whether a seat has answered is read from its `opinion` rows
-     * (`instanceStatusOf()`); this column adds the one fact those rows cannot carry — *when* — and
+     * (`sessionStatusOf()`); this column adds the one fact those rows cannot carry — *when* — and
      * a surface that draws it must treat absent as "not recorded", not as "not answered".
      */
     submittedAt: zIsoDateTime.optional(),
@@ -271,12 +271,12 @@ export const zParty = z
      * accepted yet".
      *
      * The same rule `submittedAt` follows, one column over: an instant, never a status. Whether a
-     * seat has accepted is read from this column by `instanceStatusOf()`, and whether the sheet is
+     * seat has accepted is read from this column by `sessionStatusOf()`, and whether the sheet is
      * frozen is read from it per party — `complete` is derived from it and the opinion rows
      * together, and there is no `accepted` boolean anywhere to disagree with them.
      */
     acceptedAt: zIsoDateTime.optional(),
-    /** One entry per Aspect of the instance, in the instance's own order. */
+    /** One entry per Aspect of the session, in the session's own order. */
     opinions: z.array(zAspectOpinions).min(1),
   })
   .strict();
@@ -289,10 +289,10 @@ export type Party = z.infer<typeof zParty>;
  * (`db/migrations/0011_console_columns.sql`), so the database cannot store a name the model would
  * reject.
  */
-export const INSTANCE_NAME_MAX = 120;
+export const SESSION_NAME_MAX = 120;
 
-/** The instance's own name — optional, and NULL in the database means "unnamed" (below). */
-export const zInstanceName = z.string().trim().min(1).max(INSTANCE_NAME_MAX);
+/** The session's own name — optional, and NULL in the database means "unnamed" (below). */
+export const zSessionName = z.string().trim().min(1).max(SESSION_NAME_MAX);
 
 /* ------------------------------------------------------------------ *
  * The seeded lifecycle — what a demo dataset's relationship row says
@@ -338,8 +338,8 @@ export const zRelationshipPlan = z.enum(["basic", "principal"]);
 /**
  * How much of the sheet has happened.
  *
- * The model requires **both** parties to answer every Aspect (`zAssessmentInstance`'s refinement),
- * because an instance is a copy of a template and a half-answered copy is not one. A *seeded*
+ * The model requires **both** parties to answer every Aspect (`zAssessmentSession`'s refinement),
+ * because a session is a copy of a template and a half-answered copy is not one. A *seeded*
  * relationship is not the whole sheet though: a `pending` invitation has nobody in the second seat
  * yet, and a `published` one may have one side in and the other still deciding. So the lifecycle
  * says how much of the sheet the seed writes, and the fixture keeps the full answer sheet the
@@ -348,20 +348,20 @@ export const zRelationshipPlan = z.enum(["basic", "principal"]);
 export const zAnsweredSides = z.enum(["none", "initiator", "both"]);
 
 /**
- * **The seeded lifecycle of a demo instance** — the `relationship` row's own facts, authored
+ * **The seeded lifecycle of a demo session** — the `relationship` row's own facts, authored
  * beside the answers they belong to.
  *
  * Nothing here is a second copy of a fact the rows already imply: the seed *writes* rows from this
  * block, so it is the source, and `pnpm db:verify` (V21, V31) compares what the rows then derive
  * back against it. Absent means the historic default — a finished demo session, `complete`, which is
- * what every instance authored before this block existed is.
+ * what every session authored before this block existed is.
  *
  * The seam between the two halves is deliberate and documented in `seededLifecycleOf`:
  *
  *   - the **answers** are the whole sheet (the model's shape, both parties, every Aspect);
  *   - the **lifecycle** says how much of that sheet, and which lifecycle state, a demo carries.
  *
- * `instants` are day offsets from the instance's own `date` (which is the relationship's
+ * `instants` are day offsets from the session's own `date` (which is the relationship's
  * `created_at`), never wall-clock reads: a seed has to be byte-identical on a second run, and
  * `data:check` rejects a fixture that reads a clock.
  */
@@ -420,7 +420,7 @@ export const zSeededLifecycle = z
 export type SeededLifecycle = z.infer<typeof zSeededLifecycle>;
 
 /**
- * **The lifecycle a seeded instance carries, with every unstated fact filled in by its status.**
+ * **The lifecycle a seeded session carries, with every unstated fact filled in by its status.**
  *
  * One derivation, three readers: `scripts/db-seed.mjs` writes rows from it, `scripts/db-verify.mjs`
  * compares the rows back to it, and `tests/demo-dataset-coverage.test.ts` counts it. Without a
@@ -428,7 +428,7 @@ export type SeededLifecycle = z.infer<typeof zSeededLifecycle>;
  * coverage test exists to prevent.
  *
  * The table, and why each row is the only coherent set of rows for that word (each line is also
- * what `instanceStatusOf()`, `inviteStateOf()` and V5/V6 ask for):
+ * what `sessionStatusOf()`, `inviteStateOf()` and V5/V6 ask for):
  *
  *   draft      one seat (the initiator's own), no invitation, no answers, never published. Stages
  *              1–3 of the create flow are a cookie (`lib/flow/create-draft.ts`), and stage 4's
@@ -464,23 +464,23 @@ function daysAfter(date: string, days: number): string {
 }
 
 /**
- * The honest default for an instance that carries no `lifecycle` block: **a finished demo session**.
+ * The honest default for a session that carries no `lifecycle` block: **a finished demo session**.
  *
- * That is what every instance authored before #1079 is, and what `db:seed` wrote for it before the
+ * That is what every session authored before #1079 is, and what `db:seed` wrote for it before the
  * block existed (`sealed ? "complete" : "published"`). It stays the default so the model does not
- * require a lifecycle on an instance that only describes content.
+ * require a lifecycle on a session that only describes content.
  */
 const COMPLETE_BY_DEFAULT = "complete" as const;
 
-export function seededLifecycleOf(instance: {
+export function seededLifecycleOf(session: {
   readonly date: string;
   readonly lifecycle?: SeededLifecycle | undefined;
 }): DerivedLifecycle {
-  const authored = instance.lifecycle;
+  const authored = session.lifecycle;
   const status = authored?.status ?? COMPLETE_BY_DEFAULT;
-  const publishedAt = daysAfter(instance.date, authored?.publishedAfterDays ?? 0);
-  const completedAt = daysAfter(instance.date, authored?.completedAfterDays ?? 1);
-  const expiredAt = daysAfter(instance.date, authored?.expiredAfterDays ?? 7);
+  const publishedAt = daysAfter(session.date, authored?.publishedAfterDays ?? 0);
+  const completedAt = daysAfter(session.date, authored?.completedAfterDays ?? 1);
+  const expiredAt = daysAfter(session.date, authored?.expiredAfterDays ?? 7);
 
   switch (status) {
     case "draft":
@@ -605,7 +605,7 @@ export function sessionStateOf(lifecycle: DerivedLifecycle): "draft" | "active" 
 }
 
 /**
- * How many `party` and `opinion` rows one instance writes (#1079, #1083).
+ * How many `party` and `opinion` rows one session writes (#1079, #1083).
  *
  * A bundle authors the **whole sheet** — both parties, every Aspect — and the lifecycle decides how
  * much of it a demo carries: `seats` says whether the counterparty has taken theirs yet, and
@@ -618,7 +618,7 @@ export function sessionStateOf(lifecycle: DerivedLifecycle): "draft" | "active" 
  * them from `seededLifecycleOf()` — the single derivation the seed, `db:verify` (V21/V31) and the
  * dataset tests all share. Pure: no clock, no database.
  */
-export function seededRowTotals(instance: {
+export function seededRowTotals(session: {
   readonly date: string;
   readonly lifecycle?: SeededLifecycle | undefined;
   readonly parties: readonly {
@@ -626,10 +626,10 @@ export function seededRowTotals(instance: {
     readonly opinions: readonly unknown[];
   }[];
 }): { parties: number; opinions: number } {
-  const lifecycle = seededLifecycleOf(instance);
+  const lifecycle = seededLifecycleOf(session);
   let parties = 0;
   let opinions = 0;
-  for (const party of instance.parties) {
+  for (const party of session.parties) {
     if (lifecycle.seats !== "both" && party.role !== "initiator") continue;
     parties += 1;
     const answered =
@@ -640,46 +640,46 @@ export function seededRowTotals(instance: {
   return { parties, opinions };
 }
 
-export const zAssessmentInstanceObject = zTemplateObject
+export const zAssessmentSessionObject = zTemplateObject
   .extend({
     type: z.literal("assessment"),
-    /** The template this instance is a copy of. Resolved by `data:check` E31. */
+    /** The template this session is a copy of. Resolved by `data:check` E31. */
     templateId: zId,
     /**
      * The relationship's own name, when it has one. Absent means **unnamed**, and every surface
-     * falls back to the template title — two instances of one template were otherwise two
+     * falls back to the template title — two sessions of one template were otherwise two
      * identical rows, because the title a list rendered was always the template's.
      *
      * Optional rather than defaulted on purpose: a stored copy of the template title would be a
      * second authored copy of a fact the template already holds, would stop tracking the title it
-     * copied, and could not be told apart from a name a person chose. `instanceNameOf()` is the
+     * copied, and could not be told apart from a name a person chose. `sessionNameOf()` is the
      * one place the fallback lives.
      */
-    name: zInstanceName.optional(),
+    name: zSessionName.optional(),
     /** The copy. Equal to the template's Aspects; E31 fails a copy that drifted. */
     items: z.array(zAspect).min(1),
     /**
-     * Which mode the instance is played in — decided when it is created and never
+     * Which mode the session is played in — decided when it is created and never
      * changed. The refinement below makes `basic ⇔ Think/Guess absent` true by
      * construction, which is what a report needs before it draws a Gap.
      */
     mode: zAssessmentMode,
     /**
-     * The Setting this instance is aligned under — a lens over the Gaps, not a Gap and not
+     * The Setting this session is aligned under — a lens over the Gaps, not a Gap and not
      * a stored verdict. Soft tolerates a Small Gap (1) and Full tolerates none
      * (`content/gaps.ts::gapMeetsSetting`). Required rather than optional, exactly as `mode`
-     * is: every instance *is* played under one setting, and "Soft ⇔ the author forgot" is the
+     * is: every session *is* played under one setting, and "Soft ⇔ the author forgot" is the
      * silent comparison a default would hide.
      */
     setting: zAlignmentSetting,
     /**
-     * **The relationship's seeded lifecycle**, when this instance is a demo dataset row rather than
+     * **The relationship's seeded lifecycle**, when this session is a demo dataset row rather than
      * a piece of content. Absent means `complete` (`seededLifecycleOf` below), which is what every
-     * instance authored before #1079 is and what `db:seed` writes for it.
+     * session authored before #1079 is and what `db:seed` writes for it.
      *
-     * Optional, and it must stay optional: `lib/db/rows.ts::assessmentInstanceFromRows` builds an
-     * instance from database rows and parses it through this schema, and those rows carry their
-     * lifecycle in the `relationship` table, not in the instance's own content.
+     * Optional, and it must stay optional: `lib/db/rows.ts::assessmentSessionFromRows` builds a
+     * session from database rows and parses it through this schema, and those rows carry their
+     * lifecycle in the `relationship` table, not in the session's own content.
      */
     lifecycle: zSeededLifecycle.optional(),
     /** Two parties: the glossary's Initiator and Counterparty, one each. */
@@ -687,10 +687,10 @@ export const zAssessmentInstanceObject = zTemplateObject
   })
   .strict();
 
-export const zAssessmentInstance = zAssessmentInstanceObject
+export const zAssessmentSession = zAssessmentSessionObject
   .superRefine(uniqueItemIds)
-  .superRefine((instance, ctx) => {
-    const roles = instance.parties.map((party) => party.role);
+  .superRefine((session, ctx) => {
+    const roles = session.parties.map((party) => party.role);
     if (new Set(roles).size !== roles.length) {
       ctx.addIssue({
         code: "custom",
@@ -699,7 +699,7 @@ export const zAssessmentInstance = zAssessmentInstanceObject
       });
     }
 
-    instance.parties.forEach((party, partyIndex) => {
+    session.parties.forEach((party, partyIndex) => {
       const answered = party.opinions.map((entry) => entry.itemId);
       answered.forEach((itemId, index) => {
         if (answered.indexOf(itemId) !== index) {
@@ -709,15 +709,15 @@ export const zAssessmentInstance = zAssessmentInstanceObject
             message: `party "${party.name}" answers Aspect "${itemId}" twice`,
           });
         }
-        if (!instance.items.some((item) => item.id === itemId)) {
+        if (!session.items.some((item) => item.id === itemId)) {
           ctx.addIssue({
             code: "custom",
             path: ["parties", partyIndex, "opinions", index, "itemId"],
-            message: `party "${party.name}" answers Aspect "${itemId}", which this instance does not hold`,
+            message: `party "${party.name}" answers Aspect "${itemId}", which this session does not hold`,
           });
         }
       });
-      for (const item of instance.items) {
+      for (const item of session.items) {
         if (!answered.includes(item.id)) {
           ctx.addIssue({
             code: "custom",
@@ -728,80 +728,80 @@ export const zAssessmentInstance = zAssessmentInstanceObject
       }
     });
 
-    // An instance is ONE mode: Basic means Think and Guess are absent everywhere,
+    // A session is ONE mode: Basic means Think and Guess are absent everywhere,
     // Advanced means they are answered everywhere. `zOpinions` already rejects a
     // think-without-guess pair, so checking `think` alone decides it. This is the
     // schema half of "a report never silently compares a Basic answer with an
     // Advanced one" — the value is a column, and the mixed state is unrepresentable.
-    instance.parties.forEach((party, partyIndex) => {
+    session.parties.forEach((party, partyIndex) => {
       party.opinions.forEach((entry, opinionIndex) => {
-        if (instance.mode === "basic" && entry.opinions.think !== undefined) {
+        if (session.mode === "basic" && entry.opinions.think !== undefined) {
           ctx.addIssue({
             code: "custom",
             path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
-            message: `party "${party.name}" answers Aspect "${entry.itemId}" in Advanced (Think/Guess), but this instance is ${MODE_LABELS.basic}`,
+            message: `party "${party.name}" answers Aspect "${entry.itemId}" in Advanced (Think/Guess), but this session is ${MODE_LABELS.basic}`,
           });
         }
-        if (instance.mode === "advanced" && entry.opinions.think === undefined) {
+        if (session.mode === "advanced" && entry.opinions.think === undefined) {
           ctx.addIssue({
             code: "custom",
             path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
-            message: `party "${party.name}" answers Aspect "${entry.itemId}" with only Feel/Wish, but this instance is ${MODE_LABELS.advanced} — Think and Guess are owed on every Aspect`,
+            message: `party "${party.name}" answers Aspect "${entry.itemId}" with only Feel/Wish, but this session is ${MODE_LABELS.advanced} — Think and Guess are owed on every Aspect`,
           });
         }
       });
     });
   });
 
-export type AssessmentInstance = z.infer<typeof zAssessmentInstanceObject>;
+export type AssessmentSession = z.infer<typeof zAssessmentSessionObject>;
 
 /**
  * The name a surface renders for a relationship: its own when it has one, the template's title
  * when it does not.
  *
  * This is the **only** place the fallback lives, so every list that draws a relationship — today
- * `my-instances.tsx`, tomorrow the console's registry — answers "what is this one called" the same
+ * `my-sessions.tsx`, tomorrow the console's registry — answers "what is this one called" the same
  * way, and no view has to remember that `name` is optional. It takes the narrow shape rather than
- * a whole instance so a row projection can call it without building one.
+ * a whole session so a row projection can call it without building one.
  *
- * The template title is passed in rather than read here: an instance carries the id of the
+ * The template title is passed in rather than read here: a session carries the id of the
  * template it copies (`templateId`) and not the template's words, for the same reason the copy of
  * the Aspects is not a title — the row that holds the words is the template's.
  */
-export function instanceNameOf(
-  instance: { readonly name?: string | undefined },
+export function sessionNameOf(
+  session: { readonly name?: string | undefined },
   templateTitle: string,
 ): string {
-  return instance.name ?? templateTitle;
+  return session.name ?? templateTitle;
 }
 
 /**
- * The collection rule one instance cannot see (E31 in `data:check`): the template it
+ * The collection rule one session cannot see (E31 in `data:check`): the template it
  * names exists, and its Aspects **are** that template's Aspects. A copy that drifted
  * is not a copy, and the parties are answering Aspects nobody else holds.
  *
  * Pure over its arguments so the negative cases can violate it without a filesystem,
  * the same split as `scripts/ui-refs.ts` and `scripts/mode-invariants.ts`.
  */
-export function instanceTemplateProblems(
+export function sessionTemplateProblems(
   templates: readonly Assessment[],
-  instances: readonly AssessmentInstance[],
+  sessions: readonly AssessmentSession[],
 ): string[] {
   const byId = new Map(templates.map((template) => [template.id, template]));
   const problems: string[] = [];
-  for (const instance of instances) {
-    const template = byId.get(instance.templateId);
+  for (const session of sessions) {
+    const template = byId.get(session.templateId);
     if (template === undefined) {
       problems.push(
-        `instance "${instance.id}" names template "${instance.templateId}", which is not a record in this collection`,
+        `session "${session.id}" names template "${session.templateId}", which is not a record in this collection`,
       );
       continue;
     }
     const templateIds = template.items.map((item) => item.id);
-    const copyIds = instance.items.map((item) => item.id);
+    const copyIds = session.items.map((item) => item.id);
     if (templateIds.join("\u0000") !== copyIds.join("\u0000")) {
       problems.push(
-        `instance "${instance.id}" is a copy of "${template.id}" but its Aspects are [${copyIds.join(", ")}], the template's are [${templateIds.join(", ")}]`,
+        `session "${session.id}" is a copy of "${template.id}" but its Aspects are [${copyIds.join(", ")}], the template's are [${templateIds.join(", ")}]`,
       );
     }
   }

@@ -5,7 +5,7 @@
  * recorder must not be able to write anything but platform status into it. Two earlier failures
  * made that a rule rather than a convention:
  *
- *   - a **probe** run — `db:verify` against a copy of `demo` with one instance deliberately broken,
+ *   - a **probe** run — `db:verify` against a copy of `demo` with one session deliberately broken,
  *     `exitCode: 1` on purpose — was written into the platform record, so the screen read `Fail`
  *     forever and a real regression would have hidden inside the noise (#599);
  *   - the record could be written from **any** version of the tree, so a `1.5.0` record sat beside a

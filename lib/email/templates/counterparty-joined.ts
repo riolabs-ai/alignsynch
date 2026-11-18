@@ -3,15 +3,15 @@
  *
  * **Who it is for, and why it exists.** The Initiator published an invitation and then has no
  * reason to open the app again until the other seat exists. The claim is the first event that
- * changes something for them: before it the instance is `awaiting_counterparty` and there is
+ * changes something for them: before it the session is `awaiting_counterparty` and there is
  * nothing to answer; after it both seats exist and the assessment can start. `docs/specs/
  * flow-emails.md` rejected this message as noise (#548 supersedes that row) — the card's ruling is
  * that a person told their partner has joined is told the one fact that unblocks their own work.
  *
  * **The recipient is the record's Initiator seat**, resolved by `lib/flow/join-notice.ts` from
  * `readUnlockFacts()` — never a list, never an address the same request typed. The message names
- * the joiner and the template, and links to the instance. The link carries **no invitation
- * token**: the recipient already holds the credential that opens the instance (their party
+ * the joiner and the template, and links to the session. The link carries **no invitation
+ * token**: the recipient already holds the credential that opens the session (their party
  * cookie), and a token in a mailbox would be a second bearer credential.
  *
  * **Nothing is invented.** No score, no Gap value, no count of answers, no promise about what the
@@ -35,7 +35,7 @@ export interface JoinedFacts {
   /** The party being told — the record's Initiator. */
   readonly inviter: string;
   readonly template: string;
-  /** The instance's own screen; no token, because the recipient already holds their seat. */
+  /** The session's own screen; no token, because the recipient already holds their seat. */
   readonly link: string;
   /**
    * #1125 — what the Counterparty suggested about the Aspects, when they suggested anything.
@@ -54,22 +54,26 @@ export function joinedSubject(facts: JoinedFacts): string {
   return `${facts.joiner} joined — your assessment can start`;
 }
 
-export function joinedDocument(facts: JoinedFacts): EmailDocument {
+export function joinedDocument(facts: JoinedFacts, body?: string): EmailDocument {
   return {
     subject: joinedSubject(facts),
     preheader: `${facts.joiner} claimed the invitation to ${facts.template}.`,
     blocks: [
-      ...bodyBlocks(JOINED_BODY, {
-        joiner: facts.joiner,
-        inviter: facts.inviter,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        JOINED_BODY,
+        {
+          joiner: facts.joiner,
+          inviter: facts.inviter,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.inviter}, ${facts.joiner} claimed the invitation to ${facts.template}, so both seats exist and both of you can answer.`,
       },
-      { kind: "paragraph", text: `Open the instance: ${facts.link}` },
+      { kind: "paragraph", text: `Open the session: ${facts.link}` },
       {
         kind: "paragraph",
         text: "Your answers stay hidden from each other until you have both answered and accepted the session.",

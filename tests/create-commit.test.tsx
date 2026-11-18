@@ -28,7 +28,7 @@ import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
-  CREATE_INSTANCE_PATH,
+  CREATE_SESSION_PATH,
   createAspectsPath,
   createCommitPath,
   createInviteForPath,
@@ -47,7 +47,7 @@ vi.mock("next/navigation", () => ({
 const TEMPLATE_ID = "template-relationship-basics";
 /** The same row's slug — what a create-flow URL carries (#794); the id stays the cookie key. */
 const TEMPLATE_SLUG = "relationship-basics";
-const INSTANCE_ID = "assessment-instance-audit-ready";
+const SESSION_ID = "assessment-instance-audit-ready";
 /** The relationship stage 4 wrote — what the walk names and what both of its acts land on. */
 const RELATIONSHIP_ID = "relationship-audit-ready";
 
@@ -105,7 +105,7 @@ function stage5Html(): string {
       stage: 5,
       template: TEMPLATE,
       draft: DRAFT,
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       relationshipId: RELATIONSHIP_ID,
       backHref: createCommitPath(TEMPLATE_SLUG),
       problem: null,
@@ -209,7 +209,7 @@ describe("stage 4 — one fact per sentence (#777)", () => {
 describe("stage 4 — the conversion writes a draft", () => {
   it("posts the create with draft=1, naming only the template", () => {
     const html = stage4Html();
-    expect(html).toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).toContain(`action="${CREATE_SESSION_PATH}"`);
     expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
     expect(html).toContain('name="draft" value="1"');
     expect(html).toContain('data-create-draft="true"');
@@ -228,11 +228,11 @@ describe("stage 4 — the conversion writes a draft", () => {
 
   it("cannot write a second relationship: the re-entered stage advances by link", () => {
     const html = stage4Html({
-      accountAdvanceHref: createInviteForPath(TEMPLATE_SLUG, INSTANCE_ID),
+      accountAdvanceHref: createInviteForPath(TEMPLATE_SLUG, SESSION_ID),
     });
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
     expect(html).not.toContain('data-create-draft="true"');
-    expect(html).toContain(`href="${createInviteForPath(TEMPLATE_SLUG, INSTANCE_ID)}"`);
+    expect(html).toContain(`href="${createInviteForPath(TEMPLATE_SLUG, SESSION_ID)}"`);
     expect(html).toContain('data-create-next="invite"');
   });
 });
@@ -243,7 +243,7 @@ describe("stage 5 — send or keep", () => {
     expect(html).toContain('data-pay-step="plan"');
     // No create form on this stage — not the draft's and not a second one for the send.
     expect(html).not.toContain('data-create-draft="true"');
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
   });
 
   it("sends from the walk's last step, and from no other place", () => {
@@ -258,7 +258,7 @@ describe("stage 5 — send or keep", () => {
         stage: 5,
         template: TEMPLATE,
         draft: DRAFT,
-        instanceRecordId: INSTANCE_ID,
+        sessionRecordId: SESSION_ID,
         relationshipId: "relationship-audit-ready",
         backHref: createCommitPath(TEMPLATE_SLUG),
         problem: null,
@@ -294,6 +294,6 @@ describe("stage 3 hands over to stage 4", () => {
     const html = stage3Html();
     expect(html).toContain(`href="${createCommitPath(TEMPLATE_SLUG)}"`);
     expect(html).toContain('data-create-next="account"');
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
   });
 });

@@ -2,7 +2,7 @@
  * Every `InviteDisplayState` has a label on the relationships list.
  *
  * This is the guard for a production 500 (`/assessment/instances`, 2026-11-02): the list row
- * renders `itemLabel(inviteCopy, instance.inviteState)`, the fixture still carried an older
+ * renders `itemLabel(inviteCopy, session.inviteState)`, the fixture still carried an older
  * design's names (`not-sent` / `pending` / `expired` / `accepted`), and the first row with a
  * live unclaimed invitation threw `PageCopy: section "invite" has no item "unclaimed"` — at
  * render time, in production, for every viewer.

@@ -17,7 +17,7 @@
  *
  * The page is a shell, not a second report: the projection is `lib/assessment-demo.ts` over the
  * type's sheet, and the renderer is `components/assessment/assessment-report.tsx` — the same one
- * `/assessment/[slug]` and the instance report draw. A third renderer here would be the defect
+ * `/assessment/[slug]` and the session report draw. A third renderer here would be the defect
  * the release row exists to avoid, and it is why the example is a page rather than a band on
  * `…/[slug]`: a band could only be a truncated second presentation of the same report.
  *

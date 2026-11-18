@@ -7,8 +7,8 @@
  *   it is **pure**          no React, no Next, no `pg`, no clock. Every number is read out of
  *                           `lib/assessment-report.ts`'s projection, which reads them out of the
  *                           opinion rows; nothing here computes a Gap a second time.
- *   it is **round-trippable** `record` is the instance exactly as the model has it, so
- *                           `zAssessmentInstance.safeParse(JSON.parse(reportJson(doc)).record)`
+ *   it is **round-trippable** `record` is the session exactly as the model has it, so
+ *                           `zAssessmentSession.safeParse(JSON.parse(reportJson(doc)).record)`
  *                           answers the source record, deep-equal. That is the card's
  *                           acceptance, and `tests/report-document.test.ts` pins it.
  *   it is **not a second model**  the derived half is a *projection* (names for the reader,
@@ -20,7 +20,7 @@
  * `DEMO_NOW_ISO` (`content/core.ts`) — the same instant every fixture label is a pure function
  * of — and not `new Date()`. Three consequences, all wanted: the PDF names the instant it was
  * generated from without a clock read in a render path (the hydration-mismatch defect this repo
- * has a rule about), regenerating the same complete instance twice produces byte-identical JSON
+ * has a rule about), regenerating the same complete session twice produces byte-identical JSON
  * (the card's `sha256sum` acceptance), and `db:verify`/a reviewer can recompute every number in
  * the document from the rows it carries. A live timestamp would make the second one false for
  * no gain: what a reader needs is *which* report this is, and that is the record plus the
@@ -33,7 +33,7 @@
  * printed the eight kinds would read as "there are eight kinds and all are here"; carrying
  * `not_computable` says the ninth thing out loud, with the reason, in the file and on the page.
  */
-import type { AssessmentInstance } from "@/content/assessment";
+import type { AssessmentSession } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
 import {
   flagCountsOf,
@@ -145,7 +145,7 @@ export interface ReportDocument {
   readonly template_version: string;
   /** The fixture clock, never a wall clock — see the module comment. */
   readonly generated_at: string;
-  readonly record: AssessmentInstance;
+  readonly record: AssessmentSession;
   readonly report: DocumentedReport;
   readonly not_computable: readonly NotComputable[];
 }
@@ -176,7 +176,7 @@ function opinionsOf(opinions: ReportedOpinions): {
  *
  * Rebuilt rather than passed through so the JSON's key order is a property of this module and
  * not of the order `gapKindsOf()` happened to insert into an object — two regenerations of the
- * same instance have to be byte-identical, and `JSON.stringify` follows insertion order.
+ * same session have to be byte-identical, and `JSON.stringify` follows insertion order.
  */
 function gapsOf(row: AspectReportRow): GapKinds {
   const gaps: { [K in GapKind]?: Gap } = {};
@@ -195,7 +195,7 @@ function gapsOf(row: AspectReportRow): GapKinds {
  * bundler inlines, and a test passes a version nothing else carries.
  */
 export function reportDocument(
-  record: AssessmentInstance,
+  record: AssessmentSession,
   report: AssessmentReport,
   templateVersion: string,
 ): ReportDocument {
@@ -254,7 +254,7 @@ export function reportDocument(
  * The document as the bytes an export writes.
  *
  * Two-space indent and a trailing newline, both fixed: the file is read by a person as often as
- * by a tool, and a diff of two exports of the same instance should be empty rather than a
+ * by a tool, and a diff of two exports of the same session should be empty rather than a
  * re-flow. `JSON.stringify` preserves key order, and every object above is built in a fixed one,
  * which is what makes the byte-identity acceptance a property of the code and not of luck.
  */

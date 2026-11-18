@@ -351,11 +351,11 @@ export function RelationshipsList({
                       isInitiator: row.viewerRole === "initiator",
                       href: view.href,
                       actionHref: view.actionHref,
-                      instanceRecordId: row.sessionRecordId,
+                      sessionRecordId: row.sessionRecordId,
                     }),
                     payload: {
                       relationshipId: row.id,
-                      instanceRecordId: row.sessionRecordId ?? undefined,
+                      sessionRecordId: row.sessionRecordId ?? undefined,
                     },
                     title: view.title,
                     otherParty: partyOf(row) ?? undefined,

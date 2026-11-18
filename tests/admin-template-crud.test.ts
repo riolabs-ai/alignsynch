@@ -216,7 +216,7 @@ describe("archiving a template keeps everything and offers nothing", () => {
 
   it("refuses an id that is not a template", async () => {
     const db = new FakeDb();
-    // The lock answers a non-assessment, which is what an instance row looks like here.
+    // The lock answers a non-assessment, which is what a session row looks like here.
     const original = db.query.bind(db);
     db.query = async <R>(text: string, values: readonly unknown[] = []) => {
       if (

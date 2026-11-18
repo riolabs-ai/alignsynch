@@ -307,7 +307,7 @@ async function mountWalk(
     root?.render(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,
@@ -418,7 +418,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
     // The page is the only place a cookie can be read: it measures the intent and hands the walk a
     // row. A source assertion because the page needs a database and a session to render.
     const page = readFileSync(
-      join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+      join(process.cwd(), "components/flow/template-create/invite.tsx"),
       "utf8",
     );
     expect(page).toContain("carriedPlanOf(parsePlanIntent(");

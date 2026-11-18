@@ -37,7 +37,7 @@ import {
  * total with no list behind it is the number a console exists to stop printing.
  *
  * **What varies, and why it is the whole card.** In the shipped console a figure is the operator's
- * own instance list and the card links to a list filtered by the same predicate. Here every figure
+ * own session list and the card links to a list filtered by the same predicate. Here every figure
  * is a predicate over **one** array — `adminRelationshipRows()` — and the card links to the
  * registry with that predicate in the query string (`adminRegistryHref`). So "2 past due" and the
  * two rows the `subscription=past_due` filter draws are computed by the same function over the same

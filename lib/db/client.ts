@@ -51,8 +51,8 @@ import { Pool, type PoolConfig, type QueryResultRow } from "pg";
 /**
  * The most sockets this process opens, no matter how many requests arrive at once.
  *
- * 5, because a serverless deployment opens many short-lived instances and Neon's pooler already
- * fans them out: five connections per instance is generous for this app's one read query per
+ * 5, because a serverless deployment opens many short-lived sessions and Neon's pooler already
+ * fans them out: five connections per session is generous for this app's one read query per
  * render, and a larger pool only moves the queue from the pooler to the database.
  */
 export const POOL_MAX = 5;

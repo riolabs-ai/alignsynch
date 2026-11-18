@@ -1,7 +1,7 @@
 /**
  * The assessment records — the second template on the shared record (issue #128).
  *
- * Four **templates** and four **instances**, one fixture per thing the model can say,
+ * Four **templates** and four **sessions**, one fixture per thing the model can say,
  * so a rule can be checked without authoring a record to check it with:
  *
  *   assessment-relationship-basics      the template #128 introduced (unchanged)
@@ -23,7 +23,7 @@
  * are prompts to overwrite as Stage 3 of the create flow.
  *
  * **It is `published` since #1042, and that reverses the fixture's earlier rule.** It used to
- * be a `draft` no instance could copy, because "nobody has played a template that has not been
+ * be a `draft` no session could copy, because "nobody has played a template that has not been
  * named yet". That reasoning was sound while the only way into the flow was choosing a named
  * template — and it left the product with no answer for the *generic* create action ("Create a
  * relationship", "Create your first assessment"), which had nowhere to go but `/register`.
@@ -34,22 +34,22 @@
  * published record), so nothing about the copy-at-creation rule changes.
  *
  * The copy is authored here rather than aliased to the template's `items`, because a
- * copy is what an instance holds: editing the template later is a deliberate act, not
- * something that silently rewrites an instance someone already answered. `data:check`
+ * copy is what a session holds: editing the template later is a deliberate act, not
+ * something that silently rewrites a session someone already answered. `data:check`
  * E31 fails when the copy stops matching the template it names, so "copied" is checked
  * and not merely intended.
  *
  * No record here carries a Gap. The Gap is a difference of two Opinions — arithmetic
  * on these scores, computed by `gapOf()` in `content/record.ts`. One party's Feel 2
  * against the other's Feel 5 is a Gap of 3, and there is nowhere to write that down;
- * so every instance states the arithmetic in a comment beside the pair it came from
+ * so every session states the arithmetic in a comment beside the pair it came from
  * (`gapOf(2, 5) === 3`), and a reader can check it without running anything.
  *
  * **The catalogue is the rest of the type taxonomy, derived and not retyped.** The four
  * records above are the hand-authored ones; the collection a practitioner shops from is
  * `data/relationship-types.ts`, which authors twenty-seven purchasable Relationship
  * Types across seven realms, each with its own Aspects, its two roles and its price. A
- * **template is what an instance is copied from** (`lib/flow/store.ts` reads a record, not
+ * **template is what a session is copied from** (`lib/flow/store.ts` reads a record, not
  * a type), so every purchasable type the set above does not already cover gets one record
  * built from the type itself: same `slug` as the type id (the catalogue's join), the type's
  * own name and who-it-is-for line, and **the type's own Aspects** — prompts, Left/Right
@@ -57,7 +57,7 @@
  * catalogue: editing a question in the taxonomy edits the template it belongs to, and
  * `data:check` refuses a record whose items a type does not author.
  */
-import type { Assessment, AssessmentInstance, Aspect, AspectOpinions } from "../content/assessment";
+import type { Assessment, AssessmentSession, Aspect, AspectOpinions } from "../content/assessment";
 import { MODE_LABELS } from "../content/assessment";
 import { DEMO_NOW_ISO } from "../content/core";
 import { populationRows, type PopulationRow, type PopulationSeat } from "./assessment-population";
@@ -288,8 +288,8 @@ const CATALOGUE_DATE = DEMO_NOW_ISO;
  * One template per purchasable type the hand-authored set does not already cover.
  *
  * `parent-child` and `staff-manager` are already authored above — with their own Aspects and
- * their own instance copies — so they are skipped by slug rather than duplicated: two records
- * with one slug would be two answers to "which template is this", and the instance documents
+ * their own session copies — so they are skipped by slug rather than duplicated: two records
+ * with one slug would be two answers to "which template is this", and the session documents
  * that reference them name the authored ids. Everything else is derived from the taxonomy.
  *
  * The price, the roles and the realm are **not** copied onto the record: they belong to the
@@ -333,20 +333,20 @@ export const starterTemplates: readonly Assessment[] = authoredTemplates;
 /**
  * The templates above, copied and given two parties.
  *
- * Every instance names its **mode** — `basic` asks Feel and Wish on all five Aspects,
- * `advanced` asks all four — and the model enforces it (`zAssessmentInstance` rejects a
- * Basic instance carrying Think/Guess and an Advanced one missing it). `noor-iris` is the
- * Advanced demonstration; the other three are Basic, which is what a newly created instance
+ * Every session names its **mode** — `basic` asks Feel and Wish on all five Aspects,
+ * `advanced` asks all four — and the model enforces it (`zAssessmentSession` rejects a
+ * Basic session carrying Think/Guess and an Advanced one missing it). `noor-iris` is the
+ * Advanced demonstration; the other three are Basic, which is what a newly created session
  * is too. Nothing in the model derives one opinion from another.
  *
- * Every instance also names its **Setting** — the lens `content/gaps.ts` reads to decide
+ * Every session also names its **Setting** — the lens `content/gaps.ts` reads to decide
  * whether the Gaps are small enough to call the parties aligned. Authored here rather than
  * left to the column's default, so no seeded row's setting is hidden by it: `avery-rowan`,
  * `ruth-sam` and `marco-priya` are Soft ("Small Gap (1) OK" — a Gap of 1 is tolerated), and
  * `noor-iris` is Full ("No Gap OK" — only In Synch passes). The setting changes no Gap
  * number; it only decides which of them are tolerated.
  */
-const authoredInstances: readonly AssessmentInstance[] = [
+const authoredSessions: readonly AssessmentSession[] = [
   {
     id: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
@@ -772,13 +772,13 @@ function seatOpinions(
 }
 
 /**
- * One population row as an instance, with the template's own Aspects copied in.
+ * One population row as a session, with the template's own Aspects copied in.
  *
  * The copy is what E31 checks and it is taken from the template rather than restated, so a row can
  * never answer an Aspect its template does not hold. The name, mode, setting and lifecycle are the
  * row's; the title and summary are the template's, exactly as a created relationship's are.
  */
-function populationInstance(row: PopulationRow): AssessmentInstance {
+function populationSession(row: PopulationRow): AssessmentSession {
   const template = assessments.find((record) => record.id === row.templateId);
   if (template === undefined) {
     throw new Error(
@@ -814,30 +814,30 @@ function populationInstance(row: PopulationRow): AssessmentInstance {
   };
 }
 
-/** The population as instances, in authored order. Built once, at module load, and validated by E0. */
-function populationInstances(): readonly AssessmentInstance[] {
-  return populationRows.map(populationInstance);
+/** The population as sessions, in authored order. Built once, at module load, and validated by E0. */
+function populationSessions(): readonly AssessmentSession[] {
+  return populationRows.map(populationSession);
 }
 
 /**
  * The four hand-authored demonstrations, alone — the set the model's own tests pin.
  *
  * `avery-rowan`, `ruth-sam`, `marco-priya` and `noor-iris` are the records that *define* what an
- * instance can say: one per Skill/Mode/Gap shape (#128, #219, #259). The population below them is
+ * session can say: one per Skill/Mode/Gap shape (#128, #219, #259). The population below them is
  * **data** — thirty relationships a demo renders — so an assertion that reads "the fixtures name
- * exactly one Advanced Mode instance" is about this four, not about the population. Same split as
+ * exactly one Advanced Mode session" is about this four, not about the population. Same split as
  * `starterTemplates` against the catalogue: a demonstration is authored, a row is data.
  */
-export const starterInstances: readonly AssessmentInstance[] = authoredInstances;
+export const starterSessions: readonly AssessmentSession[] = authoredSessions;
 
 /**
- * Every instance: the four hand-authored demonstrations, then the population (#1079).
+ * Every session: the four hand-authored demonstrations, then the population (#1079).
  *
- * The order matters twice. `avery-rowan` stays **first** because it is the instance the parity
+ * The order matters twice. `avery-rowan` stays **first** because it is the session the parity
  * snapshot, the report tests and the demo's own URL name; and the population follows in authored
  * order, which is the recency order the lists sort by under `DEMO_NOW_ISO`.
  */
-export const assessmentInstances: readonly AssessmentInstance[] = [
-  ...authoredInstances,
-  ...populationInstances(),
+export const assessmentSessions: readonly AssessmentSession[] = [
+  ...authoredSessions,
+  ...populationSessions(),
 ];

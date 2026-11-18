@@ -1,11 +1,11 @@
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { opinionKindsFor } from "@/content/assessment";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answersFrom } from "@/lib/flow/answers";
-import { instancePath, submittedPath } from "@/lib/flow/paths";
+import { sessionPath, submittedPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
-import { readInstanceMode, submitAnswers } from "@/lib/flow/store";
+import { readSessionMode, submitAnswers } from "@/lib/flow/store";
 import type { SubmissionRejection } from "@/lib/flow/state";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cookies } from "next/headers";
@@ -14,7 +14,7 @@ import { NextResponse } from "next/server";
 /**
  * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
  *
- * The same helper the instance, report and accept routes carry: `currentUser()` answers `null` for
+ * The same helper the session, report and accept routes carry: `currentUser()` answers `null` for
  * "no session", and `authConfigured()` keeps a tree with no `NEON_AUTH_*` env rendering rather than
  * throwing.
  */
@@ -53,7 +53,7 @@ const REFUSAL_STATUS: Record<SubmissionRejection, number> = {
  * would rewrite it for the other party without their knowing. Before that acceptance the window is
  * open even if the other party has already submitted: that is the prototype's edit-before-accept
  * review, and it is why the freeze is no longer "both parties have submitted". A browser that is
- * not a party to the instance gets **403**; an unknown instance **404**. An edit after the freeze
+ * not a party to the session gets **403**; an unknown session **404**. An edit after the freeze
  * is an error, and a test reads the status.
  *
  * **Every code in `SubmissionRejection` has a status *and* a sentence (#752).** `REFUSAL_STATUS`
@@ -64,10 +64,10 @@ const REFUSAL_STATUS: Record<SubmissionRejection, number> = {
  * its sheet is simply not writable, which is 409 — answering 404 there told the reader their
  * session was gone.
  *
- * **The sheet is the instance's mode's sheet (#213).** The field names are read against
+ * **The sheet is the session's mode's sheet (#213).** The field names are read against
  * `opinionKindsFor(mode)` — `feel`/`wish` for Basic, all four for Advanced — and the mode
- * comes from the row (`readInstanceMode`), never from a form field. A post naming a kind the
- * mode does not ask (`think:…` against a Basic instance) is **refused here, with a 409**,
+ * comes from the row (`readSessionMode`), never from a form field. A post naming a kind the
+ * mode does not ask (`think:…` against a Basic session) is **refused here, with a 409**,
  * before the store is called: a field nobody reads is the silent success the freeze rule
  * exists to prevent. The store re-reads the mode under its lock and parses the sheet against
  * that value, so this read is a refusal's convenience and never the authority.
@@ -97,23 +97,23 @@ export async function POST(
 ): Promise<Response> {
   const { instanceId } = await params;
   const form = await request.formData();
-  const mode = await readInstanceMode(instanceId);
+  const mode = await readSessionMode(instanceId);
   const parsed = answersFrom(form, opinionKindsFor(mode ?? "basic"));
   const jar = await cookies();
   const token = jar.get(partyCookieName(instanceId))?.value;
   const asserted = form.get("role");
 
   // A field this mode does not ask is a refusal, not something to drop on the floor. An
-  // unknown instance is still the store's question, so the parse only needs a legal shape.
+  // unknown session is still the store's question, so the parse only needs a legal shape.
   if (parsed.problems.length > 0) {
     return refusal(instanceId, 409, "incomplete", parsed.problems.join("; "));
   }
 
   const result = await submitAnswers({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token,
     // #R2 — the account is the second answer to "which seat is writing", asked only when the
-    // cookie holds no party token for this instance.
+    // cookie holds no party token for this session.
     viewerUserId: await viewerUserId(),
     ...(typeof asserted === "string" ? { assertedRole: asserted } : {}),
     answers: parsed.answers,
@@ -151,10 +151,10 @@ function refusal(
   reason: string,
   problems: readonly string[] = [],
 ): Response {
-  const section = sectionOf(assessmentInstancePageCopy, "problems");
+  const section = sectionOf(assessmentSessionPageCopy, "problems");
   const label = itemLabel(section, code);
   const back = itemLabel(section, "back");
-  const href = escapeHtml(instancePath(instanceId));
+  const href = escapeHtml(sessionPath(instanceId));
   const detail =
     problems.length === 0
       ? ""

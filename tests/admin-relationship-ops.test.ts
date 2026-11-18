@@ -53,7 +53,7 @@ import {
 } from "@/lib/admin/relationship-ops";
 import { hashToken } from "@/lib/flow/tokens";
 
-const INSTANCE = "inst-1";
+const SESSION = "inst-1";
 const ACTOR = "auth-operator";
 const REASON = "party is stuck, verified by phone";
 
@@ -381,7 +381,7 @@ function runnerOver(db: FakeDb) {
 }
 
 /** The base request every case shares. */
-const request = { actorUserId: ACTOR, instanceRecordId: INSTANCE, reason: REASON };
+const request = { actorUserId: ACTOR, sessionRecordId: SESSION, reason: REASON };
 
 describe("unlock — the V11 repair as a button", () => {
   it("clears the mark through act(), in one audited transaction", async () => {
@@ -411,7 +411,7 @@ describe("unlock — the V11 repair as a button", () => {
       "admin",
       "party.unlock",
       "party",
-      `${INSTANCE}:counterparty`,
+      `${SESSION}:counterparty`,
       REASON,
       JSON.stringify({ role: "counterparty", unlockSeenAt: UNLOCK_INSTANT.toISOString() }),
       JSON.stringify({ role: "counterparty", unlockSeenAt: null }),
@@ -506,7 +506,7 @@ describe("resend — a new token, and the old hash dies", () => {
     // `/admin/audit` prints for this action.
     expect(db.auditParam("action")).toBe("invite.resend");
     expect(db.auditParam("target_table")).toBe("session_invite");
-    expect(db.auditParam("target_id")).toBe(INSTANCE);
+    expect(db.auditParam("target_id")).toBe(SESSION);
     expect(JSON.parse(String(db.auditParam("before")))).toEqual({
       email: "counterparty@example.com",
       expiresAt: INVITE_EXPIRY.toISOString(),
@@ -585,7 +585,7 @@ describe("revoke — the link dies, terminally", () => {
     const update = db.statements.find(({ text }) =>
       /^UPDATE session_invite SET revoked_at/i.test(text.trimStart()),
     );
-    expect(update?.values).toEqual([INSTANCE, ACTOR]);
+    expect(update?.values).toEqual([SESSION, ACTOR]);
     expect(result.after.revokedAt).toBe(REVOKED_INSTANT.toISOString());
     expect(db.auditParam("reason")).toBe(REASON);
 
@@ -593,7 +593,7 @@ describe("revoke — the link dies, terminally", () => {
     // `/admin/audit` prints for this action.
     expect(db.auditParam("action")).toBe("invite.revoke");
     expect(db.auditParam("target_table")).toBe("session_invite");
-    expect(db.auditParam("target_id")).toBe(INSTANCE);
+    expect(db.auditParam("target_id")).toBe(SESSION);
     expect(JSON.parse(String(db.auditParam("before")))).toEqual({
       claimedAt: null,
       expiresAt: INVITE_EXPIRY.toISOString(),
@@ -636,7 +636,7 @@ describe("void — terminal, and it deletes nothing", () => {
     const update = db.statements.find(({ text }) =>
       /^UPDATE session SET voided_at/i.test(text.trimStart()),
     );
-    expect(update?.values).toEqual([INSTANCE, ACTOR]);
+    expect(update?.values).toEqual([SESSION, ACTOR]);
     expect(result.after.voidedAt).toBe(VOID_INSTANT.toISOString());
     expect(db.audit).toEqual([
       ACTOR,
@@ -644,7 +644,7 @@ describe("void — terminal, and it deletes nothing", () => {
       "admin",
       "session.void",
       "session",
-      INSTANCE,
+      SESSION,
       REASON,
       JSON.stringify({ voidedAt: null }),
       JSON.stringify({ voidedAt: VOID_INSTANT.toISOString() }),
@@ -700,7 +700,7 @@ describe("force-close — an acceptance somebody else took", () => {
     const update = db.statements.find(({ text }) =>
       /^UPDATE party\s+SET accepted_at = now\(\)/i.test(text.trimStart()),
     );
-    expect(update?.values).toEqual([INSTANCE, "counterparty", ACTOR]);
+    expect(update?.values).toEqual([SESSION, "counterparty", ACTOR]);
     expect(result.after).toEqual({
       role: "counterparty",
       acceptedAt: ACCEPT_INSTANT.toISOString(),
@@ -773,7 +773,7 @@ describe("the reason is optional, and recorded when it is stated (#732)", () => 
     // No reason field, which is what the band posts now: the repair still runs, commits, and
     // leaves a row whose reason says nobody stated one.
     await unlockParty(
-      { actorUserId: ACTOR, instanceRecordId: INSTANCE, role: "initiator" },
+      { actorUserId: ACTOR, sessionRecordId: SESSION, role: "initiator" },
       runnerOver(db),
     );
     expect(db.auditParam("action")).toBe("party.unlock");

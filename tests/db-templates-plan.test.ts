@@ -11,7 +11,7 @@
  *   2. **A converged branch is silent.** A second run writes nothing, which is what makes
  *      `templates:import` safe to re-run after a partial failure.
  *   3. **The two refusals that protect authorship.** A slug an account authored, and a slug that
- *      names an instance (a record with a `session` row), are both *refused*, never rewritten —
+ *      names a session (a record with a `session` row), are both *refused*, never rewritten —
  *      the card forbids reassigning authorship and the import has no delete statement at all.
  *
  * Plus the guard: `nonTemplateDrift` is what the importer commits on, so its two answers (silent
@@ -116,14 +116,14 @@ describe("the two refusals that protect what is not ours", () => {
     expect(plan.update.map((entry) => entry.slug)).not.toContain("parent-child");
   });
 
-  it("refuses a slug that names an instance, rather than overwriting a relationship's record", () => {
+  it("refuses a slug that names a session, rather than overwriting a relationship's record", () => {
     const rows = [
       ...PRODUCTION_ROWS.filter((row) => row.slug !== "team"),
       rowFor("team", { sessions: 2 }),
     ];
     const plan = planTemplateImport({ templates: platformTemplates, existing: rows });
     expect(plan.refuse.map((entry) => entry.slug)).toEqual(["team"]);
-    expect(plan.refuse[0]?.reason).toContain("instance");
+    expect(plan.refuse[0]?.reason).toContain("session");
   });
 
   it("reports a platform row the fixtures dropped without touching it", () => {
@@ -149,8 +149,8 @@ describe("the two refusals that protect what is not ours", () => {
     expect(plan.writes).toBe(platformTemplates.length - 3);
   });
 
-  it("does not call an instance a stray template", () => {
-    // The import's `existing` query reads every assessment record so it can see a slug an instance
+  it("does not call a session a stray template", () => {
+    // The import's `existing` query reads every assessment record so it can see a slug a session
     // holds; those rows are relationships, not retired templates, and the report must not name them.
     const rows = [
       ...PRODUCTION_ROWS,

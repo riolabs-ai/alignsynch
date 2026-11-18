@@ -156,7 +156,7 @@ describe("a decline is a withdrawal with an actor", () => {
     expect(region).toContain("FOR UPDATE");
     // And it never creates what it declines: no party, no session, no invitation row, no trial.
     expect(region).not.toMatch(
-      /INSERT INTO (party|assessment_instance|session_record|subscription)/,
+      /INSERT INTO (party|assessment_session|session_record|subscription)/,
     );
     expect(region).not.toMatch(/grantAcceptanceTrial|trial_ends_at/i);
     // Every refusal rolls back rather than leaving a half-written row.

@@ -285,7 +285,7 @@ async function branchIdentifiers() {
       templateSlug: template?.slug ?? null,
       templateId: template?.id ?? null,
       memberTemplateId: memberTemplate?.id ?? null,
-      instanceId: member?.record_id ?? null,
+      sessionId: member?.record_id ?? null,
       memberRelationshipId: member?.relationship_id ?? null,
       relationshipId: member?.relationship_id ?? null,
       handle: member?.handle ?? null,

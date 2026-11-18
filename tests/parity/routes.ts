@@ -77,7 +77,7 @@ export type ParityRoute = {
  *
  * The three fixtures are chosen so the route resolves: the first published news record
  * (`data/news-data.ts`), the playable quiz (`data/currentQuiz.ts`) and a real profile handle
- * (`data/players.ts`). `/assessment/avery-rowan` is the instance slug the spec names, and it is
+ * (`data/players.ts`). `/assessment/avery-rowan` is the session slug the spec names, and it is
  * the only route that reads a database in production — see `harness.ts` for what it reads here.
  *
  * `/leaderboard` is the one route whose *current* state is a 404: `community.leaderboard` is off

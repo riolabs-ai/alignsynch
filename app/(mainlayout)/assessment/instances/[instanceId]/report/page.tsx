@@ -8,10 +8,10 @@
  * component could not value-import the read at all (#228, `data:check` E34) — and the blind rule
  * would have to be re-implemented in a reducer, which is the arrangement #409 retired.
  *
- * **The viewer is resolved from the cookie, never from the URL.** The instance id is in the path
+ * **The viewer is resolved from the cookie, never from the URL.** The session id is in the path
  * because a page needs an address; the party token in `flow_party_<instanceId>` is what says which
  * seat is reading. A browser that is not a party to the relationship — and holds no membership —
- * gets a 404, exactly as the instance screen does, so this route reveals nothing to a stranger.
+ * gets a 404, exactly as the session screen does, so this route reveals nothing to a stranger.
  *
  * **Three answers, three pages.** No such relationship (or no role on it) → `notFound()`. A
  * relationship that is not yet scored → the locked page, drawn by `RelationshipReport` from the
@@ -38,7 +38,7 @@ export const dynamic = "force-dynamic";
 /**
  * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
  *
- * The same helper the instance screen carries, for the same reason: `currentUser()` already
+ * The same helper the session screen carries, for the same reason: `currentUser()` already
  * answers `null` for "no session", and `authConfigured()` adds the "is auth configured here at
  * all" question so the gate's database-free run renders this route as it did before.
  */
@@ -56,7 +56,7 @@ export async function generateMetadata({
   const { instanceId } = await params;
   const jar = await cookies();
   const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     viewerUserId: await viewerUserId(),
   });
@@ -79,7 +79,7 @@ export default async function RelationshipReportPage({
   const { instanceId } = await params;
   const jar = await cookies();
   const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     viewerUserId: await viewerUserId(),
   });

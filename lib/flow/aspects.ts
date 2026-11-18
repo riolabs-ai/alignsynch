@@ -21,8 +21,8 @@
  * stops being a lie without being removed.
  *
  * **A relationship needs at least one Aspect**, so the last row cannot be removed
- * (`canRemoveAspect`) and a create whose list came back empty is refused rather than written as an
- * instance the model cannot parse (`zAssessmentInstance.items` is `.min(1)`).
+ * (`canRemoveAspect`) and a create whose list came back empty is refused rather than written as a
+ * session the model cannot parse (`zAssessmentSession.items` is `.min(1)`).
  *
  * **Pure on purpose** — no `next/headers`, no React, no database — so the rules, the seeding, the
  * drag's move and the reduction are unit-tested without a server, and the page, the two route
@@ -267,7 +267,7 @@ export type AspectListProblem = "none" | "blank" | "duplicate";
  * no id appears twice.
  *
  * Both are list-level facts that need no template: a relationship needs at least one Aspect
- * (`zAssessmentInstance.items` is `.min(1)`) and `uniqueItemIds` refuses a repeat, so a post that
+ * (`zAssessmentSession.items` is `.min(1)`) and `uniqueItemIds` refuses a repeat, so a post that
  * breaks either cannot be written whatever version it names. A refusal here costs nothing — no
  * record, no item, no transaction — which is the same discipline the Mode and the Setting follow.
  */
@@ -286,7 +286,7 @@ export function aspectListProblem(aspects: readonly AspectDraft[]): "none" | "du
  * `authoredAspects`), so a blank here is a row the person added with no question — there is no
  * template Aspect to stand in for it, and writing it would put an unanswerable line on both seats'
  * sheets. The model agrees (`zAspect` requires the prompt and both labels), so this is the refusal
- * a stage can print instead of an instance no page can parse.
+ * a stage can print instead of a session no page can parse.
  */
 export function aspectWriteProblem(aspects: readonly AspectDraft[]): AspectListProblem | null {
   const listProblem = aspectListProblem(aspects);

@@ -16,7 +16,7 @@
  *     from the card that added it (#343): `saveTemplate` / `deleteTemplate` / `resetTemplates`.
  *   - **relationships** (`alignsynch.v1.relationships.v1`) — relationships, accounts, tickets. A
  *     relationship copies a template's Aspects and holds each party's answers as a map keyed by
- *     Aspect id, so an invitation can sit unclaimed without violating the real instance schema.
+ *     Aspect id, so an invitation can sit unclaimed without violating the real session schema.
  *   - **persona** (`v1_persona`) — who the browser is pretending to be, mirrored to a cookie
  *     so the persona survives a reload and is visible to the server if it ever needs it.
  *   - **admin** (`alignsynch.v1.admin.v1`) — the template ids an operator has disabled.
@@ -32,8 +32,8 @@
  */
 import {
   zAssessment,
-  zInstanceName,
-  INSTANCE_NAME_MAX,
+  zSessionName,
+  SESSION_NAME_MAX,
   type AlignmentSetting,
   type Aspect,
   type Assessment,
@@ -92,7 +92,7 @@ const PERSONA_KEY = "v1_persona";
  * template in this store is an `Assessment` from `content/assessment.ts`, the *content* model,
  * and `.strict()` means a console-only field added to it would be a schema change to the thing
  * the gate validates. Disablement is an operator decision about a record, not a property of the
- * record — the same split `lib/admin/instance-registry.ts` keeps between a stage (derived) and
+ * record — the same split `lib/admin/session-registry.ts` keeps between a stage (derived) and
  * an account a seat may or may not hold.
  */
 const ADMIN_STORAGE_KEY = "alignsynch.v1.admin.v1";
@@ -227,7 +227,7 @@ function loadAdmin(): { disabledTemplateIds: readonly string[] } {
 /** The inputs the relationship form collects (#404 §6). */
 export interface RelationshipInput {
   readonly templateId: string;
-  /** The relationship's own name — optional, ≤ `INSTANCE_NAME_MAX`; absent means the template's. */
+  /** The relationship's own name — optional, ≤ `SESSION_NAME_MAX`; absent means the template's. */
   readonly name?: string;
   readonly initiatorName: string;
   /**
@@ -691,8 +691,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
 
   /**
    * Rename a relationship (#404 §7). One of the two metadata writes the matrix grants the Initiator
-   * and an admin, and the only one with a length rule: `INSTANCE_NAME_MAX` characters, the same
-   * limit `content/assessment.ts::zInstanceName` puts on the model's own instance name. An empty
+   * and an admin, and the only one with a length rule: `SESSION_NAME_MAX` characters, the same
+   * limit `content/assessment.ts::zSessionName` puts on the model's own session name. An empty
    * name is a clear, not an error — the template's title becomes the display name again.
    */
   const renameRelationship = useCallback(
@@ -705,9 +705,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         patchRelationship(relationshipId, (current) => ({ ...current, name: undefined }));
         return null;
       }
-      const parsed = zInstanceName.safeParse(trimmed);
+      const parsed = zSessionName.safeParse(trimmed);
       if (!parsed.success) {
-        return `A relationship's name is at most ${INSTANCE_NAME_MAX} characters.`;
+        return `A relationship's name is at most ${SESSION_NAME_MAX} characters.`;
       }
       if (rel.name === parsed.data) return null;
       patchRelationship(relationshipId, (current) => ({ ...current, name: parsed.data }));

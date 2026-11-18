@@ -51,7 +51,7 @@ const SMALL = "text-xs text-gray-600 dark:text-gray-300";
 export function StageInvite({
   copy,
   draft,
-  instanceRecordId,
+  sessionRecordId,
   relationshipId,
   initialPaid,
   planIncluded,
@@ -65,7 +65,7 @@ export function StageInvite({
   copy: PageCopy;
   draft: CreateDraft;
   /** The session stage 4 wrote the relationship from — the send posts to its own address. */
-  instanceRecordId: string;
+  sessionRecordId: string;
   /**
    * The relationship's own row id — what the membership addresses, and where the walk lands.
    *
@@ -113,7 +113,7 @@ export function StageInvite({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <InviteWalk
           copy={copy}
-          instanceRecordId={instanceRecordId}
+          sessionRecordId={sessionRecordId}
           relationshipId={relationshipId}
           paid={paid}
           onPaid={() => setPaid(true)}

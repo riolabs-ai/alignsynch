@@ -267,5 +267,5 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
   });
 }
 
-/** The instance the build ships: this fixture, for the brand `BRAND` selected. */
+/** The session the build ships: this fixture, for the brand `BRAND` selected. */
 export const loginPageCopy: PageCopy = loginCopy(brand);

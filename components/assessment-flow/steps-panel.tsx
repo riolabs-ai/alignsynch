@@ -56,7 +56,7 @@ export interface StepsAspect {
 /**
  * The panel.
  *
- * `action` is the POST endpoint (`stepsPath(instanceRecordId)`); every control on the panel submits
+ * `action` is the POST endpoint (`stepsPath(sessionRecordId)`); every control on the panel submits
  * to it with the Step's id and nothing else that identifies anybody — the seat comes from the party
  * cookie inside the store's transaction, never from a form field.
  */
@@ -80,8 +80,8 @@ export function StepsPanel({
   const band = sectionOf(copy, "steps");
   const progress = stepProgressOf(steps);
 
-  // The order a reader walks: the instance's own Aspects first, then any Aspect a Step names that the
-  // instance no longer holds. Nothing is hidden for being removed — a Step outlives the Aspect it names.
+  // The order a reader walks: the session's own Aspects first, then any Aspect a Step names that the
+  // session no longer holds. Nothing is hidden for being removed — a Step outlives the Aspect it names.
   const prompts = new Map<string, string>();
   for (const aspect of aspects) prompts.set(aspect.itemId, aspect.prompt);
   const ordered: string[] = [];

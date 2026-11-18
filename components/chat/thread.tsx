@@ -323,7 +323,7 @@ export function ChatThread({
   readonly state: ChatThreadState;
   readonly messages: readonly ChatThreadMessageView[];
   readonly tags: readonly ChatAspectTag[];
-  /** `instancePath(...)` — the Align surface's address, with the Aspect's anchor appended per tag. */
+  /** `sessionPath(...)` — the Align surface's address, with the Aspect's anchor appended per tag. */
   readonly alignHrefBase: string;
   /** "With {name}", already filled — or `null` when the other seat has no name to print. */
   readonly withLine: string | null;

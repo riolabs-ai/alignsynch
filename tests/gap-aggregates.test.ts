@@ -14,7 +14,7 @@
  *                or below it. The sample's Feel Gaps are 3, 2, 1, 1, 1, 1 — a mean of 1.5, a
  *                Gap that does not exist — and the screen prints 1.
  *   nameless     the population type has no party field and the rendered HTML contains no
- *                instance id, so the screen cannot name a relationship even by accident.
+ *                session id, so the screen cannot name a relationship even by accident.
  *
  * The fixture is three complete Soft Basic relationships and one complete Full Advanced one —
  * the shape the demo database has (three Soft, one Full). Every number asserted below is counted
@@ -30,14 +30,14 @@ import { GAP_KINDS } from "@/content/gaps";
 import { pageCopies } from "@/data/pages";
 import {
   aggregateGapPopulation,
-  MIN_COMPLETE_INSTANCES,
+  MIN_COMPLETE_SESSIONS,
   ordinalMedian,
   type GapAspect,
-  type GapInstance,
+  type GapSession,
   type GapOpinions,
 } from "@/lib/admin/gap-aggregates";
 
-/** One party's answers about one Aspect, with no prediction unless it is an Advanced instance. */
+/** One party's answers about one Aspect, with no prediction unless it is an Advanced session. */
 function answers(feel: number, wish: number, think?: number, guess?: number): GapOpinions {
   return {
     feel: feel as never,
@@ -62,8 +62,8 @@ function aspect(itemId: string, initiator: GapOpinions, counterparty: GapOpinion
  *   a  5/4 vs 2/4  feel 3  wish 0  initiator 1  counterparty 2
  *   b  4/4 vs 2/2  feel 2  wish 2  initiator 0  counterparty 0
  */
-const SOFT_ONE: GapInstance = {
-  instanceId: "soft-one",
+const SOFT_ONE: GapSession = {
+  sessionId: "soft-one",
   setting: "soft",
   aspects: [aspect("a", answers(5, 4), answers(2, 4)), aspect("b", answers(4, 4), answers(2, 2))],
 };
@@ -73,8 +73,8 @@ const SOFT_ONE: GapInstance = {
  *   a  4/4 vs 3/4  feel 1  wish 0  initiator 0  counterparty 1
  *   b  3/3 vs 2/2  feel 1  wish 1  initiator 0  counterparty 0
  */
-const SOFT_TWO: GapInstance = {
-  instanceId: "soft-two",
+const SOFT_TWO: GapSession = {
+  sessionId: "soft-two",
   setting: "soft",
   aspects: [aspect("a", answers(4, 4), answers(3, 4)), aspect("b", answers(3, 3), answers(2, 2))],
 };
@@ -84,8 +84,8 @@ const SOFT_TWO: GapInstance = {
  *   a  2/2 vs 3/2  feel 1  wish 0  initiator 0  counterparty 1
  *   b  2/2 vs 1/1  feel 1  wish 1  initiator 0  counterparty 0
  */
-const SOFT_THREE: GapInstance = {
-  instanceId: "soft-three",
+const SOFT_THREE: GapSession = {
+  sessionId: "soft-three",
   setting: "soft",
   aspects: [aspect("a", answers(2, 2), answers(3, 2)), aspect("b", answers(2, 2), answers(1, 1))],
 };
@@ -100,8 +100,8 @@ const SOFT_THREE: GapInstance = {
  *      feel 0 wish 0 initiator 0 counterparty 0 init-think 0 init-guess 0
  *      cp-think 2 cp-guess 2
  */
-const FULL_ADVANCED: GapInstance = {
-  instanceId: "full-one",
+const FULL_ADVANCED: GapSession = {
+  sessionId: "full-one",
   setting: "full",
   aspects: [
     aspect("a", answers(4, 4, 2, 3), answers(4, 4, 3, 2)),
@@ -110,7 +110,7 @@ const FULL_ADVANCED: GapInstance = {
 };
 
 const POPULATION = {
-  instances: [SOFT_ONE, SOFT_TWO, SOFT_THREE, FULL_ADVANCED],
+  sessions: [SOFT_ONE, SOFT_TWO, SOFT_THREE, FULL_ADVANCED],
   excluded: 2,
   total: 6,
 };
@@ -174,15 +174,15 @@ describe("the population is complete relationships only", () => {
     expect(aggregate.complete).toBe(4);
     expect(aggregate.excluded).toBe(2);
     expect(aggregate.total).toBe(6);
-    expect(aggregate.floor).toBe(MIN_COMPLETE_INSTANCES);
+    expect(aggregate.floor).toBe(MIN_COMPLETE_SESSIONS);
   });
 
   it("never adds a Soft relationship to a Full one — each Setting is its own section", () => {
     const [soft, full] = aggregate.settings;
     expect(soft?.setting).toBe("soft");
-    expect(soft?.instances).toBe(3);
+    expect(soft?.sessions).toBe(3);
     expect(full?.setting).toBe("full");
-    expect(full?.instances).toBe(1);
+    expect(full?.sessions).toBe(1);
     // 3 relationships × 2 Aspects × 4 Basic kinds, and 1 × 2 × 8 kinds.
     expect(soft?.gaps).toBe(24);
     expect(full?.gaps).toBe(16);
@@ -231,7 +231,7 @@ describe("the eight kinds are eight rows, measured or absent with a reason", () 
     const feel = soft.kinds.find((row) => row.kind === "feel")?.reading;
     expect(feel).toEqual({
       state: "measured",
-      instances: 3,
+      sessions: 3,
       count: 6,
       // Sorted: 1, 1, 1, 1, 2, 3 — the first size at which half are at or below is 1.
       median: 1,
@@ -309,14 +309,14 @@ describe("the rendered screen", () => {
   });
 
   it("says so when a Setting has no complete relationship at all", () => {
-    const empty = render({ instances: [], excluded: 3, total: 3 });
+    const empty = render({ sessions: [], excluded: 3, total: 3 });
     expect(empty).toContain("No relationship has been finished under Soft yet.");
     expect(empty).toContain("No relationship has been finished under Full yet.");
   });
 
-  it("never prints a party or an instance — the population has neither", () => {
-    for (const instance of POPULATION.instances) {
-      expect(html).not.toContain(instance.instanceId);
+  it("never prints a party or a session — the population has neither", () => {
+    for (const session of POPULATION.sessions) {
+      expect(html).not.toContain(session.sessionId);
     }
     // …and no placeholder the fixture left unfilled.
     expect(html).not.toMatch(/\{[a-z]+\}/);

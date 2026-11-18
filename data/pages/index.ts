@@ -31,9 +31,11 @@ import { adminGapsPageCopy } from "./admin-gaps";
 import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
-import { adminInstancesPageCopy } from "./admin-instances";
+import { adminSessionsPageCopy } from "./admin-instances";
 // #1126 — the CRUD & Permissions matrix: the v2 spec reference, read from one markdown source.
 import { adminPermissionsPageCopy } from "./admin-permissions";
+// #1138 — the transactional-mail override: one register of templates, one editor per template.
+import { adminEmailTemplatesPageCopy } from "./admin-email-templates";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -42,7 +44,7 @@ import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
-import { assessmentInstancePageCopy } from "./assessment-instance";
+import { assessmentSessionPageCopy } from "./assessment-instance";
 import { assessmentsPageCopy } from "./assessments";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { assessmentAcceptPageCopy } from "./assessment-accept";
@@ -121,7 +123,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // #920 — the growth model and the sampled operational set beside it.
   "/admin/growth": adminGrowthPageCopy,
   "/admin/health": adminHealthPageCopy,
-  "/admin/instances": adminInstancesPageCopy,
+  "/admin/instances": adminSessionsPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
   // #665 — the review shelf, grouped by release; the manifest is the catalogue.
   "/admin/review": adminReviewPageCopy,
@@ -132,13 +134,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/inbox": adminInboxPageCopy,
   // #1126 — the CRUD & Permissions matrix, read from `docs/specs/v2-prototype/crud-matrix.md`.
   "/admin/permissions": adminPermissionsPageCopy,
+  // #1138 — the transactional-mail override: the register, then one template's editor.
+  "/admin/email-templates": adminEmailTemplatesPageCopy,
+  "/admin/email-templates/[id]": adminEmailTemplatesPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/
   // relationships`. It replaced `/assessment/instances`, which is a 308 here now; the three
   // session routes below it did not move.
   "/assessments": assessmentsPageCopy,
-  "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
+  "/assessment/instances/[instanceId]": assessmentSessionPageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
@@ -203,21 +208,22 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
-  // #794 — the six-stage create flow, under the template's own noun. #1109 retired the member's
-  // library listing, its authoring form and its read-only detail page (they 308 to
-  // `/dashboard/templates`), so their three entries are gone from this table with them: a path here
-  // is a promise that the route renders a fixture, and E23 checks the two directions.
-  "/templates/relationship/[slug]/create": assessmentCreatePageCopy,
+  // #794 — the create flow, at the dashboard address it shares with the member's library since
+  // #1109 (the stages moved to `/dashboard/templates/<slug>/create…`); the member's library
+  // listing, its authoring form and its read-only detail page retired in the same change (they 308
+  // to `/dashboard/templates`), so their three entries are gone from this table with them: a path
+  // here is a promise that the route renders a fixture, and E23 checks the two directions.
+  "/dashboard/templates/[id]/create": assessmentCreatePageCopy,
   // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
   // drift into two vocabularies.
-  "/templates/relationship/[slug]/create/mode": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/mode": assessmentCreatePageCopy,
   // #689 — stage 3, the third register of the same fixture.
-  "/templates/relationship/[slug]/create/aspects": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/aspects": assessmentCreatePageCopy,
   // #690 — stage 4 and stage 5 of one flow: the same fixture again, because a second copy of these
   // words is how a flow grows two dialects. #825 — the account gate that used to sit behind the
   // create is retired; stage 4 is the account and stage 5 is the invite.
-  "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
-  "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/commit": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/invite": assessmentCreatePageCopy,
   /**
    * The public catalogue, one address and one fixture (#905, consolidated in #1127).
    *

@@ -27,7 +27,7 @@ import { ROUTE_PATTERNS, routeManifest } from "@/content/routes";
 import { assessmentsPageCopy } from "@/data/pages/assessments";
 import type { RelationshipCard } from "@/lib/db/assessments";
 import type { OverviewFilter } from "@/lib/flow/overview";
-import { instancePath, MY_ASSESSMENTS_PATH, reportPath } from "@/lib/flow/paths";
+import { sessionPath, MY_ASSESSMENTS_PATH, reportPath } from "@/lib/flow/paths";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: React.ReactNode }) =>
@@ -77,7 +77,7 @@ beforeEach(() => {
 function cardOf(overrides: Partial<RelationshipCard> = {}): RelationshipCard {
   return {
     relationshipId: "relationship-assessment-instance-avery-rowan",
-    instanceRecordId: "assessment-instance-avery-rowan",
+    sessionRecordId: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
     name: "Relationship Basics",
     templateTitle: "Relationship Basics",
@@ -105,7 +105,7 @@ const completeRow = cardOf();
 /** The viewer has answered every Aspect, the session is not complete, so the other has not. */
 const awaitingRow = cardOf({
   relationshipId: "relationship-assessment-instance-marco-priya",
-  instanceRecordId: "assessment-instance-marco-priya",
+  sessionRecordId: "assessment-instance-marco-priya",
   slug: "marco-priya-1a2b3c4d",
   name: "Staff & Manager",
   templateTitle: "Staff & Manager",
@@ -120,7 +120,7 @@ const awaitingRow = cardOf({
 /** A session this reader still owes answers on — the third state. */
 const askingRow = cardOf({
   relationshipId: "relationship-assessment-instance-jo-sam",
-  instanceRecordId: "assessment-instance-jo-sam",
+  sessionRecordId: "assessment-instance-jo-sam",
   slug: "jo-sam-9f8e7d",
   name: "Siblings",
   templateTitle: "Siblings",
@@ -135,7 +135,7 @@ const askingRow = cardOf({
 /** A relationship its creator has not sent — off the ladder, so no stage word and no invitation. */
 const draftRow = cardOf({
   relationshipId: "relationship-assessment-instance-draft",
-  instanceRecordId: "assessment-instance-draft",
+  sessionRecordId: "assessment-instance-draft",
   slug: "spouses-1a2b3c4d",
   name: "Our first pass",
   templateTitle: "Relationship Basics",
@@ -248,11 +248,11 @@ describe("the row's destinations are the ones that already exist", () => {
   it("links the session, the assessment, the relationship, and the Gap on a complete row", () => {
     const html = listOf([completeRow]);
 
-    expect(html).toContain(`href="${instancePath(completeRow.instanceRecordId)}"`);
+    expect(html).toContain(`href="${sessionPath(completeRow.sessionRecordId)}"`);
     expect(html).toContain(`data-assessment-template="${completeRow.templateSlug}"`);
     expect(html).toContain(`data-assessment-relationship-link="${completeRow.relationshipId}"`);
-    expect(html).toContain(`data-assessment-gap="${completeRow.instanceRecordId}"`);
-    expect(html).toContain(`href="${reportPath(completeRow.instanceRecordId)}"`);
+    expect(html).toContain(`data-assessment-gap="${completeRow.sessionRecordId}"`);
+    expect(html).toContain(`href="${reportPath(completeRow.sessionRecordId)}"`);
   });
 
   it("draws no Gap door before both parties have accepted — the report is locked then", () => {
@@ -260,14 +260,14 @@ describe("the row's destinations are the ones that already exist", () => {
 
     expect(html).not.toContain("data-assessment-gap");
     // The session screen is still the way in.
-    expect(html).toContain(`data-assessment-session-link="${awaitingRow.instanceRecordId}"`);
+    expect(html).toContain(`data-assessment-session-link="${awaitingRow.sessionRecordId}"`);
   });
 
   it("links each row's own record, never its neighbour's", () => {
     const html = listOf([completeRow, awaitingRow]);
 
     for (const row of [completeRow, awaitingRow]) {
-      expect(html).toContain(`data-assessment-session="${row.instanceRecordId}"`);
+      expect(html).toContain(`data-assessment-session="${row.sessionRecordId}"`);
       expect(html).toContain(`data-assessment-relationship="${row.relationshipId}"`);
     }
     // Two rows, one Gap door.
@@ -294,30 +294,30 @@ describe("the shell's narrowings only narrow", () => {
 
     expect(
       visibleAssessments(rows, { state: "complete", query: "", order: "newest" }).map(
-        (row) => row.instanceRecordId,
+        (row) => row.sessionRecordId,
       ),
-    ).toEqual([completeRow.instanceRecordId]);
+    ).toEqual([completeRow.sessionRecordId]);
 
     expect(
       visibleAssessments(rows, { state: "all", query: "priya", order: "newest" }).map(
-        (row) => row.instanceRecordId,
+        (row) => row.sessionRecordId,
       ),
-    ).toEqual([awaitingRow.instanceRecordId]);
+    ).toEqual([awaitingRow.sessionRecordId]);
 
     expect(
       visibleAssessments(rows, { state: "all", query: "Siblings", order: "newest" }).map(
-        (row) => row.instanceRecordId,
+        (row) => row.sessionRecordId,
       ),
-    ).toEqual([askingRow.instanceRecordId]);
+    ).toEqual([askingRow.sessionRecordId]);
 
     expect(
       visibleAssessments(rows, { state: "all", query: "", order: "oldest" }).map(
-        (row) => row.instanceRecordId,
+        (row) => row.sessionRecordId,
       ),
     ).toEqual([
-      completeRow.instanceRecordId,
-      awaitingRow.instanceRecordId,
-      askingRow.instanceRecordId,
+      completeRow.sessionRecordId,
+      awaitingRow.sessionRecordId,
+      askingRow.sessionRecordId,
     ]);
   });
 
@@ -338,8 +338,8 @@ describe("the shell's narrowings only narrow", () => {
     const html = await render({ filter: "awaiting-other" });
 
     expect(html).toContain('data-assessments-filter="awaiting-other"');
-    expect(html).toContain(`data-assessment-session="${awaitingRow.instanceRecordId}"`);
-    expect(html).not.toContain(`data-assessment-session="${completeRow.instanceRecordId}"`);
+    expect(html).toContain(`data-assessment-session="${awaitingRow.sessionRecordId}"`);
+    expect(html).not.toContain(`data-assessment-session="${completeRow.sessionRecordId}"`);
   });
 
   it("treats an unknown filter as no narrowing, never as an empty page that claims one", async () => {
@@ -353,8 +353,8 @@ describe("the shell's narrowings only narrow", () => {
     const html = await render({ filter: "not-a-filter" });
 
     expect(html).not.toContain("data-assessments-filter");
-    expect(html).toContain(`data-assessment-session="${completeRow.instanceRecordId}"`);
-    expect(html).toContain(`data-assessment-session="${awaitingRow.instanceRecordId}"`);
+    expect(html).toContain(`data-assessment-session="${completeRow.sessionRecordId}"`);
+    expect(html).toContain(`data-assessment-session="${awaitingRow.sessionRecordId}"`);
   });
 });
 

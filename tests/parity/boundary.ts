@@ -36,7 +36,7 @@ import AdminDocsFeaturesPage from "@/app/(mainlayout)/admin/docs/features/page";
 import AdminDocsReleasesPage from "@/app/(mainlayout)/admin/docs/releases/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
-import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
+import AdminSessionsPage from "@/app/(mainlayout)/admin/instances/page";
 import AdminReviewPage from "@/app/(mainlayout)/admin/review/page";
 import BattlePage from "@/app/(mainlayout)/battle/page";
 import CategoriesPage from "@/app/(mainlayout)/categories/page";
@@ -290,7 +290,7 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
   },
   {
     route: "/admin/instances",
-    page: AdminInstancesPage as unknown as ParityPage,
+    page: AdminSessionsPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

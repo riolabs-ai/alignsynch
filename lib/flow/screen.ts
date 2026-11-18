@@ -7,7 +7,7 @@
  * viewer's own score and there is no field that could carry anybody else's. The report —
  * the only screen with Gaps on it — exists in this shape only when the status is
  * `complete`, which since #R2 means both parties have answered every Aspect **and both have
- * accepted** the session; it is built from the same `assessmentInstanceFromRows()` every other
+ * accepted** the session; it is built from the same `assessmentSessionFromRows()` every other
  * read uses, so the Gap is `gapOf()` over two rows rather than a number this module made up.
  *
  * Pure: rows in, view model out. `tests/flow-screen.test.ts` drives it with hand-built
@@ -31,10 +31,10 @@ import { assessmentReport } from "@/lib/assessment-report";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { Membership } from "@/lib/relationship/membership";
 import {
-  assessmentInstanceFromRows,
+  assessmentSessionFromRows,
   isoInstantOf,
   orderedItems,
-  type InstanceRow,
+  type SessionRow,
   type ItemRow,
   type OpinionRow,
   type OptionRow,
@@ -42,10 +42,10 @@ import {
   type RecordRow,
 } from "@/lib/db/rows";
 import {
-  instanceStatusOf,
+  sessionStatusOf,
   waitingOn,
-  type InstanceProgress,
-  type InstanceStatus,
+  type SessionProgress,
+  type SessionStatus,
 } from "@/lib/flow/state";
 
 /** One Aspect as the answer form asks it: the words, the band's ends, the viewer's answer. */
@@ -135,36 +135,36 @@ export interface FlowSeat {
    * says the acceptance was not the party's own, and who took it is the audit row's business.
    *
    * Optional so the screen fixtures written before the console could act stay valid; absent is
-   * `false`, the same shape `FlowInstanceRows.voided` uses, and the production read always
+   * `false`, the same shape `FlowSessionRows.voided` uses, and the production read always
    * supplies it.
    */
   readonly impersonated?: boolean;
 }
 
 export interface FlowScreen {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /**
-   * The **relationship** row this instance was written for (#911).
+   * The **relationship** row this session was written for (#911).
    *
-   * Distinct from `instanceRecordId`, and the distinction is not cosmetic: the create flow's URL
+   * Distinct from `sessionRecordId`, and the distinction is not cosmetic: the create flow's URL
    * carries the *record* id (`?instance=`), while every membership act — capturing a card, the
    * payment gate behind stage 5's send — names the *relationship*. A screen that only knows the
    * record id cannot start a capture, because the capture answers "no relationship holds the id".
    */
   readonly relationshipId: string;
   readonly slug: string;
-  /** The template's words: an instance is a copy, and its title is the template's. */
+  /** The template's words: a session is a copy, and its title is the template's. */
   readonly title: string;
   readonly summary: string;
-  readonly status: InstanceStatus;
+  readonly status: SessionStatus;
   /**
-   * The mode this instance was played in — the same value the report carries, so the screen
+   * The mode this session was played in — the same value the report carries, so the screen
    * can name it and the answer sheet can ask exactly the kinds it defines. Parsed from the
    * row (`zAssessmentMode.parse`): a value the model rejects is drift, never a default.
    */
   readonly mode: AssessmentMode;
   /**
-   * The Setting the instance is read through (#259): `soft` or `full`. Parsed from the row
+   * The Setting the session is read through (#259): `soft` or `full`. Parsed from the row
    * (`zAlignmentSetting.parse`), so a value the model rejects is drift and never a default.
    *
    * Carried on the screen because the accept page names it in its "what you are accepting" band —
@@ -225,11 +225,11 @@ export interface FlowScreen {
   readonly subscriptionLive?: boolean;
 }
 
-export interface FlowInstanceRows {
+export interface FlowSessionRows {
   readonly record: RecordRow;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
-  readonly instance: InstanceRow;
+  readonly session: SessionRow;
   readonly parties: readonly PartyRow[];
   /** Only the roles `visibleRoles()` allowed. Never the other party's, before `complete`. */
   readonly opinions: readonly OpinionRow[];
@@ -243,7 +243,7 @@ export interface FlowInstanceRows {
 }
 
 export interface ProjectInput {
-  readonly rows: FlowInstanceRows;
+  readonly rows: FlowSessionRows;
   readonly template: Assessment;
   readonly viewerRole: PartyRole | "coach";
   readonly invite: FlowInvite | null;
@@ -269,7 +269,7 @@ export interface ProjectInput {
    */
   readonly subscriptionLive?: boolean;
 }
-/** The party row for a role, or `undefined` — the caller's "not your instance" branch. */
+/** The party row for a role, or `undefined` — the caller's "not your session" branch. */
 export function partyIn(
   parties: readonly PartyRow[],
   role: PartyRole | "coach",
@@ -278,14 +278,14 @@ export function partyIn(
 }
 
 /** The progress counts the status is derived from. */
-export function progressOf(rows: FlowInstanceRows): InstanceProgress {
+export function progressOf(rows: FlowSessionRows): SessionProgress {
   return {
     aspectCount: rows.items.length,
     hasCounterparty: partyIn(rows.parties, "counterparty") !== undefined,
     initiatorAnswered: rows.answerCounts.initiator,
     counterpartyAnswered: rows.answerCounts.counterparty,
     // The hinge (#R2): a count of the seats whose `accepted_at` is set, read off the same party
-    // rows the names come from. `1`/`0` and never a boolean, so `instanceStatusOf()` treats the
+    // rows the names come from. `1`/`0` and never a boolean, so `sessionStatusOf()` treats the
     // two shapes the same way.
     initiatorAccepted: acceptedCountIn(rows.parties, "initiator"),
     counterpartyAccepted: acceptedCountIn(rows.parties, "counterparty"),
@@ -315,7 +315,7 @@ function acceptedAtOf(party: PartyRow | undefined): string | null {
  * `null` and not an error.
  */
 function ownOpinion(
-  rows: FlowInstanceRows,
+  rows: FlowSessionRows,
   role: PartyRole | "coach",
   itemId: string,
 ): Opinions | null {
@@ -330,34 +330,34 @@ function ownOpinion(
   return parsed.success ? parsed.data : null;
 }
 
-/** Project one instance for one viewer. */
+/** Project one session for one viewer. */
 export function projectScreen(input: ProjectInput): FlowScreen {
   const { rows, template, viewerRole, invite } = input;
   const viewerRow = partyIn(rows.parties, viewerRole);
   if (viewerRole !== "coach" && viewerRow === undefined) {
     throw new Error(
-      `instance "${rows.record.slug}" has no ${viewerRole} party — there is no screen to project`,
+      `session "${rows.record.slug}" has no ${viewerRole} party — there is no screen to project`,
     );
   }
 
   const progress = progressOf(rows);
   // #619 — the fee is the last gate: both sheets sealed and no money on file is `awaiting_payment`,
   // with the report still shut and the blind rule still in force.
-  const status = instanceStatusOf({ ...progress, paymentArmed: input.paymentArmed });
+  const status = sessionStatusOf({ ...progress, paymentArmed: input.paymentArmed });
 
   // The report is built from the same rows the read path always builds from, and only when
-  // every party has answered every Aspect — `zAssessmentInstance` would reject a partial
+  // every party has answered every Aspect — `zAssessmentSession` would reject a partial
   // sheet, which is the second half of the blind rule: a report of unfinished answers is
   // not a report, it is a leak with extra steps. A coach reaches this the same way a party
   // does: the report exists only once the status is `complete`.
   const report =
     status === "complete"
       ? assessmentReport(
-          assessmentInstanceFromRows({
+          assessmentSessionFromRows({
             record: rows.record,
             items: rows.items,
             options: rows.options,
-            instance: rows.instance,
+            session: rows.session,
             parties: rows.parties,
             opinions: rows.opinions,
           }),
@@ -366,14 +366,14 @@ export function projectScreen(input: ProjectInput): FlowScreen {
       : null;
 
   return {
-    instanceRecordId: rows.record.id,
-    relationshipId: rows.instance.relationship_id,
+    sessionRecordId: rows.record.id,
+    relationshipId: rows.session.relationship_id,
     slug: rows.record.slug,
     title: template.title,
     summary: template.summary,
     status,
-    mode: zAssessmentMode.parse(rows.instance.mode),
-    setting: zAlignmentSetting.parse(rows.instance.setting),
+    mode: zAssessmentMode.parse(rows.session.mode),
+    setting: zAlignmentSetting.parse(rows.session.setting),
     // A coach has no party row, so their name is the empty string and the view renders the
     // coach's own band (`viewer` copy id) rather than a party name.
     viewer: { role: viewerRole, name: viewerRole === "coach" ? "" : (viewerRow?.name ?? "") },

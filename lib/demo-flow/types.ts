@@ -31,7 +31,7 @@ export interface DemoFlowStep {
   /** 1..n, contiguous across the three paths — the transcript's own numbering. */
   step: number;
   path: DemoFlowPathName;
-  /** Where it happened, with run-specific ids already normalised to `<instance>` / `<token>`. */
+  /** Where it happened, with run-specific ids already normalised to `<session>` / `<token>`. */
   route: string;
   action: DemoFlowAction;
   values: DemoFlowValue[];

@@ -191,6 +191,30 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #1128 — **the Next Step a live, answering relationship draws.**
+       *
+       * The bundle's own sentence for the state (03, `joined`): the eyebrow, the heading, the
+       * three-minute promise and the one button. It is the door the issue says was missing —
+       * "Next Step 'Start Assessment' goes nowhere" — and the verb comes from the reader's own
+       * answered count, so a second visit says `Continue`.
+       */
+      id: "assessment",
+      items: [
+        { id: "next-step", label: "Next Step" },
+        { id: "start-heading", label: "Start Your First Assessment" },
+        { id: "continue-heading", label: "Continue Your Assessment" },
+        {
+          id: "body",
+          label:
+            "{count} Aspects, about 3 minutes. Your answers stay private until you both finish.",
+        },
+        { id: "start", label: "Start Assessment" },
+        { id: "continue", label: "Continue Assessment" },
+        { id: "progress", label: "{answered} of {count} Aspects answered" },
+      ],
+    },
+    {
+      /**
        * #1121 — **Stage 6's pause, in the owner's words.**
        *
        * Every string here is verbatim from the issue's state table (and the ported bundle,

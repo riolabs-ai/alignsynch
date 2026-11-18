@@ -7,7 +7,7 @@
  * five literal `<Link>` rows from `nav-alignsynch`, and `AlignSynchLinkColumn`
  * (`components/layout/footer.tsx`) draws its rows from `footer-links-alignsynch`. A row added to
  * one and not the other is the drift this file exists to catch, and the owner's *"before help add
- * Pricing"* is one instance of it — Pricing was in the header and absent from the footer.
+ * Pricing"* is one session of it — Pricing was in the header and absent from the footer.
  *
  * So this case renders both surfaces with the harness `tests/marketing-header.test.ts` uses
  * (`renderToStaticMarkup`, `next/link` mocked to an `<a>`), reads the anchors out of the header's

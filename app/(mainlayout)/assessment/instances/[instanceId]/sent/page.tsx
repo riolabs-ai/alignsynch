@@ -4,11 +4,11 @@
  *
  * The screen `POST /assessment/new` lands on: the commit already happened, the invitation is out,
  * and what is left is the state of that invitation, what happens next and the way into the
- * relationship (stage 6, `…/create`'s sibling at the instance root).
+ * relationship (stage 6, `…/create`'s sibling at the session root).
  *
  * **The read is the flow's, and so is the proof.** `readFlowScreen()` resolves the viewer from this
  * browser's `flow_party_*` token and then from the signed-in account — the same projection the
- * instance screen and the account gate draw. No party, no screen: the id in the address is not a
+ * session screen and the account gate draw. No party, no screen: the id in the address is not a
  * secret, so a crafted URL, somebody else's relationship and a dead id all answer `404` exactly as
  * the relationship screen does. A *signed-out* holder of the party cookie is a party like any other
  * and sees this screen: the account is behind them, not in front (#659).
@@ -33,7 +33,7 @@ import { StageShell } from "@/components/assessment-flow/stage-shell";
 import { assessmentSentPageCopy } from "@/data/pages/assessment-sent";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { OVERVIEW_PATH, instancePath, reinvitePath } from "@/lib/flow/paths";
+import { OVERVIEW_PATH, sessionPath, reinvitePath } from "@/lib/flow/paths";
 import { resendRefusalOf } from "@/lib/flow/resend";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -62,7 +62,7 @@ export default async function AssessmentSentPage({
   const jar = await cookies();
   const viewer = await currentUserIfConfigured();
   const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     // #220 — the Initiator's own copy of the raw token, so the link is drawn while no email
     // carried it. The create writes this cookie in the same response as the party token, so the
@@ -89,8 +89,8 @@ export default async function AssessmentSentPage({
         screen={screen}
         {...(inviteNotice === undefined ? {} : { inviteNotice })}
         {...(resendRefusal === undefined ? {} : { resendRefusal })}
-        resendAction={reinvitePath(screen.instanceRecordId)}
-        openHref={instancePath(screen.instanceRecordId)}
+        resendAction={reinvitePath(screen.sessionRecordId)}
+        openHref={sessionPath(screen.sessionRecordId)}
         signedIn={viewer !== null}
       />
     </StageShell>

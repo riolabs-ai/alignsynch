@@ -41,7 +41,7 @@ declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
-const STAGE_PATH = "/templates/relationship/relationship-basics/create/mode";
+const STAGE_PATH = "/dashboard/templates/relationship-basics/create/mode";
 
 /** The address the mocked router is "on" — a stage while the dialog stands, the page after it. */
 let pathname = STAGE_PATH;
@@ -240,12 +240,12 @@ describe("an advance is a history entry, so Back is the previous stage", () => {
     // The five addresses the flow advances through, in order. All five are intercepted routes, so
     // a Back to any of them re-renders that stage in the dialog rather than in the page.
     for (const path of [
-      "/templates/relationship/brother-sister/create",
-      "/templates/relationship/brother-sister/create/mode",
-      "/templates/relationship/brother-sister/create/aspects",
-      "/templates/relationship/brother-sister/create/commit",
-      "/templates/relationship/brother-sister/create/invite",
-      "/templates/relationship/brother-sister/create/aspects/",
+      "/dashboard/templates/brother-sister/create",
+      "/dashboard/templates/brother-sister/create/mode",
+      "/dashboard/templates/brother-sister/create/aspects",
+      "/dashboard/templates/brother-sister/create/commit",
+      "/dashboard/templates/brother-sister/create/invite",
+      "/dashboard/templates/brother-sister/create/aspects/",
     ]) {
       expect(isFlowStagePath(path), `${path} would close the dialog`).toBe(true);
     }

@@ -143,7 +143,7 @@ describe("stage 5 draws the chip, and a way to change it (#1127)", () => {
       createElement(StageInvite, {
         copy,
         draft: EMPTY_CREATE_DRAFT,
-        instanceRecordId: "instance-1",
+        sessionRecordId: "session-1",
         relationshipId: "relationship-1",
         ...(carried === null ? {} : { carriedPlan: carried }),
         backHref: "/back",

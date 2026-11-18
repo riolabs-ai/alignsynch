@@ -27,7 +27,8 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { zAssessmentInstance, seededLifecycleOf } from "@/content/assessment";
+import { seededLifecycleOf } from "@/content/assessment";
+import { zDatasetBundle } from "@/content/bundle";
 import { DEMO_NOW_ISO } from "@/content/core";
 import { billingPlan, planPriceCents } from "@/data/billing-plans";
 import { ADMIN_ACTIONS, AUDIT_TARGET_TABLES } from "@/lib/admin/roles";
@@ -46,27 +47,28 @@ interface Expectations {
   readonly rows: Record<string, number>;
 }
 
-interface DatasetBundle {
-  readonly payload: { readonly instances: unknown[] };
-}
-
 const expectations = JSON.parse(readFileSync(EXPECTATIONS_PATH, "utf8")) as Expectations;
-const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
-const bundleInstances = zAssessmentInstance.array().parse(bundle.payload.instances);
+/**
+ * The document through the format's own reader, not its raw JSON: phase 3 turned the record arrays'
+ * key into `sessions` and kept a dual-shape reader for version 2, so reaching into `payload` by hand
+ * reads a key the current document no longer has.
+ */
+const bundle = zDatasetBundle.parse(JSON.parse(readFileSync(BUNDLE_PATH, "utf8")));
+const bundleSessions = bundle.payload.sessions;
 
 /** The tier both anchors carry in the committed dataset, read from the fixture rather than typed. */
-const GRANTED_INSTANCE = "assessment-instance-avery-rowan-flat";
-const PAID_INSTANCE = "assessment-instance-avery-rowan-summer";
+const GRANTED_SESSION_ID = "assessment-instance-avery-rowan-flat";
+const PAID_SESSION_ID = "assessment-instance-avery-rowan-summer";
 const ARTIFACT_ID = "review-relationship-lifecycle-v9";
 const ADMIN_USER_ID = "b6b7d0d1-3a3e-4b0e-9d5f-2f6f3f6f0001";
 const INITIATOR_USER_ID = "b6b7d0d1-3a3e-4b0e-9d5f-2f6f3f6f0002";
 
-const grantedInstance = bundleInstances.find((instance) => instance.id === GRANTED_INSTANCE);
-const paidInstance = bundleInstances.find((instance) => instance.id === PAID_INSTANCE);
+const grantedSession = bundleSessions.find((session) => session.id === GRANTED_SESSION_ID);
+const paidSession = bundleSessions.find((session) => session.id === PAID_SESSION_ID);
 
 const grantedPlan =
-  grantedInstance === undefined ? undefined : seededLifecycleOf(grantedInstance).plan;
-const paidPlan = paidInstance === undefined ? undefined : seededLifecycleOf(paidInstance).plan;
+  grantedSession === undefined ? undefined : seededLifecycleOf(grantedSession).plan;
+const paidPlan = paidSession === undefined ? undefined : seededLifecycleOf(paidSession).plan;
 const paidTier = billingPlan(paidPlan ?? "");
 
 /**
@@ -77,15 +79,15 @@ const anchors = {
   nowIso: DEMO_NOW_ISO,
   adminUserId: ADMIN_USER_ID,
   granted: {
-    relationshipId: `relationship-${GRANTED_INSTANCE}`,
+    relationshipId: `relationship-${GRANTED_SESSION_ID}`,
     planId: grantedPlan,
-    sessionRecordId: GRANTED_INSTANCE,
+    sessionRecordId: GRANTED_SESSION_ID,
     createdAtIso: "2026-10-21T03:00:00.000Z",
   },
   paid: {
-    relationshipId: `relationship-${PAID_INSTANCE}`,
+    relationshipId: `relationship-${PAID_SESSION_ID}`,
     planId: paidPlan,
-    sessionRecordId: PAID_INSTANCE,
+    sessionRecordId: PAID_SESSION_ID,
     initiatorUserId: INITIATOR_USER_ID,
     priceCents: paidTier === undefined ? 0 : planPriceCents(paidTier, "month"),
     createdAtIso: "2026-09-28T03:00:00.000Z",
@@ -212,10 +214,10 @@ describe("the demo's admin half", () => {
     // `readAnchors()` picks an `active` and a `complete` relationship that carry a plan and are
     // bound to a demo identity. If the population stops carrying one, the seed refuses on a shared
     // branch; this fails first, by name.
-    expect(grantedInstance, `the bundle must carry ${GRANTED_INSTANCE}`).toBeDefined();
-    expect(paidInstance, `the bundle must carry ${PAID_INSTANCE}`).toBeDefined();
-    expect(seededLifecycleOf(grantedInstance!).status).toBe("active");
-    expect(seededLifecycleOf(paidInstance!).status).toBe("complete");
+    expect(grantedSession, `the bundle must carry ${GRANTED_SESSION_ID}`).toBeDefined();
+    expect(paidSession, `the bundle must carry ${PAID_SESSION_ID}`).toBeDefined();
+    expect(seededLifecycleOf(grantedSession!).status).toBe("active");
+    expect(seededLifecycleOf(paidSession!).status).toBe("complete");
     // A plan on the relationship is what makes a comp and a charge meaningful; a tierless row
     // would have the seed grant or bill a plan the relationship does not carry.
     expect(grantedPlan).toBeTruthy();

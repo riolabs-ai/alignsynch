@@ -14,7 +14,7 @@
  *
  *   - the write made both seats accepted → the **report**, because the Gap opened with it;
  *   - a first acceptance → the accept page again, now showing this seat as accepted;
- *   - a refusal → the accept page with `?accept=<code>`, the `?problem=` pattern the instance
+ *   - a refusal → the accept page with `?accept=<code>`, the `?problem=` pattern the session
  *     screen and the create form already use, so the reason survives one navigation and no more.
  *
  * **The unlock notice fires here (#258), and on the transition only.** `completed === true` is the
@@ -57,7 +57,7 @@ export async function POST(
   const jar = await cookies();
 
   const result = await acceptSession({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     viewerUserId: await viewerUserId(),
   });
@@ -73,7 +73,7 @@ export async function POST(
     // party. One attempt; a failure is an operator line and cannot undo the commit, and the
     // screen the reader lands on (the report) is the truth either way.
     await sendUnlockNotice({
-      instanceRecordId: instanceId,
+      sessionRecordId: instanceId,
       submittedBy: result.role,
     }).catch((error: unknown) => {
       console.error(

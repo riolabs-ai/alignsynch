@@ -132,7 +132,7 @@ export function reportLines(document: ReportDocument): Line[] {
 
   lines.push(line("Relationship report", 18, true));
   lines.push(line(report.title, 12, false, 4));
-  lines.push(line(`Instance ${report.slug}`, 10, false, 2));
+  lines.push(line(`Session ${report.slug}`, 10, false, 2));
   lines.push(line(`Template version ${document.template_version}`, 10, false, 10));
   lines.push(line(`Generated at ${document.generated_at}`, 10, false, 2));
   lines.push(

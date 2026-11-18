@@ -15,7 +15,7 @@
  *   the money    the paid band is absent when `paid` is `null`, says `—` when nothing was paid,
  *                and prints the plan and its instant otherwise. There is no sum anywhere.
  *
- * The rows are hand-built (`lib/db/rows.ts` shapes) for the reason `tests/instance-stage.test.ts`
+ * The rows are hand-built (`lib/db/rows.ts` shapes) for the reason `tests/session-stage.test.ts`
  * gives: the component takes a projection, so every status can be driven without a database. The
  * read's half stubs `queryRows` and `readFlowScreen`, which is the same shape
  * `tests/flow-store-identity.test.ts` uses to hold the gate database-free.
@@ -24,12 +24,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import type { Assessment } from "@/content/assessment";
 import { assessments } from "@/data/assessments";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const { queryRows, readFlowScreen } = vi.hoisted(() => ({
   queryRows: vi.fn(),
@@ -47,10 +47,10 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-detail-test";
+const SESSION_ID = "session-detail-test";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -61,7 +61,7 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 
 function answeredBy(role: "initiator" | "counterparty"): OpinionRow[] {
   return items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.item_id,
     feel: 3,
@@ -72,14 +72,14 @@ function answeredBy(role: "initiator" | "counterparty"): OpinionRow[] {
 }
 
 const bothParties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
-function rowsWith(parties: readonly PartyRow[], opinions: readonly OpinionRow[]): FlowInstanceRows {
+function rowsWith(parties: readonly PartyRow[], opinions: readonly OpinionRow[]): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "detail-test",
       record_type: "assessment",
       status: "draft",
@@ -89,8 +89,8 @@ function rowsWith(parties: readonly PartyRow[], opinions: readonly OpinionRow[])
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-detail-test",
       mode: "basic",
@@ -115,12 +115,12 @@ const complete = rowsWith(bothParties, [...answeredBy("initiator"), ...answeredB
 const invited = rowsWith([bothParties[0]], []);
 
 function render(
-  rows: FlowInstanceRows,
-  paid: Parameters<typeof AssessmentInstanceView>[0]["paid"] = null,
+  rows: FlowSessionRows,
+  paid: Parameters<typeof AssessmentSessionView>[0]["paid"] = null,
 ): string {
   const screen = projectScreen({ rows, template, viewerRole: "initiator", invite: null });
   return renderToStaticMarkup(
-    createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy, paid }),
+    createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy, paid }),
   );
 }
 
@@ -134,7 +134,7 @@ function seat(html: string, role: "initiator" | "counterparty"): string {
 describe("the read slices money to the Initiator", () => {
   const relationshipRow = {
     relationship_id: "relationship-detail-test",
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     plan: "household",
     purchased_at: new Date("2026-10-20T12:00:00.000Z"),
   };
@@ -160,10 +160,10 @@ describe("the read slices money to the Initiator", () => {
     });
 
     expect(readFlowScreen).toHaveBeenCalledWith(
-      expect.objectContaining({ instanceRecordId: INSTANCE_ID, viewerUserId: "user-avery" }),
+      expect.objectContaining({ sessionRecordId: SESSION_ID, viewerUserId: "user-avery" }),
     );
     expect(detail?.relationshipId).toBe("relationship-detail-test");
-    expect(detail?.instanceRecordId).toBe(INSTANCE_ID);
+    expect(detail?.sessionRecordId).toBe(SESSION_ID);
     expect(detail?.paid).toEqual({
       plan: "household",
       purchasedAt: "2026-10-20T12:00:00.000Z",
@@ -173,7 +173,7 @@ describe("the read slices money to the Initiator", () => {
   it("hands a Counterparty `null` even though the row carries a plan", async () => {
     readFlowScreen.mockResolvedValue(screenFor("counterparty"));
 
-    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: "user-rowan" });
+    const detail = await readRelationshipById(SESSION_ID, { viewerUserId: "user-rowan" });
 
     expect(detail?.paid).toBeNull();
   });
@@ -181,7 +181,7 @@ describe("the read slices money to the Initiator", () => {
   it("hands a coach `null` too — a coach reads the relationship, not its billing", async () => {
     readFlowScreen.mockResolvedValue(screenFor("coach"));
 
-    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: "user-coach" });
+    const detail = await readRelationshipById(SESSION_ID, { viewerUserId: "user-coach" });
 
     expect(detail?.paid).toBeNull();
   });

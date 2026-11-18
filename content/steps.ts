@@ -9,7 +9,7 @@
  *
  * ## The rule, stated once (three decisions the owner settled on PR #406)
  *
- * **1. One Step per Aspect.** For every Aspect an instance holds, the derivation emits exactly one
+ * **1. One Step per Aspect.** For every Aspect a session holds, the derivation emits exactly one
  * Step, sourced from the **widest** Gap kind on that Aspect — the distance that matters most there,
  * not every distance at once. A six-Aspect Advanced relationship therefore holds at most six Steps;
  * the earlier rule (one per non-zero kind) emitted up to forty-eight, which read as a task list
@@ -21,7 +21,7 @@
  *     the same Step on every read, in every browser, before and after a reload.
  *   - A Gap of **0** (In Synch) produces no Step: there is no distance to name, and a Step saying
  *     "already aligned" would be an action item for work nobody has to do.
- *   - A kind that is **absent** (a Basic instance's four prediction kinds, or an Aspect either party
+ *   - A kind that is **absent** (a Basic session's four prediction kinds, or an Aspect either party
  *     left unanswered) cannot be the widest: `abs(score, nothing)` is not a number, exactly as
  *     `content/gaps.ts` says.
  *
@@ -372,7 +372,7 @@ export function stepsToAdd(existing: readonly Step[], derived: readonly Step[]):
  *     finished, and closing it would turn "1 of 2 done" into "0 of 1 done" for a party who did the
  *     work; an already `closed` Step has nothing left to do;
  *   - an **authored** Step (it never had a source Gap, so no Gap falling to 0 can close it);
- *   - a Step whose Gap is **unknown** — an Aspect no longer part of the instance (soft-deleted), one
+ *   - a Step whose Gap is **unknown** — an Aspect no longer part of the session (soft-deleted), one
  *     nobody answered this session, one only one party answered, or a kind this Mode does not ask.
  *     Unknown is not 0: an absent Gap cannot be read as "done with it", because a `closed` Step is a
  *     claim that the distance disappeared, and that claim needs both answers behind it. This is the

@@ -330,7 +330,7 @@ const nextConfig = {
       },
       {
         source: "/assessment/templates/:slug/status",
-        destination: "/templates/relationship/:slug/status",
+        destination: "/dashboard/templates/:slug/status",
         permanent: true,
       },
       {
@@ -341,30 +341,33 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // #1109 — the create flow moved to the dashboard with the library, so an old address lands
+        // on the stage it named **in one hop**: `/templates/relationship/<slug>/create…` is itself a
+        // 308 below, and chaining into it would answer with two redirects for one bookmark.
         source: "/assessment/templates/:slug/create",
-        destination: "/templates/relationship/:slug/create",
+        destination: "/dashboard/templates/:slug/create",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/mode",
-        destination: "/templates/relationship/:slug/create/mode",
+        destination: "/dashboard/templates/:slug/create/mode",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/aspects",
-        destination: "/templates/relationship/:slug/create/aspects",
+        destination: "/dashboard/templates/:slug/create/aspects",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/commit",
-        destination: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
         permanent: true,
       },
       {
         // #825 — the gate that used to follow the create is retired; the account is stage 4, so a
         // bookmarked gate address lands on the stage that now asks for the account.
         source: "/assessment/templates/:slug/create/account",
-        destination: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
         permanent: true,
       },
       // #794 — the public catalogue stops owning the template noun. One row per page: the
@@ -386,9 +389,14 @@ const nextConfig = {
        *
        * **The order is load-bearing.** Next matches these in order and `:slug` matches one
        * segment, so `/templates/relationship/new` has to be spelled before the `:slug` row or the
-       * form's address would be swallowed by a rule that means "one template". The
-       * `/…/:slug/create…` paths are **not** redirected: the create flow is still mounted there
-       * (`[slug]/create/**`, phase 2 of #1109), and a single-segment pattern cannot match them.
+       * form's address would be swallowed by a rule that means "one template".
+       *
+       * **The five stage paths are redirected too, stage for stage (phase 2 of #1109).** Phase 1
+       * left them mounted; this change moved the flow to `/dashboard/templates/<slug>/create…` and
+       * deleted the old tree, so each one answers a 308 to the **same stage** — a bookmark or an
+       * invitation link that named `…/create/aspects` lands on Aspects, never on the library. The
+       * five rows are spelled out rather than folded into one because `:slug` matches a single
+       * segment: no single-segment pattern can cover them.
        */
       {
         source: "/templates/relationship",
@@ -403,6 +411,32 @@ const nextConfig = {
       {
         source: "/templates/relationship/:slug",
         destination: "/relationship-templates",
+        permanent: true,
+      },
+      // #1109 phase 2 — the create flow's five addresses, each keeping its stage.
+      {
+        source: "/templates/relationship/:slug/create",
+        destination: "/dashboard/templates/:slug/create",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/mode",
+        destination: "/dashboard/templates/:slug/create/mode",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/aspects",
+        destination: "/dashboard/templates/:slug/create/aspects",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/invite",
+        destination: "/dashboard/templates/:slug/create/invite",
         permanent: true,
       },
       //

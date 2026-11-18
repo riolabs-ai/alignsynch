@@ -66,7 +66,7 @@ export type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
  * posts this action is refused there rather than here.
  */
 export async function editRelationshipAsStaff(input: {
-  instanceRecordId?: string;
+  sessionRecordId?: string;
   record?: unknown;
   versionId?: string | null;
   counterpartyName?: string;
@@ -78,11 +78,10 @@ export async function editRelationshipAsStaff(input: {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const instanceRecordId =
-    typeof input?.instanceRecordId === "string" ? input.instanceRecordId : "";
-  if (instanceRecordId === "") return { ok: false, code: "no-such-relationship" };
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  if (sessionRecordId === "") return { ok: false, code: "no-such-relationship" };
 
-  const relationshipId = await relationshipIdOf(instanceRecordId);
+  const relationshipId = await relationshipIdOf(sessionRecordId);
   if (relationshipId === null) return { ok: false, code: "no-such-relationship" };
 
   const draft = await draftOf(input, relationshipId);
@@ -115,7 +114,7 @@ export async function editRelationshipAsStaff(input: {
 
 /** #623 — the same cost question, asked by the console before an operator commits a change. */
 export async function previewRelationshipEditAsStaff(input: {
-  instanceRecordId?: string;
+  sessionRecordId?: string;
   record?: unknown;
   versionId?: string | null;
   counterpartyName?: string;
@@ -125,11 +124,10 @@ export async function previewRelationshipEditAsStaff(input: {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const instanceRecordId =
-    typeof input?.instanceRecordId === "string" ? input.instanceRecordId : "";
-  if (instanceRecordId === "") return { ok: false, code: "no-such-relationship" };
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  if (sessionRecordId === "") return { ok: false, code: "no-such-relationship" };
 
-  const relationshipId = await relationshipIdOf(instanceRecordId);
+  const relationshipId = await relationshipIdOf(sessionRecordId);
   if (relationshipId === null) return { ok: false, code: "no-such-relationship" };
 
   const draft = await draftOf(input, relationshipId);
@@ -158,12 +156,12 @@ export async function previewRelationshipEditAsStaff(input: {
 }
 
 /** The relationship a console session belongs to, or `null` for an id this app does not audit. */
-async function relationshipIdOf(instanceRecordId: string): Promise<string | null> {
+async function relationshipIdOf(sessionRecordId: string): Promise<string | null> {
   const rows = await queryRows<{ relationship_id: string }>(
     `SELECT s.relationship_id FROM session s
        JOIN record r ON r.id = s.record_id
       WHERE s.record_id = $1 AND r.record_type = 'assessment'`,
-    [instanceRecordId],
+    [sessionRecordId],
   );
   return rows[0]?.relationship_id ?? null;
 }
@@ -239,10 +237,9 @@ export async function performRepair(input: RepairInput): Promise<RepairOutcome> 
   if (user === null) return { ok: false, code: "signed-out" };
 
   const reason = typeof input?.reason === "string" ? input.reason : "";
-  const instanceRecordId =
-    typeof input?.instanceRecordId === "string" ? input.instanceRecordId : "";
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
   const actorUserId = user.userId;
-  const base = { actorUserId, instanceRecordId, reason };
+  const base = { actorUserId, sessionRecordId, reason };
 
   try {
     switch (input?.repair) {

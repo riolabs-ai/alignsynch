@@ -232,7 +232,7 @@ describe("a draft's two CTAs", () => {
      * proof the address is built from `templateSlug` and not from the storage id.
      */
     expect(html).toContain(
-      'href="/templates/relationship/member-config-abc123/create/invite?instance=member-session-abc123"',
+      'href="/dashboard/templates/member-config-abc123/create/invite?instance=member-session-abc123"',
     );
     expect(html).toContain('data-pay-modal="true"');
     expect(html).not.toContain("data-invite-blocked");
@@ -247,7 +247,7 @@ describe("a draft's two CTAs", () => {
     const html = render(flowDraft);
     expect(html).toContain('data-publish-to-counterparty="true"');
     expect(html).toContain(
-      'href="/templates/relationship/member-config-abc123/create/invite?instance=member-session-abc123"',
+      'href="/dashboard/templates/member-config-abc123/create/invite?instance=member-session-abc123"',
     );
   });
 
@@ -277,7 +277,7 @@ describe("a draft's two CTAs", () => {
     const html = render({ status: "draft", view: "not-published", sessionRecordId: null });
     expect(html).toContain('data-invite-blocked-why="no-session"');
     expect(html).toContain(NO_INVITE_WHY);
-    expect(html).toContain('href="/templates/relationship/member-config-abc123/create"');
+    expect(html).toContain('href="/dashboard/templates/member-config-abc123/create"');
     expect(html).toContain('data-invite-blocked-door="restart"');
     // Nothing inert: no disabled control, and no label with its reason hidden in a `title`.
     expect(html).not.toContain("aria-disabled");

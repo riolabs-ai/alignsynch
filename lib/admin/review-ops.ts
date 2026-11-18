@@ -213,7 +213,7 @@ async function lockIssue(sql: ActSql, issueId: string): Promise<IssueRow | null>
  * Tick or untick one checklist item.
  *
  * **`done_at` is the state; there is no second column.** Ticking writes `now()` from the
- * database's clock (never the app's — a serverless instance's clock drifts and two people ticking
+ * database's clock (never the app's — a serverless session's clock drifts and two people ticking
  * in the same minute must not disagree about which was first), unticking writes `NULL`. A
  * request that asks for the state the row is already in is refused `no-change` rather than
  * writing an audit row that says nothing happened.

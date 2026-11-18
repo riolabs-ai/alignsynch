@@ -6,9 +6,9 @@
  * pin the three claims that make it real:
  *
  *   the vocabulary   two modes, and `opinionKindsFor()` asks 2 or 4 in the glossary's order;
- *   the schema       an instance whose mode and opinion rows disagree does not parse — the
+ *   the schema       a session whose mode and opinion rows disagree does not parse — the
  *                    mixed state is unrepresentable, not merely unwritten;
- *   the fixtures     every seeded instance names its mode, and only the Advanced one carries
+ *   the fixtures     every seeded session names its mode, and only the Advanced one carries
  *                    Think and Guess.
  *
  * The negative cases spread the **real** fixtures and change one thing, the way
@@ -19,15 +19,15 @@ import { describe, expect, it } from "vitest";
 import {
   MODE_LABELS,
   opinionKindsFor,
-  zAssessmentInstance,
+  zAssessmentSession,
   zAssessmentMode,
 } from "@/content/assessment";
-import { assessmentInstances, starterInstances } from "@/data/assessments";
+import { assessmentSessions, starterSessions } from "@/data/assessments";
 
 /** The Advanced fixture: five Aspects, four opinions each, on both sides. */
-const advanced = assessmentInstances.find((instance) => instance.slug === "noor-iris");
+const advanced = assessmentSessions.find((session) => session.slug === "noor-iris");
 /** The Basic feature example. */
-const basic = assessmentInstances.find((instance) => instance.slug === "avery-rowan");
+const basic = assessmentSessions.find((session) => session.slug === "avery-rowan");
 
 if (advanced === undefined || basic === undefined) {
   throw new Error("the Noor/Iris and Avery/Rowan fixtures are this file's subject");
@@ -52,9 +52,9 @@ describe("the vocabulary", () => {
   });
 });
 
-describe("the instance's mode is a parse-time fact", () => {
+describe("the session's mode is a parse-time fact", () => {
   it("accepts the Advanced fixture, whose Think and Guess are on every Aspect", () => {
-    expect(zAssessmentInstance.safeParse(advanced).success).toBe(true);
+    expect(zAssessmentSession.safeParse(advanced).success).toBe(true);
     for (const party of advanced.parties) {
       for (const answer of party.opinions) {
         expect(answer.opinions.think, `${party.name} ${answer.itemId}`).toBeDefined();
@@ -64,7 +64,7 @@ describe("the instance's mode is a parse-time fact", () => {
   });
 
   it("accepts the Basic fixture, which carries no Think or Guess anywhere", () => {
-    expect(zAssessmentInstance.safeParse(basic).success).toBe(true);
+    expect(zAssessmentSession.safeParse(basic).success).toBe(true);
     for (const party of basic.parties) {
       for (const answer of party.opinions) {
         expect(answer.opinions.think, `${party.name} ${answer.itemId}`).toBeUndefined();
@@ -73,7 +73,7 @@ describe("the instance's mode is a parse-time fact", () => {
     }
   });
 
-  it("rejects a Basic instance whose party answers Think and Guess, naming the party and Aspect", () => {
+  it("rejects a Basic session whose party answers Think and Guess, naming the party and Aspect", () => {
     const mixed = {
       ...basic,
       parties: [
@@ -89,7 +89,7 @@ describe("the instance's mode is a parse-time fact", () => {
       ] as typeof basic.parties,
     };
 
-    const parsed = zAssessmentInstance.safeParse(mixed);
+    const parsed = zAssessmentSession.safeParse(mixed);
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
     const message = parsed.error.issues.map((issue) => issue.message).join(" ");
@@ -99,7 +99,7 @@ describe("the instance's mode is a parse-time fact", () => {
     expect(parsed.error.issues[0]?.path).toEqual(["parties", 0, "opinions", 0, "opinions"]);
   });
 
-  it("rejects an Advanced instance whose party skips Think and Guess on one Aspect", () => {
+  it("rejects an Advanced session whose party skips Think and Guess on one Aspect", () => {
     const short = {
       ...advanced,
       parties: [
@@ -115,7 +115,7 @@ describe("the instance's mode is a parse-time fact", () => {
       ] as typeof advanced.parties,
     };
 
-    const parsed = zAssessmentInstance.safeParse(short);
+    const parsed = zAssessmentSession.safeParse(short);
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
     const message = parsed.error.issues.map((issue) => issue.message).join(" ");
@@ -125,7 +125,7 @@ describe("the instance's mode is a parse-time fact", () => {
   });
 
   it("rejects a mode the model does not define", () => {
-    const parsed = zAssessmentInstance.safeParse({ ...basic, mode: "half" });
+    const parsed = zAssessmentSession.safeParse({ ...basic, mode: "half" });
     expect(parsed.success).toBe(false);
     if (!parsed.success) {
       expect(parsed.error.issues.some((issue) => issue.path.join(".") === "mode")).toBe(true);
@@ -136,8 +136,8 @@ describe("the instance's mode is a parse-time fact", () => {
 describe("the fixtures name their mode", () => {
   it("gives every authored demonstration exactly one mode, authored rather than defaulted", () => {
     // The four demonstrations (#1079 added a population of rows beneath them, which is data, not the
-    // set that defines the shape — `starterInstances` is that set, and it is what this pins).
-    const modes = starterInstances.map((instance) => [instance.slug, instance.mode]);
+    // set that defines the shape — `starterSessions` is that set, and it is what this pins).
+    const modes = starterSessions.map((session) => [session.slug, session.mode]);
     expect(modes).toEqual([
       ["avery-rowan", "basic"],
       ["ruth-sam", "basic"],
@@ -147,7 +147,7 @@ describe("the fixtures name their mode", () => {
   });
 
   it("keeps exactly one Advanced demonstration, and it is noor-iris", () => {
-    const advancedOnes = starterInstances.filter((instance) => instance.mode === "advanced");
-    expect(advancedOnes.map((instance) => instance.slug)).toEqual(["noor-iris"]);
+    const advancedOnes = starterSessions.filter((session) => session.mode === "advanced");
+    expect(advancedOnes.map((session) => session.slug)).toEqual(["noor-iris"]);
   });
 });

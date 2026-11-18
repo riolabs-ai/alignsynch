@@ -41,9 +41,8 @@ declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
-const STAGE_PATH = "/templates/relationship/relationship-basics/create/mode";
-const NEXT_STAGE =
-  "http://localhost:3000/templates/relationship/relationship-basics/create/aspects";
+const STAGE_PATH = "/dashboard/templates/relationship-basics/create/mode";
+const NEXT_STAGE = "http://localhost:3000/dashboard/templates/relationship-basics/create/aspects";
 
 const push = vi.fn();
 
@@ -241,6 +240,6 @@ describe("advancing inside the dialog", () => {
     expect(init.method).toBe("POST");
     expect(String(init.body)).toContain("mode=fixed");
     // The answer's address is pushed: a soft navigation keeps the page underneath the dialog.
-    expect(push).toHaveBeenCalledWith("/templates/relationship/relationship-basics/create/aspects");
+    expect(push).toHaveBeenCalledWith("/dashboard/templates/relationship-basics/create/aspects");
   });
 });

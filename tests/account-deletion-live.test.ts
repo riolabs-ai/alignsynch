@@ -382,7 +382,7 @@ async function snapshot(pool: Pool): Promise<Record<string, unknown>> {
   return rows[0] ?? {};
 }
 
-/** The counts `instanceStatusOf()` reads, for one session. */
+/** The counts `sessionStatusOf()` reads, for one session. */
 async function sessionCounts(pool: Pool, sessionRecordId: string): Promise<Record<string, number>> {
   const { rows } = await pool.query(
     `SELECT
@@ -452,7 +452,7 @@ describe.skipIf(!live)("account deletion, live (§7's nine proofs)", () => {
     await runAccountDeletion(probeUserId);
 
     const counts = await sessionCounts(pool, completeSessionId);
-    // `instanceStatusOf()`'s own rule, over the rows the sweep left behind.
+    // `sessionStatusOf()`'s own rule, over the rows the sweep left behind.
     expect(counts.voided).toBe(0);
     expect(counts.counterparties).toBe(1);
     expect(counts.item_count).toBe(itemCount);
@@ -464,7 +464,7 @@ describe.skipIf(!live)("account deletion, live (§7's nine proofs)", () => {
     // GAP_ROWS_SQL inner-joins both roles' opinions per Aspect and filters on completeness, so a
     // row existing IS both answers and a surviving report.
     const population = await readGapPopulation();
-    const survivor = population.instances.find((i) => i.instanceId === completeSessionId);
+    const survivor = population.sessions.find((i) => i.sessionId === completeSessionId);
     expect(survivor).toBeDefined();
     expect(survivor?.aspects).toHaveLength(itemCount);
   });

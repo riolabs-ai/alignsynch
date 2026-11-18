@@ -134,7 +134,12 @@ export default async function AuthPage({
   const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
   const demo: DemoViewProps =
     surface.kind === "roles"
-      ? { kind: "roles", action: signInAsDemoRole }
+      ? // #1187 — the buttons carry the page the browser asked to return to, and `""` when it
+        // asked for nothing: the action validates the value and falls back to the role's own
+        // destination (`/admin/instances` for the admin), which is the documented landing this
+        // panel has always had. `settled` is deliberately not what travels here — it is already
+        // this brand's `AFTER_SIGN_IN`, which would make the role's destination unreachable.
+        { kind: "roles", action: signInAsDemoRole, next: target ?? "" }
       : surface.kind === "entry"
         ? { kind: "entry" }
         : { kind: "off" };

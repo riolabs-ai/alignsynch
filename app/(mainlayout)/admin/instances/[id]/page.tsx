@@ -31,7 +31,7 @@ import { notFound } from "next/navigation";
 import { RelationshipOperations } from "@/components/admin/relationship-operations";
 import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import { adminRelationshipPageCopy } from "@/data/pages/admin-relationship";
-import { ADMIN_INSTANCES_PATH } from "@/lib/admin/instance-registry";
+import { ADMIN_SESSIONS_PATH } from "@/lib/admin/session-registry";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -53,7 +53,7 @@ export default async function AdminRelationshipPage({
   params: Promise<{ id: string }>;
 }) {
   requireAdminProduct();
-  const { user } = await requireAdmin({ next: `${ADMIN_INSTANCES_PATH}/[id]` });
+  const { user } = await requireAdmin({ next: `${ADMIN_SESSIONS_PATH}/[id]` });
 
   const { id } = await params;
 
@@ -112,7 +112,7 @@ export default async function AdminRelationshipPage({
           <RelationshipEditPanel
             copy={adminRelationshipPageCopy}
             state={editState}
-            instanceRecordId={detail.instanceRecordId}
+            sessionRecordId={detail.sessionRecordId}
             onPreview={previewRelationshipEditAsStaff}
             onEdit={editRelationshipAsStaff}
           />

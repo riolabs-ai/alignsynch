@@ -41,7 +41,7 @@
  *
  *   step   1..n, contiguous across the three paths (a reader can key on it)
  *   path   "create-published" | "create-draft" | "unpaid"
- *   route  where the step happened, with run-specific ids normalised to `<instance>` so two runs on
+ *   route  where the step happened, with run-specific ids normalised to `<session>` so two runs on
  *          an unchanged tree produce the same bytes
  *   action "fill" | "click" | "assert"
  *   values { field: value } — verbatim what was entered, empty for clicks and asserts
@@ -66,7 +66,7 @@
  *
  * ## It runs on the seeded demo branch, and leaves it as it found it
  *
- * The target is the demo instance with the demo dataset in it: example relationships, the demo
+ * The target is the demo session with the demo dataset in it: example relationships, the demo
  * accounts and the templates. A driver against whatever happens to be in the branch is not
  * reproducible, so the seed runs first (unless `DEMO_FLOW_SKIP_SEED=1`) and takes the branch's own
  * advisory lock — never raced, never forced.
@@ -156,7 +156,7 @@ const WIDTH = 1440;
 const VIEWPORT_HEIGHT = 900;
 
 const TEMPLATE_SLUG = "relationship-basics";
-const CREATE = `/templates/relationship/${TEMPLATE_SLUG}/create`;
+const CREATE = `/dashboard/templates/${TEMPLATE_SLUG}/create`;
 
 /** The persona's own words. Fixed strings, so two runs produce the same transcript. */
 const PERSONA = {
@@ -405,8 +405,8 @@ async function cleanup() {
       await db.query("DELETE FROM coach_invite WHERE relationship_id = ANY($1::text[])", [ids]);
     }
 
-    for (const instanceId of created) {
-      await db.query("DELETE FROM record WHERE id = $1", [instanceId]);
+    for (const sessionId of created) {
+      await db.query("DELETE FROM record WHERE id = $1", [sessionId]);
     }
 
     if (strays.size > 0) {
@@ -681,7 +681,7 @@ async function walkCreateStages(send, persona, { mode, setting }) {
     actual: await stageLine(send),
     name: "stage-4-account",
   });
-  return instanceIdOf(await url(send));
+  return sessionIdOf(await url(send));
 }
 
 /**
@@ -742,7 +742,7 @@ function onBase(printed) {
 }
 
 /** The relationship id stage 5 carries: `?instance=<id>`. */
-function instanceIdOf(href) {
+function sessionIdOf(href) {
   try {
     return new URL(href).searchParams.get("instance");
   } catch {
@@ -750,18 +750,18 @@ function instanceIdOf(href) {
   }
 }
 
-/** Register the instance the moment its id is readable (#865). */
-function registerInstance(instanceId) {
-  if (typeof instanceId === "string" && instanceId !== "" && !created.includes(instanceId)) {
-    created.push(instanceId);
+/** Register the session the moment its id is readable (#865). */
+function registerSession(sessionId) {
+  if (typeof sessionId === "string" && sessionId !== "" && !created.includes(sessionId)) {
+    created.push(sessionId);
   }
 }
 
-async function relationshipIdOf(instanceId) {
+async function relationshipIdOf(sessionId) {
   const { rows } = await db.query(
     `SELECT DISTINCT relationship_id AS id FROM session
       WHERE record_id = $1 AND relationship_id IS NOT NULL`,
-    [instanceId],
+    [sessionId],
   );
   for (const row of rows) {
     if (!relationships.includes(row.id)) relationships.push(row.id);
@@ -785,10 +785,10 @@ async function commitDraft(send, pathLabel) {
     timeout: 30000,
     label: "stage 5 after the commit",
   });
-  const instanceId = instanceIdOf(await url(send));
-  registerInstance(instanceId);
-  const relationshipId = instanceId === null ? null : await relationshipIdOf(instanceId);
-  return { instanceId, relationshipId };
+  const sessionId = sessionIdOf(await url(send));
+  registerSession(sessionId);
+  const relationshipId = sessionId === null ? null : await relationshipIdOf(sessionId);
+  return { sessionId, relationshipId };
 }
 
 /* ------------------------------------------------------------------ *
@@ -1281,7 +1281,7 @@ async function walkCreatePublished(send) {
     name: "stage-4-signed-in",
   });
 
-  const { instanceId } = await commitDraft(send, "published");
+  const { sessionId } = await commitDraft(send, "published");
 
   const invite = await text(send);
   await record(send, {
@@ -1292,7 +1292,7 @@ async function walkCreatePublished(send) {
     name: "stage-5-invite",
   });
 
-  if (instanceId === null) {
+  if (sessionId === null) {
     finding("stage 5 does not carry ?instance=<id>, so the relationship cannot be identified", {
       expected: "?instance=<relationship record id>",
       actual: await url(send),
@@ -1459,8 +1459,8 @@ async function walkCreateDraft(send) {
   });
 
   await walkCreateStages(send, PERSONA.draft, { mode: "basic", setting: "soft" });
-  const { instanceId } = await commitDraft(send, "draft");
-  if (instanceId === null) {
+  const { sessionId } = await commitDraft(send, "draft");
+  if (sessionId === null) {
     finding("create-draft: stage 5 does not carry ?instance=<id>", {
       expected: "?instance=<relationship record id>",
       actual: await url(send),
@@ -1605,8 +1605,8 @@ async function walkUnpaid(send) {
 
   await navigate(send, CREATE);
   await walkCreateStages(send, PERSONA.unpaid, { mode: "advanced", setting: "full" });
-  const { instanceId, relationshipId } = await commitDraft(send, "unpaid");
-  if (instanceId === null) {
+  const { sessionId, relationshipId } = await commitDraft(send, "unpaid");
+  if (sessionId === null) {
     finding("unpaid: stage 5 does not carry ?instance=<id>", {
       expected: "?instance=<relationship record id>",
       actual: await url(send),
@@ -1956,7 +1956,7 @@ async function seedDrift(client) {
   const authored = [
     ...(payload.templates ?? []).map((record) => record.id),
     ...(payload.records ?? []).map((record) => record.id),
-    ...(payload.instances ?? []).map((record) => record.id),
+    ...(payload.sessions ?? []).map((record) => record.id),
     ...(payload.assessments ?? []).map((record) => record.id),
   ].filter((id) => typeof id === "string");
   if (authored.length === 0) return { checked: false, extra: [] };
@@ -2179,7 +2179,7 @@ function pngSize(file) {
  *
  * **Why this exists beside `--check`.** `--check` is a *regeneration* diff: to answer "does the
  * committed transcript still describe a walk of this tree" it has to walk again, so it needs the
- * demo instance, a browser, `DATABASE_URL` and the branch's rows — and it seeds and deletes rows
+ * demo session, a browser, `DATABASE_URL` and the branch's rows — and it seeds and deletes rows
  * doing it. That is a maintainer's command and can never be a gate step, because the gate is
  * database-free by doctrine (`AGENTS.md`) and CI has no credentials, no server and no Chrome. This
  * is the half that can be a gate step: it reads two committed things, the transcript and the PNGs
@@ -2206,7 +2206,7 @@ function pngSize(file) {
  *      paths and images they name.
  *
  * **What it cannot answer, and does not pretend to:** whether a *fresh* walk would write this. That
- * needs the live instance, so the transcript is regenerable by a maintainer, not by CI.
+ * needs the live session, so the transcript is regenerable by a maintainer, not by CI.
  */
 function verifyCommitted() {
   const fail = (message) => {

@@ -26,6 +26,7 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
 import { LeavingLink } from "@/components/layout/leaving-link";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
+import { registerPathFor } from "@/lib/auth/paths";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
@@ -516,7 +517,14 @@ export function LoginView({
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
               {onSwitchToRegister === undefined ? (
-                <Link href="/register" className="text-action">
+                /*
+                 * #1187 — the link carries `next`, so `/register` honours the same return the
+                 * sign-in form does. A bare `/register` dropped the query, and the sign-up then
+                 * landed on the brand's `AFTER_SIGN_IN` with the flow's draft stranded behind a
+                 * cookie nothing read. `registerPathFor()` is `#867`'s builder for this hop; it
+                 * re-runs `safeNextPath`, so a hostile value cannot become an off-site `next`.
+                 */
+                <Link href={registerPathFor(next)} className="text-action">
                   {itemLabel(form, "signup-action")}
                 </Link>
               ) : (
@@ -533,7 +541,9 @@ export function LoginView({
             {/* The demo surfaces, resolved on the server (#218). `off` renders nothing — no
                 disabled control, no hint, the same page this route rendered before the demo. */}
             {demo.kind === "entry" && <DemoEntry copy={copy} />}
-            {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
+            {demo.kind === "roles" && (
+              <DemoRoles copy={copy} action={demo.action} next={demo.next} />
+            )}
           </CardContent>
         </FormSurface>
 

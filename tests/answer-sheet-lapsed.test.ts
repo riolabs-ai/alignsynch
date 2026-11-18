@@ -24,7 +24,7 @@ const LAPSED: Membership = {
 
 function gate(overrides: Partial<Parameters<typeof answerGateOf>[0]> = {}) {
   return answerGateOf({
-    instanceRecordId: "c8832c24-5196-4ebe-aaa6-2e89a9e04720",
+    sessionRecordId: "c8832c24-5196-4ebe-aaa6-2e89a9e04720",
     status: "answering",
     viewerRole: "counterparty",
     viewerAccepted: false,

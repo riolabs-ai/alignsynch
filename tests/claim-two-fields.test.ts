@@ -61,7 +61,7 @@ const TOKEN = "k".repeat(43);
 
 const PREVIEW: InvitePreview = {
   state: "claimable",
-  instanceRecordId: "assessment-instance-avery-rowan",
+  sessionRecordId: "assessment-instance-avery-rowan",
   initiatorName: "Avery",
   counterpartyName: "Rowan",
   templateTitle: "Relationship Basics",

@@ -1,0 +1,8 @@
+{
+  "version": "1.22.0",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "approved_by": "jadenblack",
+  "approved_at": "2026-11-17T18:05:00Z",
+  "url": "https://github.com/riolabs-ai/alignsynch/issues/1064#issuecomment-0000000000",
+  "reason": "fixture — a shape for the tests, not an approval of any release"
+}

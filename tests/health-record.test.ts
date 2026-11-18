@@ -154,7 +154,7 @@ describe("the recorder's postcondition", () => {
         dbVerify: {
           ...record().dbVerify,
           database:
-            "scratch branch platform-health-probe (copy of demo), one instance deliberately broken for the #508 proof",
+            "scratch branch platform-health-probe (copy of demo), one session deliberately broken for the #508 proof",
           exitCode: 1,
           result: "fail",
         },

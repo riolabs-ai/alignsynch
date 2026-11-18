@@ -196,7 +196,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   // #1126 — the CRUD & Permissions matrix. Budget 0 from the first commit: the status vocabulary,
-  // the nine column names, the counts' captions, the failure panel, the eleven P0 gaps and the six
+  // the column names, the counts' captions, the failure panel, the eleven P0 gaps and the six
   // role × action rules are `data/pages/admin-permissions.ts`, so the next literal written in
   // `permissions-console.tsx` is a red build. Attribution is the component subdirectory, not the
   // whole `components/admin` domain, because `/admin/review` already owns that number.
@@ -204,6 +204,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/permissions/page.tsx",
     dirs: ["components/admin/permissions"],
     fixture: "data/pages/admin-permissions",
+    budget: 0,
+  },
+  // #1138 — the transactional-mail register. Budget 0: the six column labels, the three state
+  // words, the five recipient words, the two class words and the fifteen refusal sentences are
+  // `data/pages/admin-email-templates.ts`, so the next literal written in `email-template-registry.tsx`
+  // is a red build. Attribution is the component subdirectory, because `/admin/templates` already
+  // owns the whole `components/admin` number.
+  "/admin/email-templates": {
+    page: "app/(mainlayout)/admin/email-templates/page.tsx",
+    dirs: ["components/admin/email-templates"],
+    fixture: "data/pages/admin-email-templates",
+    budget: 0,
+  },
+  // The editor: the three fields, the chip list, the four actions, the two preview panels and the
+  // version table are the same fixture — one screen's copy, so the same number covers both routes.
+  "/admin/email-templates/[id]": {
+    page: "app/(mainlayout)/admin/email-templates/[id]/page.tsx",
+    dirs: ["components/admin/email-templates"],
+    fixture: "data/pages/admin-email-templates",
     budget: 0,
   },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
@@ -602,9 +621,9 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    * "Pages" and "Assessments & pages" describe the same rows. So the surface names
    * `data/pages/shell` as its fixture, exactly as the two `search` / `search-alignsynch` sections
    * are shared today, and E23 attributes this route's own component directory
-   * (`components/search/**`) to it. `data/pages/index.ts` maps `"/search"` to the same instance
+   * (`components/search/**`) to it. `data/pages/index.ts` maps `"/search"` to the same session
    * for the same reason — a budget with no copy entry is a stale slot, and the copy it points at
-   * is the instance the page renders.
+   * is the session the page renders.
    *
    * Budget 0, measured: the body's title, result count, empty states, no-query state and the
    * difficulty filter's options were all literals in `components/search/search-results.tsx`
@@ -694,34 +713,37 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // `data/pages/assessment-sent.ts`, and the two bands it shares with the other screens are
   // referenced from `data/pages/lifecycle.ts` and `data/pages/assessment-instance.ts`. Attribution
   // is reachability, so this row counts `sent-state.tsx` and what it mounts, and the resend and
-  // copy bands' own copy stays the instance fixture's.
+  // copy bands' own copy stays the session fixture's.
   "/assessment/instances/[instanceId]/sent": {
     page: "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-sent",
     budget: 0,
   },
-  "/templates/relationship/[slug]/create": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[id]/create": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/create/page.tsx",
+    // #1109 — the stage module moved out of `app/` into `components/flow/template-create/`, so the
+    // closure this row attributes gained a directory: the words are still the fixture's, and the
+    // budget stays 0 with the module counted.
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #688 — stage 2 (Mode) of the same flow. Its own row because attribution is per surface, and
   // the fixture is shared on purpose: two stages that print different words for one relationship
   // would be the copy drift this table exists to stop. Budget 0, so the form's next literal is red.
-  "/templates/relationship/[slug]/create/mode": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[id]/create/mode": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/create/mode/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #689 — stage 3 (Aspects). The same row shape and the same fixture, for the same reason: the
   // list is one stage of one flow, and its words belong beside the two forms' words. Budget 0, so a
   // sentence typed into the list is a red build rather than a second vocabulary.
-  "/templates/relationship/[slug]/create/aspects": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[id]/create/aspects": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/create/aspects/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
@@ -730,16 +752,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // card's labels, the two prices and the account stage's copy are a red build if they are typed
   // into a component. #825 — the gate is retired and this is the account stage itself, which still
   // reads the same fixture: its words are this flow's words, not a second create vocabulary.
-  "/templates/relationship/[slug]/create/commit": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[id]/create/commit": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/create/commit/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #825 — stage 5, Invite. The same row again, for the same reason: one flow, one vocabulary.
-  "/templates/relationship/[slug]/create/invite": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[id]/create/invite": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/create/invite/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },

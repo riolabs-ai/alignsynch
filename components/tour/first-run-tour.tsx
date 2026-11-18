@@ -165,9 +165,9 @@ export function FirstRunTour({
         },
       };
 
-      const instance = driver(config);
-      tourRef.current = instance;
-      instance.drive();
+      const session = driver(config);
+      tourRef.current = session;
+      session.drive();
     });
 
     return () => {

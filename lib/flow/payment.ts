@@ -32,7 +32,7 @@
  *
  * **Not measured is a third answer, not `false`.** `paymentArmedOf(null)` is `undefined`: a
  * relationship created before this card has no obligation row, and calling that "unpaid" would
- * flip every existing completed session back into a payment state. `instanceStatusOf()` therefore
+ * flip every existing completed session back into a payment state. `sessionStatusOf()` therefore
  * reads `false` as a gate and `undefined` as "nobody asked", and `relationship_payment` is written
  * at creation from now on, so every new relationship is measured.
  *

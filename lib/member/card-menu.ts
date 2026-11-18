@@ -164,7 +164,7 @@ export interface RelationshipMenuFacts {
   /** The destination the card's own action points at (the wizard for a draft, the details otherwise). */
   readonly actionHref: string;
   /** The session a resend re-mints an invitation for; `null` before anything was sent. */
-  readonly instanceRecordId: string | null;
+  readonly sessionRecordId: string | null;
 }
 
 /**
@@ -199,7 +199,7 @@ export function relationshipMenuOf(
     case "waiting":
       return [
         open,
-        ...(facts.instanceRecordId === null
+        ...(facts.sessionRecordId === null
           ? []
           : [
               {

@@ -39,14 +39,14 @@ export const DEMO_ACCOUNT_EMAILS: Readonly<Record<DemoRole, string>> = {
 };
 
 /**
- * The instance both member accounts are parties to.
+ * The session both member accounts are parties to.
  *
  * `db:seed` binds Avery and Rowan by `party.user_id` on this record, so it is the screen a demo
  * sign-in lands on. A constant rather than a query: the panel asks which party *this account*
- * is on this one instance, and an account being a party elsewhere would not be a demo any more
+ * is on this one session, and an account being a party elsewhere would not be a demo any more
  * specific than the dataset it was seeded from.
  */
-export const DEMO_INSTANCE_ID = "assessment-instance-avery-rowan";
+export const DEMO_SESSION_ID = "assessment-instance-avery-rowan";
 
 /** The role each seeded account holds. `admin` is the only one that is not a member. */
 export const DEMO_ACCOUNT_ROLES: Readonly<Record<DemoRole, UserRole>> = {
@@ -63,7 +63,7 @@ export function demoRoleOf(value: unknown): DemoRole | undefined {
 /**
  * Where a button sends the browser once the session exists.
  *
- * The two members land on the shared instance screen, where the blind rule decides what they
+ * The two members land on the shared session screen, where the blind rule decides what they
  * may read (`lib/flow/state.ts::visibleRoles`); the admin has no party to answer as, so the
  * Overview would be three zeroes and an empty state, and it lands on the operator's registry
  * instead — `/admin/instances`, the console surface that shows every relationship in the
@@ -76,11 +76,11 @@ export function demoRoleOf(value: unknown): DemoRole | undefined {
  * `user_profile.role` has nothing to click, so the button no longer points at it.
  *
  * The path is a literal, like the member one above, and the route it names is declared in
- * `lib/admin/instance-registry.ts::ADMIN_INSTANCES_PATH`. This module is imported by the role
+ * `lib/admin/session-registry.ts::ADMIN_SESSIONS_PATH`. This module is imported by the role
  * buttons' client component (`components/auth/demo-roles.tsx`), and that module carries the
  * registry's row type and derivations — importing the constant from it would put the whole
  * registry in the browser bundle for one string.
  */
 export function destinationFor(role: DemoRole): string {
-  return role === "admin" ? "/admin/instances" : `/assessment/instances/${DEMO_INSTANCE_ID}`;
+  return role === "admin" ? "/admin/instances" : `/assessment/instances/${DEMO_SESSION_ID}`;
 }

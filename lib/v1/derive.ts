@@ -2,9 +2,9 @@
  * lib/v1/derive.ts — the /v1 prototype's derivations, all pure.
  *
  * The one thing the prototype must not re-implement is the arithmetic: a Gap is
- * `content/gaps.ts::gapKindsOf`, a verdict is `instanceAlignment`, a stage is
+ * `content/gaps.ts::gapKindsOf`, a verdict is `sessionAlignment`, a stage is
  * `content/stages.ts::stageOf`. This module only wraps them around the prototype's own
- * relationship shape (`V1Relationship`), which the real `zAssessmentInstance` cannot hold while a
+ * relationship shape (`V1Relationship`), which the real `zAssessmentSession` cannot hold while a
  * relationship is mid-flight. No React, no Next, no clock, no `lib/db/**` — the client store
  * imports it, and it stays out of the server graph for the same reason.
  *
@@ -15,7 +15,7 @@
  * leak a value.
  */
 import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
-import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
+import { gapKindsIn, gapKindsOf, sessionAlignment } from "@/content/gaps";
 import { stageOf, type RelationshipStage } from "@/content/stages";
 import type { V1Relationship, V1Session } from "@/data/v1/fixtures";
 
@@ -85,7 +85,7 @@ export function aspectGapsOf(rel: V1Relationship, itemId: string): GapKinds {
   return gapKindsOf(initiator, counterparty);
 }
 
-/** Every Aspect's Gaps, in the instance's own order, for `instanceAlignment`. */
+/** Every Aspect's Gaps, in the session's own order, for `sessionAlignment`. */
 export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
   return rel.items.map((item) => ({ itemId: item.id, gaps: aspectGapsOf(rel, item.id) }));
 }
@@ -93,7 +93,7 @@ export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
 /** The verdict under the relationship's Setting — null until the session is complete (accepted). */
 export function verdictOf(rel: V1Relationship): AlignmentVerdict | null {
   if (!sessionCompleteOf(rel)) return null;
-  return instanceAlignment(allAspectGaps(rel), rel.setting);
+  return sessionAlignment(allAspectGaps(rel), rel.setting);
 }
 
 /**
@@ -219,7 +219,7 @@ export interface SessionSummary {
 
 /**
  * One completed session, read through the same arithmetic the report reads: the verdict is
- * `instanceAlignment` over the session's own answers, the widest and mean Gaps are computed
+ * `sessionAlignment` over the session's own answers, the widest and mean Gaps are computed
  * from those answers. Nothing here is stored — a timeline row that quoted a stored number
  * would be the Gap-as-column defect one level up.
  */
@@ -231,7 +231,7 @@ export function sessionSummaryOf(rel: V1Relationship, session: V1Session): Sessi
     if (initiator === undefined || counterparty === undefined) continue;
     aspects.push({ itemId: item.id, gaps: gapKindsOf(initiator, counterparty) });
   }
-  const verdict = instanceAlignment(aspects, rel.setting);
+  const verdict = sessionAlignment(aspects, rel.setting);
   let widest: number | null = null;
   let sum = 0;
   let count = 0;

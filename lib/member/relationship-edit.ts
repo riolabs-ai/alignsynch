@@ -30,7 +30,7 @@
  * **The answers a removal strands are deleted, and the count is the audit row's.** The owner's
  * decision on #623 authorises that ("the invalidation is stated before saving"), and there is no
  * other honest option: an `opinion` row keyed to an Aspect the sheet no longer asks leaves the
- * instance incomplete (`V6`/`V15`) and a reader unable to say what was answered. Deleting the item
+ * session incomplete (`V6`/`V15`) and a reader unable to say what was answered. Deleting the item
  * and its answers together keeps every count consistent, which is what those checks measure.
  *
  * **Ownership is checked inside the transaction, and so is the audience.** A member may edit their

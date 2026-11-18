@@ -10,9 +10,9 @@ import {
   parseCreateDraft,
 } from "@/lib/flow/create-draft";
 import {
-  createInstanceFromTemplate,
+  createSessionFromTemplate,
   FlowError,
-  type CreatedInstance,
+  type CreatedSession,
   type FlowErrorCode,
 } from "@/lib/flow/store";
 import {
@@ -20,8 +20,8 @@ import {
   createInviteForPath,
   createModePath,
   createRelationshipPath,
-  instancePath,
-  RELATIONSHIP_TEMPLATES_PATH,
+  sessionPath,
+  TEMPLATE_LIBRARY_PATH,
 } from "@/lib/flow/paths";
 import { loginPathFor } from "@/lib/auth/paths";
 import {
@@ -62,7 +62,7 @@ function refusalTarget(
   const slug = templateSlug.trim();
   const back =
     slug === ""
-      ? RELATIONSHIP_TEMPLATES_PATH
+      ? TEMPLATE_LIBRARY_PATH
       : fromDraft
         ? createCommitPath(slug)
         : createRelationshipPath(slug);
@@ -81,17 +81,14 @@ function refusalTarget(
  */
 function fieldTarget(request: Request, templateSlug: string, field: string, reason: string): URL {
   const slug = templateSlug.trim();
-  const target = new URL(
-    slug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(slug),
-    request.url,
-  );
+  const target = new URL(slug === "" ? TEMPLATE_LIBRARY_PATH : createModePath(slug), request.url);
   target.searchParams.set("problem", reason);
   target.searchParams.set("field", field);
   return target;
 }
 
 /**
- * `POST /assessment/new` — create an instance, then redirect to it (#146).
+ * `POST /assessment/new` — create a session, then redirect to it (#146).
  *
  * A route handler and not a server action, for two reasons: the flow has to be drivable
  * with a plain HTML form (no client bundle, and `curl` can post it), and the acceptance is
@@ -119,7 +116,7 @@ function fieldTarget(request: Request, templateSlug: string, field: string, reas
  * **The creator's account is read from the session, not from the post** (#213 follow-up). The
  * form carries two names, an address, a mode and a setting; it carries no identity, and none is
  * read from it — `currentUserIfConfigured()` resolves the account from the request's own cookies,
- * and that id is what the store writes on the Initiator's party row. It is what makes the instance
+ * and that id is what the store writes on the Initiator's party row. It is what makes the session
  * appear in the creator's `/assessment/instances` list, which filters by exactly that column.
  * Signed out (or on a tree with no auth env) the id is `null` and the create behaves as it always
  * did. The Counterparty is deliberately left unbound: they are not the person creating it, and
@@ -213,9 +210,9 @@ export async function POST(request: Request): Promise<Response> {
           email: draft.email,
         };
 
-  let created: CreatedInstance;
+  let created: CreatedSession;
   try {
-    created = await createInstanceFromTemplate({
+    created = await createSessionFromTemplate({
       templateRecordId,
       initiatorName: who.initiatorName,
       counterpartyName: who.counterpartyName,
@@ -234,7 +231,7 @@ export async function POST(request: Request): Promise<Response> {
       // the session row; a blank value falls to the schema's documented default (`soft`), so a
       // post that predates the radios still creates what it always created.
       alignmentSetting: draft?.alignmentSetting ?? value("alignmentSetting"),
-      // #689 — stage 3's list. Read as the person left it: `createInstanceFromTemplate` decides
+      // #689 — stage 3's list. Read as the person left it: `createSessionFromTemplate` decides
       // whether it is still the version's copy (ids and order kept, `aspects_authored_at` NULL) or
       // the creator's own list (added, removed or reordered — written as given, with the instant
       // recorded), and V4 is asked the matching question (#699).
@@ -262,14 +259,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   jar.set(
-    partyCookieName(created.instanceRecordId),
+    partyCookieName(created.sessionRecordId),
     created.initiatorToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
   // The Initiator's own copy of the invitation, so the screen can show the link while the
   // invite is unclaimed — the whole degraded path when no email key is configured.
   jar.set(
-    inviteCookieName(created.instanceRecordId),
+    inviteCookieName(created.sessionRecordId),
     created.inviteToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
@@ -288,8 +285,8 @@ export async function POST(request: Request): Promise<Response> {
   return NextResponse.redirect(
     new URL(
       slug === ""
-        ? instancePath(created.instanceRecordId)
-        : createInviteForPath(slug, created.instanceRecordId),
+        ? sessionPath(created.sessionRecordId)
+        : createInviteForPath(slug, created.sessionRecordId),
       request.url,
     ),
     303,

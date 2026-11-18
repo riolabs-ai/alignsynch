@@ -11,7 +11,7 @@
  *   3. the arithmetic — for every kind and every pair of scores 1..5, the kind's value is
  *      `gapOf()` of exactly the two scores its pair names, and nothing throws;
  *   4. the fixtures — all eight numbers on every Aspect of `noor-iris` (hand-computed,
- *      quoted below), four numbers and four absences on the Basic instances;
+ *      quoted below), four numbers and four absences on the Basic sessions;
  *   5. the property the glossary implies — swapping the two parties is an involution on
  *      the kinds: Feel/Wish are unchanged, and each party's prediction kind becomes the
  *      other party's.
@@ -23,12 +23,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type {
-  AssessmentInstance,
-  OpinionKind,
-  Opinions,
-  PartyRole,
-} from "../../content/assessment";
+import type { AssessmentSession, OpinionKind, Opinions, PartyRole } from "../../content/assessment";
 import {
   ADVANCED_GAP_KINDS,
   BASIC_GAP_KINDS,
@@ -49,28 +44,25 @@ import {
   type GapSource,
 } from "../../content/gaps";
 import { gapOf, type Gap, type Score } from "../../content/record";
-import { assessmentInstances } from "../../data/assessments";
+import { assessmentSessions } from "../../data/assessments";
 
-const instanceNamed = (slug: string): AssessmentInstance => {
-  const instance = assessmentInstances.find((entry) => entry.slug === slug);
-  if (instance === undefined) throw new Error(`the fixture has no instance "${slug}"`);
-  return instance;
+const sessionNamed = (slug: string): AssessmentSession => {
+  const session = assessmentSessions.find((entry) => entry.slug === slug);
+  if (session === undefined) throw new Error(`the fixture has no session "${slug}"`);
+  return session;
 };
 
 /** One party's stored answers on one Aspect. */
-const opinionsOf = (instance: AssessmentInstance, role: PartyRole, itemId: string): Opinions => {
-  const party = instance.parties.find((candidate) => candidate.role === role);
-  if (party === undefined) throw new Error(`${instance.slug} has no ${role}`);
+const opinionsOf = (session: AssessmentSession, role: PartyRole, itemId: string): Opinions => {
+  const party = session.parties.find((candidate) => candidate.role === role);
+  if (party === undefined) throw new Error(`${session.slug} has no ${role}`);
   const answer = party.opinions.find((candidate) => candidate.itemId === itemId);
   if (answer === undefined) throw new Error(`${party.name} answers no Aspect "${itemId}"`);
   return answer.opinions;
 };
 
-const gapsFor = (instance: AssessmentInstance, itemId: string) =>
-  gapKindsOf(
-    opinionsOf(instance, "initiator", itemId),
-    opinionsOf(instance, "counterparty", itemId),
-  );
+const gapsFor = (session: AssessmentSession, itemId: string) =>
+  gapKindsOf(opinionsOf(session, "initiator", itemId), opinionsOf(session, "counterparty", itemId));
 
 /** Every score at 3, then the two scores a kind compares — the sweep's starting point. */
 const opinionsWith = (party: PartyRole, sides: Array<[GapSource["left"], Score]>): Opinions => {
@@ -189,7 +181,7 @@ describe("the arithmetic", () => {
     }
 
     // A prediction kind needs the predictor's Think/Guess and the other party's
-    // Feel/Wish — the *actual* is required on every instance, the prediction is not. So a
+    // Feel/Wish — the *actual* is required on every session, the prediction is not. So a
     // half-Advanced pair measures the party who predicted and not the one who did not.
     assert.deepEqual(gapKindsIn(gapKindsOf(advanced, basic)), [
       ...BASIC_GAP_KINDS,
@@ -207,7 +199,7 @@ describe("the arithmetic", () => {
   });
 
   it("is symmetric in the subtraction but not in the pair: swapping parties swaps the prediction kinds", () => {
-    const noor = instanceNamed("noor-iris");
+    const noor = sessionNamed("noor-iris");
     const itemId = "aspect-check-ins";
     const forward = gapsFor(noor, itemId);
     const swapped = gapKindsOf(
@@ -238,7 +230,7 @@ describe("the fixtures", () => {
    *   aspect-affection           4      4       3      4        1    0    0     1
    */
   it("gives a Basic instance four kinds and no prediction to measure", () => {
-    const avery = instanceNamed("avery-rowan");
+    const avery = sessionNamed("avery-rowan");
     assert.equal(avery.mode, "basic");
 
     const expected: Record<string, [Gap, Gap, Gap, Gap]> = {
@@ -264,12 +256,12 @@ describe("the fixtures", () => {
   });
 
   it("gives every Basic fixture in the collection four kinds, and marco-priya exactly that", () => {
-    const marco = instanceNamed("marco-priya");
-    for (const instance of assessmentInstances) {
-      if (instance.mode !== "basic") continue;
-      for (const item of instance.items) {
-        const gaps = gapsFor(instance, item.id);
-        assert.deepEqual(gapKindsIn(gaps), [...BASIC_GAP_KINDS], `${instance.slug} ${item.id}`);
+    const marco = sessionNamed("marco-priya");
+    for (const session of assessmentSessions) {
+      if (session.mode !== "basic") continue;
+      for (const item of session.items) {
+        const gaps = gapsFor(session, item.id);
+        assert.deepEqual(gapKindsIn(gaps), [...BASIC_GAP_KINDS], `${session.slug} ${item.id}`);
       }
     }
     assert.equal(gapKindsIn(gapsFor(marco, "aspect-work-priorities")).length, 4);
@@ -289,7 +281,7 @@ describe("the fixtures", () => {
    *   aspect-privacy             1    3    1     1       2       1       0       3 |      1        1
    */
   it("gives the Advanced fixture all eight kinds on every Aspect, and the numbers are these", () => {
-    const noor = instanceNamed("noor-iris");
+    const noor = sessionNamed("noor-iris");
     assert.equal(noor.mode, "advanced");
 
     const expected: Record<string, Record<GapKind, Gap>> = {
@@ -358,7 +350,7 @@ describe("the fixtures", () => {
    * they make, and the same-kind difference that is a different number.
    */
   it("measures a prediction against the other party's actual, not against their prediction", () => {
-    const noor = instanceNamed("noor-iris");
+    const noor = sessionNamed("noor-iris");
     const itemId = "aspect-privacy";
     const initiator = opinionsOf(noor, "initiator", itemId);
     const counterparty = opinionsOf(noor, "counterparty", itemId);
@@ -397,7 +389,7 @@ describe("the fixtures", () => {
   });
 
   it("never reports a prediction kind on a Basic instance, whatever the caller asks", () => {
-    const avery = instanceNamed("avery-rowan");
+    const avery = sessionNamed("avery-rowan");
     for (const item of avery.items) {
       const gaps = gapsFor(avery, item.id);
       for (const kind of ADVANCED_GAP_KINDS) assert.equal(gaps[kind], undefined);
@@ -417,7 +409,7 @@ describe("the fixtures", () => {
  * headings would print the same number twice under two different names.
  *
  * `groupsIn()` is the same rule one level up from `gapKindsIn()`: a group exists when it has a
- * present kind, which is why a Basic instance draws two tables and never an empty third.
+ * present kind, which is why a Basic session draws two tables and never an empty third.
  */
 describe("the groups", () => {
   it("is the specification's three headings, in its order", () => {
@@ -449,8 +441,8 @@ describe("the groups", () => {
   });
 
   it("drops a group with no present kind, so Basic never draws a Prediction table", () => {
-    const avery = instanceNamed("avery-rowan");
-    const noor = instanceNamed("noor-iris");
+    const avery = sessionNamed("avery-rowan");
+    const noor = sessionNamed("noor-iris");
     for (const item of avery.items) {
       assert.deepEqual(
         groupsIn(gapsFor(avery, item.id)).map((group) => group.id),

@@ -1,15 +1,15 @@
 /**
  * The admin console's own routes, in one place (#503).
  *
- * `ADMIN_INSTANCES_PATH` already lives next to the registry it names
- * (`lib/admin/instance-registry.ts`), because that module's derivation is what the route renders.
+ * `ADMIN_SESSIONS_PATH` already lives next to the registry it names
+ * (`lib/admin/session-registry.ts`), because that module's derivation is what the route renders.
  * The two things added here are the routes a *repair* screen needs to link to: the log its write
  * lands in, and one relationship's detail screen. They are functions rather than spelled-out
  * strings so the page, the nav row and the registry's row link cannot disagree about an address —
  * and E10 only reads literal `href` attributes, so a path built from a constant is invisible to it
  * in exactly the way a route manifest entry makes safe.
  */
-import { ADMIN_INSTANCES_PATH } from "@/lib/admin/instance-registry";
+import { ADMIN_SESSIONS_PATH } from "@/lib/admin/session-registry";
 
 /** `/admin/audit` — the log every `act()` write lands in. */
 export const ADMIN_AUDIT_PATH = "/admin/audit";
@@ -56,15 +56,30 @@ export function adminInboxMessagePath(messageId: string): string {
  * Here rather than beside `lib/admin/templates.ts` (#502a): the editor is a client component and
  * needs the route to link to, while that module opens a pool. A pure path in a module that
  * imports `lib/db/**` is the E34 crossing the client graph forbids — the same reason
- * `adminRelationshipPath` lives here and not in `instance-registry`'s database half.
+ * `adminRelationshipPath` lives here and not in `session-registry`'s database half.
  */
 export function adminTemplatePath(templateId: string): string {
   return `${ADMIN_TEMPLATES_PATH}/${templateId}`;
 }
 
+/**
+ * `/admin/email-templates` — the transactional-mail override editor (#1138).
+ *
+ * Here for the reason every admin path in this file is: the screen's own components link to it and
+ * to each template's editor, and `lib/admin/email-templates.ts` opens a pool. `templateId` is the
+ * **register's** id (`counterparty-invitation`), not a row id — the row is the override, and there
+ * may be none at all, which is why the address cannot be built from a version.
+ */
+export const ADMIN_EMAIL_TEMPLATES_PATH = "/admin/email-templates";
+
+/** `/admin/email-templates/<id>` — one registered template, its versions and its editor. */
+export function adminEmailTemplatePath(templateId: string): string {
+  return `${ADMIN_EMAIL_TEMPLATES_PATH}/${templateId}`;
+}
+
 /** `/admin/instances/<id>` — one relationship, and its five repairs. */
-export function adminRelationshipPath(instanceRecordId: string): string {
-  return `${ADMIN_INSTANCES_PATH}/${instanceRecordId}`;
+export function adminRelationshipPath(sessionRecordId: string): string {
+  return `${ADMIN_SESSIONS_PATH}/${sessionRecordId}`;
 }
 
 /**
@@ -73,8 +88,8 @@ export function adminRelationshipPath(instanceRecordId: string): string {
  * A child of the repair screen rather than a sibling: the report belongs to the row, and the
  * operator who is repairing it is the one who reissues it.
  */
-export function adminReportPath(instanceRecordId: string): string {
-  return `${adminRelationshipPath(instanceRecordId)}/report`;
+export function adminReportPath(sessionRecordId: string): string {
+  return `${adminRelationshipPath(sessionRecordId)}/report`;
 }
 
 /**
@@ -83,6 +98,6 @@ export function adminReportPath(instanceRecordId: string): string {
  * One handler, two formats, because the read, the gate and the audit row are identical and only
  * the bytes differ. A second route would be a second place to forget the gate.
  */
-export function adminReportExportPath(instanceRecordId: string, format: "json" | "pdf"): string {
-  return `${adminReportPath(instanceRecordId)}/export?format=${format}`;
+export function adminReportExportPath(sessionRecordId: string, format: "json" | "pdf"): string {
+  return `${adminReportPath(sessionRecordId)}/export?format=${format}`;
 }

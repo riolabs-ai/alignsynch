@@ -12,7 +12,7 @@
  * **What varies from the two templates, and why.**
  *
  *   - *The numbers are per-viewer counts.* Every figure on this page is arithmetic over the rows
- *     `listMyInstances()` returned for the session's own `user_id` (`lib/flow/overview.ts`), or the
+ *     `listMySessions()` returned for the session's own `user_id` (`lib/flow/overview.ts`), or the
  *     length of the published-template read. Nothing here is authored, nothing is a percentage,
  *     and there is no string that could carry a formatted figure — `StatCard.value` is a `number`.
  *   - *The cards link to `/assessment/instances`, not to quiz routes.* A count is a question
@@ -23,8 +23,8 @@
  *     so in a sentence and given the one action that changes it; the cards stay, because a zero
  *     that opens an empty list is true and checkable, and hiding it would be a second claim.
  *
- * **The blind rule, on the page most likely to leak it.** `MyInstance.state` is derived from the
- * viewer's own answered count (`myInstanceStateOf`), and `awaiting-other` is a sentence about the
+ * **The blind rule, on the page most likely to leak it.** `MySession.state` is derived from the
+ * viewer's own answered count (`mySessionStateOf`), and `awaiting-other` is a sentence about the
  * other party's *absence of completion*, never their progress: no card here counts how many
  * Aspects somebody else answered, and the type it reads does not carry that number. `reports-open`
  * is the viewer's own `unlock_seen_at`, not a shared "read" flag. A dashboard is the easiest place
@@ -59,15 +59,15 @@ import Link from "next/link";
 export function ConsoleOverview({
   copy,
   name,
-  instances,
+  sessions,
   templates,
   unreadable,
 }: {
   copy: PageCopy;
   /** The session's display name — the fallback when no profile has been saved. */
   name: string;
-  /** Every instance this account is a party to, from `listMyInstances(user.userId)`. */
-  instances: readonly OverviewRow[];
+  /** Every session this account is a party to, from `listMySessions(user.userId)`. */
+  sessions: readonly OverviewRow[];
   /** `listPublishedTemplates().length` — the templates the catalogue is showing today. */
   templates: number;
   /** The database layer's sentence when the reads did not answer; `null` when they did. */
@@ -94,7 +94,7 @@ export function ConsoleOverview({
 
   const counts = sectionOf(copy, "counts");
   const empty = sectionOf(copy, "empty");
-  const figures = overviewCountsOf(instances);
+  const figures = overviewCountsOf(sessions);
 
   const cards: readonly StatCard[] = [
     {
@@ -157,7 +157,7 @@ export function ConsoleOverview({
         )}
       </section>
 
-      {instances.length === 0 && (
+      {sessions.length === 0 && (
         <section data-overview-empty="true">
           <Card>
             <CardHeader>

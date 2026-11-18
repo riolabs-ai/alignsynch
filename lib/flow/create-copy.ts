@@ -248,7 +248,7 @@ export type TemplateCopyCode =
 /**
  * **The door guard (#870).** Why this template cannot be copied — or `null` when it can.
  *
- * The store answers the same question at commit (`lib/flow/store.ts`, `createInstanceFromTemplate`)
+ * The store answers the same question at commit (`lib/flow/store.ts`, `createSessionFromTemplate`)
  * and that check stays as the last line of defence. This one runs at **stage 1**, before a single
  * field is collected: an unpublished template used to be refused at the end of stage 4, after the
  * person had typed six facts, chosen a Mode and reworded five Aspects, and the refusal landed on a

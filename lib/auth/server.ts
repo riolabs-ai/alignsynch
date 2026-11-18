@@ -10,10 +10,10 @@ import { readOnlyRequestContext } from "@/lib/auth/request-context";
  * The auth server itself lives in Neon, on the branch this build is linked to, and
  * users and sessions live in the `neon_auth` schema of that branch's database. Nothing
  * here runs Better Auth migrations or owns a database adapter — the SDK is a thin server
- * client over the branch's hosted instance.
+ * client over the branch's hosted session.
  *
  * **Created on first request, not at import.** `createNeonAuth()` validates its config
- * eagerly, so a module-scope instance throws `Missing required config: cookies.secret`
+ * eagerly, so a module-scope session throws `Missing required config: cookies.secret`
  * while `next build` collects page data for `/api/auth/[...path]` — which made every build
  * without auth env (CI, a Vercel preview) fail. A build must need neither a database nor
  * an auth secret; a request to `/api/auth/*` needs the secret, and nothing else does.

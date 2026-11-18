@@ -21,7 +21,8 @@ const WIRED = EMAIL_TEMPLATES.filter((template) => template.body !== undefined);
 describe("the file and the register agree", () => {
   it("generates a body for every template that reads one, and nothing else", () => {
     expect(Object.keys(EMAIL_BODIES).sort()).toEqual(WIRED.map((template) => template.id).sort());
-    expect(WIRED).toHaveLength(9);
+    // Nine before #1139 split the lapse notice by seat; the two pause mails moved in beside it.
+    expect(WIRED).toHaveLength(11);
   });
 
   it("names, by id, the two templates that carry their body in code", () => {

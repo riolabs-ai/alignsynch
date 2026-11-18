@@ -31,25 +31,28 @@ line separates one block from the next; a paragraph's lines are joined with a sp
 wherever you like. Every `{{name}}` must be one of the names in the table below, and it is replaced
 with the fact the template already holds; the check names any placeholder a template does not hold.
 
-| section (template id)     | what it may say                                            |
-| ------------------------- | ---------------------------------------------------------- |
-| `counterparty-invitation` | `{{inviter}}` `{{counterparty}}` `{{template}}` `{{link}}` |
-| `invitation-reminder`     | `{{inviter}}` `{{template}}` `{{link}}` `{{expires_on}}`   |
-| `counterparty-joined`     | `{{joiner}}` `{{inviter}}` `{{template}}` `{{link}}`       |
-| `gap-report-ready`        | `{{recipient}}` `{{other}}` `{{template}}` `{{link}}`      |
-| `trial-ending`            | `{{recipient}}` `{{trial_ends_on}}` `{{link}}`             |
-| `membership-lapsed`       | `{{recipient}}` `{{template}}` `{{ended_on}}` `{{link}}`   |
-| `support-reply`           | `{{recipient}}` `{{subject}}` `{{received_on}}`            |
-| `signup-confirmation`     | `{{address}}`                                              |
-| `purchase-confirmation`   | `{{recipient}}` `{{plan}}` `{{link}}`                      |
+| section (template id)     | what it may say                                                           |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `counterparty-invitation` | `{{inviter}}` `{{counterparty}}` `{{template}}` `{{link}}`                |
+| `invitation-reminder`     | `{{inviter}}` `{{template}}` `{{link}}` `{{expires_on}}`                  |
+| `counterparty-joined`     | `{{joiner}}` `{{inviter}}` `{{template}}` `{{link}}`                      |
+| `gap-report-ready`        | `{{recipient}}` `{{other}}` `{{template}}` `{{link}}`                     |
+| `trial-ending`            | `{{recipient}}` `{{trial_ends_on}}` `{{link}}`                            |
+| `membership-lapsed`       | `{{recipient}}` `{{template}}` `{{ended_on}}` `{{link}}`                  |
+| `trial-ended-paused`      | `{{recipient}}` `{{template}}` `{{ended_on}}` `{{link}}` `{{plans_link}}` |
+| `relationship-paused`     | `{{recipient}}` `{{template}}` `{{paused_on}}` `{{link}}`                 |
+| `support-reply`           | `{{recipient}}` `{{subject}}` `{{received_on}}`                           |
+| `signup-confirmation`     | `{{address}}`                                                             |
+| `purchase-confirmation`   | `{{recipient}}` `{{plan}}` `{{link}}`                                     |
 
-The four `*_on` names are calendar dates — `YYYY-MM-DD`, printed from the instant the record stores,
+The five `*_on` names are calendar dates — `YYYY-MM-DD`, printed from the instant the record stores,
 never computed from a clock, so the mail says the same day however often it is rendered.
 
 ### Where the body does not live here
 
-Two of the eleven templates keep their body in code, and that is deliberate. Both were already written
-before this file existed — each carries a sentence this file's one-fence shape cannot express.
+Two of the thirteen templates keep their body in code, and that is deliberate. Both were already
+written before this file existed — each carries a sentence this file's one-fence shape cannot
+express.
 
 | template                   | why this file has no section for it                                                                                                         |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,7 +88,7 @@ This invitation is the way in to {{template}}, and it stops working on {{expires
 
 ```text
 The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is
-left.
+left. Your trial has started, and it runs from the day the invitation was accepted.
 ```
 
 ## gap-report-ready
@@ -107,6 +110,19 @@ edit.
 ```text
 Nothing was deleted: the membership that paid for {{template}} ended, and what it bought is still
 yours to read.
+```
+
+## trial-ended-paused
+
+```text
+Align is paused on {{template}}. Nothing was deleted: everything you both answered is saved, and
+both of you can still read it.
+```
+
+## relationship-paused
+
+```text
+Align is paused for now; you'll hear when it resumes.
 ```
 
 ## support-reply
