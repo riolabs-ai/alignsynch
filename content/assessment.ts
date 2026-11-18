@@ -430,9 +430,22 @@ export type SeededLifecycle = z.infer<typeof zSeededLifecycle>;
  * The table, and why each row is the only coherent set of rows for that word (each line is also
  * what `sessionStatusOf()`, `inviteStateOf()` and V5/V6 ask for):
  *
- *   draft      one seat (the initiator's own), no invitation, no answers, never published. Stages
- *              1–3 of the create flow are a cookie (`lib/flow/create-draft.ts`), and stage 4's
- *              account is what writes this row (`docs/specs/flow-stages.md`).
+ * **`invite` says what the `session_invite` row holds, and every word in the table has one (#1196).**
+ * #1079 read a draft as "nothing sent, so no link" and had the seed delete the row; the product
+ * disagrees, and the product's writer is the one a person presses. Both `createSessionFromTemplate`
+ * (`lib/flow/store.ts:401`, the insert at `:797`) and the dashboard's `publishRelationship`
+ * (`lib/member/relationships.ts:1607`) insert the invitation in the same transaction as the
+ * relationship, so a draft carries the token Send later reissues — and a draft without the row is a
+ * state the product never produces, where Send can only answer `no-invitation`. The word `none` is
+ * therefore gone **from `invite`**: the three left are the row the create wrote (`created`), the row a
+ * send mailed (`sent`), and the row a claim spent (`claimed`). A draft and a pending relationship hold
+ * the *same* row; what differs is the relationship's own word, which is which one of them happened.
+ *
+ *   draft      one seat (the initiator's own), **the invitation row the create wrote — unclaimed and
+ *              never mailed** (`invite: "created"`), no answers, never published. Stages 1–3 of the
+ *              create flow are a cookie (`lib/flow/create-draft.ts`), and stage 4's account is what
+ *              writes this row (`docs/specs/flow-stages.md`) — in the same transaction as the
+ *              invitation, which is why a draft has one (#1196).
  *   pending    one seat, the invitation **sent and unclaimed**, no answers. Stage 5's send.
  *   published  both seats (the claim put the counterparty in theirs), the invitation claimed, and
  *              `answers` decides whether one side or both have filled their sheet in. Nobody has
@@ -447,7 +460,7 @@ export type SeededLifecycle = z.infer<typeof zSeededLifecycle>;
 export interface DerivedLifecycle {
   readonly status: RelationshipLifecycleStatus;
   readonly plan: "basic" | "principal" | null;
-  readonly invite: "none" | "sent" | "claimed";
+  readonly invite: "created" | "sent" | "claimed";
   readonly seats: "initiator" | "both";
   readonly answers: "none" | "initiator" | "both";
   readonly accepted: "none" | "both";
@@ -487,7 +500,10 @@ export function seededLifecycleOf(session: {
       return {
         status,
         plan: null,
-        invite: "none",
+        // #1196 — the row the create wrote, not an absent one: `createSessionFromTemplate` inserts
+        // it in the relationship's own transaction, and stage 5's Send reissues it. Unclaimed, and
+        // `sent` is deliberately not the word: nothing has been mailed yet.
+        invite: "created",
         seats: "initiator",
         answers: "none",
         accepted: "none",

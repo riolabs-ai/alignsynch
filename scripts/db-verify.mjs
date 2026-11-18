@@ -164,7 +164,9 @@
  *   V31 a **seeded relationship is coherent with its dataset** (#975, #1079): for every instance
  *       `data/assessments.ts` authors, the `relationship` row beside it carries exactly the lifecycle
  *       the dataset declares — the status, the three instants, the two reason columns, and the
- *       invitation whose presence and claim state the status implies. V21 asserts the *session*
+ *       invitation whose presence and claim state the status implies (**present for every word,
+ *       a draft included** — #1196: the product writes it in the relationship's own transaction, so
+ *       its absence is what stage 5's Send answers `no-invitation` over). V21 asserts the *session*
  *       against the same declaration; this asserts the *relationship*, because the two rows describe
  *       one pair and a branch where they disagree renders two screens saying opposite things.
  *       The finding it was written for (#975): all four relationships read `draft` — 0030's default
@@ -720,11 +722,15 @@ const SEEDED_RELATIONSHIP_SQL = `
  *   status                     the stored word must be the authored word
  *   published_at / completed_at / expired_at   present exactly when the lifecycle says so
  *   lapse_reason / void_reason the words the row carries, or NULL
- *   session_invite             absent for a draft, present otherwise, claimed exactly when a seat
+ *   session_invite             **present for every status** (#1196), and claimed exactly when a seat
  *                              exists — `claimInvite()` is the only path that creates a counterparty,
  *                              so a seat without a claimed invitation is a row written by something
- *                              that skipped the product (D16), and an invitation the status says was
- *                              never sent is the same finding from the other side
+ *                              that skipped the product (D16). A draft carries the row from its
+ *                              create (`created`), a `pending` one the row a send mailed (`sent`), and
+ *                              a relationship with no row at all is the state no product writer
+ *                              produces: stage 5's Send reads that row to mint the outgoing token, so
+ *                              its absence is exactly the `no-invitation` three seeded drafts used to
+ *                              answer on the demo branch
  *   the counterparty seat      present exactly when the lifecycle says both seats exist
  *
  * A relationship that does not exist at all is reported too — a session with no relationship is the
@@ -797,18 +803,23 @@ export function seededRelationshipProblems(rows) {
       );
     }
 
-    const wantsInvite = expected.invite !== "none";
-    if (row.invite_present !== wantsInvite) {
+    // #1196 — **every** seeded relationship carries its invitation row, a draft included. The
+    // product writes it inside the relationship's own transaction
+    // (`lib/flow/store.ts:797`, `lib/member/relationships.ts:1607`), so a seeded draft without one is
+    // the state the demo used to be in: a real relationship, shown to a customer, on which stage 5's
+    // Send can only answer `no-invitation`. #1079 read a draft as "nothing sent, so no link" and this
+    // rule used to *require* the row's absence; it now reports the absence. The report is not
+    // silenced and the direction did not get weaker — the state that cannot exist is the one that
+    // fails.
+    if (!row.invite_present) {
       problems.push({
         code: "V31",
-        message: wantsInvite
-          ? `seeded relationship "${slug}" is "${expected.status}" and has no session_invite row — the status says the invitation went out, and claimInvite() is the only path that puts a counterparty in a seat: run \`pnpm db:seed\``
-          : `seeded relationship "${slug}" is a draft and carries a session_invite row — nothing has been sent, so /invite/<token> would offer a link the relationships screen says does not exist`,
+        message: `seeded relationship "${slug}" is "${expected.status}" and has no session_invite row — every path that creates a relationship writes the invitation in the same transaction, a draft included (lib/flow/store.ts:797), so a row without one is a state the product never creates and stage 5's Send can only answer no-invitation: run \`pnpm db:seed\``,
       });
-    } else if (row.invite_present && row.invite_claimed !== (expected.invite === "claimed")) {
+    } else if (row.invite_claimed !== (expected.invite === "claimed")) {
       problems.push({
         code: "V31",
-        message: `seeded relationship "${slug}" is "${expected.status}" but its invitation is ${row.invite_claimed ? "claimed" : "unclaimed"} — a claimed seat and a sent link are the same fact, and they were written from different ones`,
+        message: `seeded relationship "${slug}" is "${expected.status}" but its invitation is ${row.invite_claimed ? "claimed" : "unclaimed"} — a claimed seat and a claimed link are the same fact, and they were written from different ones`,
       });
     }
 
@@ -2325,7 +2336,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
