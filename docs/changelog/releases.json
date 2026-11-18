@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "2.0.0-rc1.1",
+      "theme": "the candidate's first patch — stage 4's empty 500 closed and named, production's ledger applied and proved, a generated .env.example, and a bundle-format bump named rather than absorbed.",
+      "headline": "`fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code (#1210)"
+    },
+    {
       "version": "2.0.0-rc1",
       "theme": "the release candidate for the v2 surface set — nine surfaces landed as one integration branch, under a declared 2.0 number, with a capture of the routes it ships.",
       "headline": "feat(v2) — the nine surfaces of 1.22 as one integration branch (#1170)"
