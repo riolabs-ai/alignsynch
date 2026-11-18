@@ -19,12 +19,21 @@
  * customer, no testimonial is computed, quoted or implied: every sentence below comes from the
  * changelog or from `data/brand.ts`.
  *
+ * **The visuals are the ones that exist, and no others (#1169).** The note draws the hero banner
+ * `public/og/email-banner.png`, then one figure per surface the entry names — each only when a
+ * matching asset is really committed under `public/`. A surface with no asset gets no figure: no
+ * stock picture, no placeholder, and above all no chart. A chart would be a number the mail
+ * computed, and the whole point of this template is that a reader can trace every value in it to
+ * the changelog entry that carried it. A table is the same rule seen from the other side — the
+ * `table` block reproduces text the entry already writes, and it never aggregates anything.
+ *
  * Two heading spellings are accepted, because the tree carries both: the generated
  * `## [1.3.0] - 2026-11-03` and the hand-written `## 1.4.0 — 2026-11-04` an owner-approved entry
  * uses. A parser that knew only one would fail the first release cut in the other style.
  */
 import { brand } from "@/data/brand";
-import { plainInline, type EmailBlock, type EmailDocument } from "./band";
+import { emailImageIfPresent } from "./blocks";
+import { plainInline, type EmailBlock, type EmailDocument, type EmailImage } from "./band";
 
 /** One release's section of the changelog, as the file carries it. */
 export interface ChangelogSection {
@@ -163,6 +172,68 @@ export function parseEntry(body: string): ParsedEntry {
 }
 
 /**
+ * The hero banner, committed by #1169 lane A and drawn by this template and nothing else.
+ *
+ * It is named here once, and its presence is *checked*, not assumed: on a tree where the file has
+ * not landed (an older `main`, a fork) the note is sent without a hero rather than with a broken
+ * image, because a figure is a courtesy and a mail is the message.
+ */
+export const RELEASE_HERO_SRC = "/og/email-banner.png";
+
+/**
+ * Where a surface's screenshot is expected: `public/og/surface-<slug>.png`.
+ *
+ * A convention rather than a table, so landing a screenshot for a new surface is a committed file
+ * and nothing else — no template edit, no registry to keep in step. A surface with no file gets no
+ * figure; that is the rule, and the alternative (a stock picture, a placeholder, a chart the mail
+ * computed) is exactly what this template must not do.
+ */
+export function surfaceAssetPath(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `/og/surface-${slug}.png`;
+}
+
+/** What a caller may nudge about the note. Every field is a seam for a test or a rehearsal. */
+export interface ReleaseNoteOptions {
+  readonly skipIntro?: number;
+  /** A surface's figure, by lowercased title, overriding `surfaceAssetPath()`. */
+  readonly surfaceAssets?: Readonly<Record<string, string>>;
+  /** The directory a figure's `src` resolves against. Defaults to `<cwd>/public`. */
+  readonly publicDir?: string;
+}
+
+/**
+ * The figures the note draws: the hero, then one per surface the entry names — each only when the
+ * committed file is really there.
+ *
+ * Nothing is generated, sampled or computed for a surface with no asset. The alt text is authored
+ * here from the surface's own title and the brand record, and the size comes from the file's bytes,
+ * so the only two sentences a reader gets about a picture are "which surface" and "which release".
+ */
+function noteFigures(
+  highlights: readonly ChangelogSubsection[],
+  section: ChangelogSection,
+  options: ReleaseNoteOptions,
+): EmailImage[] {
+  const figures: EmailImage[] = [];
+  const figure = (src: string, alt: string): void => {
+    const block = emailImageIfPresent({ src, alt }, { publicDir: options.publicDir });
+    if (block !== undefined) figures.push(block);
+  };
+
+  figure(RELEASE_HERO_SRC, `The ${brand.name} ${section.version} release banner.`);
+  for (const highlight of highlights) {
+    const src =
+      options.surfaceAssets?.[highlight.title.toLowerCase()] ?? surfaceAssetPath(highlight.title);
+    figure(src, `${highlight.title} in ${brand.name} ${section.version}.`);
+  }
+  return figures;
+}
+
+/**
  * The blocks a release note is built from, given one parsed entry.
  *
  * `skipIntro` exists because the band draws the **preheader** as the visible lead paragraph: the
@@ -171,10 +242,15 @@ export function parseEntry(body: string): ParsedEntry {
  *
  * Highlights are every `###` subsection except two: `Known limits`, which is rendered last and
  * verbatim, and the `Commits` ledger, which is provenance and is not rendered at all.
+ *
+ * Figures (#1169 lane B) go **after the entry's own prose and before the Known limits block**: the
+ * hero, then one per named surface whose asset exists. The limits stay last and untouched — a note
+ * that ends on a picture rather than on what does not work yet would be the highlight reel this
+ * template exists to refuse.
  */
 export function releaseNoteBlocks(
   section: ChangelogSection,
-  options: { skipIntro?: number } = {},
+  options: ReleaseNoteOptions = {},
 ): EmailBlock[] {
   const parsed = parseEntry(section.body);
   const limits = parsed.subsections.find((sub) => sub.title.toLowerCase() === LIMITS_TITLE);
@@ -201,6 +277,7 @@ export function releaseNoteBlocks(
       ...sub.prose.map((text): EmailBlock => ({ kind: "paragraph", text })),
       { kind: "list", items: sub.items },
     ]),
+    ...noteFigures(highlights, section, options),
     { kind: "heading", text: limits.title },
     ...limits.prose.map((text): EmailBlock => ({ kind: "paragraph", text })),
     // Verbatim: the limits are taken as the entry wrote them, bullets and all.
@@ -215,7 +292,10 @@ export function releaseNoteBlocks(
  * second brand gets its own subject without a second template. The preheader is the entry's own
  * first line, because a preview that paraphrases the body is a second sentence nobody wrote.
  */
-export function releaseNoteDocument(section: ChangelogSection): EmailDocument {
+export function releaseNoteDocument(
+  section: ChangelogSection,
+  options: ReleaseNoteOptions = {},
+): EmailDocument {
   const parsed = parseEntry(section.body);
   const first = parsed.intro[0];
   return {
@@ -223,6 +303,9 @@ export function releaseNoteDocument(section: ChangelogSection): EmailDocument {
     preheader: first ?? `${brand.name} ${section.version}, released ${section.date}.`,
     // The first intro line is the preheader and the band draws it as the lead, so the body starts
     // after it; every other paragraph of the entry is a block, in the entry's own order.
-    blocks: releaseNoteBlocks(section, { skipIntro: first === undefined ? 0 : 1 }),
+    blocks: releaseNoteBlocks(section, {
+      ...options,
+      skipIntro: first === undefined ? 0 : 1,
+    }),
   };
 }
