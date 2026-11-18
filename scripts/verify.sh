@@ -72,11 +72,15 @@
 # classifying — the local ref, else one bounded `git fetch --no-tags origin main`
 # (no checkout, no pull, no branch — see scripts/gate-lanes.sh), and the lane
 # line names the sha and the path that resolved it: `base origin/main@abc1234
-# (local ref)` / `(fetched in 0.4s)`. The fallback is unchanged and stays
-# conservative: no ref, no merge base, or an empty diff — a push to main, where
-# HEAD *is* origin/main — means the full gate, because "I could not tell what
-# changed" is never evidence that a change is cheap. A failed fetch is a reason
-# to run MORE gate, never a reason to fail it.
+# (local ref)` / `(fetched in 0.4s)`. The fallback for an UNKNOWN diff is
+# unchanged and stays conservative: no ref, no merge base, an unmerged index, a
+# detached HEAD, or standing on the base branch itself (`HEAD` *is* `origin/main`
+# — the post-merge push, the one tree no PR run gated) means the full gate,
+# because "I could not tell what changed" is never evidence that a change is
+# cheap. A KNOWN-empty diff is the opposite case and is not unknown: a clean tree
+# on a branch that has not diverged can pay for no step, because no step can see
+# a change. That is the docs lane, and the lane line says so (#1000). A failed
+# fetch is a reason to run MORE gate, never a reason to fail it.
 #
 # GATE SLOTS — one CPU budget for the whole heavy section, not just the build.
 # `next typegen`, `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check`
@@ -134,12 +138,20 @@
 # on an 8-core box that was ALSO running other agents' builds (load 7–14), so
 # every row is "as measured under real fleet load", not on a quiet box:
 #
-#   lane=docs      1–2 s    (n=4: 1.15 / 1.6 / 1.9 / 2.2)
+#   lane=docs      15–29 s   (n=3: 15.0 / 23.3 / 28.8, 2026-11-17) — a tree that
+#                 changed nothing still pays every step that runs in EVERY lane
+#                 (glossary, ui-registry, release:check, changelog:check,
+#                 docs:check, md:check, nav:menu, env:check, lint,
+#                 format:check), and those dominate it. A docs-only diff
+#                 measures 14.9–36.0 s (n=2).
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
 #                 sibling run holds the other slot (n=2: 94.5 / 147.5 — the
 #                 difference is the lock wait, printed by the gate-slot step).
+#                 A fresh worktree is the worst case — no node_modules, no
+#                 .next, a shared box — and measured 331.2 s in-gate (333.1 s
+#                 wall, n=1, 2026-11-17).
 #                 Target: p50 < 90 s. The flat gate was 145 s under the same load.
 #                 The gate slot now covers the whole heavy section rather than the
 #                 build alone; the measured table and why the default is 3 are in

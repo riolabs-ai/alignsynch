@@ -40,6 +40,29 @@
 # anyway. In a full clone the incremental one-branch fetch is small and carries
 # the same timeout.
 #
+# A KNOWN-EMPTY DIFF IS THE CHEAPEST HONEST LANE. A fresh worktree branched from
+# the tip is clean against its base, and every card used to pay the full gate for
+# that: `lane=code … no changed files … full gate`, 333 s where the docs lane is
+# a couple of seconds (#1000). Empty is only *unknown* when the tree is not the
+# branch it claims to be, so three shapes keep the conservative full gate and the
+# rest classify honestly:
+#
+#   detached HEAD            not a branch at all, so an empty diff may mean "at
+#                            the base" or "pinned 40 commits back, where the work
+#                            never entered the tree" — the trap AGENTS.md records,
+#                            where a green gate is green about nothing. A detached
+#                            HEAD *with* a diff keeps its lane: that is CI's PR
+#                            merge commit, and forcing the full gate there would
+#                            switch the lanes off where they are enforced.
+#   standing on the base     HEAD is `main` itself — a post-merge push, the one
+#   branch                   commit no PR run gated, because a squash merge makes
+#                            a tree CI never tested. That floor is deliberate
+#                            (docs/operations/repo-layers.md).
+#   unmerged index           a half-resolved conflict is not a tree anyone ships.
+#
+# No step is made optional for this: a lane may only drop steps that cannot see a
+# changed file, and with no changed file none of them can.
+#
 # Docs: docs/operations/repo-layers.md.
 
 # lane_rank <lane> -> 0..3, higher = deeper gate
@@ -99,6 +122,37 @@ lane_paths() {
     config) printf '.github/**, scripts/**, package.json, tsconfig*, biome.jsonc' ;;
     code) printf 'app/**, components/**, lib/**, hooks/** (and anything unclassified)' ;;
   esac
+}
+
+# gate_head_branch -> the branch HEAD is attached to, or '' when HEAD is detached.
+# `git rev-parse --abbrev-ref HEAD` prints the literal string `HEAD` for a detached
+# worktree — a name that reads like a branch and is not one. `symbolic-ref` simply
+# fails, so the two states cannot be confused.
+gate_head_branch() {
+  git symbolic-ref --quiet --short HEAD 2>/dev/null || true
+}
+
+# gate_base_branch <ref> -> the branch a base ref points at, or '' when the ref is
+# not branch-shaped (a sha, a tag): 'origin/main' -> 'main'.
+gate_base_branch() {
+  local ref="$1"
+  case "$ref" in
+    refs/heads/*) printf '%s' "${ref#refs/heads/}" ;;
+    refs/remotes/*)
+      ref="${ref#refs/remotes/}"
+      printf '%s' "${ref#*/}"
+      ;;
+    origin/*) printf '%s' "${ref#origin/}" ;;
+    *) printf '' ;;
+  esac
+}
+
+# gate_index_unmerged -> 0 when the index holds an unresolved path. A tree in the
+# middle of a conflict is not a tree anyone ships, whatever its paths classify as.
+gate_index_unmerged() {
+  local first
+  first="$(git ls-files --unmerged 2>/dev/null | sed -n '1p')"
+  [ -n "$first" ]
 }
 
 # --- the diff base -----------------------------------------------------------
@@ -234,10 +288,14 @@ gate_base_label() {
 # branch or a test harness. It is resolved first (see "the diff base" above):
 # local ref, else a bounded fetch of the default, else no base — full gate.
 #
+# An EMPTY diff against a resolved base is the docs lane, because no step can see
+# a change — unless the tree is one of the three shapes the header names (detached
+# HEAD, standing on the base branch, unmerged index), which stay the full gate.
+#
 # Returns 2 on a bad GATE_LANE.
 resolve_lane() {
   local req="${GATE_LANE:-auto}" ref="${GATE_REF:-origin/main}" f lane rank sha
-  local best='docs' best_rank='-1'
+  local best='docs' best_rank='-1' branch='' base_branch='' behind=''
   LANE=''
   LANE_REASON=''
   LANE_FILES=''
@@ -273,6 +331,15 @@ resolve_lane() {
     return 0
   fi
 
+  # An unmerged index is checked before the diff, not after: the answer does not
+  # depend on which files happen to be dirty, and a conflict inside `docs/` would
+  # otherwise buy the cheapest lane for a tree nobody can build.
+  if gate_index_unmerged; then
+    LANE='code'
+    LANE_REASON="unmerged index — full gate (conservative: a half-resolved conflict is not a tree anyone ships)"
+    return 0
+  fi
+
   LANE_FILES="$(
     {
       git diff --name-only --no-renames "${ref}...HEAD" 2>/dev/null || true
@@ -282,8 +349,26 @@ resolve_lane() {
   )"
 
   if [ -z "$LANE_FILES" ]; then
-    LANE='code'
-    LANE_REASON="no changed files vs $(gate_base_label) — full gate"
+    # Known-empty, or unknown-empty? See the header: an empty diff is the
+    # cheapest HONEST lane when the tree is a branch that has not diverged, and
+    # stays the full gate when the tree is not a branch, is the base branch
+    # itself, or holds an unmerged index (checked above).
+    branch="$(gate_head_branch)"
+    if [ -z "$branch" ]; then
+      LANE='code'
+      LANE_REASON="detached HEAD, no changed files vs $(gate_base_label) — full gate (conservative: an empty diff is not evidence this tree is the branch that ships)"
+      return 0
+    fi
+    base_branch="$(gate_base_branch "$ref")"
+    if [ -n "$base_branch" ] && [ "$branch" = "$base_branch" ]; then
+      LANE='code'
+      LANE_REASON="no changed files vs $(gate_base_label), and HEAD is ${branch} itself — full gate (conservative: the landed tree is the one commit no PR run gated)"
+      return 0
+    fi
+    behind="$(git rev-list --count "HEAD..${ref}" 2>/dev/null || true)"
+    case "$behind" in '' | 0) behind='' ;; esac
+    LANE='docs'
+    LANE_REASON="no changed files vs $(gate_base_label) — nothing to verify (known-empty diff)${behind:+ · HEAD is ${behind} commit(s) behind the base}"
     return 0
   fi
 

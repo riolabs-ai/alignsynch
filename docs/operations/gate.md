@@ -92,14 +92,31 @@ Reading: the same one-job workflow spends 59 s on a code PR (build 25.7 s of it)
 a docs-only PR, where the build is skipped outright. The first row is the old behaviour for
 comparison — every run paid it, because the base ref was never there.
 
-The fallback is still the floor, not a shortcut. A `push` to `main` proves it: `HEAD` _is_
-`origin/main` there, so the diff is empty and the post-merge run logs
+The fallback is still the floor, not a shortcut, and it is decided by _what the
+classifier can see_, not by the size of the diff. Unknown stays expensive: a
+missing ref, an uncomputable diff, a detached HEAD, an unmerged index, or a tree
+standing on the base branch itself all log `lane=code … full gate
+(conservative)` and pay everything. The `push` to `main` is the last of those —
+`HEAD` _is_ `origin/main` there, so its diff is empty and it pays the full gate
+(~70 s), because the squash commit is the one tree no PR run gated.
 
 ```text
- lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main — full gate)
+ lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main@d06ae7e, and HEAD is main itself — full gate (conservative: the landed tree is the one commit no PR run gated))
 ```
 
-and pays the full gate (~70 s). A missing ref or an uncomputable diff lands in the same place.
+A **known-empty** diff is the opposite case and is not unknown: a clean tree on a
+branch that has not diverged pays for no step, because no step can see a change.
+That is the docs lane, and it says so rather than passing silently (#1000):
+
+```text
+ lane=docs (docs/**, *.md — no changed files vs origin/main@d06ae7e (local ref) — nothing to verify (known-empty diff))
+```
+
+Measured on 2026-11-17, same worktree both times: **333.1 s** at `lane=code`
+(the empty-diff fallback, n=1) against **15.0 s / 23.3 s / 28.8 s** at
+`lane=docs` (n=3 — the spread is gate-slot contention on a shared box): ~305 s
+per fresh worktree, paid once per card before this. A `docs/`-only diff in the
+same tree cost 14.9–36.0 s (n=2).
 
 ## Baseline: one measured block, and how to re-derive it
 
