@@ -330,3 +330,86 @@ describe("the release note", () => {
     expect(html).not.toContain("Unsubscribe");
   });
 });
+
+/**
+ * Lane B (#1169): the note draws the visuals that exist, and only those.
+ *
+ * The rule is *conditional on the committed file*, not on a list of surface names: the hero
+ * `public/og/email-banner.png` is drawn because lane A committed it, and a surface the entry names
+ * gets a figure only when `public/og/surface-<slug>.png` is really there. The fixture entry names
+ * `Console`, and nothing has been committed for it — so the note must draw **no** figure for it.
+ * That refusal is the whole property: a stock image, a placeholder or a chart the mail invented
+ * would each be a claim the repository cannot back.
+ */
+describe("the release note draws the visuals that exist, and no others", () => {
+  const section = changelogSection(ENTRY, "9.9.9");
+  if (section === undefined) throw new Error("fixture entry did not parse");
+  const doc = releaseNoteDocument(section);
+  const { text, html } = renderEmail(doc, { emailClass: "transactional" });
+
+  const imageBlocks = doc.blocks.filter((block) => block.kind === "image");
+
+  it("draws the hero banner lane A committed", () => {
+    expect(imageBlocks).toHaveLength(1);
+    expect(imageBlocks[0]).toMatchObject({ kind: "image", src: "/og/email-banner.png" });
+    expect(html).toContain(`src="https://${brand.domain}/og/email-banner.png"`);
+  });
+
+  it("emits no figure for a surface the entry names when no asset matches", () => {
+    expect(text).not.toContain("surface-console");
+    expect(html).not.toContain("surface-console");
+    // And nothing standing in for it: no second picture, no placeholder path. Counted over the
+    // *figures*, because the header band draws the brand lockup as an `<img>` on a brand that has
+    // one and as text on a brand that does not — the note may not depend on which.
+    expect(html).not.toContain("placeholder");
+    const figures = [...html.matchAll(/<img[^>]*src="([^"]+)"/g)].filter((match) =>
+      (match[1] ?? "").includes("/og/"),
+    );
+    expect(figures).toHaveLength(1);
+  });
+
+  it("marks the hero as a picture in the plain text too, so the text half is not silent", () => {
+    expect(text).toContain(`![The ${brand.name} 9.9.9 release banner.]`);
+  });
+
+  it("draws one figure per named surface when the asset does exist", () => {
+    const withFigure = releaseNoteDocument(section, {
+      surfaceAssets: { console: "/og/release-default.png" },
+    });
+    const figures = withFigure.blocks.filter((block) => block.kind === "image");
+    expect(figures).toHaveLength(2);
+    expect(figures[1]).toMatchObject({ kind: "image", src: "/og/release-default.png" });
+    // Drawn at the file's own shape, never a stretched box.
+    const drawn = figures[1];
+    if (drawn?.kind !== "image") throw new Error("expected an image block");
+    expect(drawn.width / drawn.height).toBeCloseTo(1200 / 630, 2);
+    expect(renderEmail(withFigure, { emailClass: "transactional" }).html).toContain(
+      "/og/release-default.png",
+    );
+  });
+
+  it("places the figures after the entry's own prose and before the Known limits block", () => {
+    const heroAt = doc.blocks.findIndex((block) => block.kind === "image");
+    const limitsAt = doc.blocks.findIndex(
+      (block) => block.kind === "heading" && block.text.toLowerCase() === "known limits",
+    );
+    const lastHighlightAt = doc.blocks.findLastIndex(
+      (block) => block.kind === "list" && block.items.some((item) => item.includes("audited")),
+    );
+    expect(heroAt).toBeGreaterThan(lastHighlightAt);
+    expect(heroAt).toBeLessThan(limitsAt);
+    // The limits are still last, and still verbatim: nothing was appended below them.
+    expect(doc.blocks.at(-1)?.kind).toBe("verbatim");
+    const bodyText = text.split("\n---\n")[0] ?? "";
+    expect(
+      bodyText.trimEnd().endsWith("- Chat has no persistence — /chat has no tables behind it."),
+    ).toBe(true);
+  });
+
+  it("keeps the mail free of a stylesheet, a class or a third-party image", () => {
+    expect(html).not.toContain("<style");
+    expect(html).not.toMatch(/\sclass=/);
+    const sources = [...html.matchAll(/<img[^>]*src="([^"]+)"/g)].map((match) => match[1] ?? "");
+    for (const src of sources) expect(src.startsWith(`https://${brand.domain}/`)).toBe(true);
+  });
+});

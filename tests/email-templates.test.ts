@@ -29,7 +29,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { brand } from "@/data/brand";
-import { htmlFromText, renderEmail, type EmailClass, type EmailDocument } from "@/lib/email/band";
+import {
+  htmlFromText,
+  renderEmail,
+  type EmailClass,
+  type EmailDocument,
+  type EmailImage,
+} from "@/lib/email/band";
 import {
   EMAIL_TEMPLATES,
   invitationTemplate,
@@ -308,7 +314,15 @@ describe("every template renders both parts, text first", () => {
     it(`${item.name}: html is htmlFromText(text)`, () => {
       const rendered = item.render();
       const document = item.document();
-      expect(rendered.html).toBe(htmlFromText(rendered.text, { preheader: document.preheader }));
+      // The one input the text does not carry is a picture's intrinsic size (#1169 lane B), and it
+      // travels with the blocks — exactly as `renderEmail()` hands it over. Everything else,
+      // every sentence included, is still the text's.
+      const figures = document.blocks.filter(
+        (block): block is EmailImage => block.kind === "image",
+      );
+      expect(rendered.html).toBe(
+        htmlFromText(rendered.text, { preheader: document.preheader, figures }),
+      );
     });
 
     it(`${item.name}: the text carries no markup`, () => {
@@ -463,6 +477,31 @@ describe("the register", () => {
       expect(item.render().subject).toBe(item.document().subject);
       expect(item.render().text.split("\n")[0]).toBe(item.document().subject);
     }
+  });
+
+  it("hands #1 its third argument, so the register carries the asset lookup and not only the facts", () => {
+    // `EmailTemplate.document()` is `(facts, body?, options?)`. Twelve entries ignore both extra
+    // arguments; #1 reads the third — `ReleaseNoteOptions`, the lookup that decides whether a
+    // named surface really has a committed figure (#1169). Asserted through the **registered**
+    // entry, because a type that admitted the argument and then dropped it would typecheck and
+    // still send a note whose figures were never checked.
+    const figuresOf = (document: EmailDocument): readonly EmailImage[] =>
+      document.blocks.filter((block): block is EmailImage => block.kind === "image");
+
+    const asSent = figuresOf(releaseNoteTemplate.document(RELEASE));
+    const withSurface = figuresOf(
+      releaseNoteTemplate.document(RELEASE, undefined, {
+        surfaceAssets: { added: "/og/release-default.png" },
+      }),
+    );
+
+    // The hero is the one figure the entry itself earns; the second arrives only because the
+    // caller's lookup said which file draws this surface.
+    expect(asSent.map((figure) => figure.src)).toEqual(["/og/email-banner.png"]);
+    expect(withSurface.map((figure) => figure.src)).toEqual([
+      "/og/email-banner.png",
+      "/og/release-default.png",
+    ]);
   });
 });
 
