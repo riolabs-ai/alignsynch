@@ -677,6 +677,12 @@ else
   skip_step "env:check" "no env:check script in package.json"
 fi
 
+# What this step deliberately is NOT: it does not read the stores. `pnpm env:matrix --check` compares
+# the live Bitwarden project and every Vercel scope against `docs/operations/env-stores.md`, and it
+# needs a vault token and the Vercel CLI's session — so it is an operator step before a release, not
+# a gate step. The half that can be proven without a network (the table against `.env.example`,
+# in both directions and in order) is inside the step above, which is why it runs in every lane.
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
