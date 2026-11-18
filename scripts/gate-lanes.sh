@@ -43,9 +43,9 @@
 # A KNOWN-EMPTY DIFF IS THE CHEAPEST HONEST LANE. A fresh worktree branched from
 # the tip is clean against its base, and every card used to pay the full gate for
 # that: `lane=code … no changed files … full gate`, 333 s where the docs lane is
-# a couple of seconds (#1000). Empty is only *unknown* when the tree is not the
-# branch it claims to be, so three shapes keep the conservative full gate and the
-# rest classify honestly:
+# 15–41 s (#1000). Empty is only *unknown* when the tree is not the branch it
+# claims to be, so three shapes keep the conservative full gate and the rest
+# classify honestly:
 #
 #   detached HEAD            not a branch at all, so an empty diff may mean "at
 #                            the base" or "pinned 40 commits back, where the work
