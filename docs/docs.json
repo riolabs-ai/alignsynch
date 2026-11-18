@@ -1016,6 +1016,11 @@
           "path": "changelog/v2-0-0-rc1.md",
           "title": "v2.0.0-rc1",
           "question": "What does the v2 surface set look like as one candidate — and what does its capture prove?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-1.md",
+          "title": "v2.0.0-rc1.1",
+          "question": "What does the patch on the candidate fix — and what format change does it carry?"
         }
       ]
     }

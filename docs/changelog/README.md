@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1.1](v2-0-0-rc1-1.md)
+
+- **Released** 2026-11-18
+- **Tag** [`v2.0.0-rc1.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.1)
+- **Pull requests named** 21
+- **Theme:** the candidate's first patch — stage 4's empty 500 closed and named, production's ledger applied and proved, a generated .env.example, and a bundle-format bump named rather than absorbed.
+- **Headline:** `fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code (#1210)
+
 ### [v2.0.0-rc1](v2-0-0-rc1.md)
 
 - **Released** 2026-11-17
