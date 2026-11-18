@@ -22,6 +22,7 @@
  *   pnpm env:sync --target production --check
  *   pnpm env:sync --target preview --branch demo --check
  *   pnpm env:sync --target preview --branch demo --write
+ *   pnpm env:sync --target development --write --env-dir <a tree with .env.local>
  *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo --diff
  *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo --apply
  *   node scripts/env-sync.mjs --from .env.production --target production --apply --confirm-production
@@ -114,6 +115,9 @@ const force = Boolean(arg("force", false));
 const diff = Boolean(arg("diff", false));
 const write = Boolean(arg("write", false));
 const confirmProduction = Boolean(arg("confirm-production", false));
+/** Where the value file is read from, when the tree running this has no `.env*` (a worktree). */
+const envDirArg = arg("env-dir");
+const envDir = envDirArg && envDirArg !== true ? path.resolve(envDirArg) : null;
 
 function refuse(message) {
   console.error(`env-sync: ${message}`);
@@ -182,9 +186,13 @@ function parseEnv(text) {
   return out;
 }
 
-/* Vercel's type for a key this script creates. `sensitive` is never readable back. */
-const typeFor = (key) =>
-  /SECRET|KEY|TOKEN|PASSWORD|DATABASE_URL/.test(key) ? "sensitive" : "encrypted";
+/* Vercel's type for a key this script creates. `sensitive` is never readable back.
+   A `function` declaration, not a `const` arrow: manifest mode is awaited at the top of this
+   module, so anything declared below that line is still in its temporal dead zone when a write
+   runs — which is how `--write` crashed with `Cannot access 'typeFor' before initialization`. */
+function typeFor(key) {
+  return /SECRET|KEY|TOKEN|PASSWORD|DATABASE_URL/.test(key) ? "sensitive" : "encrypted";
+}
 
 async function call(method, url, body, tok) {
   const res = await fetch(`${API}${url}`, {
@@ -225,7 +233,11 @@ async function call(method, url, body, tok) {
  * compared, so this is not a value check and says so on the last line of every run.
  */
 async function manifestMode() {
-  const envId = target === "production" ? "production" : "preview";
+  /* The manifest's own environment id for a Vercel target: `development` is a developer's
+     `pnpm dev`, which the table calls `local`. Before this, that target was unreachable from the
+     table and sat empty — so `vercel env pull` and local `vercel dev` resolved nothing. */
+  const envId =
+    target === "production" ? "production" : target === "development" ? "local" : "preview";
   const child = spawnSync(process.execPath, [path.join(HERE, "env-manifest.ts"), "--json"], {
     cwd: ROOT,
     encoding: "utf8",
@@ -299,7 +311,7 @@ async function manifestMode() {
       "--write --target production rewrites the live project; add --confirm-production to mean it",
     );
   }
-  const file = path.join(ROOT, TARGET_FILE[target]);
+  const file = path.join(envDir ?? ROOT, TARGET_FILE[target]);
   if (!fs.existsSync(file)) {
     refuse(
       `${TARGET_FILE[target]} is not rendered yet — run \`pnpm env:render\` first (or --from)`,

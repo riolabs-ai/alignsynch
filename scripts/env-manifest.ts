@@ -85,10 +85,11 @@
  * ## CLI
  *
  *   node scripts/env-manifest.ts --check     # the gate step; census line, then findings
+ *   node scripts/env-manifest.ts --write-example   # regenerate `.env.example` from the table
  *   node scripts/env-manifest.ts --files     # local only: keys in `.env*` that no row declares
  *   node scripts/env-manifest.ts --json      # the table, for `env:sync`
  */
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -337,6 +338,18 @@ export const ENV_ROWS: readonly EnvRow[] = [
     carried,
     "Signs POST /api/resend/webhook. Unset means the endpoint refuses every delivery with a 503.",
   ),
+  row(
+    "RESEND_ENDPOINT",
+    ["optional", "optional", "optional"],
+    carried,
+    "Points a send at a capture server instead of Resend (`mailEndpoint`); unset means Resend's own.",
+  ),
+  row(
+    "RESEND_KEY_MODE",
+    ["optional", "optional", "optional"],
+    carried,
+    "Forces the mail key's mode (lib/email/key-mode.ts) — `test` or `captured`, so a send is refused.",
+  ),
 
   // --- Brand and build ------------------------------------------------------------------------
   row(
@@ -578,6 +591,18 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "CHECK_FAST_BASE", why: "the git ref `pnpm check:fast` diffs against" },
   { name: "COACH_HTML_OUT", why: "writes a rendered coach page to disk in a test" },
   { name: "DEMO_BRANCH", why: "which Neon branch demo:reset targets" },
+  {
+    name: "DEMO_BRANCH_LIMIT",
+    why: "the plan's branch ceiling a demo prune counts against (scripts/demo-branch-prune.mjs)",
+  },
+  {
+    name: "DEMO_KEEP_BRANCHES",
+    why: "branches a demo prune never deletes (scripts/demo-branch-prune.mjs)",
+  },
+  {
+    name: "DEMO_PRESERVED_MAX_AGE_DAYS",
+    why: "age after which a kept demo branch becomes prunable (scripts/demo-branch-prune.mjs)",
+  },
   { name: "DEMO_ORIGIN", why: "the origin a demo reset/deploy asserts is trusted" },
   { name: "DEMO_SOURCE_BRANCH", why: "the branch a demo reset restores from" },
   { name: "DEMO_FLOW_DEBUG_PORT", why: "debug port for the recorded demo walk" },
@@ -667,7 +692,14 @@ export interface SourceFile {
 /** One finding, naming the variable and the rule it broke. */
 export interface Problem {
   readonly name: string;
-  readonly rule: "undeclared" | "rotted" | "boot" | "environments" | "live" | "duplicate";
+  readonly rule:
+    | "undeclared"
+    | "rotted"
+    | "boot"
+    | "environments"
+    | "live"
+    | "duplicate"
+    | "example";
   readonly message: string;
 }
 
@@ -751,6 +783,17 @@ export function extractReads(files: readonly SourceFile[]): Map<string, Set<stri
     for (const match of file.source.matchAll(/process\.env\[\s*([A-Z][A-Z0-9_]*)\s*\]/g)) {
       const resolved = constants.get(match[1]);
       if (resolved !== undefined) note(resolved, file.path);
+    }
+    // A module may take the env record as a parameter that defaults to `process.env`
+    // (`mailEndpoint(env: MailEnv = process.env)`, #507, so a test can ask the same question
+    // without touching the ambient process). The read is then a property on that record, and
+    // without this rule the name reaches the table only if something else happens to read it —
+    // `RESEND_ENDPOINT` was read by `lib/flow/email.ts` and declared by no row until the store
+    // census found it in `.env.example` and in nothing else.
+    if (/=\s*process\.env\b/.test(file.source)) {
+      for (const match of file.source.matchAll(/\benv\.([A-Z][A-Z0-9_]+)/g)) {
+        note(match[1], file.path);
+      }
     }
   }
   return reads;
@@ -1019,6 +1062,159 @@ export function censusLine(census: Census): string {
   );
 }
 
+/**
+ * `.env.example` — the checked-in template, **generated from the table**.
+ *
+ * It used to be hand-maintained, and a hand-maintained list of names is not documentation: it was
+ * 30 names while the code read 45, and it could not say which scope a name was bound in, which is
+ * the whole question a deployment failure asks. So it is now a projection of `ENV_ROWS` and
+ * `pnpm env:check` fails when the two disagree in either direction.
+ *
+ * The file carries **names and decisions only** — the requirement in each of the three
+ * environments, the source of truth for each, and the row's own one-line reason. Copy it to
+ * `.env.local` and fill it in, or let `pnpm env:render` write the three files from the vault.
+ */
+export const EXAMPLE_FILE = ".env.example";
+
+/** How a requirement cell is written in the template. */
+const REQUIREMENT_LABEL: Readonly<Record<Requirement, string>> = {
+  required: "required",
+  optional: "optional",
+  forbidden: "forbidden",
+};
+
+/** One line, wrapped at `width` with `indent` on the continuation lines. */
+function wrapLine(text: string, width: number, indent: string): string[] {
+  const words = text.split(/\s+/).filter((word) => word !== "");
+  const lines: string[] = [];
+  let current = indent;
+  for (const word of words) {
+    const candidate = current === indent ? `${current}${word}` : `${current} ${word}`;
+    if (candidate.length > width && current !== indent) {
+      lines.push(current);
+      current = `${indent}${word}`;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current.trim() !== "") lines.push(current);
+  return lines;
+}
+
+/** `vault ALIGNSYNCH_PROD_DATABASE_URL` / `literal` / `carried .env.local` / `app default`. */
+function describeSource(source: Source | undefined, environment: EnvironmentId): string {
+  if (source === undefined) return "app default";
+  if ("vault" in source) return `vault ${source.vault}`;
+  if ("literal" in source) return "literal, in the table";
+  if ("derived" in source) return `derived ${source.derived}`;
+  return `carried ${ENVIRONMENT_FILES[environment]}`;
+}
+
+/** The template, rendered from the rows. Deterministic: table order, no clock, no path. */
+export function renderExample(rows: readonly EnvRow[] = ENV_ROWS): string {
+  const lines: string[] = [
+    "# GENERATED by `pnpm env:check --write-example` from scripts/env-manifest.ts — do not edit.",
+    "#",
+    "# Every name the application reads, one block each: what each of the three environments needs",
+    "# it for, where its value comes from, and the one line saying who reads it. It carries no value",
+    "# and no address — copy it to `.env.local` and fill it in, or let `pnpm env:render` write the",
+    "# three real files from the vault.",
+    "#",
+    "#   local       `.env.local`  a developer's `pnpm dev` — the demo branch's values",
+    "#   preview     `.env.demo`   the `demo` branch on Vercel → demo.alignsynch.com",
+    "#   production  `.env`        `main` on Vercel → alignsynch.com",
+    "#",
+    "# `required` — that environment cannot work without it. `optional` — the code reports its",
+    "# absence honestly. `forbidden` — that deployment must not hold it. `pnpm env:check` fails when",
+    "# this file and the table disagree in either direction, so a variable is documented by the",
+    "# change that adds it and never by memory.",
+    "",
+  ];
+
+  for (const row of rows) {
+    const cells = ENVIRONMENTS.map(
+      (environment) => `${environment} ${REQUIREMENT_LABEL[row.environments[environment]]}`,
+    ).join(" · ");
+    lines.push(`# ${row.name}${row.boot ? " — read before the first request" : ""}`);
+    lines.push(`#   ${cells}`);
+
+    const sources = ENVIRONMENTS.map((environment) => ({
+      environment,
+      described: describeSource(sourceFor(row, environment), environment),
+    }));
+    const distinct = [...new Set(sources.map((entry) => entry.described))];
+    if (distinct.length === 1) {
+      lines.push(`#   source: ${distinct[0]} — local · preview · production`);
+    } else {
+      lines.push(`#   source —`);
+      for (const entry of sources) {
+        lines.push(`#     ${entry.environment.padEnd(11)}${entry.described}`);
+      }
+    }
+    lines.push(...wrapLine(row.why, 100, "#   "));
+    lines.push(`${row.name}=`);
+    lines.push("");
+  }
+
+  return `${lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd()}\n`;
+}
+
+/** The names a template declares, in file order, from its `NAME=` lines only. */
+export function exampleNames(text: string): string[] {
+  const names: string[] = [];
+  const shape = /^([A-Z_][A-Z0-9_]*)=/;
+  for (const raw of text.split(/\r?\n/)) {
+    const match = shape.exec(raw.trim());
+    if (match !== null) names.push(match[1]);
+  }
+  return names;
+}
+
+/**
+ * The template against the table, both directions and in order.
+ *
+ * Order matters as much as membership: the template is a reading of the table, so a row that moved
+ * and was not re-rendered shows as a diff here, which is the same signal `git diff` gives a human.
+ */
+export function exampleProblems(text: string, rows: readonly EnvRow[] = ENV_ROWS): Problem[] {
+  const problems: Problem[] = [];
+  const declared = rows.map((row) => row.name);
+  const present = exampleNames(text);
+  const presentSet = new Set(present);
+  const declaredSet = new Set(declared);
+
+  for (const name of declared) {
+    if (!presentSet.has(name)) {
+      problems.push({
+        name,
+        rule: "example",
+        message: `${EXAMPLE_FILE} does not declare it — run \`pnpm env:check --write-example\``,
+      });
+    }
+  }
+  for (const name of present) {
+    if (!declaredSet.has(name)) {
+      problems.push({
+        name,
+        rule: "example",
+        message: `${EXAMPLE_FILE} declares it and no row does — delete the line, or add the row`,
+      });
+    }
+  }
+  const inOrder = present.filter((name) => declaredSet.has(name));
+  if (inOrder.join("\n") !== declared.filter((name) => presentSet.has(name)).join("\n")) {
+    problems.push({
+      name: EXAMPLE_FILE,
+      rule: "example",
+      message: "the names are out of table order — the template is a reading of the table",
+    });
+  }
+  return problems;
+}
+
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   const flag = (name: string): string | undefined => {
@@ -1036,6 +1232,18 @@ async function main(): Promise<number> {
   }
 
   const files = readTree(root);
+
+  // The template is generated, so writing it is part of the same command that checks it: one flag
+  // keeps the file and the table in step without a second script to remember.
+  if (argv.includes("--write-example")) {
+    const path = join(root, EXAMPLE_FILE);
+    writeFileSync(path, renderExample());
+    console.log(
+      `env-manifest: wrote ${EXAMPLE_FILE} from ${ENV_ROWS.length} row(s) — names and decisions ` +
+        "only, no value.",
+    );
+    return 0;
+  }
 
   if (argv.includes("--files")) {
     const declared = new Set(declaredNames());
@@ -1070,13 +1278,26 @@ async function main(): Promise<number> {
   }
 
   const report = checkManifest({ files });
+  // The template is the table's own projection, so `--check` holds it too: a row without a line
+  // and a line without a row are the same failure in two directions.
+  const examplePath = join(root, EXAMPLE_FILE);
+  const exampleFindings = existsSync(examplePath)
+    ? exampleProblems(readFileSync(examplePath, "utf8"))
+    : [
+        {
+          name: EXAMPLE_FILE,
+          rule: "example" as const,
+          message: "absent — run `pnpm env:check --write-example` and commit it",
+        },
+      ];
+  const problems = [...report.problems, ...exampleFindings];
   console.log(censusLine(report.census));
-  for (const problem of report.problems) {
+  for (const problem of problems) {
     console.error(`  ✗ ${problem.rule.padEnd(13)} ${problem.name}: ${problem.message}`);
   }
-  if (report.problems.length > 0) {
+  if (problems.length > 0) {
     console.error(
-      `\nenv-manifest: FAIL — ${report.problems.length} problem(s). The table is the contract: a row ` +
+      `\nenv-manifest: FAIL — ${problems.length} problem(s). The table is the contract: a row ` +
         "per variable, in both directions.",
     );
     return 1;
