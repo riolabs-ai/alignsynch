@@ -563,12 +563,18 @@ than inherited from whichever file happens to sit in the checkout:
 ```bash
 read -rsp 'production DATABASE_URL (unpooled): ' PROD_DB_URL && echo
 DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:migrate   # idempotent; prints applied and skipped
+DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:schema    # read-only: N files · N applied · N pending
 DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:verify    # the party rules, read back
 unset PROD_DB_URL
 ```
 
 A release with nothing to migrate still runs it, and a run that applies nothing is the expected
-answer — cheaper than discovering the column is missing at request time.
+answer — cheaper than discovering the column is missing at request time. **`db:schema` is the
+read-only half, and `db:verify` now ends with the same comparison (V34):** it prints
+`N files · N applied · N pending` and exits 1 naming every unapplied file, so a ledger behind the
+deployed code is a named failure here rather than an empty-body 500 on the first create — which is
+how #1205 was found: production's ledger stopped at `0039`, the create's `session.state` INSERT
+raised `42703`, and nobody could read why.
 
 ### 2a. When `db:verify` names a V11, clear the mark — never the row it sits on
 
