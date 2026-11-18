@@ -112,11 +112,12 @@ That is the docs lane, and it says so rather than passing silently (#1000):
  lane=docs (docs/**, *.md — no changed files vs origin/main@d06ae7e (local ref) — nothing to verify (known-empty diff))
 ```
 
-Measured on 2026-11-17, same worktree both times: **333.1 s** at `lane=code`
-(the empty-diff fallback, n=1) against **15.0 s / 23.3 s / 28.8 s** at
-`lane=docs` (n=3 — the spread is gate-slot contention on a shared box): ~305 s
-per fresh worktree, paid once per card before this. A `docs/`-only diff in the
-same tree cost 14.9–36.0 s (n=2).
+Measured on 2026-11-17, this machine, same worktree each time: **333.1 s** at
+`lane=code` (the empty-diff fallback, n=1) against **15–41 s** at `lane=docs`
+(n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6 — the spread is gate-slot contention on a
+shared box): ~300 s per fresh worktree, paid once per card before this. A
+`docs/`-only diff lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2),
+because the steps that run in every lane dominate both.
 
 ## Baseline: one measured block, and how to re-derive it
 

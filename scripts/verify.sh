@@ -138,12 +138,12 @@
 # on an 8-core box that was ALSO running other agents' builds (load 7–14), so
 # every row is "as measured under real fleet load", not on a quiet box:
 #
-#   lane=docs      15–29 s   (n=3: 15.0 / 23.3 / 28.8, 2026-11-17) — a tree that
-#                 changed nothing still pays every step that runs in EVERY lane
-#                 (glossary, ui-registry, release:check, changelog:check,
-#                 docs:check, md:check, nav:menu, env:check, lint,
-#                 format:check), and those dominate it. A docs-only diff
-#                 measures 14.9–36.0 s (n=2).
+#   lane=docs      15–41 s   (n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6, 2026-11-17)
+#                 — a tree that changed nothing still pays every step that runs
+#                 in EVERY lane (glossary, ui-registry, release:check,
+#                 changelog:check, docs:check, md:check, nav:menu, env:check,
+#                 lint, format:check), and those dominate it. A docs-only diff
+#                 lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2).
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
