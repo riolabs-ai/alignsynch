@@ -47,7 +47,7 @@ import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import { formatDate } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import type { AdminRelationshipDetail, AdminSeat } from "@/lib/db/admin-relationship";
-import type { InstanceStatus } from "@/lib/flow/state";
+import type { SessionStatus } from "@/lib/flow/state";
 import { ADMIN_AUDIT_PATH } from "@/lib/admin/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -59,12 +59,12 @@ type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outco
 /**
  * The status the derivation answers, mapped onto the copy id that names it.
  *
- * The derivation's vocabulary is snake_case (`instanceStatusOf()` answers `awaiting_counterparty`)
+ * The derivation's vocabulary is snake_case (`sessionStatusOf()` answers `awaiting_counterparty`)
  * and a page-copy id is kebab-case, so the join is stated here once rather than by a
  * `replace("_", "-")` that would silently pass an unknown status through as a missing id. Typed
- * `Record<InstanceStatus, string>`, so a fourth status is a compile error until it has words.
+ * `Record<SessionStatus, string>`, so a fourth status is a compile error until it has words.
  */
-const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+const STATUS_COPY_ID: Record<SessionStatus, string> = {
   draft: "draft",
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
@@ -156,7 +156,7 @@ function Seat({
 function RepairBand({
   section,
   repair,
-  instanceRecordId,
+  sessionRecordId,
   formCopy,
   action,
   disabled,
@@ -167,7 +167,7 @@ function RepairBand({
 }: {
   section: PageCopySection;
   repair: string;
-  instanceRecordId: string;
+  sessionRecordId: string;
   formCopy: PageCopySection;
   action: (input: RepairInput) => Promise<RepairOutcome>;
   disabled: boolean;
@@ -185,7 +185,7 @@ function RepairBand({
     if (disabled || busy) return;
     const input: RepairInput = {
       repair,
-      instanceRecordId,
+      sessionRecordId,
       ...(repair === "unlock" || repair === "force-close" ? { role: seat } : {}),
       ...(repair === "resend" ? { email } : {}),
     };
@@ -304,7 +304,7 @@ export function RelationshipOperations({
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact label={itemLabel(facts, "id")} value={detail.instanceRecordId} />
+            <Fact label={itemLabel(facts, "id")} value={detail.sessionRecordId} />
             <Fact label={itemLabel(facts, "mode")} value={MODE_LABELS[detail.mode as "basic"]} />
             <Fact
               label={itemLabel(facts, "setting")}
@@ -408,7 +408,7 @@ export function RelationshipOperations({
           section={unlockBand}
           formCopy={formCopy}
           repair={repairOfBand(unlockBand)}
-          instanceRecordId={detail.instanceRecordId}
+          sessionRecordId={detail.sessionRecordId}
           action={action}
           seatPicker={unmarkedSeats}
           disabled={unmarkedSeats.length === 0}
@@ -419,7 +419,7 @@ export function RelationshipOperations({
           section={resendBand}
           formCopy={formCopy}
           repair={repairOfBand(resendBand)}
-          instanceRecordId={detail.instanceRecordId}
+          sessionRecordId={detail.sessionRecordId}
           action={action}
           emailField={invite?.email ?? null}
           disabled={
@@ -443,7 +443,7 @@ export function RelationshipOperations({
           section={revokeBand}
           formCopy={formCopy}
           repair={repairOfBand(revokeBand)}
-          instanceRecordId={detail.instanceRecordId}
+          sessionRecordId={detail.sessionRecordId}
           action={action}
           disabled={invite === null || invite.claimedAt !== null || invite.revokedAt !== null}
           disabledReason={
@@ -459,7 +459,7 @@ export function RelationshipOperations({
           section={voidBand}
           formCopy={formCopy}
           repair={repairOfBand(voidBand)}
-          instanceRecordId={detail.instanceRecordId}
+          sessionRecordId={detail.sessionRecordId}
           action={action}
           disabled={detail.voided}
           disabledReason={itemLabel(refusals, "already-voided")}
@@ -469,7 +469,7 @@ export function RelationshipOperations({
           section={forceBand}
           formCopy={formCopy}
           repair={repairOfBand(forceBand)}
-          instanceRecordId={detail.instanceRecordId}
+          sessionRecordId={detail.sessionRecordId}
           action={action}
           seatPicker={openSeats}
           disabled={detail.voided || openSeats.length === 0}

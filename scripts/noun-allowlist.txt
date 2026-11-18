@@ -1,0 +1,48 @@
+# The files that may still spell the retired noun, and why. Read by `scripts/noun-check.mjs`,
+# which fails on any other file under app/, components/, lib/, content/ or scripts/ that carries
+# the word — and fails on a row below that no longer does, so this list only ever shrinks.
+#
+# An entry is a file this card may not rename, or one whose whole purpose is to quote the word.
+# None of them is a place a new identifier may be spelled: the noun inside them is a handle
+# (a document key, a stored row, a copy-item id) or the quoted subject of a rule.
+
+# The demo seed path. The card forbids touching it, so its identifiers still say what the seed's
+# own vocabulary said; only the imported symbol names follow `lib/` and `data/` (aliased at the
+# import). Retire these rows when a seed card renames the seed.
+scripts/db-seed.mjs
+scripts/db-verify.mjs
+scripts/db-migrate.mjs
+scripts/db-seed-invite.mjs
+scripts/db-seed-subscriptions.mjs
+scripts/db-seed-sweep.mjs
+
+# The bundle and platform-package documents. `payload.instances`, `content.instances` and
+# `kind: "instance"` are the file format, not an identifier: phase 3 retires them with a version
+# bump, and this card is not allowed to pre-empt it.
+scripts/bundles.ts
+scripts/bundle-platform.ts
+scripts/__tests__/bundles.test.ts
+scripts/__tests__/bundle-platform.test.ts
+
+# The two ratchets that forbid the word, and the check that hosts the mask table: they have to
+# spell it to match it. `vocabulary.ts` is E41 (reader-visible copy); `noun-check.mjs` is this rule;
+# `data-check.ts`'s E41 section header quotes the noun it forbids.
+scripts/vocabulary.ts
+scripts/noun-check.mjs
+scripts/data-check.ts
+scripts/__tests__/vocabulary.test.ts
+
+# Assertions and messages that name a handle rather than the noun: the record-model and stage
+# suites describe a fixture by its old word in test names, and the walk scripts print the run
+# (`<instance>` is a normalised id in a transcript, not a noun a reader is meant to learn).
+scripts/__tests__/record-model.test.ts
+scripts/__tests__/gaps.test.ts
+scripts/__tests__/stages.test.ts
+scripts/billing-smoke.mjs
+scripts/demo-flow.mjs
+scripts/flow-e2e.mjs
+scripts/payment-e2e.mjs
+
+# The copy-item ids. `itemLabel(facts, "instance")` selects a row of `data/pages/admin-report.ts`
+# by its `id`, which E41 skips on purpose; the id moves when the fixture does, in phase 3.
+components/admin/report-operations.tsx

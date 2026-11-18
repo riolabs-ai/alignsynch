@@ -485,7 +485,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create",
+    surface: "/dashboard/templates/[id]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -495,7 +495,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/mode",
+    surface: "/dashboard/templates/[id]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -505,7 +505,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/aspects",
+    surface: "/dashboard/templates/[id]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -515,7 +515,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/commit",
+    surface: "/dashboard/templates/[id]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -525,7 +525,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/invite",
+    surface: "/dashboard/templates/[id]/create/invite",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -684,7 +684,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One Templates page, two tabs (#620, #1130): Library is the shelf a member can start a relationship from — a featured template, a category filter with counts (All / Family / Couples / Friends / Work / Home), a search, and cards carrying the shelf chip, the Aspect count and the plan's one price — and My Templates is the copies they own, each opening its own page plus the blank and clone bands.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the Library, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value — and the pre-#1130 `catalogue` — on the Library). The filter and search are `?filter=` and `?q=` over the rows already read, never a second query: the category is the relationship type's (`data/template-categories.ts`), not the record's. Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the Library and `listMemberLibrary(userId)` for My Templates — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<slug>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the Library, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value — and the pre-#1130 `catalogue` — on the Library). The filter and search are `?filter=` and `?q=` over the rows already read, never a second query: the category is the relationship type's (`data/template-categories.ts`), not the record's. Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the Library and `listMemberLibrary(userId)` for My Templates — with `requireRole` resolving the id from the session. `Create Relationship` opens `/dashboard/templates/<id>/create`, the shipped create step; nobody here says \\\"start an instance\\\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -1067,6 +1067,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share. It also owns the raised-surface container every dashboard page renders inside — `stage-column.tsx` (`StageColumn`), 1126px up to one left edge at 274 and no `mx-auto` — which is the shape #717 gave the eighteen admin pages and #858 gave the member console.",
     notes:
       "Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it. `StageColumn` is the one container: a page that centres itself, or spells a second `max-w`, is the regression `data/surface-columns.ts` and `scripts/column-refs.ts` measure in the gate (a `wide`/`bleed` page is a registered exception with a reason and, for `bleed`, a way back). The stage dialog in `stage-shell.tsx` is the one documented centred box — a sheet, not a page column.",
+  },
+  {
+    kind: "domain",
+    surface: "components/flow",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The create flow's five stage modules — Details, Settings, Aspects, Account, Invite — held where no address reaches them, because the same module is both a page and the dialog a slot mounts over the shelf. The address is `/dashboard/templates/[id]/create{,/mode,/aspects,/commit,/invite}` — a template **slug** in a segment Next names `id`, because Next refuses two dynamic segment names at one level and the editor next door is `/dashboard/templates/[id]`; the URL a person sees is `/dashboard/templates/<slug>/create…`. #1109 phase 2 moved these files out of `app/(mainlayout)/templates/relationship/[slug]/create/**/page.tsx` with `git mv`, and nothing about a stage changed in the move.",
+    notes:
+      'The rule this directory exists to keep is **a stage is written once and mounted twice**: each module takes `mount?: FlowMount` (default `"page"`), the route file under `dashboard/templates/[id]/create` renders it bare, and the `@flow` interceptors in `dashboard/templates` (`(.)`), `dashboard/relationships` and `assessment` (`(...)`) render it with `mount={FLOW_MOUNT_DIALOG}` — held by `tests/flow-entry-convergence.test.ts` and `tests/flow-dialog-shell.test.tsx`. `db`, like `components/assessment-flow` beside it: the stages read and write through `lib/flow/store.ts` over `lib/db/**`, and no stage changed a query in the move. Keeping the stages out of `app/` is what let the address change without the components knowing, and the five kept their `[slug]` dynamic-param signature because they are still page components.',
   },
   {
     kind: "domain",

@@ -6,15 +6,15 @@
  * six are properties of the *token* (`unknown`, `claimed`, `expired`) and three are
  * properties of the *request*:
  *
- *   already-a-party   the browser already answers as a party to this instance — the
+ *   already-a-party   the browser already answers as a party to this session — the
  *                     Initiator opening their own invitation link is the case QA found,
  *                     where the claim used to spend the token and silently move the
  *                     session into the Counterparty's column
- *   already-bound     the instance already has both party rows
+ *   already-bound     the session already has both party rows
  *   unconfirmed       the post did not say out loud which party it is joining
  *
  * The screen shows both halves, because they are different sentences: a spent link and
- * "you are already the Initiator of this instance" are not the same news.
+ * "you are already the Initiator of this session" are not the same news.
  *
  * `confirmationMatches` is the server half of the confirmation. The page renders
  * `You are joining as Rowan, the Counterparty` beside a checkbox whose value is the

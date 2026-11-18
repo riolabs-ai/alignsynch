@@ -190,7 +190,7 @@ export interface MemberTemplateView {
 /**
  * One template, if it is this member's.
  *
- * `undefined` covers three cases on purpose — no such id, an instance rather than a template, and
+ * `undefined` covers three cases on purpose — no such id, a session rather than a template, and
  * **somebody else's row** — because the page turns all three into `notFound()`, which is the 404 a
  * URL that never existed returns. A distinguishable "not yours" would tell a prober which ids are
  * real, which is `lib/auth/require-role.ts`'s rule applied to a row instead of a surface.
@@ -260,7 +260,7 @@ async function writeItems(sql: ActSql, recordId: string, record: Assessment) {
  * A slug no record answers to.
  *
  * `record.slug` is `UNIQUE` across the whole table (0001) — every brand, every template, every
- * instance — so two members naming a template "Team check-in" collide on the natural slug. The
+ * session — so two members naming a template "Team check-in" collide on the natural slug. The
  * first attempt keeps the natural slug (a readable URL is worth having); a taken one gets six hex
  * characters appended, which is unique by construction with overwhelming probability and is
  * re-checked anyway. The check is a `SELECT` in the transaction that inserts, so the failure mode is
@@ -350,7 +350,7 @@ export interface CloneRequest {
  * The copy is `INSERT … SELECT` over the source's `item` rows, in the transaction: the source can
  * be withdrawn between the page's read and this write, so a copy assembled from a value the screen
  * held would be a copy of a template nobody may use any more. The source is read `FOR SHARE`, the
- * same lock `createInstanceFromTemplate` takes, so a concurrent unpublish waits rather than
+ * same lock `createSessionFromTemplate` takes, so a concurrent unpublish waits rather than
  * committing under a copy that is half-written.
  *
  * **Two sources are copyable, and the difference is a product rule.** A public published template

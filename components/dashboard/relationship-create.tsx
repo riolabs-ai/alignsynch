@@ -10,7 +10,7 @@
  * dashboard card's `Invite Members` had no pay modal to open, and publishing it had no invitation
  * to mint. The member's own complaint was exactly that ("it's blocked to get back to the modal step
  * needed"), and the cause was a second create path beside the flow. Choosing a template here
- * navigates to `/templates/relationship/<slug>/create`, which is stage 1 of the one flow that
+ * navigates to `/dashboard/templates/<slug>/create`, which is stage 1 of the one flow that
  * writes a relationship: Details → Settings → Aspects → **Account** (writes the draft, the session
  * and the staged invitation) → Invite (the pay modal). Every row the product can then complete has
  * what those two later stages read.

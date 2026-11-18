@@ -1,20 +1,20 @@
 /**
  * The bundle — one RECORD, portable (#147).
  *
- * Four templates and four instances live in `data/assessments.ts`, compiled into the
+ * Four templates and four sessions live in `data/assessments.ts`, compiled into the
  * build. That is a fine store for this repository and a useless one for anybody else: a
  * tenant cannot produce a template this repo can read, and this repo cannot hand a tenant
  * a dataset it can install. The bundle is the file in between — one versioned,
  * self-describing JSON document that carries a TEMPLATE, or a DEMO DATASET (templates,
- * instances, parties, opinions).
+ * sessions, parties, opinions).
  *
  * **The payload is the schemas, not a copy of them.** A template bundle's payload is
  * `zAssessment`; a dataset bundle's payload is `zAssessment` records and
- * `zAssessmentInstance` records, exactly as `content/assessment.ts` defines them. There is
+ * `zAssessmentSession` records, exactly as `content/assessment.ts` defines them. There is
  * no second shape to drift, and the two rules a single record cannot see — a dataset's
- * ids/slugs are unique, and every instance is a copy of a template inside the same file —
+ * ids/slugs are unique, and every session is a copy of a template inside the same file —
  * are the ones `data:check` already runs (E1/E2/E31), reused through
- * `instanceTemplateProblems()` instead of re-implemented.
+ * `sessionTemplateProblems()` instead of re-implemented.
  *
  * **Canonical, so a round trip is byte-identical.** `parseBundle()` returns the
  * schema-parsed value — zod emits output keys in schema order, every assessment schema is
@@ -36,14 +36,14 @@
  * already reject it. That redundancy is deliberate: it is the policy, and it outlives the
  * current shape of the schemas.
  *
- * The codes here are `B1`–`B4`/`B6`; `B5` (a template import colliding with the active
- * store) needs a store to collide with, so it is minted in `scripts/bundles.ts`. All six
+ * The codes here are `B1`–`B4`/`B6`/`B9`; `B5` (a template import colliding with the active
+ * store) needs a store to collide with, so it is minted in `scripts/bundles.ts`. All nine
  * live in `scripts/rule-codes.ts` with one owner each, the same way the `E` codes do.
  *
  * **`bundleVersion: 2` — the platform package (#899).** One bundle could carry records; a
  * tenant also needs the *configuration* around them, the people the demo flow signs in as,
  * the media those records render, and a statement of which build the file belongs to. That
- * is `kind: "platform"`: `content` (the same `zAssessment` / `zAssessmentInstance` schemas,
+ * is `kind: "platform"`: `content` (the same `zAssessment` / `zAssessmentSession` schemas,
  * never a copy), `config` (plans, prices, flags, options — an additive plain schema), `identities`
  * (`{ email, displayName, role }` — **declared, never copied**: there is no password, hash or
  * session field, and `B4` refuses one even if a future schema grows a place to put it),
@@ -51,18 +51,35 @@
  * (`appVersion`, `schemaVersion`, `lockfileSha256` — what the package was made from, so an
  * import can refuse a target that is not that build).
  *
- * Version 2 is additive and **version 1 still reads**: `PARSEABLE_BUNDLE_VERSIONS` is `[1, 2]`,
- * and a v2 document must be `kind: "platform"` the way a v1 document must be a template or a
- * dataset. Nothing in the v1 shape moved, so the committed demo bundle and E32 did not change.
+ * Version 2 is additive and **version 1 still reads**: a v2 document must be `kind: "platform"`
+ * the way a v1 document must be a template or a dataset. Nothing in the v1 shape moved, so the
+ * committed demo bundle and E32 did not change.
+ *
+ * **`bundleVersion: 3` — the record arrays say `sessions` (#1103 phase 3).** Sessions are the
+ * product's noun, and the file format was the last place still spelling the retired one. A
+ * version-3 dataset carries `payload.sessions`; the version-1 key is **read and never written**
+ * — a bundle exported before this cut still imports (the CLI prints one deprecation line), is
+ * normalized to the new shape in memory, and the next export of it is a v3 document. There are
+ * exactly three readings and each is one rule:
+ *
+ *   - **v3 + `payload.sessions`** — the format this build writes.
+ *   - **v1 + the legacy key** — tolerated for one release, so a stored file is not a silent
+ *     break. `LEGACY_BUNDLE_VERSION` names it, and `parseBundle()` marks the result `legacy`.
+ *   - **anything else** — `B9`: the version and the record-array key must agree. A document
+ *     carrying **both** keys is that same refusal, because an ambiguous file has no reading at
+ *     all and picking one would be a guess about which half of it is newer.
+ *
+ * The row ids did not move (`assessment-instance-*` are keys in the database, in relationships
+ * and in the atlas fixtures): vocabulary moved, identity did not.
  */
 import { z } from "zod";
 import { pathOf } from "./core";
 import {
-  instanceTemplateProblems,
+  sessionTemplateProblems,
   zAssessment,
-  zAssessmentInstance,
+  zAssessmentSession,
   type Assessment,
-  type AssessmentInstance,
+  type AssessmentSession,
 } from "./assessment";
 
 /* ------------------------------------------------------------------ *
@@ -73,10 +90,20 @@ import {
 export const BUNDLE_FORMAT = "alignsynch-bundle" as const;
 
 /**
- * The version `export` writes for a template or a dataset — unchanged since #147, and the
- * version the committed demo bundle carries.
+ * The version `export` writes for a template or a dataset: the record arrays under
+ * `payload.sessions` (#1103 phase 3). Bumped from 1 so a reader can tell the two shapes apart
+ * without sniffing keys, and so a v1 file is a version this build recognises rather than a
+ * file it half-reads.
  */
-export const BUNDLE_VERSION = 1 as const;
+export const BUNDLE_VERSION = 3 as const;
+
+/**
+ * The version #147 shipped, and the **only** one that spells the record arrays
+ * `payload.instances`. This build reads it and never writes it — see the module docstring —
+ * and `LEGACY_BUNDLE_VERSION` exists so the tolerance has a name a test can point at instead
+ * of a bare `1`.
+ */
+export const LEGACY_BUNDLE_VERSION = 1 as const;
 
 /** The version the platform package writes (#899). Additive: v1 documents still parse. */
 export const PLATFORM_BUNDLE_VERSION = 2 as const;
@@ -88,22 +115,32 @@ export const PLATFORM_BUNDLE_VERSION = 2 as const;
  * carries the `schemaVersion` and `lockfileSha256` that are a refusal (`B7`, in
  * `scripts/bundle-platform.ts`).
  */
-export const PARSEABLE_BUNDLE_VERSIONS = [BUNDLE_VERSION, PLATFORM_BUNDLE_VERSION] as const;
+export const PARSEABLE_BUNDLE_VERSIONS = [
+  LEGACY_BUNDLE_VERSION,
+  PLATFORM_BUNDLE_VERSION,
+  BUNDLE_VERSION,
+] as const;
 
 export type BundleVersion = (typeof PARSEABLE_BUNDLE_VERSIONS)[number];
+
+/** `1`, `2` and `3` — the list as a person reads it, in one place so `B6` cannot drift. */
+export function parseableVersionList(): string {
+  const versions = PARSEABLE_BUNDLE_VERSIONS.map(String);
+  return `${versions.slice(0, -1).join(", ")} and ${versions[versions.length - 1]}`;
+}
 
 /** What a bundle carries: one TEMPLATE, a DEMO DATASET, or the whole PLATFORM (#899). */
 export const zBundleKind = z.enum(["template", "dataset", "platform"]);
 
 export type BundleKind = z.infer<typeof zBundleKind>;
 
-/** The kinds each version may carry — a v1 platform and a v2 dataset are both refusals. */
+/** The kinds each version may carry — a v2 platform and a v2 dataset are both refusals. */
 export function bundleKindsFor(version: number): readonly BundleKind[] {
   return version === PLATFORM_BUNDLE_VERSION ? ["platform"] : ["template", "dataset"];
 }
 
 /**
- * The envelope every v1 bundle carries, and nothing else: `strict()`, so a key this build
+ * The envelope every current bundle carries, and nothing else: `strict()`, so a key this build
  * does not know is a refusal rather than a field that silently fails to travel.
  */
 export const zBundleEnvelope = z
@@ -117,6 +154,14 @@ export const zBundleEnvelope = z
   .strict();
 
 export type BundleEnvelope = z.infer<typeof zBundleEnvelope>;
+
+/**
+ * The version-1 envelope: the same four keys and `kind`, with `bundleVersion: 1`. Read-only —
+ * `export` writes `zBundleEnvelope`.
+ */
+export const zLegacyBundleEnvelope = zBundleEnvelope
+  .extend({ bundleVersion: z.literal(LEGACY_BUNDLE_VERSION) })
+  .strict();
 
 /** The version-2 envelope: the same four keys, `bundleVersion: 2`, `kind: "platform"`. */
 export const zPlatformEnvelope = z
@@ -135,18 +180,45 @@ export type PlatformEnvelope = z.infer<typeof zPlatformEnvelope>;
  * ------------------------------------------------------------------ */
 
 /**
- * A DEMO DATASET's payload: the templates, and the instances that copy them. At least one
- * template — a dataset with none installs nothing — and any number of instances. Further
+ * The key a version-1 dataset spelled the record arrays with. It is a **literal constant**
+ * rather than a spelled-out field because there is exactly one place in this module that may
+ * ever read it — the v1 branch of `parseBundle()` — and a second occurrence would be a second
+ * reader of a format this build does not write.
+ */
+export const LEGACY_SESSIONS_KEY = "instances" as const;
+
+/**
+ * A DEMO DATASET's payload: the templates, and the sessions that copy them. At least one
+ * template — a dataset with none installs nothing — and any number of sessions. Further
  * rules need the whole payload, so they run in `datasetCollectionProblems()` below.
  */
 export const zDatasetPayload = z
   .object({
     templates: z.array(zAssessment).min(1),
-    instances: z.array(zAssessmentInstance),
+    sessions: z.array(zAssessmentSession),
   })
   .strict();
 
 export type DatasetPayload = z.infer<typeof zDatasetPayload>;
+
+/**
+ * The version-1 payload, read and never written: the same two arrays, the sessions under
+ * `LEGACY_SESSIONS_KEY`. `parseBundle()` normalizes it to `DatasetPayload` before anything
+ * else sees it, so no other module has to know there are two shapes.
+ */
+export const zLegacyDatasetPayload = z
+  .object({
+    templates: z.array(zAssessment).min(1),
+    [LEGACY_SESSIONS_KEY]: z.array(zAssessmentSession),
+  })
+  .strict();
+
+export type LegacyDatasetPayload = z.infer<typeof zLegacyDatasetPayload>;
+
+/** A version-1 dataset payload as the current shape: the one line the tolerance costs. */
+export function normalizeLegacyDatasetPayload(payload: LegacyDatasetPayload): DatasetPayload {
+  return { templates: payload.templates, sessions: payload[LEGACY_SESSIONS_KEY] };
+}
 
 export const zTemplateBundleObject = zBundleEnvelope
   .extend({
@@ -190,14 +262,14 @@ export type DatasetBundle = z.infer<typeof zDatasetBundleObject>;
 
 /**
  * The content group: exactly the dataset payload's two arrays, at the root of the platform
- * payload rather than under `payload`. Parties, Aspects and Opinions travel *inside* an
- * instance — they are `zAssessmentInstance`'s own fields — so there is no third copy of them
+ * payload rather than under `payload`. Parties, Aspects and Opinions travel *inside* a
+ * session — they are `zAssessmentSession`'s own fields — so there is no third copy of them
  * here, and no place for one to drift.
  */
 export const zPlatformContent = z
   .object({
     templates: z.array(zAssessment).min(1),
-    instances: z.array(zAssessmentInstance),
+    instances: z.array(zAssessmentSession),
   })
   .strict();
 
@@ -362,20 +434,22 @@ export type Bundle = TemplateBundle | DatasetBundle | PlatformBundle;
  * The codes a bundle can fail with, each naming one rule:
  *
  *   B1  envelope shape — not one JSON object, a bad `format`/`kind`, an unknown top-level key
- *   B2  payload record — a `zAssessment` / `zAssessmentInstance` issue, path included
+ *   B2  payload record — a `zAssessment` / `zAssessmentSession` issue, path included
  *   B3  dataset collection — ids or slugs twice, a `templateId` outside the file, a copy that drifted
  *   B4  forbidden key — a key that names a credential, wherever it sits
- *   B6  `bundleVersion` — this build reads 1 and 2
+ *   B6  `bundleVersion` — this build reads 1, 2 and 3
  *   B7  build identity — the package's `schemaVersion` / `lockfileSha256` is not this tree's
  *   B8  a package that drops a record something it keeps still references (a persona its
  *       relationships name, media a record renders)
+ *   B9  the record-array key disagrees with the version — `payload.instances` under a v3
+ *       document, `payload.sessions` under a v1 one, or both keys in one payload
  *
  * B5 is minted by `scripts/bundles.ts`: it is about the *store* the bundle is imported into,
  * and a bundle on its own cannot violate it. B7 and B8 are minted by
  * `scripts/bundle-platform.ts`: they compare a package with the tree it is opened on, which a
  * document alone cannot do.
  */
-export type BundleIssueCode = "B1" | "B2" | "B3" | "B4" | "B6" | "B7" | "B8";
+export type BundleIssueCode = "B1" | "B2" | "B3" | "B4" | "B6" | "B7" | "B8" | "B9";
 
 /** One refusal, shaped like a zod issue so a caller formats one way whatever fired. */
 export interface BundleIssue {
@@ -386,7 +460,7 @@ export interface BundleIssue {
 }
 
 /**
- * One printed line, `[B3] payload.instances: instance "x" names template "y", …`.
+ * One printed line, `[B3] payload.sessions: session "x" names template "y", …`.
  *
  * Takes any code, not only this module's: `B5` is minted by `scripts/bundles.ts` (a template
  * import colliding with the active store), and one line format is the point.
@@ -407,15 +481,25 @@ export function formatBundleIssue(issue: {
 /**
  * A dataset is one store in one file, so the identity and copy rules hold inside it:
  * an id names one record, `type/slug` names one record per collection (the split E2 makes —
- * a template and an instance keep separate URL spaces), every `templateId` resolves here,
- * and every instance's Aspects are its template's. The last two are
- * `instanceTemplateProblems()`, the same function E31 runs, so "a dataset is
+ * a template and a session keep separate URL spaces), every `templateId` resolves here,
+ * and every session's Aspects are its template's. The last two are
+ * `sessionTemplateProblems()`, the same function E31 runs, so "a dataset is
  * self-contained" is one rule and not a second implementation of one.
+ *
+ * `key` is the name the *document* gives the session array, used only for the label and the
+ * path a person acts on: `sessions` in every bundle this build writes, and
+ * `LEGACY_SESSIONS_KEY` for the two documents that still spell it the other way (a v1 dataset,
+ * and a v2 platform package, whose content group has not moved). The rule is the same either
+ * way — only the address of the offending row differs, and a path that named a key the file
+ * does not carry would send somebody to the wrong line.
  */
-export function datasetCollectionProblems(payload: {
-  readonly templates: readonly Assessment[];
-  readonly instances: readonly AssessmentInstance[];
-}): BundleIssue[] {
+export function datasetCollectionProblems(
+  payload: {
+    readonly templates: readonly Assessment[];
+    readonly sessions: readonly AssessmentSession[];
+  },
+  key: string = "sessions",
+): BundleIssue[] {
   const issues: BundleIssue[] = [];
   const seenIds = new Map<string, string>();
 
@@ -449,20 +533,20 @@ export function datasetCollectionProblems(payload: {
       "slug",
     );
   });
-  payload.instances.forEach((instance, index) => {
-    claim(instance.id, `payload.instances[${index}]`, ["instances", index, "id"], "id");
+  payload.sessions.forEach((session, index) => {
+    claim(session.id, `payload.${key}[${index}]`, [key, index, "id"], "id");
     claim(
-      `${instance.type}/${instance.slug}`,
-      `payload.instances[${index}]`,
-      ["instances", index, "slug"],
+      `${session.type}/${session.slug}`,
+      `payload.${key}[${index}]`,
+      [key, index, "slug"],
       "slug",
     );
-    // The id claim above already covers every instance; a slug is only compared inside
-    // the instance collection, so a template and an instance may share one — E2's split.
+    // The id claim above already covers every session; a slug is only compared inside
+    // the session collection, so a template and a session may share one — E2's split.
   });
 
-  for (const problem of instanceTemplateProblems(payload.templates, payload.instances)) {
-    issues.push({ code: "B3", path: ["instances"], message: problem });
+  for (const problem of sessionTemplateProblems(payload.templates, payload.sessions)) {
+    issues.push({ code: "B3", path: [key], message: problem });
   }
 
   return issues;
@@ -478,8 +562,8 @@ export function datasetCollectionProblems(payload: {
  *   B3  the content is one store — the dataset rules, reused, not re-implemented; and no two
  *       declarations or config rows share an identity (two identities with one email, a plan
  *       id twice, a flag name twice, an option key twice, a media path twice)
- *   B8  every reference resolves *inside the package* — a price names a plan in it, an
- *       instance names a template in it, and media paths are relative, inside `media/`, and
+ *   B8  every reference resolves *inside the package* — a price names a plan in it, a
+ *       session names a template in it, and media paths are relative, inside `media/`, and
  *       hash-addressed
  *
  * B8 here is the static half. The half that needs a whole dataset — "this subset dropped a
@@ -492,7 +576,14 @@ export function platformPayloadProblems(payload: {
   readonly identities: readonly PlatformIdentity[];
   readonly media: readonly PlatformMedia[];
 }): BundleIssue[] {
-  const issues: BundleIssue[] = [...datasetCollectionProblems(payload.content)];
+  const issues: BundleIssue[] = [
+    ...datasetCollectionProblems(
+      { templates: payload.content.templates, sessions: payload.content[LEGACY_SESSIONS_KEY] },
+      // A platform package is bundleVersion 2 and its content group has not moved, so a path
+      // here names the key the document really carries.
+      LEGACY_SESSIONS_KEY,
+    ),
+  ];
 
   const once = (
     key: string,
@@ -620,24 +711,86 @@ export function forbiddenKeyProblems(
 }
 
 /* ------------------------------------------------------------------ *
- * B1 / B2 / B3 / B4 / B6 — read one document
+ * B1 / B2 / B3 / B4 / B6 / B9 — read one document
  * ------------------------------------------------------------------ */
 
 /**
  * The envelope with the payload left opaque, so "the envelope is wrong" and "a record is
- * wrong" are two errors with two codes instead of one zod dump. Two shapes, one per version:
- * a v2 document is an envelope with `kind: "platform"`, and it is checked by the v2 schema so
- * a v1-only key cannot slip through it (or the reverse).
+ * wrong" are two errors with two codes instead of one zod dump. One shape per version: v2 is
+ * a platform envelope, v3 the current one, v1 the read-only predecessor — each checked by its
+ * own schema so a key from another version cannot slip through it.
  */
-const zV1EnvelopeShape = zBundleEnvelope.extend({ payload: z.unknown() }).strict();
+const zCurrentEnvelopeShape = zBundleEnvelope.extend({ payload: z.unknown() }).strict();
+const zLegacyEnvelopeShape = zLegacyBundleEnvelope.extend({ payload: z.unknown() }).strict();
 const zV2EnvelopeShape = zPlatformEnvelope.extend({ payload: z.unknown() }).strict();
 
 export type BundleParseResult =
-  | { readonly ok: true; readonly bundle: Bundle }
+  | {
+      readonly ok: true;
+      readonly bundle: Bundle;
+      /**
+       * The document was written before the sessions key: `bundleVersion: 1`, record array
+       * under `LEGACY_SESSIONS_KEY`. The payload above is already normalized to the current
+       * shape, so this flag is the whole of the tolerance — the CLI prints one deprecation
+       * line with it, and nothing writes the old shape back.
+       */
+      readonly legacy?: true;
+    }
   | { readonly ok: false; readonly issues: readonly BundleIssue[] };
 
 function failure(issues: readonly BundleIssue[]): BundleParseResult {
   return { ok: false, issues };
+}
+
+/**
+ * B9 — the version and the record-array key must agree.
+ *
+ * A `bundleVersion: 3` document carrying the legacy key is not "an old file wearing a new
+ * number": it is a file somebody half-migrated, and reading it would either ignore a payload
+ * or install one in a shape its own version says it is not. A payload carrying **both** keys is
+ * the same refusal, because an ambiguous document has no single reading and picking one half is
+ * a guess about which half is newer.
+ *
+ * This runs before the payload schema so the refusal is one named code with a path at the key,
+ * rather than a `strict()` "unknown key" from whichever half happened to be second.
+ */
+function recordKeyProblems(raw: Record<string, unknown>, version: number): BundleIssue[] {
+  if (raw.kind !== "dataset") return [];
+  const payload = raw.payload;
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) return [];
+
+  const record = payload as Record<string, unknown>;
+  const hasSessions = Object.hasOwn(record, "sessions");
+  const hasLegacy = Object.hasOwn(record, LEGACY_SESSIONS_KEY);
+
+  if (hasSessions && hasLegacy) {
+    return [
+      {
+        code: "B9",
+        path: ["payload"],
+        message: `carries both payload.sessions and payload.${LEGACY_SESSIONS_KEY} — a bundle is one shape per version, and an ambiguous file has no reading rather than two`,
+      },
+    ];
+  }
+  if (version === BUNDLE_VERSION && hasLegacy) {
+    return [
+      {
+        code: "B9",
+        path: ["payload", LEGACY_SESSIONS_KEY],
+        message: `bundleVersion ${BUNDLE_VERSION} carries payload.${LEGACY_SESSIONS_KEY} — this version spells the session array payload.sessions; only bundleVersion ${LEGACY_BUNDLE_VERSION} carried the old key, so either export the file again or correct its version`,
+      },
+    ];
+  }
+  if (version === LEGACY_BUNDLE_VERSION && hasSessions) {
+    return [
+      {
+        code: "B9",
+        path: ["payload", "sessions"],
+        message: `bundleVersion ${LEGACY_BUNDLE_VERSION} carries payload.sessions — that key belongs to bundleVersion ${BUNDLE_VERSION}, and a v1 reader would silently install no sessions at all`,
+      },
+    ];
+  }
+  return [];
 }
 
 /**
@@ -703,7 +856,7 @@ export function parseBundle(text: string): BundleParseResult {
       {
         code: "B6",
         path: ["bundleVersion"],
-        message: `bundleVersion ${version}: this build reads ${PARSEABLE_BUNDLE_VERSIONS.join(" and ")}`,
+        message: `bundleVersion ${version}: this build reads ${parseableVersionList()}`,
       },
     ]);
   }
@@ -733,7 +886,14 @@ export function parseBundle(text: string): BundleParseResult {
     };
   }
 
-  const shape = zV1EnvelopeShape.safeParse(raw);
+  const legacy = version === LEGACY_BUNDLE_VERSION;
+
+  // Before the payload schema: one named refusal with a path at the key, instead of a
+  // `strict()` unknown-key from whichever of the two shapes happened to be read second.
+  const keyProblems = recordKeyProblems(raw as Record<string, unknown>, version as number);
+  if (keyProblems.length > 0) return failure(keyProblems);
+
+  const shape = (legacy ? zLegacyEnvelopeShape : zCurrentEnvelopeShape).safeParse(raw);
   if (!shape.success) {
     return failure(zodIssues(shape.error.issues, "B1", []));
   }
@@ -745,18 +905,15 @@ export function parseBundle(text: string): BundleParseResult {
       {
         code: "B6",
         path: ["bundleVersion"],
-        message: `kind "platform" is bundleVersion ${PLATFORM_BUNDLE_VERSION}, and this file says ${BUNDLE_VERSION}`,
+        message: `kind "platform" is bundleVersion ${PLATFORM_BUNDLE_VERSION}, and this file says ${version}`,
       },
     ]);
   }
 
-  const payloadSchema = envelope.kind === "template" ? zAssessment : zDatasetPayload;
-  const payload = payloadSchema.safeParse(envelope.payload);
-  if (!payload.success) {
-    return failure(zodIssues(payload.error.issues, "B2", ["payload"]));
-  }
-
   if (envelope.kind === "template") {
+    const payload = zAssessment.safeParse(envelope.payload);
+    if (!payload.success) return failure(zodIssues(payload.error.issues, "B2", ["payload"]));
+
     return {
       ok: true,
       bundle: {
@@ -764,12 +921,22 @@ export function parseBundle(text: string): BundleParseResult {
         bundleVersion: BUNDLE_VERSION,
         kind: "template",
         appVersion: envelope.appVersion,
-        payload: payload.data as Assessment,
+        payload: payload.data,
       },
+      ...(legacy ? { legacy: true as const } : {}),
     };
   }
 
-  const collection = datasetCollectionProblems(payload.data as DatasetPayload);
+  // One reading, two spellings: a v1 payload is parsed by the v1 schema and normalized here,
+  // so nothing downstream of `parseBundle()` knows the old key exists.
+  const payload = (legacy ? zLegacyDatasetPayload : zDatasetPayload).safeParse(envelope.payload);
+  if (!payload.success) return failure(zodIssues(payload.error.issues, "B2", ["payload"]));
+
+  const dataset: DatasetPayload = legacy
+    ? normalizeLegacyDatasetPayload(payload.data as LegacyDatasetPayload)
+    : (payload.data as DatasetPayload);
+
+  const collection = datasetCollectionProblems(dataset);
   if (collection.length > 0) return failure(collection);
 
   return {
@@ -779,8 +946,9 @@ export function parseBundle(text: string): BundleParseResult {
       bundleVersion: BUNDLE_VERSION,
       kind: "dataset",
       appVersion: envelope.appVersion,
-      payload: payload.data as DatasetPayload,
+      payload: dataset,
     },
+    ...(legacy ? { legacy: true as const } : {}),
   };
 }
 
@@ -801,7 +969,7 @@ export function serializeBundle(bundle: Bundle): string {
  */
 export function serializeDatasetPayload(payload: DatasetPayload): string {
   return `${JSON.stringify(
-    { templates: payload.templates, instances: payload.instances },
+    { templates: payload.templates, sessions: payload.sessions },
     null,
     2,
   )}\n`;
@@ -823,7 +991,7 @@ export function serializeDatasetPayload(payload: DatasetPayload): string {
  */
 export function canonicalDemoBundle(
   templates: readonly Assessment[],
-  instances: readonly AssessmentInstance[],
+  sessions: readonly AssessmentSession[],
   appVersion: string,
 ): DatasetBundle {
   const envelope = {
@@ -831,7 +999,7 @@ export function canonicalDemoBundle(
     bundleVersion: BUNDLE_VERSION,
     kind: "dataset" as const,
     appVersion,
-    payload: { templates: [...templates], instances: [...instances] },
+    payload: { templates: [...templates], sessions: [...sessions] },
   };
 
   const parsed = parseBundle(JSON.stringify(envelope));

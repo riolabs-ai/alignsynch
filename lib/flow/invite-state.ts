@@ -3,7 +3,7 @@
  *
  * There are three states and there is no column for any of them. `session_invite` carries
  * `claimed_at` and `expires_at`, and the state is the pair of them compared against the clock
- * the read path already handed down — the same rule `instanceStatusOf()` applies to the count of
+ * the read path already handed down — the same rule `sessionStatusOf()` applies to the count of
  * answer rows and the same rule `gapOf()` applies to two scores. A stored `state`, a nightly job
  * that flips a row to `expired`, or a migration that rewrites `claimed_at` would each be a second
  * authored copy of a fact the two columns already carry, and nothing could compare the two.
@@ -56,7 +56,7 @@ export interface InviteFacts {
   /**
    * `revoked_at IS NOT NULL` — an operator killed the link (#503).
    *
-   * Optional like `InstanceProgress.voided`: the fixtures and tests written before the console
+   * Optional like `SessionProgress.voided`: the fixtures and tests written before the console
    * could act do not carry it, and "absent" is `false`. Every production read selects the column.
    */
   readonly revoked?: boolean;

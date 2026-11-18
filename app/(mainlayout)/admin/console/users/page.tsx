@@ -1,4 +1,4 @@
-// template-ancestor: components/admin/instance-registry.tsx
+// template-ancestor: components/admin/session-registry.tsx
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminUsersList } from "@/components/v1/admin-users-list";
 

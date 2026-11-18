@@ -3,7 +3,7 @@
  *
  * The screen is a read of two records and two functions:
  *
- *   the instance  holds the copy of the Aspects and both parties' Opinions;
+ *   the session  holds the copy of the Aspects and both parties' Opinions;
  *   the template  holds the title and summary the reader sees above them;
  *   `gapOf()`     is the one subtraction (`content/record.ts`);
  *   `gapKindsOf()` is which two Opinions each of the eight glossary Gaps subtracts
@@ -21,7 +21,7 @@
 import type {
   AlignmentSetting,
   Assessment,
-  AssessmentInstance,
+  AssessmentSession,
   AssessmentMode,
   AspectOpinions,
   Opinions,
@@ -31,7 +31,7 @@ import type {
 import {
   gapKindsIn,
   gapKindsOf,
-  instanceAlignment,
+  sessionAlignment,
   type AlignmentVerdict,
   type GapKind,
   type GapKinds,
@@ -56,13 +56,13 @@ export interface ReportedParty {
 /**
  * The Gaps of one Aspect, keyed by kind: `content/gaps.ts` computes all eight, so the
  * four Basic kinds are always numbers and the four prediction kinds are there exactly
- * when the instance was played in Advanced Mode.
+ * when the session was played in Advanced Mode.
  */
 export type ReportedGaps = GapKinds;
 
 /** One Aspect, as a row: what is asked, the two ends of the scale, both parties, the Gaps. */
 export interface AspectReportRow {
-  /** The Aspect's id — the join key between the instance's items and each party's answers. */
+  /** The Aspect's id — the join key between the session's items and each party's answers. */
   readonly itemId: string;
   readonly prompt: string;
   /** Notch 1 of the 1..5 band. */
@@ -82,7 +82,7 @@ export interface AspectReportRow {
  * The widest Gap the Setting does not tolerate, named by the Aspect it sits on — what the
  * verdict band's second sentence needs ("the widest is a Gap of 4 on …").
  *
- * Ties are broken by the glossary order (`GAP_KINDS`), then by the instance's own Aspect
+ * Ties are broken by the glossary order (`GAP_KINDS`), then by the session's own Aspect
  * order, so the same frozen numbers always name the same Gap: the report is read by two
  * people from two devices, and a "widest" that moved between reads would be a different
  * sentence about the same data.
@@ -94,20 +94,20 @@ export interface WidestGap {
   readonly gap: Gap;
 }
 
-/** The instance, ready to draw: the template's words, the parties' names, one row per Aspect. */
+/** The session, ready to draw: the template's words, the parties' names, one row per Aspect. */
 export interface AssessmentReport {
   readonly slug: string;
   readonly title: string;
   readonly summary: string;
   /**
-   * The mode the instance was played in. Copied from `instance.mode`, so a report **knows**
+   * The mode the session was played in. Copied from `session.mode`, so a report **knows**
    * which sheet it is drawing and can say so — the next card's eight gap kinds read this
    * before drawing any cross-party comparison, and a Basic report has no Think/Guess rows
    * to draw because the schema never let them exist.
    */
   readonly mode: AssessmentMode;
   /**
-   * The Setting the instance is read under, and the widest Gap it tolerates.
+   * The Setting the session is read under, and the widest Gap it tolerates.
    *
    * `settingLimit` is carried rather than re-imported by the view, because
    * `content/gaps.ts::gapMeetsSetting` is the one comparison in the codebase that reads the
@@ -117,7 +117,7 @@ export interface AssessmentReport {
   readonly setting: AlignmentSetting;
   readonly settingLimit: Gap;
   /**
-   * The verdict — `instanceAlignment()` over exactly the Gaps above, so the band and the
+   * The verdict — `sessionAlignment()` over exactly the Gaps above, so the band and the
    * rows cannot say different things. Derived on every projection, never stored and never
    * an argument: "aligned" is arithmetic over the finished Gap, not a state a caller sets.
    */
@@ -127,12 +127,12 @@ export interface AssessmentReport {
   readonly rows: readonly AspectReportRow[];
 }
 
-function partyOf(instance: AssessmentInstance, role: PartyRole): Party {
-  const party = instance.parties.find((entry) => entry.role === role);
+function partyOf(session: AssessmentSession, role: PartyRole): Party {
+  const party = session.parties.find((entry) => entry.role === role);
   if (party === undefined) {
     // The schema guarantees one of each role, so this is unreachable on valid data —
-    // say which instance broke the rule rather than drawing an empty column.
-    throw new Error(`instance "${instance.id}" has no ${role}`);
+    // say which session broke the rule rather than drawing an empty column.
+    throw new Error(`session "${session.id}" has no ${role}`);
   }
   return party;
 }
@@ -140,7 +140,7 @@ function partyOf(instance: AssessmentInstance, role: PartyRole): Party {
 function answersFor(party: Party, itemId: string): AspectOpinions {
   const answers = party.opinions.find((entry) => entry.itemId === itemId);
   if (answers === undefined) {
-    // Also schema-guaranteed: every party answers every Aspect of the instance.
+    // Also schema-guaranteed: every party answers every Aspect of the session.
     throw new Error(`party "${party.name}" answers no Aspect "${itemId}"`);
   }
   return answers;
@@ -168,21 +168,21 @@ export function gapsBetween(left: ReportedOpinions, right: ReportedOpinions): Re
 }
 
 /**
- * Project an instance and the template it names into what the screen draws.
+ * Project a session and the template it names into what the screen draws.
  *
- * The title and summary are the **template's**: an instance is a copy of it, and the copy's
+ * The title and summary are the **template's**: a session is a copy of it, and the copy's
  * own `summary` ("Relationship Basics, answered by Avery and Rowan.") is a caption for a
  * list, not the description of the assessment. Reading them off `template` is also what
- * makes the instance's `templateId` load-bearing on screen instead of only in `data:check`.
+ * makes the session's `templateId` load-bearing on screen instead of only in `data:check`.
  */
 export function assessmentReport(
-  instance: AssessmentInstance,
+  session: AssessmentSession,
   template: Assessment,
 ): AssessmentReport {
-  const initiator = partyOf(instance, "initiator");
-  const counterparty = partyOf(instance, "counterparty");
+  const initiator = partyOf(session, "initiator");
+  const counterparty = partyOf(session, "counterparty");
 
-  const rows = instance.items.map((item): AspectReportRow => {
+  const rows = session.items.map((item): AspectReportRow => {
     const left = reportedOpinions(answersFor(initiator, item.id).opinions);
     const right = reportedOpinions(answersFor(counterparty, item.id).opinions);
     return {
@@ -198,13 +198,13 @@ export function assessmentReport(
     };
   });
 
-  // The verdict is the same `instanceAlignment()` the schematic in `content/gaps.ts`
-  // defines — read over the rows just built, with the instance's own Setting. Nothing is
+  // The verdict is the same `sessionAlignment()` the schematic in `content/gaps.ts`
+  // defines — read over the rows just built, with the session's own Setting. Nothing is
   // passed in: an "aligned" flag from a caller would be a second authored copy of a
   // subtraction, and the one thing this report may never do is disagree with its own numbers.
-  const verdict = instanceAlignment(
+  const verdict = sessionAlignment(
     rows.map((row) => ({ itemId: row.itemId, gaps: row.gaps })),
-    instance.setting,
+    session.setting,
   );
 
   // The widest unmet Gap, in the rows' own order (Aspect, then glossary order) so a tie
@@ -222,11 +222,11 @@ export function assessmentReport(
   }
 
   return {
-    slug: instance.slug,
+    slug: session.slug,
     title: template.title,
     summary: template.summary,
-    mode: instance.mode,
-    setting: instance.setting,
+    mode: session.mode,
+    setting: session.setting,
     settingLimit: verdict.limit,
     verdict,
     widest,
@@ -234,10 +234,10 @@ export function assessmentReport(
   };
 }
 
-/** The instance a slug names, or `undefined` — the page turns that into `notFound()`. */
-export function instanceBySlug(
+/** The session a slug names, or `undefined` — the page turns that into `notFound()`. */
+export function sessionBySlug(
   slug: string,
-  instances: readonly AssessmentInstance[],
-): AssessmentInstance | undefined {
-  return instances.find((instance) => instance.slug === slug);
+  sessions: readonly AssessmentSession[],
+): AssessmentSession | undefined {
+  return sessions.find((session) => session.slug === slug);
 }

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
-import { SENT_RETURN_VALUE, instancePath, sentPath } from "@/lib/flow/paths";
+import { SENT_RETURN_VALUE, sessionPath, sentPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -21,7 +21,7 @@ import { resendInvite } from "@/lib/flow/store";
  * anything else falls back to the relationship.
  */
 function returnTarget(instanceId: string, posted: FormDataEntryValue | null | undefined): string {
-  return posted === SENT_RETURN_VALUE ? sentPath(instanceId) : instancePath(instanceId);
+  return posted === SENT_RETURN_VALUE ? sentPath(instanceId) : sessionPath(instanceId);
 }
 
 /**
@@ -43,7 +43,7 @@ function returnTarget(instanceId: string, posted: FormDataEntryValue | null | un
  * `flow_party_*` token and then from the signed-in account, and refuses `not-initiator` for anyone
  * else. A posted `role=initiator` would be read by nothing.
  *
- * **Three refusal books, one page.** A refusal redirects (303) back to the instance screen with
+ * **Three refusal books, one page.** A refusal redirects (303) back to the session screen with
  * `?resend=<code>`, and the panel draws the fixture's sentence for that code — the same shape the
  * claim page uses for `?claim=` and the create redirect uses for `?invite=`. The four refusals the
  * issue names (`cooldown`, `cap-reached`, `already-claimed`, `instance-complete`) are all reachable
@@ -65,7 +65,7 @@ export async function POST(
   const viewer = await currentUserIfConfigured();
 
   const result = await resendInvite({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     email: typeof posted === "string" ? posted : null,
     viewerTokens: partyTokensFrom(jar),
     viewerUserId: viewer?.userId ?? null,

@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEMO_ACCOUNT_EMAILS,
   DEMO_ACCOUNT_ROLES,
-  DEMO_INSTANCE_ID,
+  DEMO_SESSION_ID,
   DEMO_ROLE_LABELS,
   DEMO_ROLES,
   demoRoleOf,
@@ -59,10 +59,10 @@ describe("the demo panel's buttons", () => {
     }
   });
 
-  it("lands the two parties on the shared instance and the admin on the operator console", () => {
-    expect(destinationFor("initiator")).toBe(`/assessment/instances/${DEMO_INSTANCE_ID}`);
-    expect(destinationFor("counterparty")).toBe(`/assessment/instances/${DEMO_INSTANCE_ID}`);
-    // The admin answers no instance, so there is nothing blind for it to read — and its Overview
+  it("lands the two parties on the shared session and the admin on the operator console", () => {
+    expect(destinationFor("initiator")).toBe(`/assessment/instances/${DEMO_SESSION_ID}`);
+    expect(destinationFor("counterparty")).toBe(`/assessment/instances/${DEMO_SESSION_ID}`);
+    // The admin answers no session, so there is nothing blind for it to read — and its Overview
     // is three zeroes. The registry is the surface with something on it, so that is the landing.
     expect(destinationFor("admin")).toBe("/admin/instances");
     // `/demo/admin` stays as the gate's proof surface; it must not become a destination again.

@@ -47,7 +47,7 @@ import {
   serializeCreateDraft,
 } from "@/lib/flow/create-draft";
 import {
-  CREATE_INSTANCE_PATH,
+  CREATE_SESSION_PATH,
   SAVE_ASPECTS_PATH,
   SAVE_MODE_PATH,
   createAspectsPath,
@@ -301,7 +301,7 @@ describe("which list the create writes (#699)", () => {
     // The flow's own state at the floor: one row, and the control that would empty it is refused.
     expect(canRemoveAspect(1)).toBe(false);
     expect(canRemoveAspect(2)).toBe(true);
-    // And the create refuses an emptied list rather than writing an instance `zAssessmentInstance`
+    // And the create refuses an emptied list rather than writing a session `zAssessmentSession`
     // cannot parse (`items` is `.min(1)`).
     expect(aspectWriteProblem([])).toBe("none");
   });
@@ -376,10 +376,10 @@ describe("the screen", () => {
     const html = stageThreeHtml();
     expect(html).toContain(`href="${createCommitPath(TEMPLATE.slug)}"`);
     expect(html).toContain('data-create-next="account"');
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
     // The two save endpoints are reachable from this screen and nowhere else in the flow.
-    expect(SAVE_MODE_PATH).toBe(`${CREATE_INSTANCE_PATH}/mode`);
-    expect(SAVE_ASPECTS_PATH).toBe(`${CREATE_INSTANCE_PATH}/aspects`);
+    expect(SAVE_MODE_PATH).toBe(`${CREATE_SESSION_PATH}/mode`);
+    expect(SAVE_ASPECTS_PATH).toBe(`${CREATE_SESSION_PATH}/aspects`);
   });
 
   it("draws the add and remove controls at stage 3 (#699)", () => {

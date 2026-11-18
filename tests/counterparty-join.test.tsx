@@ -30,7 +30,7 @@ import { JoinAccountStep } from "@/components/assessment-flow/join-account-step"
 import { JoinInviteStep } from "@/components/assessment-flow/join-invite-step";
 import { JoinStepper } from "@/components/assessment-flow/join-stepper";
 import { invitePageCopy } from "@/data/pages/invite";
-import { afterClaimTarget, instancePath, inviteStepPath, OVERVIEW_PATH } from "@/lib/flow/paths";
+import { afterClaimTarget, sessionPath, inviteStepPath, OVERVIEW_PATH } from "@/lib/flow/paths";
 import { inviteWizardStepOf } from "@/lib/flow/paths";
 import type { InvitePreview } from "@/lib/flow/store";
 
@@ -38,7 +38,7 @@ const TOKEN = "k".repeat(43);
 
 const PREVIEW: InvitePreview = {
   state: "claimable",
-  instanceRecordId: "instance-response-1",
+  sessionRecordId: "session-response-1",
   initiatorName: "Avery",
   counterpartyName: "Rowan",
   templateTitle: "Relationship Basics",
@@ -172,19 +172,19 @@ describe("an invitation deep link resolves to the step it names", () => {
 describe("a completed join closes onto /dashboard", () => {
   it("lands a signed-in claimer on the console, where the relationship is listed", () => {
     expect(
-      afterClaimTarget({ viewerSignedIn: true, instanceRecordId: PREVIEW.instanceRecordId ?? "" }),
+      afterClaimTarget({ viewerSignedIn: true, sessionRecordId: PREVIEW.sessionRecordId ?? "" }),
     ).toBe(OVERVIEW_PATH);
   });
 
   it("keeps a signed-out claim on the relationship it just bound", () => {
-    expect(afterClaimTarget({ viewerSignedIn: false, instanceRecordId: "instance-1" })).toBe(
-      instancePath("instance-1"),
+    expect(afterClaimTarget({ viewerSignedIn: false, sessionRecordId: "session-1" })).toBe(
+      sessionPath("session-1"),
     );
   });
 
   it("names no `Ongoing` surface on either exit — that stage does not exist", () => {
     for (const viewerSignedIn of [true, false]) {
-      const target = afterClaimTarget({ viewerSignedIn, instanceRecordId: "instance-1" });
+      const target = afterClaimTarget({ viewerSignedIn, sessionRecordId: "session-1" });
       expect(target).not.toMatch(/ongoing/i);
     }
   });

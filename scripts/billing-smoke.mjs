@@ -3,7 +3,7 @@
  *
  * This is the acceptance script for the billing model: it buys a tier through the **mock** adapter
  * (no key, no network), reads the row back out of Postgres, and then drives the gate through
- * `createInstanceFromTemplate` — the same function the create form's POST endpoint calls, so what
+ * `createSessionFromTemplate` — the same function the create form's POST endpoint calls, so what
  * it proves is the server-side gate and not a hidden button.
  *
  *   free   a draft in Advanced Mode      allowed, and opens no trial (nothing is published)
@@ -13,12 +13,12 @@
  *   paid   both                          allowed
  *
  * #835 removed the mode refusal and the session-count refusal from the create path, so the four
- * outcomes this script used to print (`instance-limit`, `mode-not-entitled`) are two: the plan's
+ * outcomes this script used to print (`session-limit`, `mode-not-entitled`) are two: the plan's
  * relationship count, and the week the publish grants.
  *
  * It is a script and not a test because the property under test is a **row**: a unit test would
  * need a database and the gate is deliberately database-free (`docs/operations/gate.md`). It cleans up after
- * itself — the instances it creates, the subscriptions it buys and the checkout events it records
+ * itself — the sessions it creates, the subscriptions it buys and the checkout events it records
  * are deleted at the end — because `pnpm db:seed` refuses a tree carrying assessment records it
  * does not author, and a smoke that poisoned the next seed would be a trap.
  *
@@ -64,7 +64,7 @@ async function main() {
   });
   await client.connect();
 
-  const createdInstances = [];
+  const createdSessions = [];
   try {
     /* 1 — the plan rows, from the same fixture a pricing surface renders. --------------------- */
     heading("billing_plan — seeded from data/billing-plans.ts");
@@ -83,7 +83,7 @@ async function main() {
       fail(`${planRows.length} row(s) in the table, ${rows.length} in the fixture`);
     }
 
-    /* 2 — a published, un-instanced template to copy. ---------------------------------------- */
+    /* 2 — a published, un-sessiond template to copy. ---------------------------------------- */
     const { rows: templates } = await client.query(
       `SELECT r.id
          FROM record r
@@ -100,17 +100,17 @@ async function main() {
     }
 
     const billing = await import("@/lib/billing");
-    const { createInstanceFromTemplate, sendDraftInvitation, FlowError } = await import(
+    const { createSessionFromTemplate, sendDraftInvitation, FlowError } = await import(
       "@/lib/flow/store"
     );
-    const { activeInstanceCount, listSubscriptionsFor } = await import("@/lib/db/billing");
+    const { activeSessionCount, listSubscriptionsFor } = await import("@/lib/db/billing");
 
     /* 3 — the free account: one relationship, and the publish trial is the entitlement. ------ */
     heading(`the free account (${FREE_ACCOUNT}) — no subscription`);
     const freeEntitlement = await billing.entitlementForAccount(FREE_ACCOUNT);
     console.log(
       `  plan=${freeEntitlement.planName} paid=${freeEntitlement.paid} ` +
-        `maxActiveInstances=${freeEntitlement.maxActiveInstances} advanced=${freeEntitlement.advancedMode}`,
+        `maxActiveSessions=${freeEntitlement.maxActiveSessions} advanced=${freeEntitlement.advancedMode}`,
     );
 
     // A previous run that died before its cleanup would otherwise answer 3a's "no trial" question
@@ -120,7 +120,7 @@ async function main() {
     ]);
 
     const createOnce = async (userId, mode, draft = false) =>
-      createInstanceFromTemplate({
+      createSessionFromTemplate({
         templateRecordId: templateId,
         initiatorName: "Smoke Initiator",
         counterpartyName: "Smoke Counterparty",
@@ -132,15 +132,15 @@ async function main() {
 
     // 3a — a draft is written whatever Mode it asks for (#834), and publishes nothing, so it opens
     //      no trial.
-    let draftInstance;
+    let draftSession;
     try {
-      draftInstance = await createOnce(FREE_ACCOUNT, "advanced", true);
-      createdInstances.push(draftInstance.instanceRecordId);
+      draftSession = await createOnce(FREE_ACCOUNT, "advanced", true);
+      createdSessions.push(draftSession.sessionRecordId);
       const subs = await listSubscriptionsFor(FREE_ACCOUNT);
       if (subs.length === 0) {
         pass(
           "free account wrote an Advanced draft, and no trial opened with it",
-          `instance ${draftInstance.instanceRecordId}, 0 subscription(s)`,
+          `session ${draftSession.sessionRecordId}, 0 subscription(s)`,
         );
       } else {
         fail(
@@ -155,7 +155,7 @@ async function main() {
     // 3b — the plan's relationship count still refuses (#505), and the sentence names the plan.
     try {
       const created = await createOnce(FREE_ACCOUNT, "basic");
-      createdInstances.push(created.instanceRecordId);
+      createdSessions.push(created.sessionRecordId);
       fail("free account refused a second relationship", "it was ALLOWED — the count gate is open");
     } catch (error) {
       if (error instanceof FlowError && error.code === "relationship-limit") {
@@ -167,9 +167,9 @@ async function main() {
 
     // 3c — publishing the draft is what sells the relationship, so it opens the trial: the entry
     //      paid tier, `trialing`, one week from the publish (#840).
-    if (draftInstance !== undefined) {
+    if (draftSession !== undefined) {
       const sent = await sendDraftInvitation({
-        instanceRecordId: draftInstance.instanceRecordId,
+        sessionRecordId: draftSession.sessionRecordId,
         viewerUserId: FREE_ACCOUNT,
       });
       const trialRows = await listSubscriptionsFor(FREE_ACCOUNT);
@@ -191,11 +191,11 @@ async function main() {
       const during = await billing.entitlementForAccount(FREE_ACCOUNT);
       try {
         const advanced = await createOnce(FREE_ACCOUNT, "advanced");
-        createdInstances.push(advanced.instanceRecordId);
+        createdSessions.push(advanced.sessionRecordId);
         if (during.advancedMode) {
           pass(
             "the trial entitled Advanced Mode — the published create is allowed (#835)",
-            `plan=${during.planName} advanced=${during.advancedMode}, instance ${advanced.instanceRecordId}, ${await activeInstanceCount(FREE_ACCOUNT)} active`,
+            `plan=${during.planName} advanced=${during.advancedMode}, session ${advanced.sessionRecordId}, ${await activeSessionCount(FREE_ACCOUNT)} active`,
           );
         } else {
           fail(
@@ -247,17 +247,17 @@ async function main() {
     const paidEntitlement = await billing.entitlementForAccount(PAID_ACCOUNT);
     console.log(
       `  entitlement: plan=${paidEntitlement.planName} paid=${paidEntitlement.paid} ` +
-        `maxActiveInstances=${paidEntitlement.maxActiveInstances} advanced=${paidEntitlement.advancedMode}`,
+        `maxActiveSessions=${paidEntitlement.maxActiveSessions} advanced=${paidEntitlement.advancedMode}`,
     );
 
     try {
       const advanced = await createOnce(PAID_ACCOUNT, "advanced");
-      createdInstances.push(advanced.instanceRecordId);
+      createdSessions.push(advanced.sessionRecordId);
       const basic = await createOnce(PAID_ACCOUNT, "basic");
-      createdInstances.push(basic.instanceRecordId);
+      createdSessions.push(basic.sessionRecordId);
       pass(
         "paid account allowed Advanced Mode and a second instance",
-        `${await activeInstanceCount(PAID_ACCOUNT)} active instance(s): ${advanced.instanceRecordId}, ${basic.instanceRecordId}`,
+        `${await activeSessionCount(PAID_ACCOUNT)} active session(s): ${advanced.sessionRecordId}, ${basic.sessionRecordId}`,
       );
     } catch (error) {
       fail("paid account allowed Advanced Mode and a second instance", String(error));
@@ -293,8 +293,8 @@ async function main() {
     }
   } finally {
     /* 6 — leave the tree as it was found. ---------------------------------------------------- */
-    if (createdInstances.length > 0) {
-      await client.query("DELETE FROM record WHERE id = ANY($1::text[])", [createdInstances]);
+    if (createdSessions.length > 0) {
+      await client.query("DELETE FROM record WHERE id = ANY($1::text[])", [createdSessions]);
     }
     await client.query("DELETE FROM billing_subscription WHERE user_id = ANY($1::text[])", [
       [FREE_ACCOUNT, PAID_ACCOUNT],
@@ -302,14 +302,14 @@ async function main() {
     await client.query("DELETE FROM billing_event WHERE provider = 'mock'");
     const { rows: leftovers } = await client.query(
       `SELECT count(*)::int AS n FROM record WHERE id = ANY($1::text[])`,
-      [createdInstances],
+      [createdSessions],
     );
     if (leftovers[0].n > 0) {
-      console.log(`\n  ! cleanup left ${leftovers[0].n} instance record(s) behind`);
+      console.log(`\n  ! cleanup left ${leftovers[0].n} session record(s) behind`);
       process.exitCode = 1;
-    } else if (createdInstances.length > 0) {
+    } else if (createdSessions.length > 0) {
       console.log(
-        `\n  · cleaned up ${createdInstances.length} smoke instance(s), the subscriptions and the mock events`,
+        `\n  · cleaned up ${createdSessions.length} smoke session(s), the subscriptions and the mock events`,
       );
     }
     await client.end();

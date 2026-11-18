@@ -321,7 +321,7 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
       body: "Choose a template, answer privately, and open the report when you are both ready.",
       cta: {
         label: "Create a relationship",
-        href: "/templates/relationship/blank-template/create",
+        href: "/dashboard/templates/blank-template/create",
       },
     },
   ],

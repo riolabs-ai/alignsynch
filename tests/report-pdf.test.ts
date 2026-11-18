@@ -15,18 +15,18 @@
  */
 import { describe, expect, test } from "vitest";
 
-import { assessments, assessmentInstances } from "@/data/assessments";
+import { assessments, assessmentSessions } from "@/data/assessments";
 import { assessmentReport } from "@/lib/assessment-report";
 import { reportDocument } from "@/lib/report/document";
 import { renderReportPdf } from "@/lib/report/pdf";
 
-const instance = assessmentInstances[0];
-if (instance === undefined) throw new Error("data/assessments.ts carries no instance");
-const template = assessments.find((candidate) => candidate.id === instance.templateId);
-if (template === undefined) throw new Error(`no template "${instance.templateId}"`);
+const session = assessmentSessions[0];
+if (session === undefined) throw new Error("data/assessments.ts carries no session");
+const template = assessments.find((candidate) => candidate.id === session.templateId);
+if (template === undefined) throw new Error(`no template "${session.templateId}"`);
 
 const VERSION = "9.9.9";
-const document = reportDocument(instance, assessmentReport(instance, template), VERSION);
+const document = reportDocument(session, assessmentReport(session, template), VERSION);
 
 /** The bytes as the latin-1 string a PDF actually is — how a viewer reads it, and how we can. */
 function textOf(bytes: Uint8Array): string {
@@ -83,7 +83,7 @@ describe("the PDF names what the card requires", () => {
     const pdf = textOf(renderReportPdf(document));
 
     expect(pdf).toContain(`${document.report.aspects.length}`);
-    expect(pdf).toContain(instance.parties[0]?.name ?? "");
+    expect(pdf).toContain(session.parties[0]?.name ?? "");
   });
 });
 

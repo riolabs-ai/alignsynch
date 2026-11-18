@@ -70,7 +70,7 @@ function libraryRow(slug: string, title: string, aspectCount = 5): LibraryTempla
     status: "published",
     createdAt: "2026-01-05T09:00:00.000Z",
     aspectCount,
-    instanceCount: 3,
+    sessionCount: 3,
     authorship: "built-in",
   };
 }
@@ -185,7 +185,7 @@ describe("the relationship card menu (#1134, bundle 05)", () => {
     href: "/dashboard/relationships/r1",
     actionHref:
       state === "draft" ? "/templates/relationship/x/create" : "/dashboard/relationships/r1",
-    instanceRecordId: state === "waiting" ? "session-1" : null,
+    sessionRecordId: state === "waiting" ? "session-1" : null,
   });
 
   it("draws the four states' rows, and only those", () => {
@@ -279,9 +279,9 @@ describe("the relationship card menu (#1134, bundle 05)", () => {
         isInitiator: true,
         href: view.href,
         actionHref: view.actionHref,
-        instanceRecordId: row.sessionRecordId,
+        sessionRecordId: row.sessionRecordId,
       }),
-      payload: { relationshipId: row.id, instanceRecordId: row.sessionRecordId ?? undefined },
+      payload: { relationshipId: row.id, sessionRecordId: row.sessionRecordId ?? undefined },
       title: view.title,
       otherParty: "Elena",
       notices: relationshipMenuNotices(relationshipCopy),

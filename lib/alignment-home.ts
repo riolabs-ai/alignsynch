@@ -21,10 +21,10 @@
  *      `undefined`, which is exactly what "not in a family, and not clickable" means. The four
  *      parses are pinned in `tests/alignment-home.test.ts`, so rewriting a summary fails a test
  *      rather than silently dropping a card.
- *   2. **A link exists only when a relationship does.** A template links to the instance slug
+ *   2. **A link exists only when a relationship does.** A template links to the session slug
  *      of a record that answered it; a template nobody answered (the blank one) carries an
  *      explanatory note and no `href`. The route is `/assessment/[slug]` and it renders an
- *      *instance*, so linking a template that has no instance would be a 404 dressed as a door.
+ *      *session*, so linking a template that has no session would be a 404 dressed as a door.
  *   3. **Nothing here says how many relationships have responses.** The page names the worked
  *      example ({title}, answered by {left} and {right}) and stops; a count of "responses" would
  *      be a product claim this fixture set is not making.
@@ -40,7 +40,7 @@
  * draws it holds no words and no ids — `components/home/alignment-home.tsx` receives this
  * object and prints its fields.
  */
-import type { Assessment, AssessmentInstance, Party } from "@/content/assessment";
+import type { Assessment, AssessmentSession, Party } from "@/content/assessment";
 import type { Brand } from "@/content/brand";
 import { GAP_KIND_LABELS } from "@/content/gaps";
 import type { PageCopy, PageCopySection } from "@/content/pages";
@@ -89,7 +89,7 @@ export interface AlignmentTemplate {
   readonly family?: string;
   /** The descriptor inside that family (`Parent / Child`) — absent with the family. */
   readonly type?: string;
-  /** Present when a relationship answered this template; the link is to its instance. */
+  /** Present when a relationship answered this template; the link is to its session. */
   readonly link?: { readonly href: string; readonly label: string };
   /** Present instead of `link`: the template nobody answered, and what that means. */
   readonly note?: { readonly label: string; readonly body: string };
@@ -124,7 +124,7 @@ export interface AlignmentRealmCount {
  * One row of the hero's worked-example card: an Aspect as the template asks it, the two Feel
  * scores that were actually given on it, and the sentence their difference comes to.
  *
- * Every field is read off the featured instance — the prompt, the scale's two endpoints and
+ * Every field is read off the featured session — the prompt, the scale's two endpoints and
  * both parties' `feel` — and the Gap is `gapOf()`, the one Gap function the app has. There is
  * no authored score here: a worked example that printed a number nobody answered would be the
  * page's central claim faked in the markup that makes it.
@@ -151,7 +151,7 @@ export interface AlignmentAspectScore {
 export interface AlignmentWorkedExample {
   /** `"Worked example · Relationship Basics"`. */
   readonly title: string;
-  /** The mode the instance was answered in — `"Basic mode"`, and it is the record's, not a design's. */
+  /** The mode the session was answered in — `"Basic mode"`, and it is the record's, not a design's. */
   readonly mode: string;
   /** The two parties, named, because the bars are two people's answers and not two abstractions. */
   readonly you: string;
@@ -272,17 +272,17 @@ export function relationshipTypeOf(
   return { family, type };
 }
 
-/** The first instance that answered this template, in the fixture's order. */
-function instanceOf(
+/** The first session that answered this template, in the fixture's order. */
+function sessionOf(
   templateId: string,
-  instances: readonly AssessmentInstance[],
-): AssessmentInstance | undefined {
-  return instances.find((instance) => instance.templateId === templateId);
+  sessions: readonly AssessmentSession[],
+): AssessmentSession | undefined {
+  return sessions.find((session) => session.templateId === templateId);
 }
 
-/** `/assessment/[slug]` for an answered instance — the one route an instance has. */
-function assessmentHref(instance: AssessmentInstance): string {
-  return `/assessment/${instance.slug}`;
+/** `/assessment/[slug]` for an answered session — the one route a session has. */
+function assessmentHref(session: AssessmentSession): string {
+  return `/assessment/${session.slug}`;
 }
 
 /**
@@ -403,12 +403,12 @@ function eyebrowOf(copy: PageCopy, id: string): string | undefined {
   return copy.items?.find((item) => item.id === id)?.label;
 }
 
-/** The party holding one seat on the instance — by role, never by array position. */
-function partyIn(instance: AssessmentInstance, role: Party["role"]): Party {
-  const party = instance.parties.find((candidate) => candidate.role === role);
+/** The party holding one seat on the session — by role, never by array position. */
+function partyIn(session: AssessmentSession, role: Party["role"]): Party {
+  const party = session.parties.find((candidate) => candidate.role === role);
   if (party === undefined) {
     throw new Error(
-      `alignmentHome: relationship "${instance.slug}" has no ${role} — a worked example draws both seats`,
+      `alignmentHome: relationship "${session.slug}" has no ${role} — a worked example draws both seats`,
     );
   }
   return party;
@@ -427,20 +427,20 @@ function feelOf(party: Party, itemId: string): number {
 }
 
 /**
- * The hero's card, read off the featured instance.
+ * The hero's card, read off the featured session.
  *
- * The rows are the instance's own Aspects in the fixture's order, each carrying the template's
+ * The rows are the session's own Aspects in the fixture's order, each carrying the template's
  * prompt, the scale's two endpoints and both parties' Feel answers. The Gap is `gapOf()` — the
  * same call the report makes — so the number on the front page cannot say something the record
  * does not. A Gap of 0 is printed as the glossary's In Synch rather than "Feel Gap 0".
  *
- * The mode pill is the instance's `mode`, not a design choice: the featured relationship was
+ * The mode pill is the session's `mode`, not a design choice: the featured relationship was
  * answered in Basic Mode, so the card says "Basic mode" — the word "mode" is what stops a reader
  * taking a bare "Basic" for a plan tier or for a verdict on the product.
  */
-function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): AlignmentWorkedExample {
-  const initiator = partyIn(instance, "initiator");
-  const counterparty = partyIn(instance, "counterparty");
+function workedExampleOf(session: AssessmentSession, copy: PageCopy): AlignmentWorkedExample {
+  const initiator = partyIn(session, "initiator");
+  const counterparty = partyIn(session, "counterparty");
   const card = pageItemOf(copy, "worked-example");
   const noteBody = card.body;
   if (noteBody === undefined) {
@@ -452,11 +452,11 @@ function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): Alignmen
   const inSynchLabel = pageItemOf(copy, "worked-example-in-synch").label;
   const scoresLabel = pageItemOf(copy, "worked-example-scores").label;
   const mode =
-    instance.mode === "advanced"
+    session.mode === "advanced"
       ? pageItemOf(copy, "worked-example-mode-advanced").label
       : pageItemOf(copy, "worked-example-mode-basic").label;
 
-  const rows: AlignmentAspectScore[] = instance.items.map((item) => {
+  const rows: AlignmentAspectScore[] = session.items.map((item) => {
     if (item.scale.kind !== "score") {
       throw new Error(
         `alignmentHome: Aspect "${item.id}" is not a 1..5 score — the worked-example card draws bars, and a choice scale has no count to draw`,
@@ -486,7 +486,7 @@ function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): Alignmen
   });
 
   return {
-    title: fillLabel(card.label, { title: instance.title }),
+    title: fillLabel(card.label, { title: session.title }),
     mode,
     you: initiator.name,
     them: counterparty.name,
@@ -499,7 +499,7 @@ function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): Alignmen
  * The page, joined.
  *
  * `featuredSlug` is the relationship the hero leads with, and it is required to resolve: a
- * front page whose CTA points at an instance the fixture does not hold is the exact failure
+ * front page whose CTA points at a session the fixture does not hold is the exact failure
  * `notFound()` hides (`/assessment/[slug]` renders nothing and the build stays green), so this
  * throws while `/` is prerendered and stops `next build` instead.
  *
@@ -512,14 +512,14 @@ export function alignmentHome(
   brand: Brand,
   copy: PageCopy,
   templates: readonly Assessment[],
-  instances: readonly AssessmentInstance[],
+  sessions: readonly AssessmentSession[],
   featuredSlug: string,
   relationshipTypes: readonly RelationshipType[] = purchasableRelationshipTypes,
 ): AlignmentHomeModel {
-  const featured = instances.find((instance) => instance.slug === featuredSlug);
+  const featured = sessions.find((session) => session.slug === featuredSlug);
   if (featured === undefined) {
     throw new Error(
-      `alignmentHome: featured relationship "${featuredSlug}" is not an instance in data/assessments.ts (have: ${instances.map((instance) => instance.slug).join(", ")})`,
+      `alignmentHome: featured relationship "${featuredSlug}" is not a session in data/assessments.ts (have: ${sessions.map((session) => session.slug).join(", ")})`,
     );
   }
 
@@ -573,8 +573,8 @@ export function alignmentHome(
 
   const rows: AlignmentTemplate[] = templates.map((template) => {
     const type = relationshipTypeOf(template);
-    const instance = instanceOf(template.id, instances);
-    const answered = instance === undefined ? undefined : instance;
+    const session = sessionOf(template.id, sessions);
+    const answered = session === undefined ? undefined : session;
 
     return {
       id: template.id,

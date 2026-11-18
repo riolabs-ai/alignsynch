@@ -1,7 +1,7 @@
 /**
  * One card projection, and the figures it owns (#795 F2).
  *
- * The defect this pins down: `components/assessment-flow/my-instances.tsx` assembled its own
+ * The defect this pins down: `components/assessment-flow/my-sessions.tsx` assembled its own
  * figures — `N of M`, a percentage, `toFixed(1)` — inside the render. A number that is *derived*
  * is invisible to `E22` (which fires on a rendered literal) and to `E23` (which counts copy), so
  * the arithmetic sat in JSX while every check stayed green. Two consequences follow, and both are
@@ -33,7 +33,7 @@ import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
 import { assessmentsPageCopy } from "@/data/pages/assessments";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import type { RelationshipCard } from "@/lib/db/assessments";
-import { instancePath } from "@/lib/flow/paths";
+import { sessionPath } from "@/lib/flow/paths";
 import { CARD_ABSENT, type MemberCard, relationshipCard, sessionLabelOf } from "@/lib/member/card";
 import { catalogueCard, mineCard } from "@/lib/member/shelf";
 
@@ -60,7 +60,7 @@ function codeOf(path: string): string {
 function rowOf(overrides: Partial<RelationshipCard> = {}): RelationshipCard {
   return {
     relationshipId: "relationship-assessment-instance-avery-rowan",
-    instanceRecordId: "assessment-instance-avery-rowan",
+    sessionRecordId: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
     name: "Relationship Basics",
     templateTitle: "Relationship Basics",
@@ -91,7 +91,7 @@ const templateRow: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-29T12:00:00.000Z",
   aspectCount: 5,
-  instanceCount: 2,
+  sessionCount: 2,
   authorship: "built-in",
 };
 
@@ -233,7 +233,7 @@ describe("relationshipCard — what else the card says", () => {
     const card = relationshipCard(assessmentsPageCopy, rowOf());
     expect(card.id).toBe("assessment-instance-avery-rowan");
     expect(card.detail).toEqual({
-      href: instancePath("assessment-instance-avery-rowan"),
+      href: sessionPath("assessment-instance-avery-rowan"),
       label: "View",
     });
     expect(card.create).toBeNull();

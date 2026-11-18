@@ -7,7 +7,7 @@
  *
  * **The template it copies, and the axes it varies.** `components/my-quizzes/my-quizzes.tsx` is
  * the same list of records with the same title row, the same state on each row and the same
- * primary action at the right, and `components/admin/instance-registry.tsx` already took it to a
+ * primary action at the right, and `components/admin/session-registry.tsx` already took it to a
  * table. This screen varies three things from that registry: the status is a `record.status`
  * (draft / published / archived) rather than a derived stage, the primary action **writes**
  * (the create band posts a draft) rather than filtering, and the row link opens an editor instead
@@ -273,7 +273,7 @@ export function TemplateRegistry({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{row.aspectCount}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.instanceCount}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.sessionCount}</TableCell>
                     <TableCell>{formatDate(row.date)}</TableCell>
                     <TableCell>
                       <Link

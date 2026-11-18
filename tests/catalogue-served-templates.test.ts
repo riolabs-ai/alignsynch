@@ -11,7 +11,7 @@
  * had them all, which is why nothing local could see it.
  *
  * The fix is not a looser read (`readLibraryTemplate`'s authorization is unchanged, and this file
- * proves it still refuses a draft, an instance and somebody else's template). It is:
+ * proves it still refuses a draft, a session and somebody else's template). It is:
  *
  *   * the shelf is `lib/platform-templates.ts` — the published templates `data/assessments.ts`
  *     authors, which is what `scripts/db-templates-import.mjs` writes — so the page cannot draw a
@@ -24,7 +24,7 @@
  * The database below is built from `platformTemplates` — the seed's own source — and answers the
  * two statements `readLibraryTemplate` issues, applying the same four clauses its SQL does. So the
  * resolution cases prove the **mapper and the rule** (a platform published template with no session
- * still reads; a draft, an instance and a foreign author do not), and they prove the advertised set
+ * still reads; a draft, a session and a foreign author do not), and they prove the advertised set
  * is inside what a branch seeded from the fixtures can serve. They cannot prove a particular
  * deployed branch holds those rows: that is the acceptance run against the host, and the census the
  * import prints.
@@ -125,7 +125,7 @@ vi.mock("@/lib/db/client", () => ({
           date: record.date,
           author_user_id: record.authorUserId,
           aspects: record.items.length,
-          instances: 0,
+          sessions: 0,
           live_payload: record.payload,
         }));
     }
@@ -176,7 +176,7 @@ describe("the shelf is what the platform serves", () => {
   });
 
   it("counts the flow's blank start as a served template too", () => {
-    // `/templates/relationship/blank-template/create` is the closing band's action (#1042) and the
+    // `/dashboard/templates/blank-template/create` is the closing band's action (#1042) and the
     // address `tests/blank-start.test.ts` pins; it is a create link like any card's.
     expect(isPlatformTemplate("blank-template")).toBe(true);
   });
@@ -246,7 +246,7 @@ describe("the read's own rules still refuse — nothing was widened to pass", ()
     expect(await readLibraryTemplate("colleagues", null)).toBeUndefined();
   });
 
-  it("answers nothing for a draft, for an instance, and for somebody else's template", async () => {
+  it("answers nothing for a draft, for a session, and for somebody else's template", async () => {
     branch.records = seededBranch({
       team: { status: "draft" },
       spouses: { hasSession: true },

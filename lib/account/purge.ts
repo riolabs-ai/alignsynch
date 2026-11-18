@@ -151,7 +151,7 @@ export interface PurgeStep {
 }
 
 /**
- * The complete-session predicate, as SQL — `instanceStatusOf()` (`lib/flow/state.ts`) restated.
+ * The complete-session predicate, as SQL — `sessionStatusOf()` (`lib/flow/state.ts`) restated.
  *
  * A session is `complete` when a seat of each role exists, the copy holds at least one Aspect,
  * both seats have answered every Aspect, and **both** `accepted_at` stamps are set. The

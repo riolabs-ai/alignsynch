@@ -28,7 +28,7 @@
  * `FOR UPDATE` read of `session_invite`; a relationship with no row there answers `no-invite`
  * (`lib/flow/resend.ts:103`), which the send maps to `no-invitation` (`lib/flow/store.ts:1720`).
  * Every path that creates a draft in the product writes that row in the same transaction —
- * `createInstanceFromTemplate` at `lib/flow/store.ts:795` (the email and the Counterparty's name
+ * `createSessionFromTemplate` at `lib/flow/store.ts:795` (the email and the Counterparty's name
  * come from the create form) and the member dashboard's next round at
  * `lib/member/relationships.ts:1583` — so the row is part of the state stage 5's Send is pressed
  * in, and a fixture without it builds a state the product never creates. The third case below
@@ -109,7 +109,7 @@ async function draftRelationship(
     [sessionId, payerId],
   );
   /**
-   * The invitation, written the way `createInstanceFromTemplate` writes it (`lib/flow/store.ts:795`):
+   * The invitation, written the way `createSessionFromTemplate` writes it (`lib/flow/store.ts:795`):
    * the Counterparty's address and name from the create form, a hashed token, and a seven-day
    * window off the same `INVITE_TTL_MS` the product uses. Unclaimed, never reissued — the original
    * link of a draft nobody has opened.
@@ -201,7 +201,7 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
     // #911 gate it answered `no-payment-method`. Both are the defects a real schema and a real
     // function catch and a stub cannot.
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: payerId,
       now: NOW,
     });
@@ -217,7 +217,7 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
     const relationshipId = await draftRelationship("paid");
     await liveMembership(`${relationshipId}-payer`);
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });
@@ -239,7 +239,7 @@ live("stage 5's Send sends without a membership, and writes no trial", () => {
   it("answers no-invitation for a draft that has no invitation row — the state the fixture must not build", async () => {
     const relationshipId = await draftRelationship("no-invite", { invitation: false });
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });

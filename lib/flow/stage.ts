@@ -1,5 +1,5 @@
 /**
- * The instance screen's **one** stage sentence — derived from the flow's status, never stored,
+ * The session screen's **one** stage sentence — derived from the flow's status, never stored,
  * and never a bar (#274, `docs/specs/ux-stages.md`).
  *
  * The relationship ladder has four names (`content/stages.ts`): Invited, Connected, Sharing,
@@ -10,7 +10,7 @@
  *   answering              → connected   both seats exist, the sheet is not finished
  *   complete               → sharing     both submitted; the report is open to both
  *
- * **Aligned is a verdict, not a step.** It is `instanceAlignment()` over the finished Gap —
+ * **Aligned is a verdict, not a step.** It is `sessionAlignment()` over the finished Gap —
  * Setting-relative arithmetic that flips when a Settings choice changes — so it belongs on the
  * report (whose verdict band draws it from the same function), not in a progress display. That
  * is also why the type here excludes it: the report is the only caller that could ever know the
@@ -34,7 +34,7 @@
  */
 import type { RelationshipStage } from "@/content/stages";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
-import type { InstanceStatus } from "@/lib/flow/state";
+import type { SessionStatus } from "@/lib/flow/state";
 
 /**
  * The three stages a screen can name. `aligned` is the fourth name on the ladder and is
@@ -51,7 +51,7 @@ export type FlowStage = (typeof FLOW_STAGES)[number];
 
 /**
  * The status → stage table. `voided` has **no** stage (#503): a session an operator ended is off
- * the ladder, so `null` is the honest answer and the instance screen draws its own notice instead
+ * the ladder, so `null` is the honest answer and the session screen draws its own notice instead
  * of a badge. Typing the value as `FlowStage | null` rather than adding a fourth stage name makes
  * "draw the ladder for a void" a compile error at the call site.
  *
@@ -66,7 +66,7 @@ export type FlowStage = (typeof FLOW_STAGES)[number];
  * (`lib/db/assessments.ts` throws if one reaches the card list), and a draft is a card that draws
  * the draft's own words instead of a stage. `stageCopyId()` is never asked about either.
  */
-const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
+const STAGE_OF_STATUS: Record<SessionStatus, FlowStage | null> = {
   draft: null,
   awaiting_counterparty: "invited",
   answering: "connected",
@@ -81,10 +81,10 @@ const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
 };
 
 /**
- * The stage this instance's screen is at — `null` when it is off the ladder, which is an
+ * The stage this session's screen is at — `null` when it is off the ladder, which is an
  * operator's void (#503) or a relationship that was never sent (#975).
  */
-export function relationshipStage(status: InstanceStatus): FlowStage | null {
+export function relationshipStage(status: SessionStatus): FlowStage | null {
   return STAGE_OF_STATUS[status];
 }
 
@@ -105,12 +105,12 @@ export function relationshipStage(status: InstanceStatus): FlowStage | null {
  *   complete               true  — completed: `AlignmentView` is what the cell opens
  *   voided                 false — an operator ended the session; it is off the ladder
  *
- * **The cell opening is not the report opening.** It points at the instance screen, which renders
+ * **The cell opening is not the report opening.** It points at the session screen, which renders
  * the sheet while the blind rule holds and the Alignment once both seats have accepted
  * (`visibleRoles()`). Deciding *that* here would be a second copy of the blind rule, and the whole
  * point of `lib/flow/screen.ts` is that there is one.
  */
-export function alignAvailableOf(status: InstanceStatus): boolean {
+export function alignAvailableOf(status: SessionStatus): boolean {
   return status === "answering" || status === "awaiting_payment" || status === "complete";
 }
 
@@ -139,7 +139,7 @@ export type StageCopyId =
 export function stageCopyId(
   stage: FlowStage,
   invite: InviteDisplayState | null,
-  status?: InstanceStatus,
+  status?: SessionStatus,
 ): StageCopyId {
   if (status === "awaiting_payment") return "awaiting-payment";
   if (stage === "invited" && invite === "expired") return "invited-expired";

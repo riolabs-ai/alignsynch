@@ -80,7 +80,7 @@ function viewOf(input: {
     summary: template.summary,
     createdAt: "2026-11-01T00:00:00.000Z",
     publishedAt: "2026-11-02T00:00:00.000Z",
-    sessionRecordId: "instance-1121",
+    sessionRecordId: "session-1121",
     aspectCount: template.items.length,
     invite: null,
     counterpartyName: input.isInitiator ? "Rowan" : "Avery",

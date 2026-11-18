@@ -7,7 +7,7 @@
  *
  * One module for all three, like `data/pages/legal.ts`: the same person reads them in sequence, so
  * "Ask for a new link" has to mean the same thing on the refusal band and in the mail, and two
- * fixtures would let the two drift. `data/pages/index.ts` keys each route to the instance it
+ * fixtures would let the two drift. `data/pages/index.ts` keys each route to the session it
  * renders, so E23 still attributes each surface separately.
  *
  * ## The sentence that must not depend on the answer

@@ -30,7 +30,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { PageCopy } from "@/content/pages";
-import { CREATE_INSTANCE_PATH, CREATE_STAGE_HEADING_ID } from "@/lib/flow/paths";
+import { CREATE_SESSION_PATH, CREATE_STAGE_HEADING_ID } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { StageFoot } from "./stage-foot";
 
@@ -82,12 +82,7 @@ export function StageAccount({
           foot — one advancing control per stage, the same shape as the four stages around it. It is
           absent on the re-entered state, where the advance is a link. */}
       {advanceHref === undefined ? (
-        <form
-          id={commitFormId}
-          action={CREATE_INSTANCE_PATH}
-          method="post"
-          data-create-draft="true"
-        >
+        <form id={commitFormId} action={CREATE_SESSION_PATH} method="post" data-create-draft="true">
           <input type="hidden" name="templateRecordId" value={template.recordId} />
           <input type="hidden" name="draft" value="1" />
         </form>

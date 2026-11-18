@@ -8,7 +8,7 @@
  * One anchor, two facts, and both of them are why this file exists:
  *
  *   **a soft navigation.** `next/link`, not a bare `<a>`. The flow's dialog is mounted by an
- *   *intercepted* route (`@flow/(...)templates/relationship/[slug]/create/**` in each host's
+ *   *intercepted* route (`@flow/(...)dashboard/templates/[slug]/create/**` in each host's
  *   segment), and an interception only happens on a client-side navigation — a plain anchor is a
  *   document load, so the route renders as a page and the page the person was standing on is gone.
  *   That is the whole difference between "opens in place" and "navigates", and it is one attribute.

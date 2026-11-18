@@ -25,16 +25,16 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { zAssessmentInstance, seededLifecycleOf } from "@/content/assessment";
-import type { AssessmentInstance } from "@/content/assessment";
-import { assessmentInstances } from "@/data/assessments";
+import { zAssessmentSession, seededLifecycleOf } from "@/content/assessment";
+import type { AssessmentSession } from "@/content/assessment";
+import { assessmentSessions } from "@/data/assessments";
 import { planInitiatingAccounts, subscriptionIdFor } from "../scripts/db-seed-subscriptions.mjs";
 
 const BUNDLE_PATH = new URL("../data/bundles/demo-dataset.alignsynch.json", import.meta.url);
 const EXPECTATIONS_PATH = new URL("../data/verify/demo-expectations.json", import.meta.url);
 
 interface DatasetBundle {
-  readonly payload: { readonly instances: unknown[] };
+  readonly payload: { readonly sessions: unknown[] };
 }
 
 interface Expectations {
@@ -44,13 +44,13 @@ interface Expectations {
 const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
 const expectations = JSON.parse(readFileSync(EXPECTATIONS_PATH, "utf8")) as Expectations;
 
-/** The bundle's instances, through the model — a bundle that drifts fails here, not in a seed. */
-const bundleInstances = zAssessmentInstance.array().parse(bundle.payload.instances);
+/** The bundle's sessions, through the model — a bundle that drifts fails here, not in a seed. */
+const bundleSessions = zAssessmentSession.array().parse(bundle.payload.sessions);
 
-const planOf = (instance: AssessmentInstance) => seededLifecycleOf(instance).plan;
+const planOf = (session: AssessmentSession) => seededLifecycleOf(session).plan;
 
-const fromBundle = planInitiatingAccounts(bundleInstances, planOf);
-const fromFixtures = planInitiatingAccounts(assessmentInstances, planOf);
+const fromBundle = planInitiatingAccounts(bundleSessions, planOf);
+const fromFixtures = planInitiatingAccounts(assessmentSessions, planOf);
 
 describe("the demo dataset's billing subscriptions", () => {
   it("records the number of plan-initiating demo accounts, computed rather than typed", () => {
@@ -81,14 +81,14 @@ describe("the demo dataset's billing subscriptions", () => {
 
     // The tier a row is written on comes from the relationship the account initiates — one that a
     // `membershipOf()` read needs to be `active`, not merely authored.
-    const liveInitiations = bundleInstances.filter((instance) => {
-      const lifecycle = seededLifecycleOf(instance);
+    const liveInitiations = bundleSessions.filter((session) => {
+      const lifecycle = seededLifecycleOf(session);
       return lifecycle.status === "active" && lifecycle.plan !== null;
     });
     expect(
-      liveInitiations.some((instance) =>
+      liveInitiations.some((session) =>
         fromBundle.some((account) =>
-          instance.parties.some(
+          session.parties.some(
             (party) => party.role === "initiator" && party.name === account.name,
           ),
         ),

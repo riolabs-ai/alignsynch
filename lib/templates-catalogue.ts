@@ -4,7 +4,7 @@
  * **What this page is, and what it is not.** It is the public catalogue of relationship
  * *templates*, re-cut on the visual system `docs/specs/spec-design-page-rel-templates-v2/` draws.
  * It is **not** a new design: the package contains no mockup of this page, so the constraint that
- * replaces "pixel for pixel" is that every band here is an instance of a pattern the package
+ * replaces "pixel for pixel" is that every band here is a session of a pattern the package
  * already draws — `home/homepage-redesign.html`'s hero, in-page menu, how-it-works, templates,
  * benefits and closing band, in its order, drawn by the same components the AlignSynch `/` uses
  * (`components/home/as2-*.tsx`, #904). Nothing below invents a section: the seven slices of the

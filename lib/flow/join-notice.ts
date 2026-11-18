@@ -8,7 +8,7 @@
  * commits, so a mail failure can never un-bind the person who claimed.
  *
  * **The recipient is the record's Initiator seat, never the claimer.** The claimer already knows
- * they joined — they are looking at the instance. The person who needs the fact is the one who
+ * they joined — they are looking at the session. The person who needs the fact is the one who
  * published and then had nothing to do until the other seat existed. `readUnlockFacts()` is the
  * read that answers it: one query over `record`, `party` and `session_invite`, and **no
  * `opinion` row**, so there is nothing in scope here that could put an answer, a score or a Gap
@@ -21,11 +21,11 @@
  * **The Initiator's address is an optional fact, and its absence is an outcome.** It is written
  * on the invitation row from the creator's account at create time (`viewerEmail`); a signed-out
  * create stores NULL, and this notice then has no address to reach. That is `no-address` — a
- * degraded path, not a failure — because the instance screen already moves out of
+ * degraded path, not a failure — because the session screen already moves out of
  * `awaiting_counterparty` and the in-app state is the delivery.
  */
 import type { MailOutcome } from "@/lib/flow/email";
-import { instanceLink, sendMail } from "@/lib/flow/email";
+import { sessionLink, sendMail } from "@/lib/flow/email";
 import { readUnlockFacts } from "@/lib/flow/store";
 import { joinedTemplate } from "@/lib/email/templates";
 import { renderTemplateForSend } from "@/lib/email/send";
@@ -41,7 +41,7 @@ export type JoinNoticeOutcome = MailOutcome | "no-such-instance" | "no-address";
  * than throwing — `sendMail()` never throws, and every early return is a named reason.
  */
 export async function sendJoinNotice(input: {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /**
    * #1125 — an optional suggestion the Counterparty attached to their acceptance.
    *
@@ -54,12 +54,12 @@ export async function sendJoinNotice(input: {
   readonly base?: string;
   readonly fetchImpl?: typeof fetch;
 }): Promise<JoinNoticeOutcome> {
-  const facts = await readUnlockFacts(input.instanceRecordId);
+  const facts = await readUnlockFacts(input.sessionRecordId);
   if (facts === undefined) {
-    // The claim just committed against these rows, so an instance that cannot be read back is
+    // The claim just committed against these rows, so an session that cannot be read back is
     // drift, not a missing page. One operator line — no recipient, no address, no link.
     console.error(
-      "[joined] the instance could not be read back after a claim — no join notice was attempted",
+      "[joined] the session could not be read back after a claim — no join notice was attempted",
     );
     return "no-such-instance";
   }
@@ -69,7 +69,7 @@ export async function sendJoinNotice(input: {
     // The honest answer for a session created signed out: there is no Initiator address to write
     // to. The line names the seat, never a guess at an address.
     console.warn(
-      "[joined] the initiator holds no address on this instance — no join notice was attempted; the instance screen already shows both seats exist",
+      "[joined] the initiator holds no address on this session — no join notice was attempted; the session screen already shows both seats exist",
     );
     return "no-address";
   }
@@ -78,7 +78,7 @@ export async function sendJoinNotice(input: {
     joiner: facts.counterparty.name,
     inviter: recipient.name,
     template: facts.title,
-    link: instanceLink(facts.instanceRecordId, input.base),
+    link: sessionLink(facts.sessionRecordId, input.base),
     ...(input.suggestion === undefined ? {} : { suggestion: input.suggestion }),
   });
 

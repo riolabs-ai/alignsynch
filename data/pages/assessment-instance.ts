@@ -151,7 +151,7 @@ export const inviteBandSection: PageCopySection = {
   ],
 };
 
-export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
+export const assessmentSessionPageCopy: PageCopy = zPageCopy.parse({
   heading: "Your session",
   sections: [
     {
@@ -409,7 +409,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The acceptance entry point on the ordinary instance screen (#617).
+       * The acceptance entry point on the ordinary session screen (#617).
        *
        * `submitted` covers the visit a submit created; this section covers every later visit — the
        * party who closed the tab, came back from the report link in an email, or answered on one

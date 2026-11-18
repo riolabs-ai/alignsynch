@@ -43,7 +43,7 @@ const builtIn: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-01T09:00:00.000Z",
   aspectCount: 5,
-  instanceCount: 2,
+  sessionCount: 2,
   authorship: "built-in",
 };
 
@@ -56,7 +56,7 @@ const authoredByA: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-20T11:30:00.000Z",
   aspectCount: 3,
-  instanceCount: 1,
+  sessionCount: 1,
   authorship: "mine",
 };
 
@@ -67,7 +67,7 @@ const archivedByA: LibraryTemplate = {
   slug: "last-years-check-in",
   title: "Last Year's Check-In",
   status: "archived",
-  instanceCount: 4,
+  sessionCount: 4,
 };
 
 describe("the author rule", () => {

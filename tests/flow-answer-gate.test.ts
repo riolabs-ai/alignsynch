@@ -30,7 +30,7 @@ import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { answerGateOf, ownScoreOf, type AnswerGate } from "@/lib/flow/answer-gate";
 import { positionOf } from "@/lib/flow/answer-position";
-import { projectScreen, type FlowAspect, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowAspect, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -38,7 +38,7 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-answer-gate-test";
+const INSTANCE_ID = "session-answer-gate-test";
 const TIME = "aspect-time-together";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
@@ -83,7 +83,7 @@ function opinion(role: PartyRole, itemId: string, feel: number, wish: number): O
 function rowsWith(
   opinions: readonly OpinionRow[],
   accepted: readonly PartyRole[] = [],
-): FlowInstanceRows {
+): FlowSessionRows {
   const count = (role: PartyRole) => opinions.filter((entry) => entry.role === role).length;
   return {
     record: {
@@ -93,11 +93,11 @@ function rowsWith(
       status: "draft",
       date: new Date("2026-11-01T12:00:00.000Z"),
       title: template.title,
-      summary: "an instance under test",
+      summary: "an session under test",
     },
     items,
     options: [],
-    instance: {
+    session: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
       relationship_id: "relationship-test",
@@ -132,7 +132,7 @@ function gateFor(
 ): AnswerGate {
   const screen = screenFor(role, opinions, accepted);
   return answerGateOf({
-    instanceRecordId: screen.instanceRecordId,
+    sessionRecordId: screen.sessionRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
     viewerAccepted: screen.viewerAccepted,
@@ -303,7 +303,7 @@ describe("the sheet's markup", () => {
     }
   });
 
-  it("asks only the kinds a Basic Mode instance defines", () => {
+  it("asks only the kinds a Basic Mode session defines", () => {
     const html = render(gateFor("initiator"), aspects);
     expect(html).toContain(`name="feel:${TIME}"`);
     expect(html).toContain(`name="wish:${TIME}"`);

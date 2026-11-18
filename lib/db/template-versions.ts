@@ -169,7 +169,7 @@ export async function readLiveVersionRow(
  * The template a record id currently offers: its newest published version, or `undefined`.
  *
  * `undefined` is the honest answer for a template that has never been published (a draft) — the
- * catalogue, the picker and `createInstanceFromTemplate()` each decide what to do about it, and
+ * catalogue, the picker and `createSessionFromTemplate()` each decide what to do about it, and
  * none of them may fall back to the working copy: an unpublished edit is not an offer.
  */
 export async function readLiveTemplateVersion(

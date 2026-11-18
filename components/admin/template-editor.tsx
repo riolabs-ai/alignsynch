@@ -82,7 +82,7 @@ interface AspectState {
 /**
  * The mode the preview draws. Basic asks Feel and Wish — the two every relationship answers — so
  * the preview shows the sheet a person actually receives. It is a constant rather than a control:
- * an instance's mode is fixed at creation (`content/assessment.ts`), and a preview toggle would
+ * a session's mode is fixed at creation (`content/assessment.ts`), and a preview toggle would
  * teach that a template has one.
  */
 const PREVIEW_MODE: AssessmentMode = "basic";

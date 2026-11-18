@@ -62,7 +62,7 @@ function libraryRow(slug: string, title: string, aspectCount = 5) {
     status: "published" as const,
     createdAt: "2026-11-16T12:00:00.000Z",
     aspectCount,
-    instanceCount: 0,
+    sessionCount: 0,
     authorship: "built-in" as const,
   };
 }

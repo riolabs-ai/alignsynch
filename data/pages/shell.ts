@@ -33,7 +33,7 @@
  * footer logo render, and `footer-legal/copyright` is the same word in a sentence; both
  * read `brand.name` from `data/brand.ts`, so the projection is a function of the brand
  * record (`shellCopy(brand)`) and the two strings a second brand must change are the
- * ones it actually prints. `shellPageCopy` stays the shipped record's instance, so every
+ * ones it actually prints. `shellPageCopy` stays the shipped record's session, so every
  * caller keeps importing a `PageCopy` and nothing else moved. Every other rendered
  * literal in `app/`, `components/` and `data/` reads the same record, so a skin is a
  * second `Brand` and not a find-and-replace.
@@ -191,7 +191,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The AlignSynch navigation (issue #156) — the alignment product's own destinations.
        *
        * It is a *second section in the same fixture*, not a second fixture: E23 resolves every
-       * `itemLabel()` a component asks for against the one instance this module exports, so a
+       * `itemLabel()` a component asks for against the one session this module exports, so a
        * menu that only existed when `BRAND=alignsynch` would fail the gate that runs on the
        * default brand. The view picks the section by brand (`components/layout/nav-menus.tsx`),
        * and the words are here either way.
@@ -407,7 +407,7 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        * The header palette is chrome, so its placeholder is on every AlignSynch page, and it
        * used to promise a search over quizzes on a page that has none. The words now match
-       * what the palette actually searches on this brand: the assessment *instances* in
+       * what the palette actually searches on this brand: the assessment *sessions* in
        * `data/assessments.ts` and the three pages an alignment visitor can reach
        * (`lib/nav.ts`'s `ALIGNMENT_ROUTES`). `data/searchdata.ts` builds that index; the
        * placeholder and the group heading below are its description.
@@ -461,7 +461,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The alignment build's tab words — the two tabs its index can fill.
        *
        * `all` is the same tab on both brands; `pages` is what `searchIndexFor` really holds on
-       * this build (the instances in `data/assessments.ts` and the three `ALIGNMENT_ROUTES`),
+       * this build (the sessions in `data/assessments.ts` and the three `ALIGNMENT_ROUTES`),
        * and `search-alignsynch`'s `group-pages` already words that group the same way. There is
        * no `quizzes`, `categories` or `creators` item: no tab renders them here, and a label
        * for a filter with no rows behind it is the defect this section deletes rather than a
@@ -898,7 +898,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The version badge (issue #269) — the words the sidebar and the footer print under the
        * build's version number.
        *
-       * One section for both mounts because both read this one instance: a sidebar that said
+       * One section for both mounts because both read this one session: a sidebar that said
        * "Version" and a footer that said "Build" would be two names for one fact. It is not
        * brand-selected — a version is the same fact on both builds, and the tag it links to is
        * one tag.
@@ -923,7 +923,7 @@ export function shellCopy(brand: Brand): PageCopy {
 }
 
 /**
- * The shell as the app renders it today — the shipped record's instance of `shellCopy`.
+ * The shell as the app renders it today — the shipped record's session of `shellCopy`.
  *
  * Still a parsed `PageCopy` at module scope, so the layout, the eleven pages that mount
  * the footer, `data/pages/index.ts` and the E23 ratchet need no change: they import a

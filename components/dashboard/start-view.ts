@@ -13,7 +13,7 @@
  * Relationships; this file only resolves Start's own words for it.
  */
 import type { PageCopy } from "@/content/pages";
-import { createRelationshipPath, instancePath, relationshipPath } from "@/lib/flow/paths";
+import { createRelationshipPath, sessionPath, relationshipPath } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
 import type { AlignmentSummary } from "@/lib/member/alignment-summary";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
@@ -93,7 +93,7 @@ export function startViewOf({
         }),
         body: fillLabel(itemLabel(nextSteps, "next-step-body"), { title }),
         actionLabel: itemLabel(nextSteps, "open-align"),
-        href: instancePath(row.sessionRecordId),
+        href: sessionPath(row.sessionRecordId),
       });
       continue;
     }

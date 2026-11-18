@@ -5,8 +5,8 @@
  * The report used to be eight flat lines per Aspect. What this file pins is the change the
  * issue asks for and the four things it forbids:
  *
- *   groups    the spec's own three headings, two on a Basic instance and three on an
- *             Advanced one — and **no** empty Prediction table on a Basic instance;
+ *   groups    the spec's own three headings, two on a Basic session and three on an
+ *             Advanced one — and **no** empty Prediction table on a Basic session;
  *   tables    a real `<table>` per group, with a `<caption>` and a `<th scope="row">` per Gap,
  *             so a row announces as row-header + cells rather than as a paragraph of numbers;
  *   numbers   every Gap is text in its cell, a 0 prints "In Synch" beside it, and the bar is a
@@ -28,7 +28,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
-import { assessments, assessmentInstances } from "@/data/assessments";
+import { assessments, assessmentSessions } from "@/data/assessments";
 import {
   ADVANCED_GAP_KINDS,
   BASIC_GAP_KINDS,
@@ -39,15 +39,15 @@ import {
   type GapKind,
 } from "@/content/gaps";
 import type { AssessmentReport } from "@/lib/assessment-report";
-import { assessmentReport, instanceBySlug } from "@/lib/assessment-report";
+import { assessmentReport, sessionBySlug } from "@/lib/assessment-report";
 
 /** The projection and its markup for one fixture slug. */
 function render(slug: string): { report: AssessmentReport; html: string } {
-  const instance = instanceBySlug(slug, assessmentInstances);
-  if (instance === undefined) throw new Error(`no instance fixture "${slug}"`);
-  const template = assessments.find((entry) => entry.id === instance.templateId);
+  const session = sessionBySlug(slug, assessmentSessions);
+  if (session === undefined) throw new Error(`no session fixture "${slug}"`);
+  const template = assessments.find((entry) => entry.id === session.templateId);
   if (template === undefined) throw new Error(`no template for "${slug}"`);
-  const report = assessmentReport(instance, template);
+  const report = assessmentReport(session, template);
   return { report, html: renderToStaticMarkup(createElement(AssessmentReportView, { report })) };
 }
 
@@ -81,7 +81,7 @@ describe("the gap groups", () => {
     const basicCard = aspectSection(basic.html, "aspect-time-together");
     expect(basicCard).toContain(">Feelings and Wishes Differ</h3>");
     expect(basicCard).toContain(">Desires To Change</h3>");
-    // The Basic instance has no prediction, so no third heading and no empty table under one.
+    // The Basic session has no prediction, so no third heading and no empty table under one.
     expect(basicCard).not.toContain("Prediction Gaps and Analysis");
     expect(basicCard).not.toContain('data-gap-group="prediction-gaps"');
   });
@@ -148,7 +148,7 @@ describe("the numbers", () => {
     );
   });
 
-  it("draws no prediction number on a Basic instance — not a zero, not a dash", () => {
+  it("draws no prediction number on a Basic session — not a zero, not a dash", () => {
     for (const row of basic.report.rows) {
       const card = aspectSection(basic.html, row.itemId);
       for (const kind of ADVANCED_GAP_KINDS) {
@@ -235,7 +235,7 @@ describe("the verdict band", () => {
   });
 
   it("uses the singular sentence for exactly one unmet Gap", () => {
-    // `marco-priya` has twelve; the singular branch is what a one-Gap instance draws, and the
+    // `marco-priya` has twelve; the singular branch is what a one-Gap session draws, and the
     // copy fixture holds both because no placeholder can pluralise an English noun.
     expect(unmet.html).toContain('data-unmet-gaps="12"');
     expect(unmet.html).toContain("12 Gaps exceed Soft. The widest is a Gap of 4 on How is the");

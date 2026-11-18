@@ -21,7 +21,7 @@
  *   5. **Rate limit by client → 429.** Checked after the signature because a cheap HMAC rejection
  *      is the right answer to garbage, and before the write because the point of a limit is that a
  *      flood costs no row. The count is a database read over the window `0027` indexes — an
- *      in-process counter would be per instance on a deployment that runs several.
+ *      in-process counter would be per session on a deployment that runs several.
  *   6. **Record once, and mark in the same transaction.** The store's insert is
  *      `ON CONFLICT (provider_event_id) DO NOTHING`; a duplicate is a 200 that writes nothing,
  *      which is what makes a redelivery idempotent. A storage failure is 503 — "not stored" is a

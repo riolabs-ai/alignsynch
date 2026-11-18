@@ -6,11 +6,11 @@
  * detail page said "Not sent yet — nothing has been invited or charged". Nothing was invited, so
  * nothing can be waiting to be claimed.
  *
- * **Where the lie was.** `instanceStatusOf()` answered `awaiting_counterparty` for *any* session
+ * **Where the lie was.** `sessionStatusOf()` answered `awaiting_counterparty` for *any* session
  * with no Counterparty seat (`lib/flow/state.ts`), and it never asked whether the relationship had
  * been sent at all. The discriminating fact is on the **record**, not the session:
  * `relationship.published_at IS NULL` is "the invitation never went out". `relationshipStage()`
- * then mapped that status onto the ladder's first rung, and `myInstanceStateOf()` mapped it onto
+ * then mapped that status onto the ladder's first rung, and `mySessionStateOf()` mapped it onto
  * "you owe answers", which is how one absent invitation became two false sentences.
  *
  * **Both cases are asserted, and that is the point of the file.** An exemption with no negative
@@ -33,10 +33,10 @@ import { assessmentsPageCopy } from "@/data/pages/assessments";
 import { relationshipCardFromRow, type RelationshipCardRow } from "@/lib/db/assessments";
 import { matchesOverviewFilter, overviewCountsOf, OVERVIEW_FILTERS } from "@/lib/flow/overview";
 import { relationshipStage } from "@/lib/flow/stage";
-import { instanceStatusOf, myInstanceStateOf, type InstanceProgress } from "@/lib/flow/state";
+import { sessionStatusOf, mySessionStateOf, type SessionProgress } from "@/lib/flow/state";
 
 /** A session with no Counterparty seat — the shape a draft and an unclaimed invitation share. */
-function progress(overrides: Partial<InstanceProgress> = {}): InstanceProgress {
+function progress(overrides: Partial<SessionProgress> = {}): SessionProgress {
   return {
     aspectCount: 5,
     hasCounterparty: false,
@@ -121,18 +121,18 @@ function listOf(rows: readonly RelationshipCardRow[]): string {
 
 describe("the derivation knows whether the invitation ever went out", () => {
   it("calls a never-published relationship `draft`, not `awaiting_counterparty`", () => {
-    expect(instanceStatusOf(progress({ published: false }))).toBe("draft");
+    expect(sessionStatusOf(progress({ published: false }))).toBe("draft");
   });
 
   it("keeps a published relationship with an unclaimed seat `awaiting_counterparty`", () => {
     // The negative case. Without this, "draft" could be a deleted label rather than an exemption.
-    expect(instanceStatusOf(progress({ published: true }))).toBe("awaiting_counterparty");
+    expect(sessionStatusOf(progress({ published: true }))).toBe("awaiting_counterparty");
   });
 
   it("leaves a read that did not measure the fact alone — absent is not `false`", () => {
     // Every other read path (the flow screen, the flow store, the older fixtures) omits it, and
     // none of them may change status because this field was added.
-    expect(instanceStatusOf(progress())).toBe("awaiting_counterparty");
+    expect(sessionStatusOf(progress())).toBe("awaiting_counterparty");
   });
 
   it("gives a draft no ladder rung, and keeps the first rung for a sent invitation", () => {
@@ -142,8 +142,8 @@ describe("the derivation knows whether the invitation ever went out", () => {
 
   it("answers `draft` for the viewer's own row state, and `yours-to-answer` once sent", () => {
     const viewerRole = "initiator" as const;
-    expect(myInstanceStateOf({ ...progress({ published: false }), viewerRole })).toBe("draft");
-    expect(myInstanceStateOf({ ...progress({ published: true }), viewerRole })).toBe(
+    expect(mySessionStateOf({ ...progress({ published: false }), viewerRole })).toBe("draft");
+    expect(mySessionStateOf({ ...progress({ published: true }), viewerRole })).toBe(
       "yours-to-answer",
     );
   });

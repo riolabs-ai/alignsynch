@@ -24,13 +24,15 @@
  * ## What "the modules it imports directly" means
  *
  * One level for the **centring** rule: the page's own file plus every module it names in an import.
- * That is where a page-level shell lives — `instance-view.tsx`, `invite-view.tsx`,
+ * That is where a page-level shell lives — `session-view.tsx`, `invite-view.tsx`,
  * `report-view.tsx` were each imported by exactly one page and each drew its own container.
  *
- * One level for the **column** rule, plus one more, because the create flow's stages moved their
- * column into the one shell that both mountings share (#979 B): the page renders `CreateRelationship`,
- * which renders `RelationshipFlowShell`, which draws `StageColumn`. `rendersColumn` walks two hops and
- * stops there — three is the case that matters, a page that draws no column at all.
+ * One level for the **column** rule, plus two more, because the column is three modules away from
+ * the page that draws it: the page renders `components/flow/template-create/<stage>.tsx` (the stage
+ * modules moved out of `app/` in #1109 so one module could be both a page and a `@flow` slot child),
+ * which renders `CreateRelationship`, which renders `RelationshipFlowShell`, which draws
+ * `StageColumn`. `rendersColumn` therefore walks three levels of imports and stops there — a fourth
+ * is the case that matters, a page that draws no column at all.
  *
  * The leftovers are named one at a time in `CENTRING_ALLOWANCES`: an **exact string in an exact
  * file**, never a whole file, and an allowance no walked source uses is itself a finding — the
@@ -279,14 +281,14 @@ export const CENTRING_ALLOWANCES: readonly CentringAllowance[] = [
  * registry marks those pages `column` and means it, so the walk follows their tree to the module that
  * draws it instead of announcing a fork that is not there.
  *
- * The bound is what keeps the check honest: a page three imports away from the column still fails,
+ * The bound is what keeps the check honest: a page four imports away from the column still fails,
  * which is the case that matters — a new page that draws no column at all.
  */
 export function rendersColumn(
   pageSource: string,
   directImports: readonly string[],
   files: ReadonlyMap<string, SourceFile>,
-  depth = 2,
+  depth = 3,
 ): boolean {
   if (pageSource.includes("<StageColumn")) return true;
   let frontier = [...directImports];

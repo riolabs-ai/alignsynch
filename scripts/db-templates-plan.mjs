@@ -73,7 +73,7 @@ export function planTemplateImport({ templates, existing }) {
     if ((row.sessions ?? 0) > 0) {
       refuse.push({
         slug: template.slug,
-        reason: `the slug names an instance (${row.sessions} session row(s)), not a template — rewriting it would overwrite a relationship's own record`,
+        reason: `the slug names a session (${row.sessions} session row(s)), not a template — rewriting it would overwrite a relationship's own record`,
       });
       continue;
     }

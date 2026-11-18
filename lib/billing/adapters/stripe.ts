@@ -710,7 +710,7 @@ export class StripeBillingAdapter implements BillingPort {
   private readonly now: () => Date;
   private readonly fetchImpl: typeof fetch;
   /**
-   * Resolved Price ids, per lookup key, for this adapter instance.
+   * Resolved Price ids, per lookup key, for this adapter session.
    *
    * A lookup key resolves to one id on one account and that never moves, so resolving it per
    * checkout would spend a round trip on a fact that cannot change while the process is up.

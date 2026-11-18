@@ -98,7 +98,7 @@ export const TEMPLATE_ANCESTOR_EXEMPTIONS: readonly TemplateAncestorExemption[] 
       "the claim page — a single-use token has no quiz analogue (#336's first no-ancestor surface)",
   },
   {
-    file: "components/assessment-flow/instance-view.tsx",
+    file: "components/assessment-flow/session-view.tsx",
     issue: 336,
     reason: "the stage machine — derived stages over a blind sheet have no quiz analogue",
   },

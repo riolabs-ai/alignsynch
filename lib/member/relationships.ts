@@ -44,7 +44,7 @@
  *
  * **Nothing is created at publish that phase 3 has to undo.** The session (the assessment round) and
  * its record copy come into being in the publish transaction, from the **version the relationship is
- * bound to** — not from the working copy — because that is what `db:verify` V4 compares an instance
+ * bound to** — not from the working copy — because that is what `db:verify` V4 compares a session
  * against and what every party-facing read draws. `published_at`, in `0030`'s words, is "when the
  * invite went out and the initiator's own session opened"; this is the statement that makes that
  * sentence true.
@@ -184,7 +184,7 @@ export interface MemberRelationshipRow {
    * (`readLibraryTemplate` takes a slug or an id, and #794 says the URL carries the slug).
    *
    * Carried on the row because the draft CTAs are on a **client** component and the pay modal's
-   * address is `createInviteForPath(slug, instanceRecordId)` from `lib/flow/paths.ts` — a pure
+   * address is `createInviteForPath(slug, sessionRecordId)` from `lib/flow/paths.ts` — a pure
    * module. Building the address from `templateId` instead would put a storage handle in the URL,
    * which is the one thing #794 retired.
    */
@@ -305,7 +305,7 @@ interface RelationshipQueryRow {
  * **Membership and permission are two predicates, deliberately.** `VIEWER_IS_PARTY` decides which
  * rows a reader sees: the account that started the relationship, **or** any account bound to one of
  * its seats — `party.user_id`, reached through `session.relationship_id`, which is the rule
- * `lib/db/my-instances.ts` follows. The initiator half is not a permission leaking into the list; it
+ * `lib/db/my-sessions.ts` follows. The initiator half is not a permission leaking into the list; it
  * is what keeps a **draft** visible, because a draft has no session and therefore no `party` row to
  * bind anybody (#706).
  *
@@ -741,14 +741,14 @@ export interface InvitationHygiene {
  *   the member write   `createRelationship()` copies the member's template into a **private
  *                      `record`** and points `relationship.template_id` at it. No session exists
  *                      yet, so that copy is the relationship's own Aspect list.
- *   the flow           `createInstanceFromTemplate()` copies the version into the **instance
+ *   the flow           `createSessionFromTemplate()` copies the version into the **session
  *                      record** (`session.record_id`) and keeps `template_id` naming the template
  *                      it was copied from — V23 requires the pin to be a version *of that
- *                      template*, so `template_id` cannot move. The instance copy is the list.
+ *                      template*, so `template_id` cannot move. The session copy is the list.
  *
  * Every reader on the relationship screen used `template_id`, which is only ever right for the
  * first. For a relationship the flow created it is the shared template itself, so an Aspect the
- * creator added at stage 3 — written to the instance copy, and present in the session the pair
+ * creator added at stage 3 — written to the session copy, and present in the session the pair
  * answers — was simply not in the list the detail screen drew. That is #936: saved, never shown.
  *
  * The rule is one line: the session's copy when there is a session, the private copy otherwise.
@@ -1104,7 +1104,7 @@ export async function snapshotVersion(
  * copied the template itself, and the relationships list called it — writing a relationship with no
  * session and no seats, which meant the dashboard card's `Invite Members` had no pay modal to open
  * and publishing it had no invitation to mint. The create flow's modal is the one writer
- * (`lib/flow/store.ts::createInstanceFromTemplate`), because stage 4 is where the session and the
+ * (`lib/flow/store.ts::createSessionFromTemplate`), because stage 4 is where the session and the
  * staged invitation are written and stage 5 is what sends them.
  */
 
@@ -1267,7 +1267,7 @@ export async function saveAspects(
          *
          * For the member write, `template_id` is the private copy and `template_version` rows hang
          * off it, so a save writes the next version and repins — V4 compares the session's copy to
-         * it. For a relationship the flow created, the list lives on the instance copy and the pin
+         * it. For a relationship the flow created, the list lives on the session copy and the pin
          * names a version of the *template*; writing this list as a version of that template would
          * publish one member's private words to everyone who copies it (#502b), so the pin stays
          * where it is. That copy is an authored one (#699) — `session.aspects_authored_at` is what

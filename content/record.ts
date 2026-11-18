@@ -25,14 +25,14 @@
  *             may be `record_type`, and the model is not renamed to hide that.
  *   Item      a row inside a record: a question, an Aspect.
  *   Template  a record that holds items and has no parties.
- *   Instance  a template copied and given parties.
+ *   Session  a template copied and given parties.
  *   Opinion   a score on an Aspect, 1..5, one per Feel / Wish / Think / Guess.
  *   Gap       a difference of Opinion — `gapOf()` below. A function, never a field.
  *
  * `strict()` everywhere, for the reason `content/core.ts` gives: an unknown key is a
  * validation error, which is what turns a fixture drift into a red build. Here it is
- * doing a second job — a template carrying `parties` is a validation error, so an
- * instance can never be mistaken for the template it was copied from.
+ * doing a second job — a template carrying `parties` is a validation error, so a
+ * session can never be mistaken for the template it was copied from.
  */
 import { z } from "zod";
 import { pathOf, zId, zIsoDateTime, zPublishStatus, zSlug } from "./core";
@@ -217,7 +217,7 @@ export const zTemplateObject = zRecord
  * A template — a record that holds items and has no parties.
  *
  * There is no `parties` key to omit: `strict()` rejects one. That is the whole
- * difference between a template and an instance, and it is structural rather than
+ * difference between a template and a session, and it is structural rather than
  * a rule someone has to remember.
  */
 export const zTemplate = zTemplateObject.superRefine(uniqueItemIds);

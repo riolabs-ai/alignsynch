@@ -14,7 +14,7 @@
  * without adding one, and the surface is not public — `requireAdmin()` has already refused every
  * caller who is not an admin of this installation. What the window is for here is a brake: a
  * panel stuck in a retry loop, or a double submit, filing five issues in ten seconds. Held per
- * instance is honest for that job, and the docstring says so rather than implying a wall.
+ * session is honest for that job, and the docstring says so rather than implying a wall.
  *
  * The alternative — a `docs_feedback` form kind in `form_guard_attempt` — was measured and
  * rejected: the table's `form` column accepts the value, so it would work, but the counter would

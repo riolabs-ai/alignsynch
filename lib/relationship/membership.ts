@@ -358,7 +358,7 @@ export function membershipSentence(membership: Membership, initiatorName?: strin
  * The short form for a screen that already has a band and needs one line of *why*.
  *
  * Same facts as `membershipSentence()`, without the sentence about what stops working — the
- * instance screen draws that in its own band, and saying it twice is how two strings start
+ * session screen draws that in its own band, and saying it twice is how two strings start
  * disagreeing.
  */
 export function membershipReasonLine(membership: Membership): string {

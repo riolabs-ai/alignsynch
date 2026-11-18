@@ -3,11 +3,11 @@
  *
  * Three claims the card makes that a comment cannot carry:
  *
- *   1. **the JSON round-trips through the model.** `record` is the instance as the model has it, so
- *      `zAssessmentInstance.safeParse(JSON.parse(reportJson(doc)).record)` answers the source
+ *   1. **the JSON round-trips through the model.** `record` is the session as the model has it, so
+ *      `zAssessmentSession.safeParse(JSON.parse(reportJson(doc)).record)` answers the source
  *      record, deep-equal. A hand-built projection that "looks like" a record would fail here.
  *   2. **two regenerations are byte-identical.** The instant is the fixture clock, not a wall
- *      clock, so the same instance produces the same string every time — which is what makes the
+ *      clock, so the same session produces the same string every time — which is what makes the
  *      card's `sha256sum` acceptance a property of the code.
  *   3. **every number is recomputable from the rows it carries.** Each Aspect's Gaps are compared
  *      with `gapKindsOf()` over the two parties' answers the document itself prints, and the
@@ -19,10 +19,10 @@
  */
 import { describe, expect, test } from "vitest";
 
-import { zAssessmentInstance } from "@/content/assessment";
+import { zAssessmentSession } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
 import { GAP_KINDS, gapKindsOf } from "@/content/gaps";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentSessions, assessments } from "@/data/assessments";
 import { assessmentReport } from "@/lib/assessment-report";
 import {
   NOT_COMPUTABLE,
@@ -35,26 +35,26 @@ import {
 /** The version a test passes — nothing in the tree contains it. */
 const VERSION = "9.9.9";
 
-const instance = assessmentInstances[0];
-if (instance === undefined) throw new Error("data/assessments.ts carries no instance");
-const template = assessments.find((candidate) => candidate.id === instance.templateId);
-if (template === undefined) throw new Error(`no template "${instance.templateId}"`);
+const session = assessmentSessions[0];
+if (session === undefined) throw new Error("data/assessments.ts carries no session");
+const template = assessments.find((candidate) => candidate.id === session.templateId);
+if (template === undefined) throw new Error(`no template "${session.templateId}"`);
 
 /** The document under test, built the way the page and the export build it. */
-function documentFor(source = instance): ReportDocument {
+function documentFor(source = session): ReportDocument {
   const templateOf = assessments.find((candidate) => candidate.id === source.templateId);
   if (templateOf === undefined) throw new Error(`no template "${source.templateId}"`);
   return reportDocument(source, assessmentReport(source, templateOf), VERSION);
 }
 
 describe("the report document round-trips through the model", () => {
-  test("the exported record parses back to the source instance, deep-equal", () => {
+  test("the exported record parses back to the source session, deep-equal", () => {
     const document = documentFor();
     const exported = JSON.parse(reportJson(document)) as { record: unknown };
-    const parsed = zAssessmentInstance.safeParse(exported.record);
+    const parsed = zAssessmentSession.safeParse(exported.record);
 
     expect(parsed.success).toBe(true);
-    expect(parsed.success ? parsed.data : null).toEqual(instance);
+    expect(parsed.success ? parsed.data : null).toEqual(session);
   });
 
   test("the format tag and the version are the document's own", () => {
@@ -66,7 +66,7 @@ describe("the report document round-trips through the model", () => {
 });
 
 describe("two regenerations are byte-identical", () => {
-  test("the same instance produces the same bytes twice", () => {
+  test("the same session produces the same bytes twice", () => {
     expect(reportJson(documentFor())).toBe(reportJson(documentFor()));
   });
 
@@ -82,7 +82,7 @@ describe("two regenerations are byte-identical", () => {
 });
 
 describe("every number is recomputable from the rows the document carries", () => {
-  test.each(instance.items.map((item) => [item.id] as const))(
+  test.each(session.items.map((item) => [item.id] as const))(
     "the Gaps on %s are gapKindsOf() over the two printed answers",
     (itemId) => {
       const document = documentFor();

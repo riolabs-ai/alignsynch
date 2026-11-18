@@ -32,7 +32,7 @@ export function ReinviteForm({
   returnTo,
 }: {
   copy: PageCopy;
-  /** The instance's re-invite endpoint (`reinvitePath()`). */
+  /** The session's re-invite endpoint (`reinvitePath()`). */
   action: string;
   /** The address on the invitation row, as the field's starting value. */
   email: string;

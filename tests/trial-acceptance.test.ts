@@ -30,7 +30,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createInstanceFromTemplate, type CreateInstanceInput } from "@/lib/flow/store";
+import { createSessionFromTemplate, type CreateSessionInput } from "@/lib/flow/store";
 
 /* ------------------------------------------------------------------ *\
  * The recording client
@@ -66,7 +66,7 @@ const stub = vi.hoisted(() => {
             status: "published",
             author_user_id: null,
             aspects: 3,
-            is_instance: false,
+            is_session: false,
           },
         ],
         rowCount: 1,
@@ -149,7 +149,7 @@ function trialWrites() {
 const CREATED_AT = new Date("2026-11-16T12:00:00.000Z");
 const USER = "account-avery";
 
-function createInput(over: Partial<CreateInstanceInput> = {}): CreateInstanceInput {
+function createInput(over: Partial<CreateSessionInput> = {}): CreateSessionInput {
   return {
     templateRecordId: "assessment-relationship-basics",
     initiatorName: "Avery",
@@ -168,9 +168,9 @@ beforeEach(() => stub.reset());
  * 1. Creation writes nothing — a draft consumes no trial days
  * ------------------------------------------------------------------ */
 
-describe("createInstanceFromTemplate consumes no trial days", () => {
+describe("createSessionFromTemplate consumes no trial days", () => {
   it("writes no subscription row for a create that publishes and sends the invitation", async () => {
-    await createInstanceFromTemplate(createInput());
+    await createSessionFromTemplate(createInput());
 
     // The create really happened: the relationship, the session and the invitation went out. A
     // 0-row answer has to mean "nothing was charged", not "nothing ran".
@@ -183,13 +183,13 @@ describe("createInstanceFromTemplate consumes no trial days", () => {
   });
 
   it("writes none for a draft create either — the week has not started", async () => {
-    await createInstanceFromTemplate(createInput({ draft: true }));
+    await createSessionFromTemplate(createInput({ draft: true }));
 
     expect(trialWrites()).toHaveLength(0);
   });
 
   it("writes none for a signed-out create — there is no account to hold a trial", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: null }));
+    await createSessionFromTemplate(createInput({ viewerUserId: null }));
 
     expect(trialWrites()).toHaveLength(0);
   });
@@ -259,7 +259,7 @@ describe("the acceptance writer exists for the claim to call", () => {
     // The rule is the rule, not a preference: no flag, no default-on option, no call site.
     const store = source("lib/flow/store.ts");
     expect(store).not.toMatch(/grant(Creation|Publish)Trial/);
-    const start = store.indexOf("export async function createInstanceFromTemplate");
+    const start = store.indexOf("export async function createSessionFromTemplate");
     const create = store.slice(start, store.indexOf("export async function ", start + 1));
     expect(create).not.toMatch(/await grant(Acceptance|Creation|Publish)Trial\(/);
   });

@@ -134,7 +134,7 @@ describe("the delete order", () => {
     }
   });
 
-  test("ends with the instance's own record, after every row that names it", () => {
+  test("ends with the session's own record, after every row that names it", () => {
     // The session's `record` row is the one a flow-created relationship leaves behind when its
     // session is swept (#962 follow-up), so it must go last: `session.record_id`, `item.record_id`
     // and the parties' `session_record_id` all name it, and each is deleted earlier in the list.

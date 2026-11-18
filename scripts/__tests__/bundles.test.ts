@@ -24,13 +24,14 @@ import { after, describe, it } from "node:test";
 import {
   BUNDLE_FORMAT,
   BUNDLE_VERSION,
+  LEGACY_BUNDLE_VERSION,
   canonicalDemoBundle,
   formatBundleIssue,
   parseBundle,
   serializeBundle,
   type DatasetBundle,
 } from "../../content/bundle";
-import { assessmentInstances, assessments } from "../../data/assessments";
+import { assessmentSessions, assessments } from "../../data/assessments";
 import {
   BundleError,
   DEMO_BUNDLE_FILE,
@@ -59,10 +60,34 @@ after(() => {
 
 /** A dataset bundle as text, with `mutate` applied to a fresh copy of the fixtures' payload. */
 function datasetText(mutate?: (bundle: DatasetBundle) => void): string {
-  const bundle = canonicalDemoBundle(assessments, assessmentInstances, APP);
+  const bundle = canonicalDemoBundle(assessments, assessmentSessions, APP);
   const copy = JSON.parse(serializeBundle(bundle)) as DatasetBundle;
   mutate?.(copy);
   return serializeBundle(copy);
+}
+
+/**
+ * The fixtures as a **version-1** dataset document — the shape this build reads and never
+ * writes. Derived from the canonical bundle, so the two documents differ in exactly the two
+ * things the migration changed: the version number and the record-array key.
+ */
+function legacyDatasetText(): string {
+  const current = canonicalDemoBundle(assessments, assessmentSessions, APP);
+  const payload = JSON.parse(serializeBundle(current)).payload as {
+    templates: unknown;
+    sessions: unknown;
+  };
+  return `${JSON.stringify(
+    {
+      format: BUNDLE_FORMAT,
+      bundleVersion: LEGACY_BUNDLE_VERSION,
+      kind: "dataset",
+      appVersion: current.appVersion,
+      payload: { templates: payload.templates, instances: payload.sessions },
+    },
+    null,
+    2,
+  )}\n`;
 }
 
 function templateText(id: string, mutate?: (payload: Record<string, unknown>) => void): string {
@@ -98,7 +123,7 @@ const temporaryFiles = (directory: string): string[] =>
 
 describe("a canonical bundle is a fixed point of serialize(parse(…))", () => {
   it("serializes the fixtures' dataset bundle and re-serializes it unchanged", () => {
-    const once = serializeBundle(canonicalDemoBundle(assessments, assessmentInstances, APP));
+    const once = serializeBundle(canonicalDemoBundle(assessments, assessmentSessions, APP));
     const parsed = parseBundle(once);
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.issues.map(formatBundleIssue).join("\n"));
     assert.equal(serializeBundle(parsed.bundle), once);
@@ -124,7 +149,7 @@ describe("export → import → export is byte-identical", () => {
     // taxonomy does (`data/assessments.ts` derives one template per purchasable type), and a
     // literal would make adding a type look like a bundle defect.
     assert.equal(imported.templates, assessments.length);
-    assert.equal(imported.instances, assessmentInstances.length);
+    assert.equal(imported.sessions, assessmentSessions.length);
     assert.equal(imported.materialized, false, "a dataset install has nothing to materialize");
 
     const second = exportDataset({ store, out: join(directory, "two.json"), appVersion: APP });
@@ -165,7 +190,7 @@ describe("export → import → export is byte-identical", () => {
     });
 
     // The receiving store is a dataset without it: `assessment-blank-template` ships as a
-    // draft no instance copies, so a dataset that leaves it out is still valid.
+    // draft no session copies, so a dataset that leaves it out is still valid.
     const bundle = JSON.parse(datasetText()) as DatasetBundle;
     importBundleFile(
       write(
@@ -175,7 +200,7 @@ describe("export → import → export is byte-identical", () => {
           ...bundle,
           payload: {
             templates: bundle.payload.templates.filter((template) => template.id !== blank),
-            instances: bundle.payload.instances.filter((instance) => instance.templateId !== blank),
+            sessions: bundle.payload.sessions.filter((session) => session.templateId !== blank),
           },
         }),
       ),
@@ -230,12 +255,80 @@ describe("export → import → export is byte-identical", () => {
 
     const exported = exportDataset({ store, out: join(directory, "all.json"), appVersion: APP });
     assert.equal(exported.bundle.payload.templates.length, assessments.length + 1);
-    assert.equal(exported.bundle.payload.instances.length, assessmentInstances.length);
+    assert.equal(exported.bundle.payload.sessions.length, assessmentSessions.length);
   });
 });
 
 /* ================================================================== *
- * 2. Six refusals — one code, one path, a store left alone
+ * 1b. The version-1 shape: read, normalized, never written
+ * ================================================================== */
+
+describe("bundleVersion 1 — tolerated for one release, never written back", () => {
+  it("parses, and says so", () => {
+    const parsed = parseBundle(legacyDatasetText());
+    assert.ok(parsed.ok, parsed.ok ? "" : parsed.issues.map(formatBundleIssue).join("\n"));
+    assert.equal(parsed.legacy, true);
+    assert.equal(parsed.bundle.bundleVersion, BUNDLE_VERSION, "normalized to the current version");
+    assert.equal(
+      parsed.bundle.kind === "dataset" ? parsed.bundle.payload.sessions.length : -1,
+      assessmentSessions.length,
+    );
+  });
+
+  it("imports into a store written in the current shape", () => {
+    const directory = workspace();
+    const store = join(directory, "assessments.json");
+    const file = write(directory, "legacy.json", legacyDatasetText());
+
+    const result = importBundleFile(file, { store, appVersion: APP });
+    assert.equal(result.deprecated, true, "the caller is told the file was a legacy one");
+    assert.equal(result.sessions, assessmentSessions.length);
+    assert.equal(readStore(store).kind, "valid");
+
+    const text = readFileSync(store, "utf8");
+    assert.match(text, /"sessions":/);
+    assert.equal(text.includes('"instances"'), false, "the store is written in the new shape");
+  });
+
+  it("re-exports as a version 3 document — the old key does not travel back", () => {
+    const directory = workspace();
+    const store = join(directory, "assessments.json");
+    importBundleFile(write(directory, "legacy.json", legacyDatasetText()), {
+      store,
+      appVersion: APP,
+    });
+
+    const exported = exportDataset({ store, out: join(directory, "again.json"), appVersion: APP });
+    assert.equal(exported.bundle.bundleVersion, BUNDLE_VERSION);
+    const text = readFileSync(exported.file, "utf8");
+    assert.match(text, /"bundleVersion": 3/);
+    assert.match(text, /"sessions":/);
+    assert.equal(text.includes('"instances"'), false);
+  });
+
+  it("reads a store left behind by an older build, without E33 calling it invalid", () => {
+    const directory = workspace();
+    const store = join(directory, "assessments.json");
+    const raw = JSON.parse(datasetText()) as { payload: Record<string, unknown> };
+    raw.payload.instances = raw.payload.sessions;
+    delete raw.payload.sessions;
+    writeFileSync(
+      store,
+      `${JSON.stringify({ templates: raw.payload.templates, instances: raw.payload.instances }, null, 2)}\n`,
+      "utf8",
+    );
+
+    const read = readStore(store);
+    assert.equal(read.kind, "valid");
+    assert.equal(
+      read.kind === "valid" ? read.records.sessions.length : -1,
+      assessmentSessions.length,
+    );
+  });
+});
+
+/* ================================================================== *
+ * 2. Refusals — one code, one path, a store left alone
  * ================================================================== */
 
 interface RefusalCase {
@@ -273,10 +366,10 @@ const BUNDLE_CASES: readonly RefusalCase[] = [
   {
     name: "B3 — an instance naming a template outside the bundle",
     code: "B3",
-    line: /^\[B3\] instances: instance "assessment-instance-avery-rowan" names template "assessment-not-in-this-bundle"/,
+    line: /^\[B3\] sessions: session "assessment-instance-avery-rowan" names template "assessment-not-in-this-bundle"/,
     text: () =>
       datasetText((bundle) => {
-        bundle.payload.instances[0].templateId = "assessment-not-in-this-bundle";
+        bundle.payload.sessions[0].templateId = "assessment-not-in-this-bundle";
       }),
     needsStore: false,
   },
@@ -300,16 +393,50 @@ const BUNDLE_CASES: readonly RefusalCase[] = [
   {
     name: "B6 — a bundleVersion this build does not read",
     code: "B6",
-    line: /^\[B6\] bundleVersion: bundleVersion 3: this build reads 1 and 2/,
+    line: /^\[B6\] bundleVersion: bundleVersion 9: this build reads 1, 2 and 3/,
     text: () =>
       datasetText((bundle) => {
-        (bundle as unknown as Record<string, unknown>).bundleVersion = 3;
+        (bundle as unknown as Record<string, unknown>).bundleVersion = 9;
       }),
+    needsStore: false,
+  },
+  {
+    name: "B9 — a bundleVersion 3 dataset that still carries the legacy key",
+    code: "B9",
+    line: /^\[B9\] payload\.instances: bundleVersion 3 carries payload\.instances/,
+    text: () =>
+      datasetText((bundle) => {
+        const payload = (bundle as unknown as { payload: Record<string, unknown> }).payload;
+        payload.instances = payload.sessions;
+        delete payload.sessions;
+      }),
+    needsStore: false,
+  },
+  {
+    name: "B9 — a payload carrying both keys is ambiguous, not a newer file",
+    code: "B9",
+    line: /^\[B9\] payload: carries both payload\.sessions and payload\.instances/,
+    text: () =>
+      datasetText((bundle) => {
+        const payload = (bundle as unknown as { payload: Record<string, unknown> }).payload;
+        payload.instances = payload.sessions;
+      }),
+    needsStore: false,
+  },
+  {
+    name: "B9 — a version 1 document already carrying the new key",
+    code: "B9",
+    line: /^\[B9\] payload\.sessions: bundleVersion 1 carries payload\.sessions/,
+    text: () => {
+      const raw = JSON.parse(datasetText()) as Record<string, unknown>;
+      raw.bundleVersion = LEGACY_BUNDLE_VERSION;
+      return `${JSON.stringify(raw, null, 2)}\n`;
+    },
     needsStore: false,
   },
 ];
 
-describe("six malformed bundles, six different path-bearing refusals", () => {
+describe("every malformed bundle gets one path-bearing refusal, and one code", () => {
   for (const testCase of BUNDLE_CASES) {
     it(testCase.name, () => {
       const directory = workspace();
@@ -347,10 +474,10 @@ describe("six malformed bundles, six different path-bearing refusals", () => {
     });
   }
 
-  it("the six codes are six different rules", () => {
+  it("the codes are different rules, not one rule under several names", () => {
     const codes = new Set(BUNDLE_CASES.map((testCase) => testCase.code));
-    assert.equal(codes.size, 6);
-    assert.deepEqual([...codes].sort(), ["B1", "B2", "B3", "B4", "B5", "B6"]);
+    assert.equal(codes.size, 7);
+    assert.deepEqual([...codes].sort(), ["B1", "B2", "B3", "B4", "B5", "B6", "B9"]);
   });
 
   it("refuses a file that is not JSON at all, naming the path it could not read", () => {
@@ -399,6 +526,30 @@ describe("six malformed bundles, six different path-bearing refusals", () => {
 describe("E32 — the committed demo bundle is the canonical export of the fixtures", () => {
   it("matches the fixtures byte for byte", () => {
     assert.deepEqual(demoBundleProblems(), []);
+  });
+
+  it("is a bundleVersion 3 document that does not spell the retired key", () => {
+    const text = readFileSync(DEMO_BUNDLE_FILE, "utf8");
+    const parsed = parseBundle(text);
+    assert.ok(parsed.ok, parsed.ok ? "" : parsed.issues.map(formatBundleIssue).join("\n"));
+    assert.equal(parsed.bundle.bundleVersion, BUNDLE_VERSION);
+    assert.equal(parsed.legacy, undefined, "the shipped file is written, not merely tolerated");
+    assert.match(text, /"sessions":/);
+    assert.equal(text.includes('"instances"'), false);
+  });
+
+  it("refuses the legacy key by name when the committed bundle keeps it at the new version", () => {
+    const directory = workspace();
+    const raw = JSON.parse(readFileSync(DEMO_BUNDLE_FILE, "utf8")) as {
+      payload: Record<string, unknown>;
+    };
+    raw.payload.instances = raw.payload.sessions;
+    delete raw.payload.sessions;
+    const file = write(directory, "half-migrated.json", `${JSON.stringify(raw, null, 2)}\n`);
+
+    const problems = demoBundleProblems({ file });
+    assert.equal(problems.length > 0, true, "a half-migrated committed bundle is a finding");
+    assert.match(problems.join("\n"), /\[B9\] payload\.instances: bundleVersion 3 carries/);
   });
 
   it("fails when one byte of it changes", () => {

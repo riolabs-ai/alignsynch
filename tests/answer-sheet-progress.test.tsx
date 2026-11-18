@@ -29,7 +29,7 @@ import { positionOf } from "@/lib/flow/answer-position";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
-const INSTANCE_ID = "instance-answer-progress-test";
+const INSTANCE_ID = "session-answer-progress-test";
 
 /**
  * The five approved names, in order — the spec's own words (`data/pages/lifecycle.ts`, #825).

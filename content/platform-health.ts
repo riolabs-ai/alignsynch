@@ -27,7 +27,7 @@ import { zIsoDateTime } from "./core";
 
 /**
  * One `db:verify` violation: the rule code exactly as the script prints it, and the sentence that
- * follows it on the same line (`  V11  instance "…" (answering): …`).
+ * follows it on the same line (`  V11  session "…" (answering): …`).
  */
 export const zPlatformHealthViolation = z
   .object({

@@ -25,15 +25,15 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
-import { answersPath, instancePath } from "@/lib/flow/paths";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
+import { answersPath, sessionPath } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { StepRefusal } from "@/lib/flow/store";
 import type { SubmissionRejection } from "@/lib/flow/state";
 
 /**
  * The store's answer, set per test. Hoisted so `vi.mock`'s factory can reach it — the route reads
- * `readInstanceMode` before the write and `submitAnswers` for it, and nothing else from the module.
+ * `readSessionMode` before the write and `submitAnswers` for it, and nothing else from the module.
  */
 const stub = vi.hoisted(() => ({
   refusal: {
@@ -44,7 +44,7 @@ const stub = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/flow/store", () => ({
-  readInstanceMode: async () => "basic",
+  readSessionMode: async () => "basic",
   submitAnswers: async () => stub.refusal,
 }));
 
@@ -73,21 +73,21 @@ const EXPECTED_STATUS: Record<SubmissionRejection, number> = {
 /** The union as a runtime list. `EXPECTED_STATUS` supplies the keys; the values are the statuses. */
 const SUBMISSION_CODES = Object.keys(EXPECTED_STATUS) as SubmissionRejection[];
 
-const INSTANCE = "inst-752";
+const SESSION = "inst-752";
 
 /** A post a party could have made: a Basic sheet, one Aspect, a score for each opinion it asks. */
 function sheetRequest(): Request {
   const form = new FormData();
   form.set("feel:aspect-money", "3");
   form.set("wish:aspect-money", "4");
-  return new Request(`http://localhost${answersPath(INSTANCE)}`, { method: "POST", body: form });
+  return new Request(`http://localhost${answersPath(SESSION)}`, { method: "POST", body: form });
 }
 
 async function submit(): Promise<Response> {
-  return POST(sheetRequest(), { params: Promise.resolve({ instanceId: INSTANCE }) });
+  return POST(sheetRequest(), { params: Promise.resolve({ instanceId: SESSION }) });
 }
 
-const problems = sectionOf(assessmentInstancePageCopy, "problems");
+const problems = sectionOf(assessmentSessionPageCopy, "problems");
 
 describe("the refusal copy covers the store's refusal union", () => {
   it("has a sentence for every code `submitAnswers` can return", () => {
@@ -124,7 +124,7 @@ describe("the refusal copy covers the store's refusal union", () => {
     }
   });
 
-  it("still has the way back to the instance", () => {
+  it("still has the way back to the session", () => {
     expect(() => itemLabel(problems, "back")).not.toThrow();
   });
 });
@@ -147,8 +147,8 @@ describe("a refusal is a page, per code", () => {
     expect(html).toContain(itemLabel(problems, "lapsed"));
     // …and the store's own reason is printed beneath them, because it names the instant.
     expect(html).toContain("2026-11-01T00:00:00.000Z");
-    // The way back to the instance, so the reader is not stranded on a bare refusal.
-    expect(html).toContain(`href="${instancePath(INSTANCE)}"`);
+    // The way back to the session, so the reader is not stranded on a bare refusal.
+    expect(html).toContain(`href="${sessionPath(SESSION)}"`);
   });
 
   it("answers every code in the union with its own status and its own sentence", async () => {

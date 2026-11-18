@@ -12,7 +12,7 @@
  *
  * Both halves are the *viewer's*: the owner column and the relationship's two person columns are
  * compared to the session's id, so the query cannot return somebody else's row even if a component
- * forgot to filter. That is the same shape `lib/member/templates.ts` and `lib/db/my-instances.ts`
+ * forgot to filter. That is the same shape `lib/member/templates.ts` and `lib/db/my-sessions.ts`
  * use, and it is why this module takes an id rather than reading a session — the page resolves it
  * once (`requireRole`) and the read is a function of a value.
  *
@@ -23,7 +23,7 @@
  * which is where a person looks for it.
  *
  * **`NOT EXISTS (session)` is the definition of a template**, repeated here rather than joined: a
- * record with a session is an instance, and an instance is never a template you can start from.
+ * record with a session is a session, and a session is never a template you can start from.
  *
  * Reads go through `queryRows`, so this surface gets the pool's dead-socket retry and the same
  * `DatabaseUnavailableError` every other console read raises — the page turns that into its panel.

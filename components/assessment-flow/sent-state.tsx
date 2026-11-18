@@ -88,7 +88,7 @@ export function SentState({
   inviteNotice?: "sent" | "unset" | "failed";
   /** `?resend=<code>` — the re-invite endpoint's refusal, carried through its 303. */
   resendRefusal?: string;
-  /** The instance's re-invite endpoint (`reinvitePath()`). */
+  /** The session's re-invite endpoint (`reinvitePath()`). */
   resendAction: string;
   /** The relationship itself — stage 6, `Align`, one click away. */
   openHref: string;
@@ -105,7 +105,7 @@ export function SentState({
   const counterparty = invite?.counterpartyName ?? screen.counterpartyName ?? "";
   // The Initiator is the only seat the store lets re-invite, and `claimed` is terminal: the seat is
   // taken, so the panel says so and offers nothing. The store is the authority; this only decides
-  // what is drawn, exactly as the instance screen's panel does.
+  // what is drawn, exactly as the session screen's panel does.
   const canReinvite =
     invite !== null && invite.state !== "claimed" && screen.viewer.role === "initiator";
 

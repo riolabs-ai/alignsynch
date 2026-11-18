@@ -2,11 +2,11 @@
  * The demo population — 30 people, 27 relationships, and every lifecycle the model allows (#1079).
  *
  * This file is **data, not content logic**: it holds one compact row per relationship and
- * `data/assessments.ts` turns each row into a full `AssessmentInstance` (`populationInstance`),
+ * `data/assessments.ts` turns each row into a full `AssessmentSession` (`populationSession`),
  * copying the template's Aspects so `data:check` E31 cannot see a copy that drifted. Two reasons
  * for the shape:
  *
- *   1. **A row is readable.** The four hand-authored instances in `data/assessments.ts` spell out
+ *   1. **A row is readable.** The four hand-authored sessions in `data/assessments.ts` spell out
  *      every Aspect prompt and every opinion object, which is right for the four records that
  *      *define* the shape and unreadable once there are thirty. A row here states the one thing a
  *      reader is looking for — who is in it, what state it is in, and how far apart they are.
@@ -17,7 +17,7 @@
  * **The answers are the whole sheet; the lifecycle says how much of it has happened.** The model
  * requires both parties to answer every Aspect, so a draft or a pending invitation still carries
  * both seats' eventual answers here — and the lifecycle (`answers`) decides how many of those rows
- * the seed writes. That is the honest split: an `AssessmentInstance` is *content* (a template copied
+ * the seed writes. That is the honest split: an `AssessmentSession` is *content* (a template copied
  * and answered), while a `relationship` row is a *state*, and the two are not the same thing.
  *
  * **Every status the CHECK allows appears at least once**, and `tests/demo-dataset-coverage.test.ts`
@@ -53,11 +53,11 @@ export interface PopulationSeat {
 
 /** One relationship in the population. */
 export interface PopulationRow {
-  /** The instance slug — unique across the collection (E2), and the seed's id is `relationship-<id>`. */
+  /** The session slug — unique across the collection (E2), and the seed's id is `relationship-<id>`. */
   readonly slug: string;
   /** Which template this relationship copied. Resolved by E31; a typo is a red build. */
   readonly templateId: string;
-  /** The relationship's own name, when it has one (`instanceNameOf` falls back to the template's). */
+  /** The relationship's own name, when it has one (`sessionNameOf` falls back to the template's). */
   readonly name?: string;
   /** The fixture instant the relationship was created — `relationship.created_at`, never a clock. */
   readonly date: string;

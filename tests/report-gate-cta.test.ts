@@ -34,11 +34,11 @@ import { describe, expect, it } from "vitest";
 import { RelationshipReport } from "@/components/assessment-flow/report-view";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import { relationshipReportPageCopy } from "@/data/pages/assessment-relationship-report";
-import { answerSheetPath, answersPath, instancePath } from "@/lib/flow/paths";
+import { answerSheetPath, answersPath, sessionPath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 
-/** The instance the fixture names — any id would do; a real-looking one keeps the URLs legible. */
-const INSTANCE_ID = "instance-report-gate";
+/** The session the fixture names — any id would do; a real-looking one keeps the URLs legible. */
+const SESSION_ID = "session-report-gate";
 
 /** Every `href` in a rendered tree, in document order. */
 function hrefsOf(html: string): string[] {
@@ -68,11 +68,11 @@ function hrefOf(html: string, attribute: string): string {
  */
 function lockedScreen(): FlowScreen {
   return {
-    instanceRecordId: INSTANCE_ID,
+    sessionRecordId: SESSION_ID,
     relationshipId: "relationship-report-gate",
-    slug: "relationship-basics-instance-report-gate",
+    slug: "relationship-basics-session-report-gate",
     title: "Relationship Basics",
-    summary: "An instance between two people.",
+    summary: "A session between two people.",
     status: "answering",
     mode: "basic",
     setting: "soft",
@@ -123,9 +123,9 @@ function renderGate(): string {
 describe("the locked report's continue CTA", () => {
   it("links to the sheet page, not to the POST-only endpoint", () => {
     const html = renderGate();
-    const sheet = answerSheetPath(INSTANCE_ID);
+    const sheet = answerSheetPath(SESSION_ID);
 
-    expect(sheet).toBe(`${instancePath(INSTANCE_ID)}/answer`);
+    expect(sheet).toBe(`${sessionPath(SESSION_ID)}/answer`);
     expect(hrefOf(html, 'data-report-continue="true"')).toBe(sheet);
     expect(hrefsOf(html)).toContain(sheet);
   });
@@ -138,7 +138,7 @@ describe("the locked report's continue CTA", () => {
     // too: a `…/answers` written as a bare string, an `action` on a stray form, or a href built by
     // hand rather than by `answersPath()` would all slip past the exact comparison above.
     expect(html).not.toMatch(/href="[^"]*\/answers[^"]*"/);
-    expect(html).not.toContain(`href="${answersPath(INSTANCE_ID)}"`);
+    expect(html).not.toContain(`href="${answersPath(SESSION_ID)}"`);
   });
 
   it("keeps the gate's words and its one control", () => {
@@ -151,7 +151,7 @@ describe("the locked report's continue CTA", () => {
     expect(html).toContain("You have answered 0 of 2 Aspects.");
     expect(html).toContain("Answer your Aspects");
     // The back link is the other destination on this page and it stays the relationship itself.
-    expect(hrefsOf(html)).toContain(instancePath(INSTANCE_ID));
+    expect(hrefsOf(html)).toContain(sessionPath(SESSION_ID));
     // Two destinations, one of them the sheet: a third would mean the gate grew a control the
     // card never asked for, and that control would need its own link assertion.
     expect(hrefsOf(html)).toHaveLength(2);

@@ -141,7 +141,7 @@ interface Endings {
     relationshipId?: string;
     reason?: string;
   }) => Promise<CancelInviteOutcome>;
-  onResendInvite?: (payload: { instanceRecordId?: string }) => Promise<ResendInviteOutcome>;
+  onResendInvite?: (payload: { sessionRecordId?: string }) => Promise<ResendInviteOutcome>;
   onAbandon?: (payload: { relationshipId?: string; reason?: string }) => Promise<AbandonOutcome>;
   onLeave?: (payload: { relationshipId?: string; reason?: string }) => Promise<LeaveOutcome>;
   onRequestRemoval?: (payload: {

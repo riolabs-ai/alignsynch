@@ -7,7 +7,7 @@
  * **The viewer is resolved by Postgres, never by the URL.** `readFlowScreen()` answers "who is
  * reading" from the party cookie's token hash, then the signed-in account (`party.user_id`), then
  * a relationship membership — and returns `undefined` for a request that is none of those. That
- * `undefined` is a `notFound()`: an instance a browser is not a party to does not exist for it, and
+ * `undefined` is a `notFound()`: an session a browser is not a party to does not exist for it, and
  * a 404 leaks less than a screen that names the relationship and then refuses.
  *
  * **The blind rule is the input, not a check on this page.** `readFlowScreen()` asks Postgres only
@@ -40,7 +40,7 @@ import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answerGateOf } from "@/lib/flow/answer-gate";
 import { positionOf } from "@/lib/flow/answer-position";
-import { answerDraftsPath, answerSheetPath, answersPath, instancePath } from "@/lib/flow/paths";
+import { answerDraftsPath, answerSheetPath, answersPath, sessionPath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -54,7 +54,7 @@ export const dynamic = "force-dynamic";
 /**
  * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
  *
- * The same five lines the instance screen carries, and for the same reason: `currentUser()` answers
+ * The same five lines the session screen carries, and for the same reason: `currentUser()` answers
  * `null` for "no session", and `authConfigured()` adds the "is auth here at all" question so the
  * gate's database-free build renders this route without `NEON_AUTH_*` set.
  */
@@ -71,29 +71,29 @@ async function viewerUserId(): Promise<string | null> {
  * costs the relationship read plus the screen's own statements. `cache()` holds it for one request
  * and nothing longer; a throw is not memoised.
  */
-const screenFor = cache(async (instanceId: string): Promise<FlowScreen | undefined> => {
+const screenFor = cache(async (sessionId: string): Promise<FlowScreen | undefined> => {
   const jar = await cookies();
   return readFlowScreen({
-    instanceRecordId: instanceId,
-    token: jar.get(partyCookieName(instanceId))?.value,
-    inviteToken: jar.get(inviteCookieName(instanceId))?.value ?? null,
+    sessionRecordId: sessionId,
+    token: jar.get(partyCookieName(sessionId))?.value,
+    inviteToken: jar.get(inviteCookieName(sessionId))?.value ?? null,
     viewerUserId: await viewerUserId(),
   });
 });
 
 /**
- * The instance's own title — for a viewer who is a party to it, and nobody else.
+ * The session's own title — for a viewer who is a party to it, and nobody else.
  *
  * `readFlowScreen()` already refuses a non-viewer, so the fallback is the whole protection here:
- * a browser that holds no seat for this instance is told nothing about it, not even its name.
+ * a browser that holds no seat for this session is told nothing about it, not even its name.
  */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ instanceId: string }>;
 }): Promise<Metadata> {
-  const { instanceId } = await params;
-  const screen = await screenFor(instanceId);
+  const { instanceId: sessionId } = await params;
+  const screen = await screenFor(sessionId);
   return { title: screen?.title ?? "Assessment Not Found" };
 }
 
@@ -114,8 +114,8 @@ export default async function AnswerSheetPage({
     refused?: string | string[];
   }>;
 }) {
-  const { instanceId } = await params;
-  const screen = await screenFor(instanceId);
+  const { instanceId: sessionId } = await params;
+  const screen = await screenFor(sessionId);
   if (screen === undefined) notFound();
 
   const query = searchParams === undefined ? {} : await searchParams;
@@ -123,7 +123,7 @@ export default async function AnswerSheetPage({
     Array.isArray(value) ? value[0] : value;
 
   const gate = answerGateOf({
-    instanceRecordId: screen.instanceRecordId,
+    sessionRecordId: screen.sessionRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
     viewerAccepted: screen.viewerAccepted,
@@ -141,10 +141,10 @@ export default async function AnswerSheetPage({
         gate={gate}
         viewer={screen.viewer}
         mode={screen.mode}
-        backHref={instancePath(instanceId)}
-        sheetPath={answerSheetPath(instanceId)}
-        draftAction={answerDraftsPath(instanceId)}
-        answersAction={gate.action ?? answersPath(instanceId)}
+        backHref={sessionPath(sessionId)}
+        sheetPath={answerSheetPath(sessionId)}
+        draftAction={answerDraftsPath(sessionId)}
+        answersAction={gate.action ?? answersPath(sessionId)}
         /* The other party's name, from the rows: the privacy note names who cannot see this
            sheet, and it is the one name the projection carries for them. */
         otherName={

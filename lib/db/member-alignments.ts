@@ -3,7 +3,7 @@
  * account is a party to (#1129).
  *
  * **Why a second read beside `lib/db/gap-rows.ts`.** That one is the *population* read: every
- * complete instance on the platform, nameless, for `/admin/gaps`. A member's Start page and
+ * complete session on the platform, nameless, for `/admin/gaps`. A member's Start page and
  * My Relationships ask a narrower question — *mine* — and they need the Aspect's **prompt** as well
  * as its id, because the card prints "Next Step: talk about Parent Decisions". It is the same
  * completeness rule, the same columns and the same `WHERE … party.user_id = $1` the rest of the
@@ -53,7 +53,7 @@ export interface MemberAlignment {
 /**
  * One statement, keyed on the session.
  *
- * Completeness is decided in SQL and it is `instanceStatusOf`'s rule (`lib/flow/state.ts`): a
+ * Completeness is decided in SQL and it is `sessionStatusOf`'s rule (`lib/flow/state.ts`): a
  * Counterparty seat exists, the copy holds at least one Aspect, and both parties answered every
  * Aspect. The inner joins on the two `opinion` rows state that structurally — one row per Aspect
  * requires an answer on both sides — so a half-answered relationship contributes no rows at all
@@ -115,7 +115,7 @@ function scoreOf(value: number, column: string, sessionRecordId: string): Score 
   return value as Score;
 }
 
-/** The optional half of an Advanced instance: think and guess come together, or neither. */
+/** The optional half of an Advanced session: think and guess come together, or neither. */
 function predictionOf(
   think: number | null,
   guess: number | null,

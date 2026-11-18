@@ -88,7 +88,7 @@ function stage(which: CreateStage, extra: Record<string, unknown> = {}): string 
       aspects: [{ id: "aspect-1", prompt: "Aspect One", leftValue: "Low", rightValue: "High" }],
       backHref: "/back",
       problem: null,
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       relationshipId: "relationship-brother",
       /* The create path always measures the week: its absence is the purchase panel, which this
          flow cannot reach (it supplies no checkout handler either). */
@@ -103,7 +103,7 @@ function walk(step?: (typeof PAY_FLOW_STEPS)[number], extra: Record<string, unkn
   return renderToStaticMarkup(
     createElement(InviteWalk, {
       copy: assessmentCreatePageCopy,
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       relationshipId: "relationship-brother",
       paid: false,
       onPaid: () => undefined,
@@ -186,8 +186,11 @@ describe("stage 5's primary action is the free week", () => {
 });
 
 describe("the invite page cannot reach the checkout adapter", () => {
+  // #1109 moved the stage's body out of the route and under `components/flow/template-create/`,
+  // so the page at `/dashboard/templates/[id]/create/invite` is the two-line wrapper and this is
+  // the module that decides what the step draws.
   const page = readFileSync(
-    join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+    join(process.cwd(), "components/flow/template-create/invite.tsx"),
     "utf8",
   );
 
@@ -218,7 +221,7 @@ describe("the walk's purchase path is out of the create flow, not deleted", () =
     const html = renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-brother",
+        sessionRecordId: "assessment-instance-brother",
         relationshipId: "relationship-brother",
         paid: true,
         onPaid: () => undefined,

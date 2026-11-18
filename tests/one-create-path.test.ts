@@ -124,14 +124,14 @@ describe("one create path", () => {
   /* ------------------------------------------------------------------ #957's seam */
 
   it("is reached by a named set of modules, not by any page that renders a form", () => {
-    const namers = SOURCES.filter(({ text }) => /\bCREATE_INSTANCE_PATH\b/.test(text))
+    const namers = SOURCES.filter(({ text }) => /\bCREATE_SESSION_PATH\b/.test(text))
       .map(({ path }) => path)
       .sort();
     expect(namers).toEqual([...ENDPOINT_NAMERS].sort());
   });
 
   it("posts a draft from the one module that posts it at all", () => {
-    const posters = SOURCES.filter(({ text }) => /action=\{CREATE_INSTANCE_PATH\}/.test(text));
+    const posters = SOURCES.filter(({ text }) => /action=\{CREATE_SESSION_PATH\}/.test(text));
     expect(posters.map(({ path }) => path)).toEqual([STAGE_ACCOUNT]);
     // The flag, not just the address: without it the same form publishes and mails (#825).
     expect(posters[0]?.text).toContain('name="draft"');
@@ -162,7 +162,7 @@ describe("the start band", () => {
   it("opens the flow's own address for the chosen template", () => {
     // The band holds slugs because the flow's URL carries the slug (#794), never the record id.
     expect(createRelationshipPath("member-config-abc123")).toBe(
-      "/templates/relationship/member-config-abc123/create",
+      "/dashboard/templates/member-config-abc123/create",
     );
     const html = renderToStaticMarkup(
       createElement(RelationshipStart, { copy: dashboardRelationshipsPageCopy, templates }),

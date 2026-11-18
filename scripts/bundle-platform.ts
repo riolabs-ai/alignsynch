@@ -9,7 +9,7 @@
  *
  * Five decisions, each one the reason a code exists:
  *
- * 1. **The payload is the schemas.** `content` is exactly `zAssessment` / `zAssessmentInstance`
+ * 1. **The payload is the schemas.** `content` is exactly `zAssessment` / `zAssessmentSession`
  *    — Aspects, parties and opinions travel inside an instance, as they always did — so there
  *    is no second shape to drift between the package and the store.
  *
@@ -57,7 +57,7 @@ import {
   ASSESSMENT_MODES,
   OPINION_KINDS,
   type Assessment,
-  type AssessmentInstance,
+  type AssessmentSession,
 } from "../content/assessment";
 import {
   BUNDLE_FORMAT,
@@ -343,10 +343,17 @@ export function platformPayload(
   return { payload, media: index.bytes, problems: index.problems };
 }
 
-/** The active set (the tenant store when it exists, the fixtures otherwise) as content. */
+/**
+ * The active set (the tenant store when it exists, the fixtures otherwise) as content.
+ *
+ * The record arrays are `sessions` since #1103 phase 3, and a platform package's content group
+ * still names the same array with the pre-migration key — that document is `bundleVersion: 2`
+ * and this card did not move it. So this is the one place the two vocabularies meet: the value
+ * is the current model's, the field keeps the v2 package's key until that format bumps.
+ */
 export function activeContent(options: { store?: string } = {}): PlatformContent {
   const dataset = activeDataset({ store: options.store });
-  return { templates: dataset.payload.templates, instances: dataset.payload.instances };
+  return { templates: dataset.payload.templates, instances: dataset.payload.sessions };
 }
 
 /* ------------------------------------------------------------------ *
@@ -417,7 +424,7 @@ function prodSubset(full: PlatformPayload): SubsetResult {
     }
   }
 
-  const keptInstances: AssessmentInstance[] = [];
+  const keptInstances: AssessmentSession[] = [];
   const orphaned: string[] = [];
 
   for (const instance of full.content.instances) {
@@ -495,7 +502,7 @@ function previewSubset(full: PlatformPayload, limit: number): SubsetResult {
     });
   }
 
-  const keptInstances: AssessmentInstance[] = [];
+  const keptInstances: AssessmentSession[] = [];
   for (const instance of full.content.instances) {
     if (!keptTemplateIds.has(instance.templateId)) {
       dropped.push({
@@ -928,7 +935,7 @@ export function unpackPackage(file: string, options: UnpackOptions = {}): Unpack
       store,
       serializeDatasetPayload({
         templates: parsed.bundle.payload.content.templates as Assessment[],
-        instances: parsed.bundle.payload.content.instances as AssessmentInstance[],
+        sessions: parsed.bundle.payload.content.instances as AssessmentSession[],
       }),
     );
     installed = store;

@@ -106,7 +106,7 @@ const alignSynch: Brand = zBrand.parse({
  * The pairs below are about *records*, not about the ambient `brand`: the gate's CI matrix builds
  * **and tests** under `BRAND=alignsynch` as well as `BRAND=quizhub`, and a "QuizHub" half that
  * quietly read the ambient record would assert the opposite of its own name in that lane. The
- * ambient record has its own tests: "exports today's shell as the QuizHub instance" and "resolves
+ * ambient record has its own tests: "exports today's shell as the QuizHub session" and "resolves
  * the flag" below.
  */
 const quizHubRender = render(shellCopy(quizHubBrand));
@@ -210,7 +210,7 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(render(shellPageCopy)).not.toContain("mailto:");
   });
 
-  it("exports today's shell as the QuizHub instance", () => {
+  it("exports today's shell as the QuizHub session", () => {
     expect(shellPageCopy).toEqual(shellCopy(brand));
     expect(shellPageCopy.heading).toBe(brand.name);
   });

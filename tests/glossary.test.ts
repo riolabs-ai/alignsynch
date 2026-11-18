@@ -9,7 +9,7 @@
  *      prose somebody wrote by hand;
  *   4. the same rule holds for the two kinds of source: a JSDoc block above a declaration
  *      (Template, Aspect, Opinion, Gap) and a term line in the file's leading comment
- *      (Record, Item, Instance).
+ *      (Record, Item, Session).
  *
  * Every case runs the real script against a sandbox copy of the three schema files, so the
  * assertions are about the bytes the gate would compare, not about a helper exported for
@@ -25,7 +25,7 @@ import { afterAll, describe, expect, it } from "vitest";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SCRIPT = join(ROOT, "scripts/gen-glossary.mjs");
 const SCHEMA_FILES = ["content/record.ts", "content/assessment.ts", "content/quiz.ts"];
-const TERMS = ["Record", "Item", "Template", "Instance", "Aspect", "Opinion", "Gap"];
+const TERMS = ["Record", "Item", "Template", "Session", "Aspect", "Opinion", "Gap"];
 
 const sandboxes: string[] = [];
 
@@ -135,11 +135,11 @@ describe("docs/glossary.md", () => {
 
   it("fails naming the type when a glossary line is missing", () => {
     const dir = sandbox();
-    stripGlossaryLine(dir, "content/record.ts", "Instance");
+    stripGlossaryLine(dir, "content/record.ts", "Session");
 
     const run = generate(dir);
     expect(run.status).toBe(1);
-    expect(run.stderr).toContain("no comment for AssessmentInstance");
+    expect(run.stderr).toContain("no comment for AssessmentSession");
     expect(() => readFileSync(join(dir, "docs/glossary.md"), "utf8")).toThrow();
   });
 });

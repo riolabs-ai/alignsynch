@@ -8,7 +8,7 @@
  *                          it writes `session_invite.claimed_at`, and a second claim reads
  *                          that column and is refused.
  *   the party token        what a party's browser carries afterwards, in one cookie per
- *                          instance. It is what makes "my answers" mine and nobody else's.
+ *                          session. It is what makes "my answers" mine and nobody else's.
  *
  * Neither is ever written to a row: `party.access_token_hash` and
  * `session_invite.token_hash` hold SHA-256 of the token, so reading the database does not
@@ -42,7 +42,7 @@ export const RESEND_COOLDOWN_MS = 24 * 60 * 60 * 1000;
  *
  * A cooldown alone still allows an unbounded drip (one send a day, forever), so the cap is the
  * terminal half of the guard: past it the refusal names the honest next step, which is starting a
- * new instance. Three covers every legitimate story — a typo, a lost email, an expiry, one more
+ * new session. Three covers every legitimate story — a typo, a lost email, an expiry, one more
  * try — and `resent_count` is the only stored fact the cap needs.
  */
 export const RESEND_LIFETIME_CAP = 3;
