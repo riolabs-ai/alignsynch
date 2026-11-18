@@ -49,7 +49,11 @@ import { entitlementForAccount } from "@/lib/billing";
 import { trialStateOf } from "@/lib/billing/trial";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { carriedPlanOf, parsePlanIntent } from "@/lib/flow/plan-intent";
-import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
+import {
+  createCommitForPath,
+  createRelationshipPath,
+  relationshipIdFromSearch,
+} from "@/lib/flow/paths";
 import { partyCookieName, PLAN_INTENT_COOKIE } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
 
@@ -60,9 +64,16 @@ export const metadata: Metadata = {
 };
 
 type InviteParams = {
-  readonly session?: string | string[];
   readonly problem?: string | string[];
   readonly field?: string | string[];
+  /**
+   * The relationship stage 4 wrote arrives in the address, and the page does **not** name that key
+   * here: `relationshipIdFromSearch()` (`lib/flow/paths.ts`) owns it, because the reader used to spell
+   * `?session=` while the writer wrote `?instance=` — so this stage refused a create that had just
+   * succeeded and sent the person back to an empty stage 1 (#1216). The index signature is what lets
+   * the address carry a key no stage may name twice.
+   */
+  readonly [key: string]: string | string[] | undefined;
 };
 
 /** The first value of a search param — Next hands a repeated param back as an array. */
@@ -89,8 +100,11 @@ export default async function TemplateCreateInvitePage({
   const { slug } = await params;
   const query = await searchParams;
   const whoPath = createRelationshipPath(slug);
-  const commitPath = createCommitPath(slug);
-  const sessionRecordId = (firstValue(query.session) ?? "").trim();
+  // #1216 — the id is read through the same name the create's redirect writes it under. This used
+  // to name `?session=` itself, which no writer produced: the stage then answered "nothing was
+  // created by this browser" on a create that had just succeeded, and the draft cookie that create
+  // consumed made the landing an empty stage 1.
+  const sessionRecordId = relationshipIdFromSearch(query);
 
   // No relationship named: nothing was created by this browser in this flow.
   if (sessionRecordId === "") redirect(whoPath);
@@ -219,7 +233,9 @@ export default async function TemplateCreateInvitePage({
       draft={draft}
       sessionRecordId={screen.sessionRecordId}
       relationshipId={screen.relationshipId}
-      backHref={commitPath}
+      // #1216 — `Back` names the relationship, so stage 4 re-enters on the row it already wrote
+      // instead of finding no draft and starting the flow again from an empty stage 1.
+      backHref={createCommitForPath(slug, screen.sessionRecordId)}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}

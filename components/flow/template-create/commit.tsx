@@ -65,6 +65,7 @@ import {
   createCommitPath,
   createInviteForPath,
   createRelationshipPath,
+  relationshipIdFromSearch,
   OVERVIEW_PATH,
 } from "@/lib/flow/paths";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -84,10 +85,15 @@ export const metadata: Metadata = {
 type CommitParams = {
   readonly problem?: string | string[];
   readonly field?: string | string[];
-  /** The relationship stage 4 already wrote, when stage 5's `Back` is what brought the reader. */
-  readonly session?: string | string[];
   /** `account` draws the sign-in panel for a signed-in viewer too — a review affordance. */
   readonly preview?: string | string[];
+  /**
+   * The relationship stage 4 already wrote, when stage 5's `Back` is what brought the reader. The
+   * key is `lib/flow/paths.ts`'s (`relationshipIdFromSearch`), not this page's: the re-entry used to
+   * read `?session=`, which nothing wrote, so it could never fire and `Back` landed on an empty
+   * stage 1 (#1216).
+   */
+  readonly [key: string]: string | string[] | undefined;
 };
 
 /** The first value of a search param — Next hands a repeated param back as an array. */
@@ -138,7 +144,7 @@ export default async function TemplateCreateCommitPage({
    * cookie is the proof — an id alone is not a secret — and a read that finds no seat is treated as
    * no relationship at all, which falls through to the ordinary account stage.
    */
-  const createdId = (firstValue(query.session) ?? "").trim();
+  const createdId = relationshipIdFromSearch(query);
   const created =
     createdId === "" || detail === undefined
       ? undefined
