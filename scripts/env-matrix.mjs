@@ -317,6 +317,7 @@ function duplicateDecisions(scopes, branchScopes) {
       const basePrint = fingerprint(base);
       const branchPrint = fingerprint(scoped);
       const same = basePrint !== "hidden" && basePrint === branchPrint;
+      const masked = [basePrint, branchPrint].filter((print) => print === "hidden").length;
       decisions.push({
         name,
         branch,
@@ -325,11 +326,14 @@ function duplicateDecisions(scopes, branchScopes) {
         baseFingerprint: basePrint,
         branchFingerprint: branchPrint,
         same,
+        masked,
         decision: same
           ? "identical value, proven — the all-branches entry is authoritative and the branch copy is redundant"
-          : basePrint === "hidden"
+          : masked === 2
             ? "unprovable (both masked) — the branch entry stays authoritative on that branch by precedence"
-            : "the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere",
+            : masked === 1
+              ? "unprovable (one side masked) — the branch entry stays authoritative there by precedence"
+              : "the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere",
       });
     }
   }

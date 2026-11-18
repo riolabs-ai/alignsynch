@@ -90,16 +90,16 @@ A branch entry is only justified when that branch must _differ_. The fingerprint
 
 | name                                  | scope types                    | fp(all-branches) | fp(branch)   | decision                                                                                          |
 | ------------------------------------- | ------------------------------ | ---------------- | ------------ | ------------------------------------------------------------------------------------------------- |
-| `BILLING_HOST`                        | sensitive / encrypted (`demo`) | hidden           | 998934e01a89 | unprovable (both masked) — the branch entry stays authoritative on that branch by precedence      |
-| `BILLING_KEY_SET`                     | encrypted / sensitive (`demo`) | 50ff9913d9cd     | hidden       | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
-| `BILLING_PROVIDER`                    | sensitive / encrypted (`demo`) | hidden           | 7abc6f57168b | unprovable (both masked) — the branch entry stays authoritative on that branch by precedence      |
+| `BILLING_HOST`                        | sensitive / encrypted (`demo`) | hidden           | 998934e01a89 | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
+| `BILLING_KEY_SET`                     | encrypted / sensitive (`demo`) | 50ff9913d9cd     | hidden       | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
+| `BILLING_PROVIDER`                    | sensitive / encrypted (`demo`) | hidden           | 7abc6f57168b | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
 | `BRAND`                               | encrypted / encrypted (`demo`) | d959d45dff3a     | b511d39a6ea5 | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
-| `DATABASE_URL`                        | encrypted / sensitive (`demo`) | aab48e6976d9     | hidden       | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
-| `DATABASE_URL_UNPOOLED`               | encrypted / sensitive (`demo`) | 72b139362c43     | hidden       | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
+| `DATABASE_URL`                        | encrypted / sensitive (`demo`) | aab48e6976d9     | hidden       | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
+| `DATABASE_URL_UNPOOLED`               | encrypted / sensitive (`demo`) | 72b139362c43     | hidden       | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
 | `DEMO_AUTH`                           | encrypted / encrypted (`demo`) | ffd2d27f3994     | 912ca7c999f3 | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
 | `DEMO_PIN`                            | encrypted / encrypted (`demo`) | 0411f21594f9     | 4e827916d59e | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
 | `NEON_AUTH_BASE_URL`                  | encrypted / encrypted (`demo`) | b80217cc4fb5     | ae8aa5054a0f | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
-| `NEON_AUTH_COOKIE_SECRET`             | encrypted / sensitive (`demo`) | 9c375411dd20     | hidden       | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
+| `NEON_AUTH_COOKIE_SECRET`             | encrypted / sensitive (`demo`) | 9c375411dd20     | hidden       | unprovable (one side masked) — the branch entry stays authoritative there by precedence           |
 | `NEON_AUTH_JWKS_URL`                  | encrypted / encrypted (`demo`) | 21ee2a60b165     | a50a54d698b9 | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
 | `NEON_BRANCH`                         | encrypted / encrypted (`demo`) | 99d79a87bf73     | b72badc59af7 | the two values differ — the branch entry is authoritative there, the all-branches entry elsewhere |
 | `STRIPE_VENTURE_TEST_PUBLISHABLE_KEY` | sensitive / sensitive (`demo`) | hidden           | hidden       | unprovable (both masked) — the branch entry stays authoritative on that branch by precedence      |
