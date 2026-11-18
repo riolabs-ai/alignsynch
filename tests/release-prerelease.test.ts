@@ -145,7 +145,9 @@ function probe({
 
   mkdirSync(join(repo, "scripts"), { recursive: true });
   mkdirSync(bin);
-  for (const file of ["release.sh", "release-version.mjs"]) {
+  // The preflight runs first in every `--tag-only` cut (card t_3c37542f), so the probe carries it
+  // and satisfies it: the release's own page exists, and the `gh` shim answers `run list`/`pr list`.
+  for (const file of ["release.sh", "release-version.mjs", "release-preflight.mjs"]) {
     cpSync(join(ROOT, "scripts", file), join(repo, "scripts", file));
   }
   writeFileSync(join(repo, "scripts", "verify.sh"), "#!/usr/bin/env bash\nexit 0\n", {
@@ -156,6 +158,11 @@ function probe({
     `${JSON.stringify({ name: "probe", version }, null, 2)}\n`,
   );
   writeFileSync(join(repo, "CHANGELOG.md"), changelog);
+  mkdirSync(join(repo, "docs", "changelog"), { recursive: true });
+  writeFileSync(
+    join(repo, "docs", "changelog", `v${version.replace(/\./g, "-")}.md`),
+    `# v${version} — the probe\n`,
+  );
   writeFileSync(limits, "- nothing is stored: the probe serves fixtures.\n");
 
   // A prepended script, not a wrapper: the shim has to be what `gh` resolves to on PATH, and it
@@ -175,6 +182,8 @@ case "$1 $2" in
   "release view")
     printf '%s|false|%s|https://example.test/releases/tag/%s\\n' "$3" "$GH_FAKE_PRERELEASE" "$3"
     ;;
+  "run list") printf '[{"status":"completed","conclusion":"success","url":"https://example.test/run/1"}]\\n' ;;
+  "pr list") printf '[]\\n' ;;
 esac
 `,
     { mode: 0o755 },
