@@ -23,13 +23,46 @@
  *
  * It reads `data/health/platform-health.json` and nothing else — no network, no database, no git —
  * so it is a pure function of a file and three arguments, and the cut runs it in a second.
+ *
+ * ---------------------------------------------------------------------------------------------
+ * The approval ledger — the second record this module owns
+ * ---------------------------------------------------------------------------------------------
+ * A pre-approved cut (`scripts/release-cut.mjs --execute` with no TTY) tags on the strength of a
+ * committed approval artifact. Printing the banner is not a record: the next reader asks *which*
+ * approval covered *which* tag, and a transcript is not an answer. So this module also owns
+ * `data/health/release-approvals.json`, appended by `recordApproval()` once the tag exists:
+ *
+ *     { "schemaVersion": 1,
+ *       "approvals": [ { version, commit, approved_by, approved_at, url, reason?, tag, recorded_at } ] }
+ *
+ * It is a separate file rather than a block in `platform-health.json` for two measured reasons: that
+ * record's schema is `strict()`, so an unknown key is a red build (`content/platform-health.ts`),
+ * and the recorder rewrites the file whole on every `--tag-only` — an approval stored there would be
+ * deleted by the very step that follows it. The tag itself is created *before* this write, so the
+ * ledger can never dirty the tree the gate checks.
+ *
+ * The published release note is the `CHANGELOG.md` entry byte for byte (`release.sh`,
+ * `gh release create --notes-file`), so a post-hoc approval cannot ride in it without changing the
+ * tag/publish path — which this mechanism deliberately does not touch. The ledger plus the printed
+ * banner is the audit trail; `pnpm release:approvals` prints it.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { compareVersions } from "./release-version.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const RECORD_PATH = join(ROOT, "data", "health", "platform-health.json");
+
+/** The approval ledger this module also owns: one row per pre-approved cut, newest version first. */
+const APPROVALS_RELATIVE = join("data", "health", "release-approvals.json");
+export const APPROVAL_LEDGER_SCHEMA = 1;
+
+/** Where the ledger lives, for a tree other than this one (a test, a scratch checkout). */
+export function approvalLedgerPath(root = ROOT) {
+  return join(root, APPROVALS_RELATIVE);
+}
 
 const short = (sha) => (/^[0-9a-f]{12,}$/.test(sha) ? sha.slice(0, 7) : sha);
 
@@ -91,6 +124,90 @@ export function recordFacts(record, { version, tagSha, since }) {
   return facts;
 }
 
+/* ------------------------------------------------------------------ *
+ * The approval ledger — which approval covered which tag
+ * ------------------------------------------------------------------ */
+
+/** An empty ledger, and the one shape a reader may assume. */
+export function emptyLedger() {
+  return { schemaVersion: APPROVAL_LEDGER_SCHEMA, approvals: [] };
+}
+
+/**
+ * The ledger at `path`, or an empty one when the file does not exist yet.
+ *
+ * A malformed file is an error rather than a reset: silently starting from `approvals: []` would
+ * delete the record of every earlier pre-approved cut on the next write.
+ *
+ * @param {string} [path]
+ * @returns {{ ok: true, ledger: { schemaVersion?: number, approvals: Array<Record<string, string>> }, created: boolean } | { ok: false, problem: string }}
+ */
+export function readApprovalLedger(path = approvalLedgerPath()) {
+  if (!existsSync(path)) return { ok: true, ledger: emptyLedger(), created: true };
+
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    return { ok: false, problem: `${path} is not readable as JSON (${error.message})` };
+  }
+  if (parsed === null || typeof parsed !== "object" || !Array.isArray(parsed.approvals)) {
+    return { ok: false, problem: `${path} carries no 'approvals' array` };
+  }
+  return { ok: true, ledger: parsed, created: false };
+}
+
+/**
+ * Append one approval to the ledger, replacing any earlier row for the same version (a re-run of a
+ * failed cut must not leave two rows for one release). Returns the path written.
+ *
+ * `recorded_at` is the write's own instant, passed in rather than read here so the function stays a
+ * pure write of the values it is given.
+ *
+ * @param {Record<string, string | undefined>} approval
+ * @param {{ path?: string, recordedAt?: string | null }} [options]
+ * @returns {string} the path written
+ */
+export function recordApproval(approval, { path = approvalLedgerPath(), recordedAt = null } = {}) {
+  const version = String(approval?.version ?? "")
+    .trim()
+    .replace(/^v/, "");
+  for (const key of ["commit", "approved_by", "url"]) {
+    if (typeof approval?.[key] !== "string" || approval[key].trim() === "") {
+      throw new Error(`recordApproval: '${key}' is required — the ledger names who approved what`);
+    }
+  }
+
+  const current = readApprovalLedger(path);
+  if (!current.ok) throw new Error(`recordApproval: ${current.problem}`);
+
+  const entry = {
+    version,
+    commit: String(approval.commit).trim(),
+    approved_by: String(approval.approved_by).trim(),
+    approved_at: String(approval.approved_at ?? "").trim(),
+    url: String(approval.url).trim(),
+    ...(typeof approval.reason === "string" && approval.reason.trim() !== ""
+      ? { reason: approval.reason.trim() }
+      : {}),
+    tag: typeof approval.tag === "string" ? approval.tag.trim() : `v${version}`,
+    recorded_at: recordedAt ?? new Date().toISOString(),
+  };
+
+  const others = current.ledger.approvals.filter((row) => String(row?.version) !== version);
+  const approvals = [...others, entry].sort((left, right) => {
+    const byVersion = compareVersions(left?.version, right?.version);
+    return byVersion === null ? 0 : -byVersion;
+  });
+
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(
+    path,
+    `${JSON.stringify({ ...current.ledger, schemaVersion: APPROVAL_LEDGER_SCHEMA, approvals }, null, 2)}\n`,
+  );
+  return path;
+}
+
 function flagValue(argv, flag) {
   const index = argv.indexOf(flag);
   return index === -1 ? undefined : argv[index + 1];
@@ -135,12 +252,68 @@ function check(argv) {
   return 0;
 }
 
+/** `approval <version> <commit> --approved-by <login> --url <url> [--approved-at <iso>] …` */
+function approval(argv) {
+  const [version, commit] = argv;
+  const approvedBy = flagValue(argv, "--approved-by");
+  const url = flagValue(argv, "--url");
+  if (!version || !commit || !approvedBy || !url) {
+    console.error(
+      "release-record: approval needs <version> <commit> --approved-by <login> --url <url>",
+    );
+    return 2;
+  }
+  const path = flagValue(argv, "--ledger") ?? approvalLedgerPath();
+  try {
+    const written = recordApproval(
+      {
+        version,
+        commit,
+        approved_by: approvedBy,
+        approved_at: flagValue(argv, "--approved-at") ?? new Date().toISOString(),
+        url,
+        reason: flagValue(argv, "--reason"),
+        tag: `v${String(version).replace(/^v/, "")}`,
+      },
+      { path },
+    );
+    console.log(`release-record: recorded the approval for ${version} in ${written}`);
+    return 0;
+  } catch (error) {
+    console.error(`  ✗ ${error.message}`);
+    return 1;
+  }
+}
+
+/** `approvals [--ledger <path>]` — the ledger as it stands, newest version first. */
+function approvals(argv) {
+  const path = flagValue(argv, "--ledger") ?? approvalLedgerPath();
+  const ledger = readApprovalLedger(path);
+  if (!ledger.ok) {
+    console.error(`  ✗ ${ledger.problem}`);
+    return 1;
+  }
+  if (ledger.ledger.approvals.length === 0) {
+    console.log(`release-record: no pre-approved cut is recorded in ${path}`);
+    return 0;
+  }
+  for (const row of ledger.ledger.approvals) {
+    console.log(
+      `  ${row.tag ?? `v${row.version}`}  ${short(String(row.commit))}  ${row.approved_by}  ${row.url}`,
+    );
+  }
+  console.log(`release-record: ${ledger.ledger.approvals.length} approval(s) in ${path}`);
+  return 0;
+}
+
 if (process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`) {
   const argv = process.argv.slice(2);
   const mode = argv.shift();
-  if (mode !== "check") {
-    console.error(`release-record: unknown mode '${String(mode)}' — the modes are: check`);
-    process.exit(2);
-  }
-  process.exit(check(argv));
+  if (mode === "check") process.exit(check(argv));
+  if (mode === "approval") process.exit(approval(argv));
+  if (mode === "approvals") process.exit(approvals(argv));
+  console.error(
+    `release-record: unknown mode '${String(mode)}' — the modes are: check, approval, approvals`,
+  );
+  process.exit(2);
 }
