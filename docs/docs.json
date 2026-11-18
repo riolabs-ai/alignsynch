@@ -707,6 +707,11 @@
           "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
         },
         {
+          "path": "qa/release-2.0.0-rc1.1/billing-checkout.md",
+          "title": "A test-mode checkout on production, #1053",
+          "question": "Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?"
+        },
+        {
           "path": "qa/rel-detail-edit/README.md",
           "title": "Relationship detail — the edit form is asked for",
           "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"

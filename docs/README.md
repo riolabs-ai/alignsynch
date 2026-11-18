@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**189 documents in 9 sections.** Every page carries the same nav block, generated
+**190 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 18 documents
 - [Specs & design briefs](#specs-design-briefs) — 83 documents
-- [Records & QA](#records-qa) — 24 documents
+- [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 27 documents
@@ -209,6 +209,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/qa-dogfood-p4.md`](qa/qa-dogfood-p4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa/qa-links.md`](qa/qa-links.md) — **QA links** — Which local routes do I click to QA this change range, and what will each one cost me?
 - [`qa/rail-handle/README.md`](qa/rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?
+- [`qa/release-2.0.0-rc1.1/billing-checkout.md`](qa/release-2.0.0-rc1.1/billing-checkout.md) — **A test-mode checkout on production, #1053** — Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?
 - [`qa/rel-detail-edit/README.md`](qa/rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
 - [`qa/stage5/README.md`](qa/stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
 - [`qa/swiper-12/README.md`](qa/swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
