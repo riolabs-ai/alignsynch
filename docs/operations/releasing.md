@@ -15,6 +15,48 @@ A fifth artefact is written by a different command and answers the same question
 tree tell the truth about itself: `data/health/platform-health.json`, which `/admin/health` prints as
 status. Step 5 records it.
 
+## The preflight: ten facts, one command
+
+`pnpm release:preflight <version>` prints ten lines, one per fact a cut depends on, and exits 1 if
+any of them is false. `bash scripts/release.sh --tag-only <version>` runs it **first** — before the
+checkout guard, before the gate — and no flag skips it. Each line that fails prints the command that
+clears it; the script itself fixes nothing.
+
+```bash
+pnpm release:preflight 2.0.0-rc1.1
+```
+
+| #   | check                      | fails when                                                              | what failed a real cut                    |
+| --- | -------------------------- | ----------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | no concurrent cut          | another `release.sh` / `release-cut` is running against this repository | two cuts at once, one `.next`, one slot   |
+| 2   | checkout current           | after `git fetch origin --prune`, `HEAD !== origin/main`                | a checkout 8 commits behind               |
+| 3   | tree clean                 | `git status --porcelain` prints anything                                | a path a tool wrote, riding into the cut  |
+| 4   | version matches            | `package.json` names a different version                                | a bump that was never merged              |
+| 5   | tag is free                | `v<version>` exists locally **or** on the remote                        | the next attempt must be the next version |
+| 6   | entry exists and is honest | no `docs/changelog/v<X-Y-Z>.md`, or `release.sh --check` is red         | a tag with no page beside it              |
+| 7   | no stale build cache       | `.next/dev` or `.next/types` is on disk                                 | `next dev` types poisoning `typecheck`    |
+| 8   | record step can run        | no `DATABASE_URL` in the environment and `--no-record` was not passed   | the record step skipped silently, twice   |
+| 9   | CI green at this sha       | `gh run list --commit HEAD` shows no success, or any failure            | a local check that disagreed with CI      |
+| 10  | no merges in flight        | a pull request is open and `--allow-open-prs` was not passed            | a merge moving `main` mid-cut             |
+
+Two flags narrow it, one check each, and both print a warning line naming what they waved through:
+
+- `--no-record` covers check 8. The cut publishes the tag and **owes** the record; the exact
+  `pnpm health:record …` command is still printed at the end of the run.
+- `--allow-open-prs` covers check 10. The open queue is known and the operator accepts that a merge
+  may land while the cut runs.
+
+An **unverifiable** check is always a ✗: a missing or unauthenticated `gh` fails checks 9 and 10
+rather than warning, because an unverified cut is the failure this command exists to prevent. So the
+flags wave through a check that _ran and failed_, never one that could not run — `--allow-open-prs`
+does not make an unreadable queue green.
+
+The checks are **cut-time facts and live nowhere else**. `tag is free` and `no concurrent cut` are
+false in the middle of a working day, so this is deliberately not a step in `scripts/verify.sh` and
+not a step in CI: the gate runs on every push, and this runs where it is read, which is the cut.
+`tests/release-preflight.test.ts` holds one case per check, both sides, plus ten cases where exactly
+one check fails alone.
+
 ## The run order
 
 Eight steps, in this order. Each names the command it runs; the sections below are the reasons, and
