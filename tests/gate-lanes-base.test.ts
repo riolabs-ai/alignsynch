@@ -19,7 +19,13 @@
  *   GATE_REF override absent   -> lane=code, and an override is never fetched
  *   resolve_lane twice         -> still 1 fetch (the base is cached for the run)
  *   a code path                -> lane=code with the base resolved
- *   no changes vs the base     -> lane=code, "no changed files"
+ *   a lib/ path                -> lane=code with the base resolved
+ *   a clean, undiverged branch -> lane=docs, "nothing to verify (known-empty diff)"
+ *   the base branch itself     -> lane=code, "HEAD is main itself" (post-merge push)
+ *   a detached HEAD, empty     -> lane=code, "detached HEAD"
+ *   a detached HEAD, a diff    -> its honest lane (CI's PR merge commit)
+ *   an unmerged index          -> lane=code, even over a docs/ path
+ *   a branch behind the base   -> lane=docs, and the distance is named
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -297,15 +303,100 @@ describe("gate-lanes base resolution", () => {
     expect(r.reason).toMatch(/1 changed file\(s\) · base origin\/main@[0-9a-f]{7}/);
   });
 
-  it("still runs the full gate when nothing differs from the base", () => {
+  it("still runs the full gate for a lib/ path", () => {
     const f = fixture();
+    git(f.work, "switch", "-c", "lib-only");
+    commit(f.work, "lib/thing.ts", "export const thing = 1;\n");
 
     const r = resolve(f);
 
     expect(r.lane).toBe("code");
+    expect(r.how).toBe("local");
+    expect(r.reason).toMatch(/1 changed file\(s\) · base origin\/main@[0-9a-f]{7}/);
+  });
+
+  // --- a known-empty diff is the cheapest honest lane (#1000) ----------------
+  //
+  // A fresh worktree branched from the tip is clean against its base; before
+  // this, every card paid `lane=code … no changed files … full gate` (333 s in a
+  // cold worktree) for a tree that had changed nothing at all.
+
+  it("classifies a clean, undiverged branch as the docs lane", () => {
+    const f = fixture();
+    git(f.work, "switch", "-c", "wt/fresh-card");
+
+    const r = resolve(f);
+
+    expect(r.status).toBe(0);
+    expect(r.lane).toBe("docs");
     expect(r.reason).toMatch(
-      /no changed files vs origin\/main@[0-9a-f]{7} \(local ref\) — full gate/,
+      /no changed files vs origin\/main@[0-9a-f]{7} \(local ref\) — nothing to verify \(known-empty diff\)/,
     );
+    expect(r.reason).not.toMatch(/conservative/);
+    expect(r.fetches).toBe(0);
+  });
+
+  it("still pays the full gate when HEAD is the base branch itself (a post-merge push)", () => {
+    const f = fixture(); // no new branch: the tree *is* main at origin/main
+
+    const r = resolve(f);
+
+    expect(r.lane).toBe("code");
+    expect(r.reason).toMatch(/HEAD is main itself — full gate \(conservative/);
+  });
+
+  it("falls back to the full gate on a detached HEAD with an empty diff", () => {
+    const f = fixture();
+    git(f.work, "switch", "--detach", "HEAD");
+
+    const r = resolve(f);
+
+    expect(r.lane).toBe("code");
+    expect(r.reason).toMatch(/detached HEAD, no changed files/);
+    expect(r.reason).toMatch(/full gate \(conservative/);
+  });
+
+  it("keeps the lane of a detached HEAD that has a diff (CI's PR merge commit)", () => {
+    const f = fixture();
+    git(f.work, "switch", "-c", "docs-only");
+    commit(f.work, "docs/note.md");
+    git(f.work, "switch", "--detach", "HEAD");
+
+    const r = resolve(f);
+
+    expect(r.lane).toBe("docs");
+    expect(r.reason).toMatch(/1 changed file\(s\)/);
+  });
+
+  it("refuses the cheap lane while the index is unmerged, even over a docs/ path", () => {
+    const f = fixture();
+    git(f.work, "switch", "-c", "theirs");
+    commit(f.work, "docs/note.md", "theirs\n");
+    git(f.work, "switch", "main");
+    commit(f.work, "docs/note.md", "ours\n");
+    expect(() => git(f.work, "merge", "theirs")).toThrow(); // leaves the conflict in the index
+    expect(git(f.work, "ls-files", "--unmerged")).toMatch(/docs\/note\.md/);
+
+    const r = resolve(f);
+
+    expect(r.lane).toBe("code");
+    expect(r.reason).toMatch(/unmerged index — full gate \(conservative/);
+  });
+
+  it("classifies a branch that is behind the base, and names the distance", () => {
+    const f = fixture();
+    git(f.work, "switch", "-c", "later");
+    commit(f.work, "docs/later.md");
+    git(f.work, "push", "origin", "later:main"); // origin/main advances
+    git(f.work, "switch", "main");
+    git(f.work, "branch", "-D", "later");
+    git(f.work, "switch", "-c", "wt/behind-card");
+
+    const r = resolve(f);
+
+    expect(r.lane).toBe("docs");
+    expect(r.reason).toMatch(/nothing to verify \(known-empty diff\)/);
+    expect(r.reason).toMatch(/HEAD is 1 commit\(s\) behind the base/);
   });
 
   it("does not fetch the base for GATE_LANE=full", () => {

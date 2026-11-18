@@ -55,8 +55,13 @@ code (3)  >  config (2)  >  content (1)  >  docs (0)
   cannot buy a shortcut;
 - `AGENTS.md` is prose but it is **config**: it changes what every future card
   runs;
-- an empty diff, or no `origin/main` to diff against, resolves to **code** —
-  no evidence about what changed means no shortcut.
+- no `origin/main` to diff against, a detached HEAD, an unmerged index, or
+  standing on the base branch itself (`HEAD` _is_ `origin/main`, a post-merge
+  push) resolves to **code** — no evidence about what changed means no shortcut;
+- a **known-empty** diff — a clean tree on a branch that has not diverged —
+  resolves to **docs**, the lightest lane: no step can see a change, so there is
+  nothing for depth to buy. A fresh worktree used to pay `lane=code … no changed
+  files … full gate` (333 s cold) for exactly this, on every card (#1000).
 
 The diff is `git diff --name-only $GATE_REF...HEAD` plus the working tree and
 untracked files, so the pre-push hook (which gates the working tree, not just
@@ -90,6 +95,7 @@ its own line, so a conservative gate is never silent:
 ```text
  lane=docs docs/**, *.md (2 changed file(s) · base origin/main@2742e2d (local ref))
  lane=docs docs/**, *.md (2 changed file(s) · base origin/main@2742e2d (fetched in 0.4s))
+ lane=docs docs/**, *.md (no changed files vs origin/main@2742e2d (local ref) — nothing to verify (known-empty diff))
   base: origin/main was not in this clone — origin/main@2742e2d (fetched in 0.4s)
  lane=code app/**, components/**, lib/**, hooks/** (and anything unclassified)
    (fetching origin/main failed (git exit 128) — full gate (conservative))
@@ -230,11 +236,20 @@ never resolved, and every run logged
 `+refs/heads/main:refs/remotes/origin/main` before setting up pnpm, so the
 three-dot diff has both the ref and a merge base. The fallback is unchanged and
 is the reason the old behaviour was safe rather than silent: no ref, no
-computable diff, or an empty diff still means `lane=code` and the full gate. A
-`push` to `main` lands exactly there — `HEAD` _is_ `origin/main`, so the diff is
-empty and the post-merge run pays for everything. That is deliberate: the PR
-run is where the flake-free lane evidence exists, and the merge head is not a
+computable diff, a detached HEAD or an unmerged index still means `lane=code`
+and the full gate. A `push` to `main` also lands in the full gate — by the
+branch, not by the empty diff: `HEAD` _is_ `origin/main` there, so the diff is
+empty, and the classifier keeps the full gate whenever HEAD is standing on the
+base branch's own name. That is deliberate: a squash merge creates a tree no PR
+run ever tested, so the post-merge run is the only place it is gated, and the
+PR run is where the flake-free lane evidence exists. The merge head is not a
 place to buy speed.
+
+A **card worktree** is the case that changes: it is clean and it is on its own
+branch, so an empty diff there is _known-empty_ rather than unknown, and it
+takes the docs lane (#1000). The distinction is the branch, not the diff, which
+is what keeps the post-merge floor and the fresh-worktree saving from being the
+same rule.
 
 The fetch step is not fatal if it fails: it prints a `::warning` and the gate
 falls back to the full gate. A red run on a network hiccup would be a worse
