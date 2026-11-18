@@ -138,6 +138,55 @@ const nextConfig = {
       "./docs/qa/demo-flow/**/*.png",
     ],
   },
+  /**
+   * What the tracer must stop carrying (#t_a4b85c6d) — the other half of the block above.
+   *
+   * `lib/docs/tree.ts` roots the docs reader at `join(process.cwd(), "docs")`, a path whose last
+   * segment is only known at request time. `@vercel/nft` cannot resolve a read like that, so it
+   * emits **the whole directory it can see** into the trace of every function whose graph reaches
+   * that module — measured on this tree: 66 of the 150 traced routes carried all 125.97 MB of
+   * `docs/` into their function, i.e. 126 MB of a 151.4 MB trace. Nothing in `outputFileTracingIncludes`
+   * above does that; the includes are route-keyed and narrow. The sweep is the tracer's answer to a
+   * dynamic path, and `outputFileTracingExcludes` is the lever that narrows it.
+   *
+   * **These are not size guesses; they are the material no runtime read can reach.** The triage was:
+   * seed from every document `docs/docs.json` lists (193 files), follow the markdown/image links
+   * transitively, add the two trees a route serves directly (`docs/review/**` for `/admin/review`
+   * and `/review-artifacts/[id]`, `docs/qa/demo-flow/**` for `/how-it-works` and
+   * `/qa-demo-flow/[...shot]`), then exclude only directories and extensions whose every file is
+   * outside that closure — 575 files / 31.0 MB kept, 79.82 MB excluded, and the globs were checked
+   * against the keep set with the same `picomatch(globs, { dot: true, contains: true })` the build
+   * uses, so no line here can shadow a document a page opens.
+   *
+   * **No negation, deliberately.** Next merges every matching key's globs and then deletes matches
+   * (`build/collect-build-traces.js`), so an exclude always wins over an include and a `!pattern`
+   * inside the value array is ignored. Anything a route genuinely needs therefore has to stay out of
+   * this list entirely — which is why `docs/review/**`, `docs/qa/demo-flow/**` and every document
+   * reachable from the manifest are absent from it rather than re-included.
+   *
+   * The residual after this pass is the documents themselves plus the images they embed (~46 MB);
+   * the remaining win is a code change (a statically visible docs path, or a manifest-driven read),
+   * not another glob.
+   */
+  outputFileTracingExcludes: {
+    "/*": [
+      /** The vendored prototype payload inside the twelve spec bundles: full HTML mockups with
+       * their own js/css/images. The reader renders the `.md` beside them, never the prototype. */
+      "./docs/specs/v2-bundles/*/reference/**",
+      "./docs/specs/v2-bundles/*/*.html",
+      "./docs/specs/v2-bundles/*/{js,css,images}/**",
+      "./docs/specs/{spec-ux-repo-patterns}/**",
+      "./docs/specs/spec-as2-style-templates-redesign/images/**",
+      "./docs/specs/spec-as2-style-home-redesign/images/**",
+      /** Mockup screenshots filed beside the reference docs, referenced by nothing that renders. */
+      "./docs/reference/mockups/**",
+      /** QA capture archives: full-screen sets nobody embeds. Any directory whose *whole* subtree is
+       * unreachable, then the `*.png` of the ones that also carry a reachable `README.md`. */
+      "./docs/qa/{p4-screenshots,935-aspects-once,975,975-d12,og-card}/**",
+      "./docs/qa/{as2-home,home-comments,swiper-12,rail-handle,v1x-ui-cohort,971-tiles,979-flow-parity,stage5,rel-detail-edit,979-flow-dialog,975-detail-identity}/*.png",
+      "./docs/qa/975-detail-identity/{after,before}/**",
+    ],
+  },
   // typescript: {
   //   ignoreBuildErrors: true,
   // },
