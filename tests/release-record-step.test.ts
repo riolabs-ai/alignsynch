@@ -148,7 +148,15 @@ function probe(): Probe {
 
   mkdirSync(join(repo, "scripts"), { recursive: true });
   mkdirSync(bin);
-  for (const file of ["release.sh", "release-version.mjs", "release-record.mjs"]) {
+  // The preflight is part of the cut now (card t_3c37542f), so the probe tree carries it and
+  // satisfies it: the release's own page exists, and the `gh` shim below answers `run list` and
+  // `pr list`.
+  for (const file of [
+    "release.sh",
+    "release-version.mjs",
+    "release-record.mjs",
+    "release-preflight.mjs",
+  ]) {
     cpSync(join(ROOT, "scripts", file), join(repo, "scripts", file));
   }
   writeFileSync(join(repo, "scripts", "verify.sh"), "#!/usr/bin/env bash\nexit 0\n", {
@@ -159,6 +167,11 @@ function probe(): Probe {
     `${JSON.stringify({ name: "probe", version: VERSION }, null, 2)}\n`,
   );
   writeFileSync(join(repo, "CHANGELOG.md"), CHANGELOG);
+  mkdirSync(join(repo, "docs", "changelog"), { recursive: true });
+  writeFileSync(
+    join(repo, "docs", "changelog", `v${VERSION.replace(/\./g, "-")}.md`),
+    `# v${VERSION} — the probe\n`,
+  );
   writeFileSync(limits, "- nothing is stored: the probe serves fixtures.\n");
   chmodSync(join(repo, "scripts", "release.sh"), 0o755);
 
@@ -168,6 +181,8 @@ function probe(): Probe {
 case "$1 $2" in
   "release create") ;;
   "release view") printf '%s|false|false|https://example.test/releases/tag/%s\\n' "$3" "$3" ;;
+  "run list") printf '[{"status":"completed","conclusion":"success","url":"https://example.test/run/1"}]\\n' ;;
+  "pr list") printf '[]\\n' ;;
 esac
 `,
     { mode: 0o755 },
@@ -295,17 +310,23 @@ describe("--no-record is an escape that is not silent", () => {
     expect(tagsOnOrigin(p)).toContain(`refs/tags/v${VERSION}`);
   });
 
-  it("refuses to run the recorder with no demo credentials, naming both ways out", () => {
+  it("refuses before the tag when the shell has no demo credentials, naming both ways out", () => {
     const p = probe();
 
     const run = release(p, ["--tag-only", VERSION]);
 
     expect(run.status).toBe(1);
-    expect(run.stderr).toContain("carries no DATABASE_URL");
-    expect(run.stderr).toContain("withenv.sh");
-    expect(run.stderr).toContain("--no-record");
+    // The check moved *earlier* with the preflight (card t_3c37542f): the same missing URL is now caught
+    // before the tag rather than after it, so `--tag-only` no longer publishes a tag it cannot
+    // record. That is a strengthening — the old refusal is still in `record_step`, and unreachable
+    // from here because the preflight refuses first.
+    expect(run.stdout).toContain("DATABASE_URL is unset and --no-record was not passed");
+    expect(run.stdout).toContain("withenv.sh");
+    expect(run.stdout).toContain("--no-record");
+    expect(run.stderr).toContain("the preflight refused this cut");
     expect(pnpmCalls(p)).toBe("");
-    expect(tagsOnOrigin(p)).toContain(`refs/tags/v${VERSION}`);
+    // And nothing was published: the refusal is before the tag now, not after it.
+    expect(tagsOnOrigin(p)).not.toContain(`refs/tags/v${VERSION}`);
   });
 
   it("is a usage error on a mode that has no record step", () => {

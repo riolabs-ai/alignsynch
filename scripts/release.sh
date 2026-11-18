@@ -15,9 +15,27 @@
 #   bash scripts/release.sh --tag-only <v> --no-record
 #                                                  the same cut on a machine with no demo credentials:
 #                                                  the recovery command is printed, never run
+#   bash scripts/release.sh --tag-only <v> --allow-open-prs
+#                                                  wave preflight check 10 through: pull requests are
+#                                                  open and the operator has decided the cut proceeds
 #
 # --limits <file> supplies the Known limits block for a generated entry. Without it a generation
 # refuses to write: the block is public release-note content, so a human writes it.
+#
+# **`--tag-only` runs `scripts/release-preflight.mjs` first, and no flag skips it.** Ten facts a cut
+# must be true are checked in one command, one line each, with a ✗ per failure and the remedy printed
+# under it (card t_3c37542f): no concurrent cut; the checkout level with `origin/main`; a clean tree;
+# `package.json` on the version being cut; the tag free locally *and* on the remote; the release's
+# own `docs/changelog/` page present and `--check` green; no `.next/dev` left behind by a dev server;
+# a database URL for the record step; a green CI run at this sha; and no pull request open. Every one
+# of those had already failed a real cut invisibly — two cuts at once, a stale checkout, dev types
+# poisoning `typecheck`, a local check that disagreed with CI, and a record step that skipped twice
+# because the shell had no `DATABASE_URL`. Two flags exist, each covering exactly one check and each
+# printing a warning line naming what it waved through: `--no-record` the record step,
+# `--allow-open-prs` the queue. A missing or unauthenticated `gh` **fails** checks 9 and 10 rather
+# than warning, because an unverified cut is the failure the preflight exists to prevent. The
+# preflight adds refusals and removes none: the checkout, dirty-tree, gate and tag refusals below are
+# unchanged and still run, after it.
 #
 # Why the record step exists (#961): a tag is immutable, so the record *on* a tag is a snapshot of
 # whatever the last `pnpm health:record` measured — v1.17.0 was cut with `--tag-only` and the file on
@@ -530,6 +548,29 @@ require_cut_checkout() { # the three states a cut cannot start from, each refuse
   fi
 }
 
+# --- the preflight (card t_3c37542f) ---------------------------------------------
+# Ten cut-time facts, checked by a node script with its own cases
+# (`tests/release-preflight.test.ts`), one line each, a ✗ and a remedy per failure. This is the
+# first thing `--tag-only` does: every one of these facts has already failed a real cut invisibly,
+# and a fact checked after the tag exists is a fact nobody can act on.
+#
+# It fixes nothing on the operator's behalf — a failing check prints the command to run, and running
+# it is a human's act. It also weakens nothing: `require_cut_checkout`, the contains-origin/main
+# check, the tag-exists check and the gate refusal below are unchanged and still run, after this.
+# Two flags narrow it, one check each, and both say so in the output:
+#   --no-record        check 8 (the record step can run) — the record is then owed, and printed
+#   --allow-open-prs   check 10 (no merges in flight) — the open queue is known and accepted
+PREFLIGHT_TOOL="scripts/release-preflight.mjs"
+
+release_preflight() { # <version>
+  local version="$1" flags=()
+  if [ "$NO_RECORD" -eq 1 ]; then flags+=(--no-record); fi
+  if [ "$ALLOW_OPEN_PRS" -eq 1 ]; then flags+=(--allow-open-prs); fi
+  step "preflight ($PREFLIGHT_TOOL — the ten cut-time facts)"
+  node "$ROOT/$PREFLIGHT_TOOL" "$version" ${flags[@]+"${flags[@]}"} ||
+    die "the preflight refused this cut — the ✗ lines above name the fact and its remedy, and nothing was changed either way. Fix them, then cut again"
+}
+
 preflight() { # <version> — everything a cut must be true before a single byte is written
   local version="$1"
   is_version "$version" ||
@@ -614,6 +655,9 @@ tag_and_publish() { # <version> — annotated tag at HEAD, push it, publish the 
 # it prints the exact command and says the record is owed.
 
 NO_RECORD=0
+# The second flag that narrows the preflight, declared beside the first: `--allow-open-prs` waves
+# through check 10 only, and it exists because a merge can legitimately be parked while a cut runs.
+ALLOW_OPEN_PRS=0
 TAGGED_SHA=""
 
 previous_utc_day() { # the completed UTC day `docs/gate-baseline.py --window` is read for
@@ -656,6 +700,8 @@ record_step() { # <version> <tag-sha>
 
 cmd_tag_only() { # <version> — the version and entry are already merged on main
   local version="$1"
+  # First, before the checkout guard and the gate: the ten facts, each with its own line and remedy.
+  release_preflight "$version"
   guard_arm
   preflight "$version"
   [ "$(pkg_version)" = "$version" ] ||
@@ -788,6 +834,7 @@ while [ $# -gt 0 ]; do
     --dry-run) MODE="dry-run" ;;
     --tag-only) MODE="tag-only" ;;
     --no-record) NO_RECORD=1 ;;
+    --allow-open-prs) ALLOW_OPEN_PRS=1 ;;
     --limits)
       [ "$#" -ge 2 ] || usage_die "--limits needs a file"
       LIMITS="$2"
@@ -805,6 +852,10 @@ done
 
 if [ "$NO_RECORD" -eq 1 ] && [ "$MODE" != "tag-only" ]; then
   usage_die "--no-record belongs to --tag-only — it is that mode whose cut runs the record step"
+fi
+
+if [ "$ALLOW_OPEN_PRS" -eq 1 ] && [ "$MODE" != "tag-only" ]; then
+  usage_die "--allow-open-prs belongs to --tag-only — it is that mode whose preflight reads the queue"
 fi
 
 case "$MODE" in
