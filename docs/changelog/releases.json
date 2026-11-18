@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "2.0.0-rc1.2",
+      "theme": "the two loops the candidate left open, closed in code — stage 5 reads the key stage 4 writes, and a seeded complete relationship carries its fee.",
+      "headline": "`fix(flow)` — #1216 stage 5 reads the address the create writes (#1217)"
+    },
+    {
       "version": "2.0.0-rc1.1",
       "theme": "the candidate's first patch — stage 4's empty 500 closed and named, production's ledger applied and proved, a generated .env.example, and a bundle-format bump named rather than absorbed.",
       "headline": "`fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code (#1210)"

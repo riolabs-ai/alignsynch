@@ -1021,6 +1021,11 @@
           "path": "changelog/v2-0-0-rc1-1.md",
           "title": "v2.0.0-rc1.1",
           "question": "What does the patch on the candidate fix — and what format change does it carry?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-2.md",
+          "title": "v2.0.0-rc1.2",
+          "question": "Which two loops did the candidate leave open, and what closes them?"
         }
       ]
     }

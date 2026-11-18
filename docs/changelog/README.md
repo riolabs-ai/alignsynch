@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1.2](v2-0-0-rc1-2.md)
+
+- **Released** 2026-11-18
+- **Tag** [`v2.0.0-rc1.2`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.2)
+- **Pull requests named** 6
+- **Theme:** the two loops the candidate left open, closed in code — stage 5 reads the key stage 4 writes, and a seeded complete relationship carries its fee.
+- **Headline:** `fix(flow)` — #1216 stage 5 reads the address the create writes (#1217)
+
 ### [v2.0.0-rc1.1](v2-0-0-rc1-1.md)
 
 - **Released** 2026-11-18
