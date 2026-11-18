@@ -88,6 +88,45 @@ function fieldTarget(request: Request, templateSlug: string, field: string, reas
 }
 
 /**
+ * A throw the route could not name as a refusal, in the shape the endpoint answers it (#1205).
+ *
+ * **What went wrong without this.** On 2026-11-18 `POST /assessment/new {draft:"1"}` answered an
+ * **empty-body 500** twice on production. The create's one transaction inserts `session.state`
+ * (`0041_session_state.sql`) and production's ledger stopped at `0039`, so the INSERT raised a
+ * `pg` `DatabaseError` **42703** — which is not a `FlowError`, so this route rethrew it, Next
+ * answered an opaque 500, and the person (and the QA walk) got a blank response with no line
+ * anywhere naming the SQLSTATE, the column or the migration. Zero rows were written, and the only
+ * symptom was "it broke".
+ *
+ * So every remaining throw is answered **by name**, with the same three facts the log gets:
+ *
+ *   `code`      always `create-failed` — the marker a log search and a support script key on.
+ *   `sqlstate`  the driver's SQLSTATE when it gave one, else `null`. It is checked against the
+ *               SQLSTATE alphabet (`^[0-9A-Z]{5}$`) because a Node `code` such as `ECONNREFUSED`
+ *               is a different namespace, and reporting it here would send the reader looking for
+ *               a Postgres error class that does not exist.
+ *   `message`   the throw's own sentence, verbatim — `column "state" of relation "session" does
+ *               not exist` is the answer, and paraphrasing it into "something went wrong" is
+ *               exactly what the empty body already said.
+ *
+ * **It is deliberately not a `?problem=` redirect.** That vocabulary is the person's own errors —
+ * a Mode they did not pick, a Setting the form never offered (#688, #794) — and a database missing
+ * a column must never read as something they can fix by editing the form. A 500 is the truth: the
+ * deployment is broken, and the body now says how.
+ */
+function createFailureOf(error: unknown): {
+  code: "create-failed";
+  sqlstate: string | null;
+  message: string;
+} {
+  const code =
+    typeof error === "object" && error !== null ? (error as { code?: unknown }).code : undefined;
+  const sqlstate = typeof code === "string" && /^[0-9A-Z]{5}$/.test(code) ? code : null;
+  const message = error instanceof Error ? error.message : String(error);
+  return { code: "create-failed", sqlstate, message };
+}
+
+/**
  * `POST /assessment/new` — create a session, then redirect to it (#146).
  *
  * A route handler and not a server action, for two reasons: the flow has to be drivable
@@ -255,7 +294,14 @@ export async function POST(request: Request): Promise<Response> {
         303,
       );
     }
-    throw error;
+    // #1205 — anything else is a deployment that cannot do the write, and it says so. This used to
+    // be `throw error`, which Next turned into an empty 500: the transaction rolled back (zero rows,
+    // correct) and nobody could read why. The refusals above are the person's errors; this is ours,
+    // so it is a named 500 with a body and the same facts in the server log — never a `?problem=`,
+    // which would send them back to the form to fix a column that does not exist.
+    const failure = createFailureOf(error);
+    console.error("create-failed", failure.sqlstate, failure.message);
+    return NextResponse.json(failure, { status: 500 });
   }
 
   jar.set(

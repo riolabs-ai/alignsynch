@@ -62,6 +62,7 @@
     "db:seed:demo": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --demo-accounts",
     "templates:import": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-templates-import.mjs",
     "db:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-verify.mjs",
+    "db:schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-schema.mjs",
     "admin:ensure": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-admin-ensure.mjs",
     "health:record": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/health-record.mjs",
     "demo:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-verify.mjs",
