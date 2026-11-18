@@ -24,13 +24,15 @@
  * `afterAll`. No seeded relationship is read or written.
  *
  * **The fixture writes the invitation row the send reissues (#1183).** `sendDraftInvitation()` mints
- * the outgoing token through `resendInvite()` (`lib/flow/store.ts:1710`), whose first act is a
- * `FOR UPDATE` read of `session_invite`; a relationship with no row there answers `no-invite`
- * (`lib/flow/resend.ts:103`), which the send maps to `no-invitation` (`lib/flow/store.ts:1720`).
+ * the outgoing token through `resendInvite()` (`lib/flow/store.ts:1443`), whose first act is a
+ * `FOR UPDATE` read of `session_invite` (`lib/flow/store.ts:1469`); a relationship with no row
+ * there answers `no-invite` (`lib/flow/resend.ts:103`), which the send maps to `no-invitation`
+ * (`lib/flow/store.ts:1712`).
  * Every path that creates a draft in the product writes that row in the same transaction —
- * `createSessionFromTemplate` at `lib/flow/store.ts:795` (the email and the Counterparty's name
- * come from the create form) and the member dashboard's next round at
- * `lib/member/relationships.ts:1583` — so the row is part of the state stage 5's Send is pressed
+ * `createSessionFromTemplate` at `lib/flow/store.ts:401`, whose `session_invite` insert is at
+ * `lib/flow/store.ts:797` (the email and the Counterparty's name come from the create form), and
+ * the member dashboard's publish, `publishRelationship`, at `lib/member/relationships.ts:1607` —
+ * so the row is part of the state stage 5's Send is pressed
  * in, and a fixture without it builds a state the product never creates. The third case below
  * pins that refusal, so this file names the gate it has to satisfy instead of depending on it
  * silently.
@@ -109,7 +111,7 @@ async function draftRelationship(
     [sessionId, payerId],
   );
   /**
-   * The invitation, written the way `createSessionFromTemplate` writes it (`lib/flow/store.ts:795`):
+   * The invitation, written the way `createSessionFromTemplate` writes it (`lib/flow/store.ts:797`):
    * the Counterparty's address and name from the create form, a hashed token, and a seven-day
    * window off the same `INVITE_TTL_MS` the product uses. Unclaimed, never reissued — the original
    * link of a draft nobody has opened.
