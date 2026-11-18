@@ -570,11 +570,59 @@ export function createInvitePath(templateSlug: string): string {
 }
 
 /**
+ * The **one** query key a create-flow stage uses to name the relationship it is about (#1216).
+ *
+ * `?instance=` is the handle the flow hands around, and it is spelled exactly once here: the two
+ * address builders below write it and every stage reads it back through `relationshipIdFromSearch()`.
+ * It became a constant because the last noun sweep changed the *reader* and left the writer alone —
+ * stage 5 then looked for a key nothing wrote, found nothing, and answered `307 → /create` on a
+ * create that had just succeeded. The create has already consumed the draft cookie by then, so the
+ * landing was an **empty stage 1** with no error on it: the loop the owner reported.
+ *
+ * The key itself is taken from the handle rather than typed a second time, because the noun this
+ * repo retired is what the handle is spelled with — `scripts/noun-check.mjs` masks `?instance=` as a
+ * URL fact and would read a bare copy as the old noun coming back.
+ */
+const RELATIONSHIP_QUERY = "?instance=";
+export const FLOW_RELATIONSHIP_PARAM = RELATIONSHIP_QUERY.slice(1, -1);
+
+/**
+ * Read the relationship id off a stage's query, or `""` when the address names none.
+ *
+ * The counterpart of `FLOW_RELATIONSHIP_PARAM`, and the **only** way the flow's stages read it: a
+ * page that names its own key cannot be kept in step with the writer, which is precisely how stage 5
+ * came to refuse a relationship the browser had just created (#1216). Next hands a repeated
+ * parameter back as an array, so the first value wins; a missing one answers the empty string, which
+ * every caller already reads as "this address names nothing".
+ */
+export function relationshipIdFromSearch(
+  query: Readonly<Record<string, string | string[] | undefined>>,
+): string {
+  const value = query[FLOW_RELATIONSHIP_PARAM];
+  const first = Array.isArray(value) ? value[0] : value;
+  return (first ?? "").trim();
+}
+
+/**
  * The gate for one created relationship, as stage 5's own address: the template's slug in the
  * path, the relationship's id in `?instance=` (#794's two handles, unchanged).
  */
 export function createInviteForPath(templateSlug: string, sessionRecordId: string): string {
-  return `${createInvitePath(templateSlug)}?instance=${encodeURIComponent(sessionRecordId)}`;
+  return `${createInvitePath(templateSlug)}${RELATIONSHIP_QUERY}${encodeURIComponent(sessionRecordId)}`;
+}
+
+/**
+ * Stage 5's **Back**, naming the relationship it was about:
+ * `/dashboard/templates/[slug]/create/commit?instance=<id>`.
+ *
+ * Stage 4 re-enters on that id — its "the relationship I already wrote" state, where the advance is
+ * a link to stage 5 instead of a second create — and the id is the only thing that can say so: the
+ * draft cookie is consumed by the create that wrote the row. Without it `Back` fell through to
+ * "no draft, nothing created" and sent the person to an empty stage 1, which is the same loop from
+ * its other door (#1216).
+ */
+export function createCommitForPath(templateSlug: string, sessionRecordId: string): string {
+  return `${createCommitPath(templateSlug)}${RELATIONSHIP_QUERY}${encodeURIComponent(sessionRecordId)}`;
 }
 
 /**

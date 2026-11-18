@@ -637,6 +637,10 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "QUIZHUB_CACHE_KEY", why: "an override for the build cache's derived key" },
   { name: "XDG_CACHE_HOME", why: "where the build cache and deploy tooling keep state" },
   { name: "XDG_DATA_HOME", why: "where the vercel CLI keeps its auth file" },
+  {
+    name: "NO_COLOR",
+    why: "a terminal knob, never a deployment's: suppresses colour in release:preflight's transcript",
+  },
   { name: "GH_TOKEN", why: "a GitHub token for release mail, supplied by the shell or CI" },
   { name: "GITHUB_TOKEN", why: "the same, under the name CI injects" },
   { name: "GITHUB_REPOSITORY", why: "set by GitHub Actions" },
