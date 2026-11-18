@@ -95,7 +95,9 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
         expired_at: expected.expiredAt,
         lapse_reason: expected.lapseReason,
         void_reason: expected.voidReason,
-        invite_present: expected.invite !== "none",
+        // #1196 — every word carries its invitation row, a draft included: the product writes it in
+        // the relationship's own transaction, and only a claimed seat claims it.
+        invite_present: true,
         invite_claimed: expected.invite === "claimed",
         counterparties: expected.seats === "both" ? 1 : 0,
         expected,
@@ -105,6 +107,48 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
         problems: [],
       });
     }
+  });
+
+  it("names a draft with no invitation row — the state #1196 removed from the demo (#1196)", () => {
+    // The row the seed used to write for a draft: one seat, `status = 'draft'`, and no
+    // `session_invite`. No product writer produces it — `createSessionFromTemplate` inserts the
+    // invitation with the relationship — and stage 5's Send can only answer `no-invitation` over it.
+    // V31 has to name it, because this is the report the fix must not buy tidiness by deleting.
+    const expected = expectedOfStatus("draft");
+    const problems = seededRelationshipProblems([
+      coherentRow({
+        relationship_status: "draft",
+        published_at: null,
+        completed_at: null,
+        expired_at: null,
+        invite_present: false,
+        invite_claimed: false,
+        counterparties: 0,
+        expected,
+      }),
+    ]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0].code).toBe("V31");
+    expect(problems[0].message).toContain("has no session_invite row");
+    expect(problems[0].message).toContain("no-invitation");
+  });
+
+  it("names a draft whose invitation reads claimed — a seat nobody took", () => {
+    const expected = expectedOfStatus("draft");
+    const problems = seededRelationshipProblems([
+      coherentRow({
+        relationship_status: "draft",
+        published_at: null,
+        completed_at: null,
+        expired_at: null,
+        invite_claimed: true,
+        counterparties: 0,
+        expected,
+      }),
+    ]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0].code).toBe("V31");
+    expect(problems[0].message).toContain("its invitation is claimed");
   });
 
   it("names a relationship whose stored status is not the one its dataset authors", () => {
@@ -144,7 +188,11 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
     expect(problems[0].message).toContain("avery-rowan");
   });
 
-  it("names a claimed invitation the dataset says was never sent — a draft carrying a link", () => {
+  it("passes a draft carrying its unclaimed link — the row every create writes (#1196)", () => {
+    // This case used to assert the finding: #1079 had the seed delete a draft's invitation, so a
+    // draft holding one was reported. The product's own create writes it in the relationship's
+    // transaction (`lib/flow/store.ts:797`), which makes this row — `draft`, one seat, an unclaimed
+    // `session_invite` — the state the seed must produce, not the state it must avoid.
     const expected = expectedOfStatus("draft");
     const problems = seededRelationshipProblems([
       coherentRow({
@@ -157,8 +205,7 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
         expected,
       }),
     ]);
-    expect(problems).toHaveLength(1);
-    expect(problems[0].message).toContain("draft");
+    expect(problems).toEqual([]);
   });
 
   it("names an unclaimed invitation on a seat somebody already holds", () => {
