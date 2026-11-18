@@ -9,9 +9,9 @@
  * opposite of what a demo is for. This file authors the rows those lists read.
  *
  * **Every row names a row that exists.** Ids are not typed anywhere in this file: the anchors (a
- * relationship on an `active` plan, a `complete` one that was paid for, its session, the newest
- * review artifact, the Admin's own account) are **read from the branch inside the seed's own
- * transaction**, so a row cannot point at a record the seed did not create — and
+ * relationship on an `active` plan, a `complete` one whose fee the demo half charged, its session,
+ * the newest review artifact, the Admin's own account) are **read from the branch inside the seed's
+ * own transaction**, so a row cannot point at a record the seed did not create — and
  * `adminSurfacePlan()` builds a `knownTargets` set from exactly those ids and their children, so an
  * audit row that named anything else throws before a single statement runs. A dangling reference
  * renders a 404 from an admin list, which is worse than the empty state it replaced.
@@ -106,7 +106,6 @@ export const ADMIN_SURFACE_ROWS = {
   email_event: 2,
   news_signup: 5,
   plan_grant: 1,
-  relationship_payment: 1,
   review_issue: 2,
   review_issue_comment: 2,
   review_todo: 3,
@@ -376,41 +375,24 @@ export function adminSurfacePlan(anchors) {
   ];
 
   /*
-   * The paid-on-completion row (#619). Its instants are the *relationship's* own creation plus whole
-   * days, not `now`: the obligation is written at creation, the method comes on file a day later, the
-   * charge is due a week after that and lands the day after it is due — all of it history by
-   * `DEMO_NOW_ISO`, and all of it inside the chronology 0036's CHECKs enforce.
+   * **No `relationship_payment` row here any more** (t_b9679354). The fee a completed relationship
+   * carries is owned by the seed's demo half (`scripts/db-seed-payments.mjs`), which writes it for
+   * *every* complete relationship whose payer seat is an account, through the product's own writers
+   * — this file authored the one row by hand, so the console's charge card showed a relationship the
+   * rest of the demo could not account for. `paid` stays an anchor because the audit row and the
+   * `invoice.paid` event below are this half's own facts: the money legitimately produced an event,
+   * and the row it is about is the one the demo half wrote.
    */
-  const capturedAt = shiftIso(paid.createdAtIso, { days: 1 });
-  const payments = [
-    {
-      relationshipId: paid.relationshipId,
-      // The original initiator always pays (#619), and this is the account the seed bound to the seat.
-      payerUserId: paid.initiatorUserId,
-      provider: "mock",
-      providerCustomerId: null,
-      providerPaymentMethodId: null,
-      methodCapturedAt: capturedAt,
-      chargeDueAt: shiftIso(capturedAt, { days: 7 }),
-      chargedAt: shiftIso(capturedAt, { days: 8 }),
-      chargeAmountCents: paid.priceCents,
-      chargeAttempts: 1,
-      lastAttemptAt: shiftIso(capturedAt, { days: 8 }),
-      firstFailedAt: null,
-      expiredAt: null,
-      expireReason: null,
-      reminderDay3At: null,
-      reminderDay10At: null,
-    },
-  ];
-
   const billingEvents = [
     {
       provider: "mock",
       providerEventId: "demo-evt-invoice-paid",
       type: "invoice.paid",
       payloadDigest: digestOf(`invoice.paid:${paid.relationshipId}:${paid.priceCents}`),
-      receivedAt: shiftIso(capturedAt, { days: 8 }),
+      // The provider's receipt of the charge: a day after the fee landed, which is the
+      // relationship's creation + 9 days (`scripts/db-seed-payments.mjs::feeScheduleOf` captures the
+      // method at +1 and charges at +8).
+      receivedAt: shiftIso(paid.createdAtIso, { days: 9 }),
     },
     {
       provider: "mock",
@@ -602,7 +584,6 @@ export function adminSurfacePlan(anchors) {
     replies,
     audit,
     grants,
-    payments,
     billingEvents,
     todos,
     issues,
@@ -642,7 +623,6 @@ export function assertReferences(plan) {
     email_event: plan.emailEvents.length,
     news_signup: plan.newsSignups.length,
     plan_grant: plan.grants.length,
-    relationship_payment: plan.payments.length,
     review_issue: plan.issues.length,
     review_issue_comment: plan.comments.length,
     review_todo: plan.todos.length,
@@ -749,30 +729,6 @@ const SQL = {
       reason      = EXCLUDED.reason,
       granted_by  = EXCLUDED.granted_by,
       created_at  = EXCLUDED.created_at`,
-  relationshipPayment: `
-    INSERT INTO relationship_payment
-      (relationship_id, payer_user_id, provider, provider_customer_id, provider_payment_method_id,
-       method_captured_at, charge_due_at, charged_at, charge_amount_cents, charge_attempts,
-       last_attempt_at, first_failed_at, expired_at, expire_reason, reminder_day3_at,
-       reminder_day10_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-    ON CONFLICT (relationship_id) DO UPDATE SET
-      payer_user_id              = EXCLUDED.payer_user_id,
-      provider                   = EXCLUDED.provider,
-      provider_customer_id       = EXCLUDED.provider_customer_id,
-      provider_payment_method_id = EXCLUDED.provider_payment_method_id,
-      method_captured_at         = EXCLUDED.method_captured_at,
-      charge_due_at              = EXCLUDED.charge_due_at,
-      charged_at                 = EXCLUDED.charged_at,
-      charge_amount_cents        = EXCLUDED.charge_amount_cents,
-      charge_attempts            = EXCLUDED.charge_attempts,
-      last_attempt_at            = EXCLUDED.last_attempt_at,
-      first_failed_at            = EXCLUDED.first_failed_at,
-      expired_at                 = EXCLUDED.expired_at,
-      expire_reason              = EXCLUDED.expire_reason,
-      reminder_day3_at           = EXCLUDED.reminder_day3_at,
-      reminder_day10_at          = EXCLUDED.reminder_day10_at,
-      updated_at                 = now()`,
   billingEvent: `
     INSERT INTO billing_event (provider, provider_event_id, type, payload_digest, received_at)
     VALUES ($1, $2, $3, $4, $5)
@@ -1000,26 +956,6 @@ export async function seedAdminSurfaces(client, { actorUserId, nowIso }) {
       row.createdAt,
     ]);
   }
-  for (const row of plan.payments) {
-    await client.query(SQL.relationshipPayment, [
-      row.relationshipId,
-      row.payerUserId,
-      row.provider,
-      row.providerCustomerId,
-      row.providerPaymentMethodId,
-      row.methodCapturedAt,
-      row.chargeDueAt,
-      row.chargedAt,
-      row.chargeAmountCents,
-      row.chargeAttempts,
-      row.lastAttemptAt,
-      row.firstFailedAt,
-      row.expiredAt,
-      row.expireReason,
-      row.reminderDay3At,
-      row.reminderDay10At,
-    ]);
-  }
   for (const row of plan.billingEvents) {
     await client.query(SQL.billingEvent, [
       row.provider,
@@ -1085,7 +1021,7 @@ export async function seedAdminSurfaces(client, { actorUserId, nowIso }) {
     counts: { ...ADMIN_SURFACE_ROWS },
     subjects: {
       grantedRelationship: plan.grants[0].relationshipId,
-      paidRelationship: plan.payments[0].relationshipId,
+      paidRelationship: anchors.paid.relationshipId,
       artifact: plan.issues[0].artifactId,
     },
   };

@@ -125,7 +125,12 @@ describe("the demo's admin half", () => {
     // And the plan agrees with itself: `adminSurfacePlan` refuses when its rows and the table say
     // different things, so a mismatch above would already have thrown.
     expect(plan.audit).toHaveLength(6);
-    expect(Object.keys(ADMIN_SURFACE_ROWS)).toHaveLength(13);
+    expect(Object.keys(ADMIN_SURFACE_ROWS)).toHaveLength(12);
+    // `relationship_payment` is the table this half used to author one row of. It belongs to the
+    // demo half now (`scripts/db-seed-payments.mjs`), and its count is held equal to the dataset by
+    // `tests/db-seed-payments.test.ts` — so it must not come back here, or two writers would own
+    // one fact again.
+    expect(ADMIN_SURFACE_ROWS).not.toHaveProperty("relationship_payment");
   });
 
   it("references only rows the seed creates: the anchors, and ids derived from them", () => {
@@ -133,10 +138,6 @@ describe("the demo's admin half", () => {
     const sessionIds = new Set([anchors.granted.sessionRecordId, anchors.paid.sessionRecordId]);
 
     for (const grant of plan.grants) expect(relationshipIds).toContain(grant.relationshipId);
-    for (const payment of plan.payments) {
-      expect(relationshipIds).toContain(payment.relationshipId);
-      expect(payment.payerUserId).toBe(INITIATOR_USER_ID);
-    }
     for (const todo of plan.todos) expect(todo.artifactId).toBe(ARTIFACT_ID);
     for (const issue of plan.issues) expect(issue.artifactId).toBe(ARTIFACT_ID);
     // Every author column is an account this run created.

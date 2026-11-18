@@ -93,7 +93,10 @@
  * and a charged obligation, and the review shelf's issues and to-dos — all from ids drawn from the
  * rows this same seed writes, on the fixture clock (`DEMO_NOW_ISO`), and gated on `DEMO_AUTH` so a
  * production seed never writes a synthetic audit row. `data/verify/demo-expectations.json` carries
- * the thirteen counts and `tests/db-seed-admin-surfaces.test.ts` holds them equal to the plan.
+ * the twelve counts and `tests/db-seed-admin-surfaces.test.ts` holds them equal to the plan. The
+ * charged obligation's **row** is not one of them: it belongs to the demo half
+ * (`scripts/db-seed-payments.mjs`, t_b9679354), which writes it for every complete relationship an
+ * account pays for rather than for the one the console happened to draw.
  *
  * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
  * ensures each pair is a durable `admin` account: created through the same sign-up path when
@@ -138,6 +141,12 @@ import {
   waitBudgetMs,
 } from "./db-seed-lock.mjs";
 import { planInitiatingAccounts, subscriptionIdFor } from "./db-seed-subscriptions.mjs";
+import {
+  FEE_INTERVAL,
+  payableFeeRows,
+  seedDemoPayments,
+  unpayableCompleteRows,
+} from "./db-seed-payments.mjs";
 import {
   assertExactCount,
   checkReport,
@@ -927,6 +936,38 @@ async function bindDemoParties(client, accounts) {
 }
 
 /**
+ * **The fee a completed demo relationship carries** (#V31 card, t_b9679354).
+ *
+ * A `complete` relationship is one both people finished and accepted: the report is real, and so is
+ * the money. The seed wrote the first half and none of the second, so the demo showed eight
+ * completed relationships and one `relationship_payment` row — the console's own charge card — and
+ * a `complete` row in production carried no obligation at all.
+ *
+ * Writes are `scripts/db-seed-payments.mjs`'s, through the product's own
+ * `lib/db/relationship-payment.ts` writers, with the amount read from `data/billing-plans.ts` (the
+ * fixture `billing_plan` is seeded from, so the charge and the checkout cannot quote two prices).
+ * Only a relationship whose **payer seat is a demo account** can carry one:
+ * `relationship_payment.payer_user_id` is `NOT NULL`. The complete relationships whose initiator is
+ * an authored fixture name are returned instead of charged — the seed prints them rather than
+ * leaving a silent gap, and `tests/db-seed-payments.test.ts` proves every complete row is one or the
+ * other.
+ */
+async function seedRelationshipFees(client, instances) {
+  const { seededLifecycleOf } = await import("../content/assessment.ts");
+  const { billingPlan, planPriceCents } = await import("../data/billing-plans.ts");
+  const lifecycleOf = (instance) => seededLifecycleOf(instance);
+  const priceOf = (planId) => {
+    const plan = billingPlan(planId);
+    return plan === undefined ? undefined : planPriceCents(plan, FEE_INTERVAL);
+  };
+
+  const rows = payableFeeRows(instances, lifecycleOf, priceOf);
+  const unpayable = unpayableCompleteRows(instances, lifecycleOf);
+  const { written } = await seedDemoPayments(client, rows);
+  return { written, unpayable };
+}
+
+/**
  * **The live subscription a real `active` relationship needs** (#1079).
  *
  * `membershipOf()` reads a live status with no entitling subscription as `lapsed`, so an `active`
@@ -1606,6 +1647,9 @@ async function main() {
       // fixtures, which `data:check` E32 holds the bundle equal to.
       const { assessmentSessions: assessmentInstances } = await import("../data/assessments.ts");
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      /* The fee rows a completed relationship carries, restored by the same narrow door: they hang
+       * off the payer account, so they are as lost to a re-created identity as the subscription is. */
+      const fees = await seedRelationshipFees(client, assessmentInstances);
       /* #1081 — the console half is re-written here too, and the reason is the ids: every account
        * this path creates is a *new* auth user, so a repair that stopped at the subscriptions would
        * leave the audit log's `actor_user_id` (and the grant's `granted_by`) pointing at the
@@ -1617,8 +1661,12 @@ async function main() {
         operator === undefined
           ? null
           : await seedAdminSurfaces(client, { actorUserId: operator.userId, nowIso: DEMO_NOW_ISO });
+      const feeReport =
+        fees.unpayable.length === 0
+          ? ""
+          : ` — ${fees.unpayable.length} complete relationship(s) name no account on the payer seat (${fees.unpayable.map((row) => row.slug).join(", ")}): no payer, so no fee row exists for them`;
       console.log(
-        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)` +
+        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s), ${fees.written.length} fee row(s)${feeReport}` +
           (adminHalf === null ? " — no operator, the console half was not written" : ""),
       );
     } finally {
@@ -1850,6 +1898,9 @@ async function main() {
       // #1079 — the subscription an `active` relationship is read against, written after the
       // accounts exist and after `billing_plan` (phase 1) so the tier resolves.
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      // The fee a completed relationship carries — after the seat bindings (the payer is an
+      // account) and after `billing_plan` (phase 1), so the amount is the tier's own price.
+      const fees = await seedRelationshipFees(client, assessmentInstances);
       /* #1081 — the console's own half: the audit log, the support inbox, the one broadcast, the
        * comp and the charge `/admin/billing` draws, and the review shelf's issues and to-dos. Every
        * id it writes is drawn from the rows above — the operator's own account, the relationships
@@ -1886,6 +1937,19 @@ async function main() {
       for (const subscription of subscriptions) {
         console.log(
           `  · subscription: ${subscription.email} on the ${subscription.plan} tier (active) — an \`active\` relationship reads entitled rather than lapsed`,
+        );
+      }
+      // #V31 (t_b9679354) — the fee a completed relationship carries, and the census of the ones no
+      // fee can exist for. A `complete` row with no account on the payer seat has a report and no
+      // money: there is nobody to charge, and no payer is invented for it.
+      for (const fee of fees.written) {
+        console.log(
+          `  · fee: ${fee.slug} — charged ${fee.amountCents} cents on ${fee.chargedAt} (relationship_payment, method captured, one charge)`,
+        );
+      }
+      if (fees.unpayable.length > 0) {
+        console.log(
+          `  ○ fee: ${fees.unpayable.length} complete relationship(s) carry no fee row because no account holds the payer seat (${fees.unpayable.map((row) => row.slug).join(", ")}) — their report is real, their money is not: nobody there is a member`,
         );
       }
       // #1081 — what the console half wrote, in the tables its screens read. This is the line an
