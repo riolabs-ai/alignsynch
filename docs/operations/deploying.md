@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [Env manifest](env-manifest.md)
+[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [Env stores](env-stores.md)
 
 <!-- docs-nav:end -->
 
@@ -564,6 +564,6 @@ contract. Run it when Function Storage passes roughly 70 %, or before a release 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [Env manifest](env-manifest.md)
+[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [Env stores](env-stores.md)
 
 <!-- docs-nav:end -->

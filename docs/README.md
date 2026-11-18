@@ -40,7 +40,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 18 documents
+- [Operations](#operations) — 19 documents
 - [Specs & design briefs](#specs-design-briefs) — 83 documents
 - [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
@@ -86,6 +86,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/branch-triage.md`](operations/branch-triage.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`operations/brand-release.md`](operations/brand-release.md) — **Two brands, one tree** — How does a brand version ship without moving parity?
 - [`operations/deploying.md`](operations/deploying.md) — **Deploying** — How does this repository reach `alignsynch.com`?
+- [`operations/env-stores.md`](operations/env-stores.md) — **Env stores** — Which store holds each variable, in which scope — and which Preview entry wins?
 - [`operations/env-manifest.md`](operations/env-manifest.md) — **Env manifest** — Which environment variable is required where, and where does its value come from?
 - [`operations/gate.md`](operations/gate.md) — **The gate** — What does `scripts/verify.sh` run, in what order, and what are its current numbers?
 - [`operations/history/p1-migration/MIGRATION.md`](operations/history/p1-migration/MIGRATION.md) — **P1 migration** — What did the P1 content model change, field by field?
