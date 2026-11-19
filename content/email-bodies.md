@@ -88,7 +88,7 @@ This invitation is the way in to {{template}}, and it stops working on {{expires
 
 ```text
 The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is
-left. Your trial has started, and it runs from the day the invitation was accepted.
+left.
 ```
 
 ## gap-report-ready
