@@ -6,6 +6,52 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [2.0.0-rc1.3] - 2026-11-19
+
+> **Declared override.** The commit census computes 2.1.0 (minor, 13 commit(s) since v2.0.0-rc1.2); this release is cut as 2.0.0-rc1.3 by decision: the v2.0.0-rc train continues: milestone 27 names this candidate, rc2 is still pending with 16 open issues, and a release candidate is a deliberate boundary the census cannot compute
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+### Added
+
+- `feat(billing)` — one plan — Basic at $9.99/month for one relationship ([#1241](https://github.com/riolabs-ai/alignsynch/pull/1241))
+- `feat(admin)` — #1232 the CRUD matrix reads as icon-plus-word status ([#1245](https://github.com/riolabs-ai/alignsynch/pull/1245))
+- `feat(create)` — #1226 the create-failed screen — the drawn state, not a generic error ([#1244](https://github.com/riolabs-ai/alignsynch/pull/1244))
+
+### Fixed
+
+- `fix(health)` — the record's gate block names the lane it asked for ([#1234](https://github.com/riolabs-ai/alignsynch/pull/1234))
+- `fix(copy)` — #1227 the join notice says the week starts today only on a free trial ([#1240](https://github.com/riolabs-ai/alignsynch/pull/1240))
+- `fix(copy)` — #1228 the get-started answer describes the five stages ([#1238](https://github.com/riolabs-ai/alignsynch/pull/1238))
+- `fix(copy)` — #1231 the email-template labels read in Title Case, as the spec writes them ([#1242](https://github.com/riolabs-ai/alignsynch/pull/1242))
+- `fix(copy)` — #1225 the Counterparty's expired notice carries the copy spec ([#1239](https://github.com/riolabs-ai/alignsynch/pull/1239))
+- `fix(copy)` — #1224 the lapse line is written for the seat reading it ([#1236](https://github.com/riolabs-ai/alignsynch/pull/1236))
+- `fix(answer)` — #1223 the lapsed state is reachable, and it pauses the sheet without closing it ([#1235](https://github.com/riolabs-ai/alignsynch/pull/1235))
+
+### Maintenance
+
+- `docs(specs)` — #1233 bundle 11's settings page drops the Notifications card ([#1243](https://github.com/riolabs-ai/alignsynch/pull/1243))
+- `chore(billing)` — remove the Family plan — the catalogue goes from three plans to two ([#1237](https://github.com/riolabs-ai/alignsynch/pull/1237))
+- `chore(health)` — re-record platform health at v2.0.0-rc1.2 ([#1222](https://github.com/riolabs-ai/alignsynch/pull/1222))
+
+### Known limits
+
+- **The number is declared, and the census disagrees with it.** `v2.0.0-rc1.2..HEAD` is 13 commits — 3 `feat:` and 10 other — so `pnpm release:cut --check` computes `2.1.0` (minor) and both readers agree. This tree is cut as `2.0.0-rc1.3` by decision: `2.0.0` final has never been released and `v2.0.0-rc2` is still open, so a `2.1.0` would sit past a final that does not exist and would claim a stability the candidate line does not have. The banner at the top of this entry is `pnpm release:cut`'s own record of the override, not a note added afterwards.
+
+- **One plan ships, and none of it is a data migration.** `#1237` removed Family and `#1241` narrowed the catalogue to a single card — Basic, `$9.99` a month, one relationship. Both read production in their own step 0 first: 9 `billing_subscription` rows, all `basic/month` (4 active, 5 trialing), **0** at the `principal` tier and **0** at interval `year` — so no subscriber is grandfathered and nothing in Stripe moved. What the tree does not do is clean up after the delisted plan: `billing_plan` keeps its dormant `principal` rows and `alignsynch_principal_year` stays unclaimed on the provider, because repricing or deleting either is a provider-side act.
+
+- **No atlas sweep, and the deferral is on file.** `docs/qa-atlas/DEFERRED.md` carries this release's row (version, date, the commit it is cut from, and the reason). The pool's subjects are the states the atlas cannot reach: a trial that has actually lapsed (`#1223`, `#1224`), the relationship detail's payment tab with a completed engagement, the admin CRUD matrix behind an admin seat (`#1232`, `#1231`), and the create-failed screen, which needs a write that failed (`#1226`).
+
+- **The ten surfaces are proved by the gate and by `tests/`, not by a browser walk on production.** Every change in this window is copy, state reachability or a drawn screen; the evidence is `bash scripts/verify.sh` plus the cases the pull requests added. No part of this cut re-walks the changed screens on a live deployment.
+
+- **The billing checkout is still unproven end to end on production** (`#1053`, open). This release changes the plan catalogue the checkout sells from; it does not re-run the proof that a test-mode checkout completes.
+
+- **Admin surfaces remain gated rather than exercised over HTTP on production.** `#1084` is closed, but `#1202` — creating the two `ADMIN_EMAILS` identities in production — is still open, so the console routes answer for a seat nobody has yet been given.
+
+- **Two migrations share the number `0042`.** `db/migrations/0042_billing_plan_prices.sql` and `db/migrations/0042_email_template_version.sql` both apply — `db:migrate` orders by filename and keys its ledger by full name, so nothing is skipped — but a migration number no longer identifies one step, and a third `0042` would read as out-of-order in review. Renumbering is a follow-up, not part of this cut.
+
+- **This is a pre-release.** A `-suffix` version is published with `--prerelease`, so `v2.0.0-rc1.3` is never `latest`: `v1.22.0` remains the newest stable release, and production's `/api/version` is the only thing that says which build is live.
+
 ## [2.0.0-rc1.2] - 2026-11-18
 
 > **Declared override.** The commit census computes 2.0.1 (patch, 6 commit(s) since v2.0.0-rc1.1); this release is cut as 2.0.0-rc1.2 by decision: 2.0.0 final has never been released: a 2.0.1 patch would sit on a version that does not exist and would claim a stability the candidate line does not have, so the rc line stays until 2.0.0 is cut
@@ -2080,3 +2126,4 @@ The admin console, and relationship templates become products.
 [2.0.0-rc1]: https://github.com/riolabs-ai/alignsynch/compare/v1.22.0...v2.0.0-rc1
 [2.0.0-rc1.1]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1...v2.0.0-rc1.1
 [2.0.0-rc1.2]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.1...v2.0.0-rc1.2
+[2.0.0-rc1.3]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.2...v2.0.0-rc1.3

@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "2.0.0-rc1.3",
+      "theme": "the UI/UX pool — the relationship reads correctly from whichever seat is looking, every notification is worded for its reader, and the catalogue is one plan.",
+      "headline": "`feat(billing)` — one plan — Basic at $9.99/month for one relationship (#1241)"
+    },
+    {
       "version": "2.0.0-rc1.2",
       "theme": "the two loops the candidate left open, closed in code — stage 5 reads the key stage 4 writes, and a seeded complete relationship carries its fee.",
       "headline": "`fix(flow)` — #1216 stage 5 reads the address the create writes (#1217)"
