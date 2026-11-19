@@ -1,24 +1,24 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-19T05:41:22.239Z",
+  "recordedAt": "2026-11-19T13:16:53.927Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
-    "ranAt": "2026-11-19T05:39:36.087Z",
+    "ranAt": "2026-11-19T13:15:05.262Z",
     "database": "demo branch (NEON_BRANCH=demo, neondb) · host ep-crimson-truth-b4ppwxrp.c-6.us-east-2.aws.neon.tech",
     "exitCode": 0,
     "result": "pass",
-    "summary": "✓ db:verify — 31 session(s) checked, 31 template(s) resolved, 29 template version(s) parsed with every relationship bound to one (0 copy(ies) authored at create, checked as structure), 29 published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 31 invitation(s) with 31 missing a relationship (V32 reports all of them; 0 wanted), 25 active and 6 draft session(s) of 31 — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the \"invited but not started\" census), 20 active session(s) whose relationship mirror is NULL (reported; the seat is the fact), 0 UPDATE path(s) against session/opinion across 607 source file(s) (a scored session is immutable), 5 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 31 seeded setting(s) matching the fixture, 13 of 31 seeded session(s) complete, 31 seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), 10 party binding(s) resolve to an account, 2 seeded binding(s) intact, 0 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (2 live subscription(s)), 4 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 7 mail event(s) recorded (1 address(es) suppressed), 3 contact message(s) in the inbox with 2 reply attempt(s), 1 broadcast send(s) recorded (3 address(es) mailed), 5 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 11 review artifact(s) with 3 TODO item(s) and 2 feedback issue(s) none in a closed/open mismatch, no drift",
+    "summary": "✓ db:verify — 31 session(s) checked, 31 template(s) resolved, 29 template version(s) parsed with every relationship bound to one (0 copy(ies) authored at create, checked as structure), 29 published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 31 invitation(s) with 31 missing a relationship (V32 reports all of them; 0 wanted), 25 active and 6 draft session(s) of 31 — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the \"invited but not started\" census), 20 active session(s) whose relationship mirror is NULL (reported; the seat is the fact), 0 UPDATE path(s) against session/opinion across 608 source file(s) (a scored session is immutable), 5 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 31 seeded setting(s) matching the fixture, 13 of 31 seeded session(s) complete, 31 seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), 10 party binding(s) resolve to an account, 2 seeded binding(s) intact, 0 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (2 live subscription(s)), 4 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 12 mail event(s) recorded (1 address(es) suppressed), 3 contact message(s) in the inbox with 2 reply attempt(s), 1 broadcast send(s) recorded (3 address(es) mailed), 5 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 11 review artifact(s) with 3 TODO item(s) and 2 feedback issue(s) none in a closed/open mismatch, no drift",
     "violations": []
   },
   "gate": {
     "lane": "docs",
-    "seconds": 12.4,
-    "measuredAt": "2026-11-19T05:38:53.488Z",
-    "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
+    "seconds": 15,
+    "measuredAt": "2026-11-19T13:14:02.488Z",
+    "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 GATE_LANE=auto bash scripts/verify.sh",
     "yield": {
       "window": "2026-11-18",
-      "measuredAt": "2026-11-19T05:39:05.878Z",
+      "measuredAt": "2026-11-19T13:14:17.477Z",
       "command": "python3 docs/gate-baseline.py --window 2026-11-18",
       "successes": 41,
       "runs": 44,
@@ -29,18 +29,18 @@
   },
   "production": {
     "state": "answering",
-    "version": "2.0.0-rc1.2",
-    "commit": "e9188e785ff6b1025dff145fc0d211fd1dc2d86e",
+    "version": "2.0.0-rc1.3",
+    "commit": "94f3e8fd2f06d949af1720e42e8d821f58f09d14",
     "status": 200,
-    "measuredAt": "2026-11-19T05:38:53.488Z",
+    "measuredAt": "2026-11-19T13:14:02.487Z",
     "source": "GET https://alignsynch.com/api/version",
     "behindMain": 0
   },
   "tree": {
-    "packageVersion": "2.0.0-rc1.2",
-    "latestTag": "v2.0.0-rc1.2",
-    "headSha": "e9188e785ff6b1025dff145fc0d211fd1dc2d86e",
-    "mainSha": "e9188e785ff6b1025dff145fc0d211fd1dc2d86e",
-    "measuredAt": "2026-11-19T05:38:52.881Z"
+    "packageVersion": "2.0.0-rc1.3",
+    "latestTag": "v2.0.0-rc1.3",
+    "headSha": "94f3e8fd2f06d949af1720e42e8d821f58f09d14",
+    "mainSha": "94f3e8fd2f06d949af1720e42e8d821f58f09d14",
+    "measuredAt": "2026-11-19T13:14:01.880Z"
   }
 }
