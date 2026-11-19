@@ -25,6 +25,7 @@
  */
 import Link from "next/link";
 
+import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import {
   SPEC_STATUSES,
@@ -144,14 +145,14 @@ export function SpecStatusBox({
           {words("status-heading")}
         </p>
         <div className="mt-1 flex flex-wrap justify-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-small-gap-mark bg-small-gap-tint px-2 py-0.5 text-xs font-semibold text-small-gap">
+          <Chip className="gap-1 border-dashed border-small-gap-mark bg-small-gap-tint font-semibold text-small-gap">
             <span aria-hidden="true">◐</span>
             <span>{words("status-draft")}</span>
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-input bg-background px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+          </Chip>
+          <Chip className="gap-1 border-dashed border-input bg-background font-semibold text-muted-foreground">
             <span aria-hidden="true">☐</span>
             <span>{words("status-not-signable")}</span>
-          </span>
+          </Chip>
         </div>
         <p className="mt-2 text-xs">
           <span className="font-bold">{doc.release}</span>
