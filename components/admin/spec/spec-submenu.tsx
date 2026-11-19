@@ -18,9 +18,20 @@
  * carries the same markup server-rendered.
  *
  * A server component: no handler, no state, no clock.
+ *
+ * **The last row leaves the app** (`Docs`, #1252 follow-up). Everything above it is a route of
+ * this surface; the docs preview is a *different origin* — the v2 draft pages, which live outside
+ * this repository and are not copied into it. So the row is `LeavingLink`
+ * (`components/layout/leaving-link.tsx`), the one control that owns `target="_blank"` +
+ * `rel="noopener noreferrer"` + the external marker and the "opens in a new tab" name, and its
+ * destination is `ADMIN_SPEC_DOCS_URL` from the surface's own fixture rather than a literal here.
+ * It sits after the around-the-story group so the register's order is untouched, and its label
+ * says the pages are drafts, because they are. It carries no `aria-current`: no path in this app
+ * is that page.
  */
 import Link from "next/link";
 
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PageCopy } from "@/content/pages";
 import {
   SPEC_STORY_GROUPS,
@@ -30,6 +41,7 @@ import {
   specTotalsOf,
   type SpecValidation,
 } from "@/content/spec";
+import { ADMIN_SPEC_DOCS_URL } from "@/data/pages/admin-spec";
 import {
   ADMIN_SPEC_PATH,
   ADMIN_SPEC_VALIDATION_PATH,
@@ -163,6 +175,16 @@ export function SpecSubmenu({
       <div>
         <p className={GROUP_LABEL}>{words("rail-around")}</p>
         {aroundRows}
+      </div>
+
+      {/**
+       * The departing row. It is not a route of this surface, so it sits outside every group —
+       * separated by the rule above it — and it is the last thing in the navigation. `LeavingLink`
+       * draws the new tab and the marker; `words("rail-docs")` is the fixture's label, which says
+       * the pages it opens are drafts.
+       */}
+      <div className="border-t pt-3">
+        <LeavingLink href={ADMIN_SPEC_DOCS_URL} label={words("rail-docs")} className={ROW} />
       </div>
     </nav>
   );
