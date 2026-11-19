@@ -36,8 +36,15 @@ import { USER_ROLES } from "./role-ladder";
  * **2 (#929)** — the owner's standard rail: `group-admin` first, and the review shelf + health
  * page inside `group-support`. The schema did not change; the arrangement did, and the version is
  * how a later edit is a bump plus a diff rather than a silent reinterpretation of the same number.
+ *
+ * **3 (2026-11-19)** — the project spec moved *above* the Admin heading, which the schema could
+ * not express: an item above a group's title cannot stay in that group, and a heading of its own
+ * would repeat the row's word. So a group may now omit `label` (see `zNavGroup`), and the document
+ * opens with the title-less `group-project-spec`. A v3 document is not readable by a v2 build for
+ * exactly that reason: v2 would have rendered it with no heading anyway, but the *intent* — a group
+ * that is allowed to have none — is new, and the version says so.
  */
-export const NAV_DOCUMENT_VERSION = 2;
+export const NAV_DOCUMENT_VERSION = 3;
 
 /**
  * Every glyph a rail row may draw. A name, not a component: the descriptor holds no JSX, and the
@@ -125,16 +132,27 @@ export const zNavRow = z
   .strict();
 
 /**
- * A labelled run of rows — one heading and its rows, one level, no submenus.
+ * A run of rows — one heading and its rows, or a **title-less** run above the first heading.
  *
  * `label` is a fixture id, like every other word in the rail; `id` is the document's handle for
  * the group and is what a diagnostic names when something inside it is wrong.
+ *
+ * **`label` is optional since the project-spec group.** A group with no label draws its rows with
+ * no heading between it and the group above, which is the shape the rail needs *above* the first
+ * heading: `group-project-spec` is the project-spec row sitting on its own above the Admin heading,
+ * and a heading there would either repeat the row's own word ("Project Spec" over "Project Spec")
+ * or invent one nobody asked for. The absence is the statement — a title-less group is written by
+ * omitting the key, never by an empty string, and the validator still refuses a label id that is
+ * not an item of the shell's `nav-alignsynch` section.
  */
 export const zNavGroup = z
   .object({
     id: z.string().min(1),
-    /** The heading's label id in `data/pages/shell.ts`'s `nav-alignsynch` section. */
-    label: z.string().min(1),
+    /**
+     * The heading's label id in `data/pages/shell.ts`'s `nav-alignsynch` section. **Omitted** for
+     * the group that draws no heading — see the docstring above.
+     */
+    label: z.string().min(1).optional(),
     items: z.array(zNavRow).min(1),
   })
   .strict();
