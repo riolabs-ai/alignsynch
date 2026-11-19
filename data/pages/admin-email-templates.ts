@@ -40,7 +40,7 @@ export const adminEmailTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "class", label: "Class" },
         { id: "recipient", label: "Recipient" },
         { id: "status", label: "Status" },
-        { id: "edited", label: "Last edited" },
+        { id: "edited", label: "Last Edited" },
         { id: "open", label: "Open" },
       ],
     },
@@ -64,21 +64,21 @@ export const adminEmailTemplatesPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "counterparty", label: "Counterparty" },
         { id: "initiator", label: "Initiator" },
-        { id: "both", label: "Either seat" },
+        { id: "both", label: "Either Seat" },
         { id: "member", label: "Member" },
         { id: "subscriber", label: "Subscriber" },
       ],
     },
     {
       id: "fields",
-      heading: "The override",
+      heading: "The Override",
       body: "Subject, preheader and body. The body is plain text — a blank line separates paragraphs and a line starting with ## is a heading — and the band composes the HTML from it. The footer, the class and the unsubscribe line are the band's and cannot be edited here.",
       items: [
         { id: "subject", label: "Subject" },
         { id: "preheader", label: "Preheader" },
         { id: "body", label: "Body" },
-        { id: "chips", label: "Facts this body may say" },
-        { id: "default", label: "Show the code default" },
+        { id: "chips", label: "Allowed Facts" },
+        { id: "default", label: "Show Code Default" },
         { id: "draft-source", label: "Draft — not in production" },
         { id: "published-source", label: "Published — what production sends" },
         { id: "default-source", label: "Default — nothing is published for this template" },
@@ -90,8 +90,8 @@ export const adminEmailTemplatesPageCopy: PageCopy = zPageCopy.parse({
       body: "One set of sample facts, rendered through the same band a real send uses. The text is canonical; the HTML beside it is derived from the text.",
       items: [
         { id: "sample", label: "Sample data — no member's link and no live token" },
-        { id: "text", label: "Plain text" },
-        { id: "html", label: "HTML, derived" },
+        { id: "text", label: "Plain Text" },
+        { id: "html", label: "HTML (Derived)" },
         { id: "overridden", label: "Showing your unsaved edit" },
         { id: "refused", label: "This preview is refused" },
         {
@@ -103,7 +103,7 @@ export const adminEmailTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "actions",
       items: [
-        { id: "save", label: "Save draft" },
+        { id: "save", label: "Save Draft" },
         { id: "saving", label: "Saving…" },
         { id: "publish", label: "Publish" },
         { id: "publishing", label: "Publishing…" },
@@ -119,14 +119,14 @@ export const adminEmailTemplatesPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "versions",
-      heading: "Version history",
+      heading: "Version History",
       body: "Every save, publish and reset, newest first. A retired row keeps the words it carried and the instant it stopped being live.",
       items: [
         { id: "version", label: "Version" },
         { id: "status", label: "State" },
         { id: "editor", label: "Editor" },
         { id: "at", label: "When" },
-        { id: "restore", label: "Restore to draft" },
+        { id: "restore", label: "Restore to Draft" },
         { id: "restoring", label: "Restoring…" },
         { id: "restored", label: "Restored to a draft — publish it to change production." },
         { id: "none", label: "No version yet. This template has never been overridden." },
