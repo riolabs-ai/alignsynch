@@ -23,6 +23,21 @@
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
+/**
+ * The v2 docs preview — the one destination the Project Spec's submenu leaves for.
+ *
+ * **One home, and it is here rather than in the component** (`components/admin/spec/spec-submenu.tsx`
+ * reads it; it does not spell it). A URL typed into a component is the string no fixture check can
+ * see, and the row's whole job is that address — so it sits beside the surface's words, where a
+ * move of the preview is a one-line diff in a file the gate already reads.
+ *
+ * **Public, and the card says so.** The preview is an unauthenticated Vercel deployment of the
+ * draft docs; this file is the copy surface for the spec, which is NDA material, so the rule is
+ * worth stating: nothing here may carry a token, a signed URL or a private host. The link opens in
+ * a new tab and prints "draft" beside it, because the pages it leads to are drafts.
+ */
+export const ADMIN_SPEC_DOCS_URL = "https://alignsynch-v2-docs-preview.vercel.app/";
+
 export const adminSpecPageCopy: PageCopy = zPageCopy.parse({
   heading: "Project Spec",
   subtitle:
@@ -45,6 +60,8 @@ export const adminSpecPageCopy: PageCopy = zPageCopy.parse({
     { id: "rail-story", label: "Story" },
     { id: "rail-around", label: "Around the Story" },
     { id: "rail-count", label: "{met}/{total}" },
+    /* The one row that leaves the app — last, so the register's own order is untouched. */
+    { id: "rail-docs", label: "Docs — draft pages" },
 
     /* The status box — s02's aside, drawn on Overview and Validation alike. */
     { id: "status-heading", label: "Phase 6 · Delivery Certification" },
