@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Orchestration rules](orchestration.md)
+[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Migrations](migrations.md)
 
 <!-- docs-nav:end -->
 
@@ -102,6 +102,6 @@ git push                          # one push → one CI run → one merge
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Orchestration rules](orchestration.md)
+[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Migrations](migrations.md)
 
 <!-- docs-nav:end -->

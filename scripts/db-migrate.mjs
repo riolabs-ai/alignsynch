@@ -7,15 +7,44 @@
  * with its ledger row, so a file that fails leaves neither half-applied DDL nor a false
  * "applied" marker.
  *
+ * **The preflight is the first thing that runs, before `loadEnv` and before a connection**
+ * (#1249): a migration number must identify exactly one step, and two files sharing one is
+ * refused here rather than in `verify.sh` — the gate never opens a connection, and a naming
+ * defect has to stop the run that would write it. The rule and the four grandfathered pairs
+ * live in `scripts/migration-prefixes-rules.ts`; never renumber an applied file, because its
+ * name is its ledger key.
+ *
+ *   pnpm db:migrate                     # the real run
+ *   pnpm db:migrate --check-prefixes    # the preflight alone — no env, no connection
+ *   node scripts/db-migrate.mjs --dir <path>   # the preflight against another directory (tests)
+ *
  * Connection: the **unpooled** URL. `pg` is the only driver and there is no `psql` on this
  * machine, which is the whole reason this script exists rather than a `psql < file`.
  */
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { Client } from "pg";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
+import {
+  findMigrationPrefixFindings,
+  formatPrefixFindings,
+  grandfatheredPrefixes,
+} from "./migration-prefixes-rules.ts";
 
 const MIGRATIONS = join(repoRoot, "db", "migrations");
+
+/**
+ * Which directory this run reads. `--dir` exists for the tests (#1249): the prefix check is
+ * provable without a database, so its test points it at a fixture directory the repository
+ * cannot be arranged into.
+ */
+function migrationsDirFromArgs() {
+  const at = process.argv.indexOf("--dir");
+  if (at < 0) return MIGRATIONS;
+  const given = process.argv[at + 1];
+  if (!given) throw new Error("--dir needs a path, e.g. `--dir db/migrations`");
+  return resolve(given);
+}
 
 const LEDGER = `
   CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -42,6 +71,36 @@ const CONTENT_TABLES = [
 ];
 
 async function main() {
+  const migrationsDir = migrationsDirFromArgs();
+  // The path a reader can act on: relative to the repo in every ordinary run, absolute for a
+  // fixture directory outside it.
+  const shown = relative(repoRoot, migrationsDir);
+  const label = shown === "" || shown.startsWith("..") ? migrationsDir : shown;
+
+  // #1249 — the preflight, before `loadEnv`, before a connection and before the first statement.
+  // A directory that cannot be read, holds no migration, or names two files with one number is a
+  // defect this run must not write. It is deliberately not a `verify.sh` step: the gate never opens
+  // a connection, and the cost of a naming mistake belongs on the run that applies it.
+  const files = readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort();
+  if (files.length === 0) throw new Error(`no .sql files under ${label}`);
+  const findings = findMigrationPrefixFindings(files);
+  if (findings.length > 0) throw new Error(formatPrefixFindings(findings, label));
+  const grandfathered = grandfatheredPrefixes(files);
+  console.log(
+    `  · prefixes: ${files.length} file(s), every number one step` +
+      (grandfathered.length > 0
+        ? ` — ${grandfathered.length} grandfathered pair(s): ${grandfathered.join(", ")}`
+        : ""),
+  );
+
+  // The check alone, for a human or for a test: no env, no connection, nothing written.
+  if (process.argv.includes("--check-prefixes")) {
+    console.log(`\n✓ db:migrate --check-prefixes — ${label} is a legal sequence`);
+    return;
+  }
+
   loadEnv();
   // **Which branch does this run touch?** Answered before the first statement, because a migration
   // applied to the wrong branch is the one mistake this script cannot roll back: `.env.local` wins
@@ -66,18 +125,14 @@ async function main() {
     const { rows: applied } = await client.query("SELECT name FROM schema_migrations");
     const done = new Set(applied.map((row) => row.name));
 
-    const files = readdirSync(MIGRATIONS)
-      .filter((name) => name.endsWith(".sql"))
-      .sort();
-    if (files.length === 0) throw new Error(`no .sql files under ${MIGRATIONS}`);
-
+    // `files` and its prefix check ran above, before the connection opened (#1249).
     let changed = 0;
     for (const file of files) {
       if (done.has(file)) {
         console.log(`  = ${file} — already applied, skipped`);
         continue;
       }
-      const sql = readFileSync(join(MIGRATIONS, file), "utf8");
+      const sql = readFileSync(join(migrationsDir, file), "utf8");
       const started = Date.now();
       await client.query("BEGIN");
       try {
