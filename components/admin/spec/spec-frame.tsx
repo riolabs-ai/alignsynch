@@ -55,10 +55,17 @@ export function SpecFrame({
       {/**
        * The NDA notice. `role="note"` rather than a paragraph alone: it is not part of the page's
        * narrative and a screen reader should be able to reach it on demand.
+       *
+       * **The tone is the artifact's, and it is the initiator's.** `css/admin-project-spec.css:65`
+       * draws `.nda` as `border: 1px solid var(--initiator-line); background: var(--initiator-tint);
+       * color: var(--foreground)` — the warm clay a notice about who may read NDA material carries
+       * in this product. It was drawn in `small-gap` (an ochre), which is the *partial* status's
+       * tone: a status colour borrowed for a notice, on the one line the brand-class lint cannot
+       * check because both are tokens.
        */}
       <p
         role="note"
-        className="rounded-md border border-small-gap-mark/60 bg-small-gap-tint px-3 py-2 text-xs text-small-gap"
+        className="rounded-md border border-initiator-line bg-initiator-tint px-3 py-2 text-xs text-foreground"
       >
         {confidentiality}
       </p>

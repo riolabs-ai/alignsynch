@@ -152,10 +152,11 @@ export function AppSidebar({
   /**
    * A surface's own navigation, handed to the drawer by `RailSheetSection` (#1252).
    *
-   * Rendered above the rail's groups and **only below `md`**: above it the surface draws its
-   * second column beside its page, and the drawer is an invisible column that must not grow a
-   * second copy of the same links. The handover exists so a phone opens one menu rather than two
-   * (AS-11); `undefined` is every route that has no second column.
+   * Rendered above the rail's groups while the drawer is open, and **only below `md`**: above it
+   * the surface draws its second column beside its page, and the drawer is an invisible column that
+   * must not carry a second copy of the same links — two `aria-current="page"` rows and two `nav`
+   * landmarks for one page is what that copy measured as. The handover exists so a phone opens one
+   * menu rather than two (AS-11); `undefined` is every route that has no second column.
    */
   sheetSection?: ReactNode;
 }) {
@@ -526,14 +527,23 @@ export function AppSidebar({
           <nav className="grid gap-1 px-2">
             {/**
              * The surface's own navigation first (#1252) — the project spec's submenu above the
-             * rail's groups, which is the order the artifact draws. Below `md` only: above it the
-             * drawer is an invisible column and the surface has a column of its own.
+             * rail's groups, which is the order the artifact draws.
+             *
+             * **Only while the drawer is open (`open`).** It used to render unconditionally, with
+             * `md:hidden` on the wrapper, and the page then carried the submenu *twice* in the
+             * document at every width — once in the surface's 208px column and once in this panel —
+             * with two `aria-current="page"` rows and two `nav` landmarks of the same name for one
+             * page. `display: none` hides the copy from a reader but not from the document, and the
+             * whole point of the handover is that a phone opens *one* menu (AS-11). Below `md` the
+             * panel is only a menu while it is open, so gating on the same boolean that opens it is
+             * the state the slot actually describes; at `md` and up the surface's column is the one
+             * home and nothing is duplicated.
              */}
-            {sheetSection === undefined || sheetSection === null ? null : (
+            {open && sheetSection !== undefined && sheetSection !== null ? (
               <div className="md:hidden" data-rail-sheet-section="">
                 {sheetSection}
               </div>
-            )}
+            ) : null}
             {/**
              * `labelled` is the drawer, not a width: the same rows render their text at a 390px
              * viewport because the panel they are in is 250px wide. Following a row closes the

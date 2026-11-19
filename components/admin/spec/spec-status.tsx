@@ -21,6 +21,7 @@
  */
 import { cn } from "@/lib/utils";
 import { SPEC_STATUS_MARKS, type SpecCheck, type SpecStatus } from "@/content/spec";
+import { Chip } from "@/components/ui/badge";
 
 /**
  * One status's chip tone. Exported so the overview card's stack bar paints the same six colours as
@@ -53,7 +54,16 @@ const CHECK_TONE: Readonly<Record<SpecCheck, string>> = {
   "→": SPEC_STATUS_TONE.Offset,
 };
 
-/** A status, as the register prints it: mark, word, and the count when the caller has one. */
+/**
+ * A status, as the register prints it: mark, word, and the count when the caller has one.
+ *
+ * **The chip is `components/ui`'s `Chip`, not a pill drawn here** (#795's primitive,
+ * `components/ui/badge.tsx`): one geometry, one padding, one type step, and the `rounded-full`
+ * radius the design system already carries. What this file adds is the *tone* — the register's six,
+ * from `SPEC_STATUS_TONE` — and the mark, so a status is never a colour alone. The base string's
+ * `text-white` / `bg-white` / `border-gray-300` are dropped by `cn`'s merge, which is exactly the
+ * seam `Chip` documents for a caller with its own fill.
+ */
 export function SpecStatusChip({
   status,
   count,
@@ -65,17 +75,13 @@ export function SpecStatusChip({
   className?: string;
 }) {
   return (
-    <span
+    <Chip
       data-spec-status={status}
-      className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold",
-        SPEC_STATUS_TONE[status],
-        className,
-      )}
+      className={cn("gap-1 whitespace-nowrap font-semibold", SPEC_STATUS_TONE[status], className)}
     >
       <span aria-hidden="true">{SPEC_STATUS_MARKS[status]}</span>
       <span>{count === undefined ? status : `${status} ${count}`}</span>
-    </span>
+    </Chip>
   );
 }
 
@@ -114,13 +120,13 @@ export function SpecParityChip({
   basis: string;
 }) {
   return (
-    <span
+    <Chip
       data-spec-parity={parity}
       title={basis}
-      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-input bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground"
+      className="gap-1 whitespace-nowrap border-input bg-background font-medium text-muted-foreground"
     >
       <span aria-hidden="true">·</span>
       <span>{parity}</span>
-    </span>
+    </Chip>
   );
 }
