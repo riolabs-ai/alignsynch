@@ -35,6 +35,43 @@ function demoRelationshipId(instanceId: string): string {
 
 export const chatThreads: readonly ChatThread[] = zChatThreads.parse([
   /**
+   * Avery and Rowan, the open relationship (`assessment-instance-avery-rowan-flat`).
+   *
+   * **Which relationship is why this entry exists, not the wording.** `chat-and-discussion`'s
+   * register row (`docs/specs/v2-rectification.md`) photographs
+   * `relationship-assessment-instance-avery-rowan-flat?tab=discussion`, and that is the demo
+   * relationship that is still running: `relationship-assessment-instance-avery-rowan` is `complete`,
+   * so its Discussion is read-only and can only ever photograph the closed band. A demo thread on the
+   * running row is what makes the Discussion tab show a conversation, and the sentence below promises
+   * nothing about either person's answers — the blind rule holds.
+   */
+  {
+    relationshipId: demoRelationshipId("assessment-instance-avery-rowan-flat"),
+    messages: [
+      {
+        id: "chat-avery-rowan-flat-1",
+        sender: "counterparty",
+        body: "I read through the five Aspects. The one I keep coming back to is how the week actually splits.",
+        at: "2026-10-21T19:02:00.000Z",
+        aspectId: "aspect-housework",
+      },
+      {
+        id: "chat-avery-rowan-flat-2",
+        sender: "initiator",
+        body: "Same. I would rather work out what we both mean before we change anything.",
+        at: "2026-10-21T19:14:00.000Z",
+        aspectId: "aspect-housework",
+      },
+      {
+        id: "chat-avery-rowan-flat-3",
+        sender: "counterparty",
+        body: "Then let us start with Tuesday and Thursday. Ten minutes, no more than that.",
+        at: "2026-10-21T19:26:00.000Z",
+        unread: true,
+      },
+    ],
+  },
+  /**
    * Avery and Rowan — the feature example (`assessment-instance-avery-rowan`). Two tagged messages
    * on the Aspects Align draws, one of them Rowan's and still unread, so the list's badge has a
    * number on the demo branch without anything being invented for it.

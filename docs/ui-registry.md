@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **103** — 65 static, 38 dynamic, from `app/**/page.tsx`
-- component domains: **44** — 402 files under `components/`, 393 of them `.tsx`
+- component domains: **44** — 403 files under `components/`, 394 of them `.tsx`
 - route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 78 · **db** 45 · **live** 8 · **prototype** 1
 - templates: Both templates 53 · AlignSynch 50 · QuizHub 42 · No template yet 2
@@ -805,7 +805,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (28): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `card-menu.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `my-template-detail.tsx`, `my-template-retire.tsx`, `recent-quizzes.tsx`, `relationship-aspects-note.tsx`, `relationship-card-model.ts`, `relationship-card.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationship-panels.tsx`, `relationship-tabs.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `start-page.tsx`, `start-view.ts`, `template-gallery.tsx`, `template-proposal-form.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (29): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `card-menu.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `discussion-thread.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `my-template-detail.tsx`, `my-template-retire.tsx`, `recent-quizzes.tsx`, `relationship-aspects-note.tsx`, `relationship-card-model.ts`, `relationship-card.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationship-panels.tsx`, `relationship-tabs.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `start-page.tsx`, `start-view.ts`, `template-gallery.tsx`, `template-proposal-form.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (7): `/assessments`, `/dashboard`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`, `/dashboard/templates/[id]`, `/dashboard/templates/[id]/propose`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
