@@ -60,9 +60,17 @@ export type StartResult =
   | { readonly ok: true; readonly url: string; readonly challenge: string }
   | { readonly ok: false; readonly failure: AuthFailure };
 
-/** An exchange that produced cookies for our origin, or the refusal kind. */
+/**
+ * An exchange that produced cookies for our origin, or the refusal kind.
+ *
+ * `userId` is the id the exchange's own body names (#1252) — the callback has just minted a session
+ * whose cookie the browser does not hold yet, so this is the **one** moment it can learn who signed
+ * in without a second round trip. `null` when the body did not carry one: the session is still
+ * valid (the cookies are what matter), and every caller treats it as "no role known", which is the
+ * landing page the person would have had before this card.
+ */
 export type ExchangeResult =
-  | { readonly ok: true; readonly setCookies: readonly string[] }
+  | { readonly ok: true; readonly setCookies: readonly string[]; readonly userId: string | null }
   | {
       readonly ok: false;
       readonly failure: AuthFailure;
@@ -139,6 +147,17 @@ export async function startGoogleHandshake(options: {
 }
 
 /**
+ * The user id in a `get-session` body: `{ session, user: { id } }`. `null` when the shape is not
+ * that, which is a landing decision's fallback rather than an error — the cookies are the session.
+ */
+function userIdOf(body: Record<string, unknown> | null): string | null {
+  const user = body?.user;
+  if (user === null || typeof user !== "object") return null;
+  const id = (user as { id?: unknown }).id;
+  return typeof id === "string" && id !== "" ? id : null;
+}
+
+/**
  * Spend the verifier: ask Neon to swap `?neon_auth_session_verifier=` for a session.
  *
  * The request is the one `@neon/auth`'s own middleware would make (`exchangeOAuthToken`), built here
@@ -189,5 +208,7 @@ export async function exchangeVerifier(options: {
 
   const relayable = setCookiesOf(response.headers).filter(isRelayableSessionCookie);
   if (relayable.length === 0) return { ok: false, failure: "unknown", status: response.status };
-  return { ok: true, setCookies: relayable };
+  // The body is read *after* the cookies are in hand: the session is what the exchange is for, and
+  // a body that cannot be parsed must not turn a successful sign-in into a refusal.
+  return { ok: true, setCookies: relayable, userId: userIdOf(await jsonOf(response)) };
 }

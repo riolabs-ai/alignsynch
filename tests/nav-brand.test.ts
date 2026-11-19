@@ -186,6 +186,8 @@ const ADMIN_GROUP = [
   "/admin/permissions",
   // #1138 — the transactional-mail override editor, the third reference row.
   "/admin/email-templates",
+  // #1252 — the project spec, the fourth reference row and still before the log.
+  "/admin/spec",
   "/admin/audit",
 ];
 

@@ -123,6 +123,13 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/admin/permissions", mode: "column" },
   { path: "/admin/email-templates", mode: "column" },
   { path: "/admin/email-templates/[id]", mode: "column" },
+  // #1252 — the project spec's three routes, one panel inside `StageColumn` like every other
+  // console page. The reader the next card adds (the pinned Validation column, the 208px submenu)
+  // is a wide *element* inside the column rather than a wider page, and this row is where it says
+  // so: the reading measure is the console family's, not the matrix's.
+  { path: "/admin/spec", mode: "column" },
+  { path: "/admin/spec/validation", mode: "column" },
+  { path: "/admin/spec/[group]", mode: "column" },
   { path: "/admin/review", mode: "column" },
   { path: "/admin/templates", mode: "column" },
   { path: "/admin/templates/[id]", mode: "column" },

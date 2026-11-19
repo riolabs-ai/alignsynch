@@ -236,6 +236,21 @@ const nextConfig = {
           { key: "Cache-Control", value: "no-store, max-age=0" },
         ],
       },
+      /**
+       * #1252 — the project spec. Every one of its three routes is NDA material behind a role
+       * gate, so the response says so in two headers the page cannot be asked to remember:
+       * `private, no-store` keeps a shared cache from holding a served page, and
+       * `X-Robots-Tag` keeps a crawler out of the one surface a `robots.txt` cannot gate.
+       * `/reset/:path*`'s own rule is the precedent: a header that belongs to a *route family*
+       * belongs beside the router, not in three page modules that a fourth would forget.
+       */
+      {
+        source: "/admin/spec/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Robots-Tag", value: "noindex" },
+        ],
+      },
     ];
   },
   /**

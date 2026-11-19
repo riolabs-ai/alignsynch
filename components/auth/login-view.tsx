@@ -123,6 +123,7 @@ export function LoginView({
   marks,
   markSrc,
   next,
+  landing,
   prompt = null,
   googleFailure: googleFailureProp,
   demo,
@@ -171,6 +172,15 @@ export function LoginView({
    */
   onSwitchToRegister?: () => void;
   next: string;
+  /**
+   * "Where do I go now that I'm signed in?" — the server action from
+   * `app/(auth)/login/landing-action.ts` (#1252), wired by the page with the raw `?next=` already
+   * bound on the server. `next` above is validated on a **signed-out** request and cannot know the
+   * role; a stakeholder's destination only becomes decidable once the session exists. Optional, so
+   * stage 4's embedded mount keeps the plain destination, and a failed ask falls back to `next` —
+   * a landing question must never fail a sign-in that already succeeded.
+   */
+  landing?: () => Promise<string>;
   /**
    * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
    * every other visit — the words are the login fixture's (`lib/auth/invite-prompt.ts` decides
@@ -278,7 +288,11 @@ export function LoginView({
       return;
     }
 
-    router.push(next);
+    // Where to go is a question for the server once there is a session (#1252): a stakeholder
+    // lands on the project spec, everyone else on the `next` this page already validated. A
+    // refused/failed ask is not a failed sign-in — the destination the page rendered is kept.
+    const destination = landing === undefined ? next : await landing().catch(() => next);
+    router.push(destination);
     router.refresh();
   };
 

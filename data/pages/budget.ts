@@ -225,6 +225,31 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-email-templates",
     budget: 0,
   },
+  // #1252 — the project spec's R0 spine, three routes and one fixture: the Overview, the Validation
+  // matrix and one group's page are three depths of the same surface, so the same number covers all
+  // three (as `/admin/docs` and its two derived views are). Budget 0 from the first commit: the
+  // heading, the confidential notice, the two promises and the group body are
+  // `data/pages/admin-spec.ts`, so the next literal written into `components/admin/spec/**` or into
+  // any of the three page modules is a red build. The reader the next card adds is expected to
+  // arrive at 0 as well, in this directory.
+  "/admin/spec": {
+    page: "app/(mainlayout)/admin/spec/page.tsx",
+    dirs: ["components/admin/spec"],
+    fixture: "data/pages/admin-spec",
+    budget: 0,
+  },
+  "/admin/spec/validation": {
+    page: "app/(mainlayout)/admin/spec/validation/page.tsx",
+    dirs: ["components/admin/spec"],
+    fixture: "data/pages/admin-spec",
+    budget: 0,
+  },
+  "/admin/spec/[group]": {
+    page: "app/(mainlayout)/admin/spec/[group]/page.tsx",
+    dirs: ["components/admin/spec"],
+    fixture: "data/pages/admin-spec",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is

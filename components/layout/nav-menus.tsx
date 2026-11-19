@@ -25,6 +25,7 @@ import {
   Compass,
   CreditCard,
   DollarSign,
+  FileCheck2,
   FileQuestion,
   Gauge,
   HeartHandshake,
@@ -507,6 +508,9 @@ const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
   broadcast: Megaphone,
   review: ClipboardCheck,
   audit: ScrollText,
+  // #1252 — Project Spec is `FileCheck2`: a document with a tick is "this page states what is
+  // agreed and what is proven", and it is the one glyph in this group that draws a document.
+  spec: FileCheck2,
 };
 
 /**
@@ -546,7 +550,7 @@ function AlignSynchMenu({
   const nav = sectionOf(copy, "nav-alignsynch");
   return (
     <>
-      {menuFor(viewer.role).map((group) => (
+      {menuFor(viewer.role, viewer.capabilities).map((group) => (
         <Fragment key={group.label}>
           <NavGroup label={itemLabel(nav, group.label)} labelled={labelled}>
             {group.items.map((item) => {

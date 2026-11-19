@@ -281,6 +281,36 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/spec",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The project spec's front page and a stakeholder's landing: the confidential notice, what the spine is, where the Validation matrix sits one click away, and one group's page per segment below it. Read-only — there is no form, no action and no write on any of the three routes.",
+    notes:
+      "#1252 — the R0 spine, and deliberately not the reader: the submenu, the pinned Validation column, the eleven story pages and their met/total counts are the next card (t_f5458e3d), parented on this one, so what this surface draws is the architecture — heading, confidential notice, the two promises — and nothing the reader will redraw. **The gate is the card.** `requireAdminProduct()` first (#509), then `requireSpecReader()` (`lib/auth/require-role.ts`), which is membership of `SPEC_READERS` — `stakeholder`, `admin`, `owner` — and *not* a rung comparison: `support` outranks `stakeholder` and is refused, and a member or a support seat is answered with the byte-for-byte unknown-URL 404, never a 403 and never a redirect, because either would confirm the page exists. Signed out goes to `/login?next=/admin/spec`. `force-dynamic`; `Cache-Control: private, no-store` and `X-Robots-Tag: noindex` come from `next.config.mjs` for the whole route family, so a fourth spec page cannot forget them. The template is `/admin/permissions` (`components/admin/permissions/permissions-console.tsx`): the same `StageColumn`, the same two-gate order, the same honest panel; the axis that varies is the data source (three static depths of one fixture instead of a parsed matrix) and the absence of a filter band. `data/pages/admin-spec.ts` holds every word at E23 budget 0 for all three routes; `data/surface-columns.ts` records all three as `column`. The route answers on both brands today because the console capability does, but the content is the alignment product's own spec, which is why `templates` names `alignsynch`.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/spec/validation",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The spec's Validation route: the address the pinned submenu row and the landing's own call to action point at, behind the same two gates.",
+    notes:
+      "#1252 — the same gates in the same order as `/admin/spec` (`requireAdminProduct()` then the spec-reader gate), the same unknown-URL 404 for a member or a support seat, and the same fixture at E23 budget 0. The matrix itself — three columns, the sticky status box, 76 rows in four sections — is the next card; the address exists now so the refusal is provable at the depth the submenu links to rather than only at the parent. A static segment beside `[group]`, so Next resolves it before the group page.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/spec/[group]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "One spec group's page: the segment the landing's eleven entries name, drawn in the fixture's own sentence.",
+    notes:
+      "#1252 — the third route of the same family and the same two gates. **The segment is not a vocabulary check in this card**: eleven group ids exist in the source the reader card reads, and a 404 on a mistyped group would be indistinguishable from the gate's 404 — which is the one answer that has to stay unambiguous — so the page renders whatever the address named and the reader card decides what a group id means. `params` is awaited before the gate (Next 16), so the `next` handed to `/login` is the address the person actually asked for. `force-dynamic`, the same headers, the same fixture.",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],

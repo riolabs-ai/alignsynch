@@ -124,6 +124,8 @@ describe("the shell's menus", () => {
       "/admin/permissions",
       // #1138 — the transactional-mail override editor: the words the product sends.
       "/admin/email-templates",
+      // #1252 — the project spec, the fourth reference row.
+      "/admin/spec",
       "/admin/audit",
       "/dashboard",
       "/dashboard/relationships",
