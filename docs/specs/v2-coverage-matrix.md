@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › v2 coverage matrix — the 23 screens, measured · prev [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › v2 coverage matrix — the 23 screens, measured · prev [Stage display](ux-stages.md) · next [v2 rectification register — every delta, named](v2-rectification.md)
 
 <!-- docs-nav:end -->
 
@@ -111,6 +111,6 @@ to render.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › v2 coverage matrix — the 23 screens, measured · prev [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › v2 coverage matrix — the 23 screens, measured · prev [Stage display](ux-stages.md) · next [v2 rectification register — every delta, named](v2-rectification.md)
 
 <!-- docs-nav:end -->

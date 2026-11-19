@@ -643,6 +643,11 @@
           "path": "specs/v2-coverage-matrix.md",
           "title": "v2 coverage matrix — the 23 screens, measured",
           "question": "Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?"
+        },
+        {
+          "path": "specs/v2-rectification.md",
+          "title": "v2 rectification register — every delta, named",
+          "question": "Which v2 spec doc's screen differs from its bundle reference, exactly how, and what would a card have to accept to close it?"
         }
       ]
     },

@@ -1,0 +1,615 @@
+{
+  "$comment": [
+    "The doc→route map for scripts/design-audit.mjs. One row per doc that carries a build status.",
+    "Authored, never inferred: a route is here because a person read the doc and found the screen it",
+    "describes, and the `note` says which sentence decided it. An unmapped doc is `unverifiable`,",
+    "never `matches` — do not add a row from a title alone.",
+    "",
+    "`route: null` means the doc describes no page (an email body, a copy rule sheet). The harness",
+    "captures nothing for it and the register says why. Placeholders — {relationship}, {trial},",
+    "{review}, {flat}, {summer}, {instance}, {template}, {token} — are resolved from `entities`",
+    "below, which is the demo seed measured on 2026-11-19. A placeholder with no id makes the run",
+    "print the row it could not resolve instead of quietly capturing a 404.",
+    "",
+    "`auth` is the card's vocabulary: public | session. `role` is the demo seat that may see it,",
+    "because the demo session is per-seat and an admin row captured as an Initiator is the sign-in",
+    "page, not a verdict."
+  ],
+  "measuredAt": "2026-11-19",
+  "base": "https://demo.alignsynch.com",
+  "entities": {
+    "relationship": "relationship-assessment-instance-avery-rowan-flat",
+    "trial": "relationship-assessment-instance-avery-rowan-trial",
+    "review": "relationship-assessment-instance-rowan-avery-review",
+    "flat": "relationship-assessment-instance-avery-rowan-flat",
+    "summer": "relationship-assessment-instance-avery-rowan-summer",
+    "instance": "assessment-instance-avery-rowan",
+    "template": "brother-sister",
+    "token": "",
+    "wizardTemplate": "friends",
+    "draftInstance": "assessment-instance-avery-rowan-trial",
+    "closed": "relationship-assessment-instance-avery-rowan"
+  },
+  "rows": [
+    {
+      "doc": "guides/account/account-menu.md",
+      "title": "Account Menu",
+      "route": "/dashboard",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/11-spec-design-page-account-settings-v2/settings.html",
+        "query": ""
+      },
+      "note": "The menu is shell chrome, drawn on every session page; /dashboard is the cheapest page that renders it. The doc's own shot is bundle 11's account-menu-1280."
+    },
+    {
+      "doc": "guides/account/delete-your-account.md",
+      "title": "Delete Your Account",
+      "route": "/settings",
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "/settings is where the doc's 'Account Settings › Delete Account' lives. No bundle draws the confirm: the doc's shot is an 18 Nov prototype capture, so there is no reference HTML to compare against."
+    },
+    {
+      "doc": "guides/account/profile-and-password.md",
+      "title": "Profile and Password",
+      "route": "/settings",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/11-spec-design-page-account-settings-v2/settings.html",
+        "query": ""
+      },
+      "note": "/settings, the page the doc's two cards (Profile, Email) sit on. The doc itself says the bundle 11 render is stale — compared anyway, with that staleness recorded rather than assumed."
+    },
+    {
+      "doc": "guides/admin/crud-and-permissions.md",
+      "title": "CRUD & Permissions",
+      "route": "/admin/permissions",
+      "auth": "session",
+      "role": "admin",
+      "reference": {
+        "html": "spec-design-v2-bundles/12-spec-design-page-admin-crud-matrix-v2/admin-crud-matrix.html",
+        "query": ""
+      },
+      "note": "The doc names the address outright: 'Admin rail › CRUD & Permissions · /admin/permissions'. Admin seat only."
+    },
+    {
+      "doc": "guides/admin/email-templates.md",
+      "title": "Email Templates",
+      "route": "/admin/email-templates",
+      "auth": "session",
+      "role": "admin",
+      "reference": null,
+      "note": "The doc names '/admin/email-templates', but its own reference — rc1.3 bundle 09 — ships only README.md and IMPLEMENTATION-PROMPT.md, no render. So there is no reference to pair: the row is judged against the copy the doc says the page carries."
+    },
+    {
+      "doc": "guides/admin/who-sees-the-admin-rail.md",
+      "title": "Who Sees the Admin Rail",
+      "route": "/admin/permissions",
+      "auth": "session",
+      "role": "admin",
+      "reference": {
+        "html": "spec-design-v2-bundles/12-spec-design-page-admin-crud-matrix-v2/admin-crud-matrix.html",
+        "query": ""
+      },
+      "note": "The rail is drawn on every admin page; /admin/permissions is the one the doc describes in detail. The doc says no shot of the rail by seat exists, which is itself the gap."
+    },
+    {
+      "doc": "guides/counterparty/accept-or-decline-an-invite.md",
+      "title": "Accept or Decline an Invite",
+      "route": "/invite/{token}",
+      "auth": "public",
+      "role": "public",
+      "reference": {
+        "html": "spec-design-v2-bundles/02-spec-design-page-onboarding-v2/counterparty-join.html",
+        "query": ""
+      },
+      "note": "The three-step join is /invite/[token]. It needs a live invite token, which the demo seed does not publish outside the Initiator's copy-link control — so {token} has no id and the row is unverifiable unless one is supplied."
+    },
+    {
+      "doc": "guides/counterparty/ask-to-be-removed.md",
+      "title": "Ask to Be Removed",
+      "route": "/dashboard/relationships/{relationship}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "Leave Relationship / Request My Removal are on the relationship detail. The doc says 'no shot' and its citations are data/pages/dashboard-relationship-detail.ts, so there is no reference render to pair."
+    },
+    {
+      "doc": "guides/counterparty/save-these-aspects-as-a-template.md",
+      "title": "Save These Aspects as a Template",
+      "route": "/dashboard/relationships/{review}?tab=aspects",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=live"
+      },
+      "note": "The doc's 'Where: Relationship › Aspects tab'. The {review} relationship is the one that draws 'Save this template to My Templates' on the demo seed."
+    },
+    {
+      "doc": "guides/counterparty/when-a-relationship-pauses.md",
+      "title": "When a Relationship Pauses",
+      "route": "/dashboard/relationships/{trial}",
+      "auth": "session",
+      "role": "counterparty",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=trial-ended"
+      },
+      "note": "Counterparty view of the pause: 'Your badge ⏸ Paused · Waiting on Marcus'. Captured as the counterparty seat because the doc's whole subject is what the other person sees."
+    },
+    {
+      "doc": "guides/initiator/add-a-card-or-take-your-extra-week.md",
+      "title": "Add a Card or Take Your Extra Week",
+      "route": "/dashboard/relationships/{trial}?tab=payment",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=trial-ended"
+      },
+      "note": "The doc starts at 'the paused Payment tab'; {trial} is the seeded relationship that draws 'Get 7 More Days Free'."
+    },
+    {
+      "doc": "guides/initiator/copy-resend-or-cancel-an-invite.md",
+      "title": "Copy, Resend or Cancel an Invite",
+      "route": "/dashboard/relationships/{summer}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=invited"
+      },
+      "note": "Copy Invite Link / Resend Invite appear while an invite is waiting; {summer} is the seeded waiting invite. The reference is the bundle's invited state."
+    },
+    {
+      "doc": "guides/initiator/create-your-account.md",
+      "title": "Create Your Account",
+      "route": "/dashboard/templates/{wizardTemplate}/create/commit?instance={draftInstance}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 4",
+        "stage": 4
+      },
+      "note": "Stage 4 is .../create/commit. With ?instance= it renders 'Create your account' (measured 2026-11-19), so no driving is needed; the seeded instance is the anchor. The reference is the prototype's stage 4, reached by pressing Stage 4 — the bundle rewrites ?step=N to stage 1."
+    },
+    {
+      "doc": "guides/initiator/edit-a-draft-or-sent-invite.md",
+      "title": "Edit a Draft or Sent Invite",
+      "route": "/dashboard/relationships/{flat}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=draft"
+      },
+      "note": "A draft opens back in the wizard and a sent invite is edited on the relationship; {flat} is the seeded draft-shaped relationship. The documented state is the draft, so the reference is ?state=draft."
+    },
+    {
+      "doc": "guides/initiator/if-a-draft-cant-be-created.md",
+      "title": "If a Draft Can't Be Created",
+      "route": "/assessment/new/failed",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-rc1.3-bundle/04-create-failed-screen-1226/create-failed.html",
+        "query": ""
+      },
+      "note": "/assessment/new/failed is the address a failed create lands on. Its docstring says the screen is drawn from create-failed.html in the rc1.3 bundle — the same file named in the doc's frontmatter."
+    },
+    {
+      "doc": "guides/initiator/my-relationships-and-start.md",
+      "title": "My Relationships and Start",
+      "route": "/dashboard",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/05-spec-design-page-start-my-relationships-v2/start.html",
+        "query": ""
+      },
+      "note": "The doc covers two screens; Start (/dashboard) is first and is where the 'Your Next Steps' heading it cites lives. The list is the sibling row below."
+    },
+    {
+      "doc": "guides/initiator/my-templates.md",
+      "title": "My Templates",
+      "route": "/dashboard/templates?tab=mine",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/06-spec-design-page-templates-v2/my-templates.html",
+        "query": ""
+      },
+      "note": "The doc's citation is data/pages/dashboard-templates.ts:50, the 'mine' tab; ?tab=mine is that tab's address on the demo seed."
+    },
+    {
+      "doc": "guides/initiator/payment.md",
+      "title": "Payment",
+      "route": "/dashboard/payment",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/08-spec-design-page-payment-v2/payment.html",
+        "query": ""
+      },
+      "note": "The doc's two sections are Memberships and Payment Method, both on /dashboard/payment."
+    },
+    {
+      "doc": "guides/initiator/pick-a-template.md",
+      "title": "Pick a Template",
+      "route": "/relationship-templates",
+      "auth": "public",
+      "role": "public",
+      "reference": {
+        "html": "spec-design-v2-bundles/02-spec-design-page-onboarding-v2/relationship-templates.html",
+        "query": ""
+      },
+      "note": "The doc names the address and its auth: 'Where: Relationship Templates (/relationship-templates), public, no sign-in needed'."
+    },
+    {
+      "doc": "guides/initiator/send-the-invite.md",
+      "title": "Send the Invite",
+      "route": "/dashboard/templates/{wizardTemplate}/create/invite?instance={draftInstance}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 5",
+        "stage": 5
+      },
+      "note": "Stage 5 is .../create/invite, and ?instance= renders 'Send the invitation' (measured 2026-11-19). The reference is the prototype's stage 5 by pressing Stage 5."
+    },
+    {
+      "doc": "guides/initiator/set-up-details-settings-and-aspects.md",
+      "title": "Set Up Details, Settings and Aspects",
+      "route": "/dashboard/templates/{template}/create",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 1",
+        "stage": 1
+      },
+      "note": "Stage 1 is .../create. Captured at stage 1 because that is the stage whose rail labels (Done · In Progress · Up Next · Later) the doc describes."
+    },
+    {
+      "doc": "guides/initiator/when-a-relationship-pauses.md",
+      "title": "When a Relationship Pauses",
+      "route": "/dashboard/relationships/{trial}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=trial-ended"
+      },
+      "note": "The Initiator's side of the pause, on the relationship detail: the stage gauge stays on Stage 6 with a Paused chip. {trial} is the seeded paused relationship."
+    },
+    {
+      "doc": "guides/initiator/your-7-days-free.md",
+      "title": "Your 7 Days Free",
+      "route": "/dashboard/relationships/{trial}?tab=payment",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=live"
+      },
+      "note": "The doc's At a Glance is the Payment tab before/while the trial runs; the bundle's live state is the running trial, which is what the doc's own shot (rd-live-payment-1280) photographs."
+    },
+    {
+      "doc": "guides/shared/answer-the-assessment.md",
+      "title": "Answer the Assessment",
+      "route": "/assessment/instances/{instance}/answer",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/10-spec-design-page-assessment-v2/assessment.html",
+        "query": ""
+      },
+      "note": "The doc's 'Where: Relationship › Start Assessment or Continue Assessment' resolves to the answer sheet; {instance} is the live seeded relationship's instance."
+    },
+    {
+      "doc": "guides/shared/chat-and-discussion.md",
+      "title": "Chat and Discussion",
+      "route": "/dashboard/relationships/{relationship}?tab=discussion",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/07-spec-design-page-chat-v2/chat.html",
+        "query": ""
+      },
+      "note": "The in-relationship thread is the Discussion tab, which is where the Aspect-tagged composer lives; /dashboard/chat is the cross-relationship index of the same thread."
+    },
+    {
+      "doc": "guides/shared/leave-a-relationship.md",
+      "title": "Leave a Relationship",
+      "route": "/dashboard/relationships/{closed}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "The doc's flow starts at the relationship menu (⋮). {closed} is the seeded relationship that has already been left, which is the state the doc describes after the fact. It says 'no shot: there is no bundle, QA, spec or prototype render of the leave flow'."
+    },
+    {
+      "doc": "guides/shared/propose-a-change.md",
+      "title": "Propose a Change",
+      "route": "/dashboard/relationships/{relationship}?tab=aspects",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=live"
+      },
+      "note": "The lock and the propose control live on the Aspects tab while Stage 6 is live."
+    },
+    {
+      "doc": "guides/shared/results-and-align.md",
+      "title": "Results and Align",
+      "route": "/dashboard/relationships/{relationship}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/04-spec-design-page-align-v2/align.html",
+        "query": ""
+      },
+      "note": "Results are on the relationship detail once both have answered — the doc's citations are dashboard-relationship-detail.ts and the Next Step band, and the demo's live relationship has both sides answered. Bundle 04 is the Align reference."
+    },
+    {
+      "doc": "reference/changelog.md",
+      "title": "Changelog",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "No screen: a dated list of what changed. There is nothing to photograph, and the register says so rather than inventing a route."
+    },
+    {
+      "doc": "reference/copy/copy-rules.md",
+      "title": "Copy Rules",
+      "route": null,
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "No screen of its own — the rules are checked on the screens that obey them, so the register judges this doc against the live text of the routes it governs (Title Case, 'Stage 6' not 'Align is paused')."
+    },
+    {
+      "doc": "reference/copy/glossary.md",
+      "title": "Glossary",
+      "route": null,
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "No screen: a word list, judged against the live text (does the app say Relationship, Assessment, Aspect) and against docs/glossary.md, the repo's generated copy."
+    },
+    {
+      "doc": "reference/copy/retired-terms.md",
+      "title": "Retired Terms",
+      "route": null,
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "No screen: a retirement list, judged by searching the live DOM text of the product routes for the retired words (session, instance, quiz)."
+    },
+    {
+      "doc": "reference/emails/counterparty-joined.md",
+      "title": "Counterparty Joined Email",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "An email is not a page. The subject and body are in content/email-bodies.md and lib/email/templates/, which the doc cites, so the delta is a text comparison there."
+    },
+    {
+      "doc": "reference/emails/invitation.md",
+      "title": "Invitation Email",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "An email is not a page; the doc cites lib/email/templates/invitation.ts and content/email-bodies.md."
+    },
+    {
+      "doc": "reference/emails/paused-counterparty.md",
+      "title": "Paused Email (Counterparty)",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "An email is not a page; the subject is in lib/email/templates/relationship-paused.ts, which the doc cites."
+    },
+    {
+      "doc": "reference/emails/paused-initiator.md",
+      "title": "Paused Email (Initiator)",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "An email is not a page; the subject is in lib/email/templates/trial-ended-paused.ts, which the doc cites."
+    },
+    {
+      "doc": "reference/emails/release-notes-and-banners.md",
+      "title": "Release Notes and Banners",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "Mail and rasters, not a screen; the doc cites public/og/ and lib/email/release-note.ts."
+    },
+    {
+      "doc": "reference/emails/trial-started.md",
+      "title": "Trial Started Line",
+      "route": null,
+      "auth": "public",
+      "role": "public",
+      "reference": null,
+      "note": "A single line in an email, and Planned: the doc points at PR #1240."
+    },
+    {
+      "doc": "reference/stages/stage-1-details.md",
+      "title": "Stage 1 · Details",
+      "route": "/dashboard/templates/{template}/create",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 1",
+        "stage": 1
+      },
+      "note": "Stage 1 of the five-stage flow; the rail must print 'Stage 1 of 5' (docs/specs/flow-stages.md)."
+    },
+    {
+      "doc": "reference/stages/stage-2-settings.md",
+      "title": "Stage 2 · Settings",
+      "route": "/dashboard/templates/{template}/create/mode",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 2",
+        "stage": 2
+      },
+      "note": "Stage 2 is the mode step. /create/mode answers 307 → /create until a draft exists, so the harness fills stage 1 and presses the advance control, the way a person does (measured 2026-11-19). The reference is the prototype's stage 2 by pressing Stage 2.",
+      "prepare": "wizard"
+    },
+    {
+      "doc": "reference/stages/stage-3-aspects.md",
+      "title": "Stage 3 · Aspects",
+      "route": "/dashboard/templates/{template}/create/aspects",
+      "auth": "session",
+      "role": "initiator",
+      "reference": null,
+      "note": "Stage 3's own address answers 307 → /create on every seeded instance, and the flow cannot be driven past stage 2 headlessly: stage 2's advance control is inert until a Mode/Setting choice is recorded, and the harness does not make product choices on a reader's behalf. So this row is unverifiable, and it carries no reference render — pairing stage 3's reference with a stage-2 screenshot would be the guess this register exists to avoid."
+    },
+    {
+      "doc": "reference/stages/stage-4-account.md",
+      "title": "Stage 4 · Account",
+      "route": "/dashboard/templates/{wizardTemplate}/create/commit?instance={draftInstance}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 4"
+      },
+      "note": "Stage 4 is .../create/commit, and ?instance= renders it (measured 2026-11-19: the page heads 'Create your account' and its advance control reads 'Continue to Stage 5'). No driving needed. The reference is the prototype's stage 4 by pressing Stage 4."
+    },
+    {
+      "doc": "reference/stages/stage-5-invite.md",
+      "title": "Stage 5 · Invite",
+      "route": "/dashboard/templates/{wizardTemplate}/create/invite?instance={draftInstance}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
+        "query": "",
+        "click": "Stage 5"
+      },
+      "note": "Stage 5 is .../create/invite, and ?instance= renders it (the page heads 'Send the invitation'). The reference is the prototype's stage 5 by pressing Stage 5."
+    },
+    {
+      "doc": "reference/stages/stage-6-align.md",
+      "title": "Stage 6 · Align",
+      "route": "/dashboard/relationships/{relationship}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": "?state=live"
+      },
+      "note": "Stage 6 is not a wizard step: it lands on the relationship detail. {relationship} is the seeded relationship whose Stage 6 is live."
+    },
+    {
+      "doc": "reference/states/answer-scale.md",
+      "title": "The Answer Scale",
+      "route": "/assessment/instances/{instance}/answer",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/10-spec-design-page-assessment-v2/assessment.html",
+        "query": ""
+      },
+      "note": "The 1–5 scale with its two labels is the answer sheet's control."
+    },
+    {
+      "doc": "reference/states/relationship-states-by-role.md",
+      "title": "Relationship States by Role",
+      "route": "/dashboard/relationships",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
+        "query": ""
+      },
+      "note": "The state vocabulary is visible on the list's state chips and on the detail's badge; the list is the one page that draws several states at once."
+    },
+    {
+      "doc": "reference/states/status-chips.md",
+      "title": "Status Chips",
+      "route": "/dashboard/relationships/{relationship}",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/09-spec-design-system-tokens-v2/patterns.html",
+        "query": ""
+      },
+      "note": "The chips are the token sheet's patterns page; the live screen that draws the most of them is the relationship detail."
+    },
+    {
+      "doc": "start/core-concepts.md",
+      "title": "Core Concepts",
+      "route": "/how-it-works",
+      "auth": "public",
+      "role": "public",
+      "reference": {
+        "html": "spec-design-v2-bundles/02-spec-design-page-onboarding-v2/relationship-templates.html",
+        "query": ""
+      },
+      "note": "Core Concepts (Stage 6, Gap, Extra Week) is the public explainer at /how-it-works; the note is that no bundle draws /how-it-works, so the reference is the onboarding bundle's vocabulary rather than a matching screen."
+    },
+    {
+      "doc": "start/plans-and-trial.md",
+      "title": "Plans and the Free Trial",
+      "route": "/pricing",
+      "auth": "public",
+      "role": "public",
+      "reference": {
+        "html": "spec-design-v2-bundles/02-spec-design-page-onboarding-v2/pricing.html",
+        "query": ""
+      },
+      "note": "The plan and trial explainer is /pricing; the doc's own bundle reference is bundle 08's payment page, which is the signed-in mirror of the same decision."
+    },
+    {
+      "doc": "start/quickstart.md",
+      "title": "Quickstart",
+      "route": "/dashboard",
+      "auth": "session",
+      "role": "initiator",
+      "reference": {
+        "html": "spec-design-v2-bundles/05-spec-design-page-start-my-relationships-v2/start.html",
+        "query": ""
+      },
+      "note": "Quickstart walks the same path Start opens on, so the surface is /dashboard signed in."
+    },
+    {
+      "doc": "start/what-is-alignsynch.md",
+      "title": "What Is AlignSynch",
+      "route": "/",
+      "auth": "public",
+      "role": "public",
+      "reference": {
+        "html": "spec-design-v2-bundles/02-spec-design-page-onboarding-v2/pricing.html",
+        "query": ""
+      },
+      "note": "The public front door; the marketing home is /. No bundle draws the home page, which the register records instead of hiding."
+    }
+  ]
+}
