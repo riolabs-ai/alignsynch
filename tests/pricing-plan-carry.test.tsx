@@ -162,12 +162,15 @@ describe("what a plan card can carry, and what it cannot", () => {
       expect(row === null ? null : PLAN_BILLING_TIER[row]).toBe(tier);
     }
     // …and what stage 5 actually receives keeps both halves of the choice.
-    const carried = carriedPlanOf({ planId: "basic", interval: "year" });
+    const carried = carriedPlanOf({ planId: "basic", interval: "month" });
     expect(carried).not.toBeNull();
     expect(carried && PLAN_BILLING_TIER[carried.row]).toBe("basic");
-    expect(carried?.interval).toBe("year");
-    // The yearly tier is Single Annual's row, not Single's — the pair is matched exactly.
-    expect(carried?.row).toBe("annual");
+    expect(carried?.interval).toBe("month");
+    // The monthly plan is that tier's only row, and the pair is matched exactly: the yearly SKU
+    // the owner delisted on 2026-11-19 claims no row, so a carried `basic/year` reads as no plan
+    // carried rather than as the monthly row at a yearly address.
+    expect(carried?.row).toBe("single");
+    expect(carriedPlanOf({ planId: "basic", interval: "year" })).toBeNull();
     expect(carriedPlanOf(null)).toBeNull();
     // The removed Family plan's tier claims no row any more, so a cookie that still names it reads
     // as no plan carried at all rather than as a fallback row.
@@ -181,9 +184,9 @@ describe("what a plan card can carry, and what it cannot", () => {
 
 describe("every /pricing action opens the flow's door (#1043)", () => {
   /**
-   * The page's bands as `/pricing` builds them (#1127): the three approved plans, no entitlement,
-   * so every card offers its own action. Rendered the way the page composes them, so the assertion
-   * is about the render a visitor gets rather than about a component in isolation.
+   * The page's bands as `/pricing` builds them (#1127): the one plan the catalogue sells, no
+   * entitlement, so its card offers its own action. Rendered the way the page composes them, so the
+   * assertion is about the render a visitor gets rather than about a component in isolation.
    */
   function bands(): { plans: string; cta: string } {
     const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
@@ -310,9 +313,7 @@ let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 let posted: { planId?: string; interval?: string }[] = [];
 
-async function mountWalk(
-  carriedPlan?: PlanIntent & { row: "single" | "annual" },
-): Promise<HTMLDivElement> {
+async function mountWalk(carriedPlan?: PlanIntent & { row: "single" }): Promise<HTMLDivElement> {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -367,19 +368,19 @@ afterEach(async () => {
 
 describe("stage 5 opens with the carried plan already selected", () => {
   it("draws the row checked, names it, and continues with the carried tier and interval", async () => {
-    const where = await mountWalk({ planId: "basic", interval: "year", row: "annual" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
 
     // The render says what it carried — the attribute the acceptance quotes.
     const section = where.querySelector("[data-plan-carried]");
     expect(section?.getAttribute("data-plan-carried")).toBe("basic");
-    expect(section?.getAttribute("data-plan-carried-interval")).toBe("year");
+    expect(section?.getAttribute("data-plan-carried-interval")).toBe("month");
 
     // …and the row itself is the selected one, before anything is pressed.
     const checked = where.querySelector<HTMLInputElement>('input[name="plan"]:checked');
-    expect(checked?.value).toBe("annual");
+    expect(checked?.value).toBe("single");
     // The panel's own recap names the plan the money would buy (#1036's line, now filled).
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "annual")} · ${itemLabel(PLANS, "annual-price")}${itemLabel(PLANS, "annual-interval")}`,
+      `${itemLabel(PLANS, "single")} · ${itemLabel(PLANS, "single-price")}${itemLabel(PLANS, "single-interval")}`,
     );
 
     // A checked row fires no `change`, so the panel carries one control that opens the card step.
@@ -390,7 +391,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
 
     expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
     // The checkout names the tier, and the interval the reader chose on `/pricing`.
-    expect(posted).toEqual([{ planId: "basic", interval: "year" }]);
+    expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
   });
 
   it("carries the row, not the walk's own id, whatever the interval", async () => {
@@ -439,11 +440,12 @@ describe("stage 5 opens with the carried plan already selected", () => {
     expect(page).toContain("{...(carriedPlan === null ? {} : { carriedPlan })}");
   });
 
-  it("keeps the plan rows' own words: the catalogue's two plans", () => {
+  it("keeps the plan row's own words: the catalogue's one plan", () => {
     // #1043 changes where a plan is chosen, never what it is called; #1127 set the catalogue and
-    // the owner narrowed it to these two on 2026-11-19 by removing Family.
-    expect(itemLabel(PLANS, "single")).toBe("Single");
-    expect(itemLabel(PLANS, "annual")).toBe("Single Annual");
+    // the owner has narrowed it twice since — Family first, then the yearly SKU (2026-11-19) —
+    // leaving Basic, whose name is now the `billing_plan` mirror's own word for that tier.
+    expect(itemLabel(PLANS, "single")).toBe("Basic");
+    expect(itemLabel(PLANS, "single-note")).toBe("1 relationship");
     // …and the copy that only the deleted checkout button read is gone, so nothing names a state
     // this product no longer has on `/pricing`.
     expect((pricingPageCopy.sections ?? []).flatMap((section) => section.items ?? [])).not.toEqual(

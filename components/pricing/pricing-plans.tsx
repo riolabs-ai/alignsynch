@@ -15,10 +15,10 @@ import Link from "next/link";
  * with a monthly/yearly switch and a "Save up to N%" badge: every tier had two intervals, so the
  * reader picked a tier and then a frequency, and the page printed a `/mo` figure for a yearly
  * charge divided by twelve. The artifact sells **one card per plan, each with one interval** —
- * Single and Single Annual, the two the owner approved on #1127 and then narrowed to on 2026-11-19
- * by removing Family — where the interval is a property of the plan. So the switch, the discount
- * badge and the free tier's card are removed rather than defaulted, and there is no reader-visible
- * control on this page but the two actions.
+ * Basic, the one plan left after the owner removed Family and then Single Annual on 2026-11-19 —
+ * where the interval is a property of the plan. So the switch, the discount badge and the free
+ * tier's card are removed rather than defaulted, and there is no reader-visible control on this
+ * page but the one action.
  *
  * **This component owns no word and no figure.** The hero, every card and the strip arrive from
  * `lib/pricing-page.ts`, which joins `data/pages/pricing.ts` (the words) to

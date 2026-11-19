@@ -41,7 +41,7 @@ import {
 import { lifecycleStageSection } from "./lifecycle";
 
 /**
- * The plan panel's three rows, priced from the catalogue that sells them (#975, #1127).
+ * The plan panel's rows, priced from the catalogue that sells them (#975, #1127).
  *
  * This section used to carry two typed prices — `$9.95` and `$19.85` — under a comment claiming
  * they were "data here for the reason every other figure in this tree is: a price typed into
@@ -50,8 +50,8 @@ import { lifecycleStageSection } from "./lifecycle";
  * figure, while stage 5 of the create flow asked the same person for a different pair over the
  * identical two choices. Three prices, one relationship, no gate anywhere that compared them.
  *
- * So the rows are **derived, never typed**: `data/membership-plans.ts` names the plans
- * (Single `$9.99`/mo · Single Annual `$99`/yr — the owner removed the third, Family, on
+ * So the rows are **derived, never typed**: `data/membership-plans.ts` names the plan the catalogue
+ * sells (Basic `$9.99`/mo, one relationship — Family went first and Single Annual after it, both on
  * 2026-11-19), and every amount in this section is `formatCurrency(spec.priceCents)` read out of
  * it. A plan that stops existing is a thrown error at import — a screen with a missing price is a
  * screen that would otherwise print `$0.00`.
@@ -60,8 +60,8 @@ import { lifecycleStageSection } from "./lifecycle";
 /**
  * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
  *
- * The `plans` section below is keyed by the row ids the artifact draws (`single`, `annual`), and
- * each row's figure is read from the plan of that id. That tier is what a checkout
+ * The `plans` section below is keyed by the row ids the artifact draws (`single`), and each row's
+ * figure is read from the plan of that id. That tier is what a checkout
  * must be asked for, and it is declared once — in `data/membership-plans.ts`, re-exported here
  * under the name every reader already imports — a second map anywhere else is how the two
  * vocabularies drifted apart in the first place.
@@ -73,7 +73,7 @@ import { lifecycleStageSection } from "./lifecycle";
  * map to `BILLING_PLAN_IDS` **and** to a Price at the row's own interval, so the next rename on
  * either side fails a check instead of a checkout.
  *
- * Two rows may share a tier (`Single` and `Single Annual` are both `basic`): a plan is a
+ * A tier may carry more than one row (a monthly and a yearly plan at `basic`): a plan is a
  * (tier, interval) pair, and the interval is what tells them apart.
  */
 export const PLAN_BILLING_TIER = MEMBERSHIP_PLAN_TIERS;
@@ -186,10 +186,10 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * choosing one commits nothing — the card step is where a card is taken, and it charges
        * nothing either.
        *
-       * **#1127 replaced the two rows with the owner's approved catalogue**, and the owner then
-       * removed its Family plan on 2026-11-19 — leaving Single `$9.99`/mo and Single Annual
-       * `$99`/yr. Each row carries its own interval, because a plan is a (tier, interval) pair and
-       * the annual row is not a monthly one.
+       * **#1127 replaced the two rows with the owner's approved catalogue**, and the owner has
+       * narrowed it to one plan since: Family removed first, then Single Annual (2026-11-19), leaving
+       * **Basic `$9.99`/mo, one relationship**. Each row still carries its own interval, because a
+       * plan is a (tier, interval) pair — the row, not this step, says what unit it is charged in.
        *
        * **#911 changed what this step is for.** It used to be a soft prompt beside a send that went
        * through unpaid. Now the walk's first step is where the money is *decided*: the two things

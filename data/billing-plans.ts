@@ -30,28 +30,31 @@
  * (`QuizStats.rewardCents`, `data/metrics.ts`): `999` is `$9.99`, and no price is a float that
  * `0.1 + 0.2` can move.
  *
- * **The amounts are the owner's approved catalogue (#1127, 2026-11-17)** — Single `$9.99` a month,
- * Family `$19.99` a month, Single Annual `$99` a year — and the *plans* those amounts belong to are
- * named in `data/membership-plans.ts`, which reads every figure back out of this file. This fixture
- * stays the one home for an **amount**; that one is the one home for a plan's name, capacity and
- * interval. Neither types a price the other can disagree with: `membershipPlanProblems()` and
- * `tests/plan-catalogue.test.ts` compare them row for row.
+ * **The amounts are the owner's approved catalogue (#1127, 2026-11-17, narrowed since)** — Basic
+ * `$9.99` a month for one relationship, plus the dormant rows a delisted plan left behind — and the
+ * *plan* those amounts belong to is named in `data/membership-plans.ts`, which reads every figure
+ * back out of this file. This fixture stays the one home for an **amount**; that one is the one home
+ * for a plan's name, capacity and interval. Neither types a price the other can disagree with:
+ * `membershipPlanProblems()` and `tests/plan-catalogue.test.ts` compare them row for row.
  *
- * **The Family plan is gone; its tier and its amounts are not** (owner, 2026-11-19). The catalogue
- * now sells Single and Single Annual, and the `principal` rows below are a **tier** no plan claims
- * rather than a plan this file advertises: they stay, exactly as seeded, because a `billing_plan`
- * row is what a checkout charges and what `billing_plan` is seeded from, and delisting a plan is
- * not archiving a Price in Stripe — that is a dashboard act, and a card that deleted the row here
- * would leave the seed and the provider disagreeing. The one row whose amount is authored and not
- * a formula is `principal/year`, left at the amount it was created with.
+ * **Three of the four paid rows are unclaimed, and that is the shape after 2026-11-19** (owner).
+ * The catalogue sells one plan — Basic, `basic`/`month` — so `basic`/`year` (the yearly SKU, then
+ * Single Annual's) and both `principal` rows (Family's tier) are **tiers no plan claims** rather
+ * than plans this file advertises: they stay, exactly as seeded, because a `billing_plan` row is
+ * what a checkout charges and what `billing_plan` is seeded from, and delisting a plan is not
+ * archiving a Price in Stripe — that is a dashboard act, and a card that deleted the row here would
+ * leave the seed and the provider disagreeing. Re-listing one is a row in the membership catalogue
+ * and nothing else. The one row whose amount is authored and not a formula is `principal/year`,
+ * left at the amount it was created with.
  *
- * **`yearlyCents` is the amount charged once a year**, not the monthly-equivalent the card prints:
+ * **`yearlyCents` is the amount charged once a year**, not the monthly-equivalent the page prints:
  * `$99` beside "/mo, billed yearly" is `9_900 / 12`. A `billing_plan` row is what a checkout
  * charges, so it holds 9_900 — an amount the page renders but a checkout never charges would be
- * exactly the drift this fixture prevents. The annual figure is **not** a percentage rule any more:
- * the owner priced Single Annual at a round `$99` against `$9.99 × 12 = $119.88` (the artifact's
- * "2 months free"), so it is an authored amount and the test asserts the number rather than a
- * formula that would round it.
+ * exactly the drift this fixture prevents. No plan is billed yearly today, so nothing on a screen
+ * prints that division; the row stays because the Price behind it does. The annual figure is **not**
+ * a percentage rule either: the owner priced the yearly SKU at a round `$99` against
+ * `$9.99 × 12 = $119.88` (the artifact's "2 months free"), so it is an authored amount and the test
+ * asserts the number rather than a formula that would round it.
  *
  * **The `principal` tier is unclaimed since the Family plan was removed (2026-11-19).** No
  * membership plan maps either `principal` row and `alignsynch_principal_month` /
@@ -167,7 +170,7 @@ export const billingPlans: readonly BillingPlan[] = [
     name: "Basic",
     description: "For a coach running a practice",
     monthlyCents: 999,
-    yearlyCents: 9_900, // Single Annual — the owner's round $99 for a year, charged once
+    yearlyCents: 9_900, // the delisted yearly SKU — the owner's round $99 for a year, charged once
     features: [
       "Unlimited active relationships",
       "Basic Mode and Advanced Mode",

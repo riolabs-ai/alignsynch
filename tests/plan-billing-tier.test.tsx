@@ -171,8 +171,8 @@ describe("the plan choice's ids are not billing tiers — the map is the only cr
     }
   });
 
-  it("gives each plan its own (tier, interval) pair — two rows, two prices", () => {
-    // Two plans may share a tier: Single and Single Annual are both `basic`. What may not repeat is
+  it("gives each plan its own (tier, interval) pair — one row, one price", () => {
+    // Two plans could share a tier (a monthly and a yearly one at `basic`). What may not repeat is
     // the pair, because a pair is what a checkout renews against and what the panel prices.
     const pairs = PLAN_IDS.map((plan) => {
       const spec = membershipPlan(plan);
@@ -196,10 +196,10 @@ describe("the plan choice's ids are not billing tiers — the map is the only cr
     }
   });
 
-  it("sells a Price at every interval the catalogue claims, and names the two it does not", () => {
-    // The two plans claim two of the four keys — `alignsynch_basic_month` and
-    // `alignsynch_basic_year`. Both `principal` keys are the removed Family plan's tier, named here
-    // as carried-but-unmapped so they cannot quietly become a plan nobody approved.
+  it("sells a Price at every interval the catalogue claims, and names the three it does not", () => {
+    // The one plan claims one of the four keys — `alignsynch_basic_month`. `alignsynch_basic_year`
+    // was the yearly plan's and both `principal` keys were Family's; all three are named here as
+    // carried-but-unmapped so they cannot quietly become a plan nobody approved.
     const claimed = new Set(
       PLAN_IDS.map((plan) => {
         const spec = membershipPlan(plan);
@@ -211,10 +211,13 @@ describe("the plan choice's ids are not billing tiers — the map is the only cr
         const key = billingPriceLookupKeyFor(tier, interval);
         expect(key, `${tier}/${interval}`).toBeDefined();
         if (key === undefined) continue;
-        // Every key the table carries is either claimed by a plan or one of the two unclaimed ones.
-        expect([...claimed, "principal/month", "principal/year"]).toContain(`${tier}/${interval}`);
+        // Every key the table carries is either claimed by a plan or one of the three unclaimed.
+        expect([...claimed, "basic/year", "principal/month", "principal/year"]).toContain(
+          `${tier}/${interval}`,
+        );
       }
     }
+    expect(claimed.has("basic/year")).toBe(false);
     expect(claimed.has("principal/month")).toBe(false);
     expect(claimed.has("principal/year")).toBe(false);
   });
@@ -242,7 +245,7 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
       // the catalogue sells.
       expect(payload?.planId).not.toBe(plan);
       expect(BILLING_PLAN_IDS).toContain(payload?.planId);
-      // The interval is the row's own: Single Annual is a yearly plan, not a monthly one.
+      // The interval is the row's own, taken from the plan the row names rather than typed here.
       expect(payload?.interval).toBe(membershipPlan(plan)?.interval);
 
       const mounted = root;
@@ -260,16 +263,16 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
     // An inline purchase ends the walk on the thank-you, which recaps the plan it bought.
     answer = { ok: true, completed: true };
     const where = await mount();
-    await press(where, 'input[name="plan"][value="annual"]');
+    await press(where, 'input[name="plan"][value="single"]');
 
     expect(posted[0]?.planId).toBe("basic");
-    expect(posted[0]?.interval).toBe("year");
+    expect(posted[0]?.interval).toBe("month");
     expect(where.querySelector('[data-pay-step="thanks"]')).not.toBeNull();
     // #1036's guard, moved: the plan panel is left the moment a row is chosen, so the recap that
-    // names the tier is the thank-you's own line — `Single Annual` and the price the row prints,
-    // never the walk's own id that keys the row.
+    // names the tier is the thank-you's own line — `Basic` and the price the row prints, never the
+    // walk's own id that keys the row.
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "annual")} · ${itemLabel(PLANS, "annual-price")}${itemLabel(PLANS, "annual-interval")}`,
+      `${itemLabel(PLANS, "single")} · ${itemLabel(PLANS, "single-price")}${itemLabel(PLANS, "single-interval")}`,
     );
   });
 

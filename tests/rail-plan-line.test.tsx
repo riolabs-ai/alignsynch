@@ -2,7 +2,7 @@
  * **The rail's "· then <Plan>" line (#1127, bundle 01).**
  *
  * Bundle 01 draws the wizard rail's live `Your Relationship` summary with a membership row that
- * reads `Free Trial · Starts When Elena Accepts · then Single`: the trial is what opens when the
+ * reads `Free Trial · Starts When Elena Accepts · then Basic`: the trial is what opens when the
  * Counterparty accepts, and the plan the reader chose on `/pricing` is what carries on after it.
  * The row shipped with only the first half — the plan reached stage 5's panel and never the rail —
  * so a reader deciding whether to invite someone could not see what they had chosen.
@@ -77,10 +77,10 @@ describe("the rail states the plan after the trial (#1127)", () => {
   });
 
   it("names it on stage 5, where the cookie carried it", () => {
-    const carried = carriedPlanOf({ planId: "basic", interval: "year" });
+    const carried = carriedPlanOf({ planId: "basic", interval: "month" });
     expect(carried).not.toBeNull();
     const html = railHtml({ stage: 5, ...(carried === null ? {} : { carried }) });
-    expect(html).toContain(`${TRIAL} · then ${membershipPlan("annual")?.name}`);
+    expect(html).toContain(`${TRIAL} · then ${membershipPlan("single")?.name}`);
   });
 
   it("leaves the line out when nothing was carried", () => {
@@ -89,10 +89,10 @@ describe("the rail states the plan after the trial (#1127)", () => {
     expect(html).not.toContain("· then");
   });
 
-  it("prints one row per catalogue plan without inventing a third", () => {
+  it("prints one row per catalogue plan without inventing a second", () => {
     // The catalogue's plans are the only ones the rail may name; a rail naming anything else would
     // be a plan nobody sells. This also pins that the line reads the *name* field rather than the
-    // tier.
-    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual(["Single", "Single Annual"]);
+    // tier — `basic` is the tier, `Basic` the plan.
+    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual(["Basic"]);
   });
 });

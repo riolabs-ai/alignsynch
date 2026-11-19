@@ -120,14 +120,14 @@ export function parsePlanIntent(raw: string | undefined): PlanIntent | null {
 /**
  * The plan row a carried intent is drawn by — the catalogue read backwards.
  *
- * The exact (tier, interval) pair is matched first: `basic/year` is **Single Annual**, not Single,
- * so a yearly carry cannot land on the monthly row and quietly post a monthly price. A tier whose
- * yearly interval no plan claims — the unclaimed Family Annual key — falls back to the plan for that
- * tier, and the carried interval is handed to the checkout unchanged, which is what keeps a
- * `/pricing` choice from being silently re-billed.
+ * The (tier, interval) pair is matched **exactly**, and an interval that no plan claims resolves to
+ * `null`: `basic/month` is Basic, and a carried `basic/year` — the yearly SKU the owner delisted on
+ * 2026-11-19 — draws no row at all rather than landing on the monthly one and quoting a monthly
+ * price for a yearly charge. A tier no plan names resolves to `null` for the same reason.
  *
- * `null` when the catalogue names no plan at that tier, which is the state a map edited on one side
- * only produces; stage 5 then draws nothing preselected rather than guessing a row.
+ * `null` when the catalogue names no plan at that pair, which is the state a stale cookie or a map
+ * edited on one side only produces; stage 5 then draws nothing preselected rather than guessing a
+ * row.
  */
 export function planRowFor(tier: PaidPlanTier, interval?: BillingInterval): PlanRowId | null {
   const row = membershipPlanFor(tier, interval);

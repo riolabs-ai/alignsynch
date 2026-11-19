@@ -57,7 +57,7 @@
  * the courtesy, not the enforcement.
  *
  * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the plan
- * catalogue's handles (`single`, `annual`), which key its copy; a checkout is named by a
+ * catalogue's handles (`single`), which key its copy; a checkout is named by a
  * `billing_plan` row (`basic`, `principal`) at an interval. This module used to post the handle and
  * fall back to `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was
  * invisible to the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a
@@ -280,11 +280,10 @@ export function InviteWalk({
     setStarting(true);
     try {
       /**
-       * **The interval is the row's own, unless `/pricing` carried one** (#1043, #1127). The three
-       * plans are (tier, interval) pairs — Single Annual is `basic` billed yearly — so the row
-       * decides the unit: it defaults to the plan's interval rather than to `month`, which would
-       * quietly re-bill an annual plan monthly. A carried interval still wins, because it is the one
-       * the reader chose on `/pricing`.
+       * **The interval is the row's own, unless `/pricing` carried one** (#1043, #1127). A plan is a
+       * (tier, interval) pair, so the row decides the unit: it defaults to the plan's interval
+       * rather than to `month`, which would quietly re-bill a yearly plan monthly. A carried
+       * interval still wins, because it is the one the reader chose on `/pricing`.
        */
       const planId = chosen.tier;
       const interval = carriedPlan?.interval ?? chosen.interval;

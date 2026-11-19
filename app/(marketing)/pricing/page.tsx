@@ -54,11 +54,11 @@ async function viewerPlanFacts(): Promise<BillingPlanId | null> {
  * The pricing route, in bundle 02's five bands (#1127).
  *
  * **The composition is the artifact's, not this file's.** `lib/pricing-page.ts` joins
- * `data/pages/pricing.ts` (every word on the page) to `data/membership-plans.ts` (the three
- * approved plans — Single, Family, Single Annual — and their amounts, which that module reads out
- * of `data/billing-plans.ts`). Nothing here types a price, a plan name or a sentence: the three
- * plan names come from the catalogue, and the only thing that turns cents into money is
- * `formatCurrency` inside the projection.
+ * `data/pages/pricing.ts` (every word on the page) to `data/membership-plans.ts` (the one plan the
+ * catalogue sells — Basic — and its amount, which that module reads out of
+ * `data/billing-plans.ts`). Nothing here types a price, a plan name or a sentence: the plan's name
+ * comes from the catalogue, and the only thing that turns cents into money is `formatCurrency`
+ * inside the projection.
  *
  * **The pre-v2 page is gone rather than restyled.** It drew four `billing_plan` rows behind a
  * monthly/yearly switch, and a paid card started a checkout on the spot — a membership with no

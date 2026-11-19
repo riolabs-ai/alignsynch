@@ -25,9 +25,9 @@
  *     panel** (what starts free, what follows, who never pays) and **How It Works**;
  *   - the **closing band**, which repeats the one action rather than adding a second one.
  *
- * **The price is the plan's, and it is one figure.** `data/membership-plans.ts` names the plans and
+ * **The price is the plan's, and it is one figure.** `data/membership-plans.ts` names the plan and
  * `data/billing-plans.ts` the money; the trial panel prints the month of the plan that covers this
- * template (Single). The taxonomy's own `price` field is never read here — the shop does not sell a
+ * template (Basic). The taxonomy's own `price` field is never read here — the shop does not sell a
  * relationship at a per-relationship rate (#798) — and no component types a figure.
  *
  * A slug that names no purchasable type resolves to `undefined`, never a default: the route turns
