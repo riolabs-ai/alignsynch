@@ -151,6 +151,64 @@ describe("the submenu", () => {
     expect(markup).toContain("44/76");
     expect(markup).toContain("5/7");
   });
+  it("lets a long story label wrap rather than cutting it or widening the column", () => {
+    const doc = register();
+    const column = renderToStaticMarkup(
+      createElement(SpecSubmenu, { copy, doc, current: { kind: "overview" } }),
+    );
+    const sheet = renderToStaticMarkup(
+      createElement(SpecSubmenu, {
+        copy,
+        doc,
+        current: { kind: "overview" },
+        surface: "sheet",
+      }),
+    );
+
+    /**
+     * `truncate` cut "08 Coaches and Professionals" to an ellipsis **and** — being
+     * `white-space: nowrap` — gave every row a min-content width equal to its whole sentence, so
+     * the rows refused to shrink inside the column (246px of rows in a 208px column, measured).
+     * `min-w-0` on the label is what lets the row be the column's width and the label wrap.
+     */
+    for (const markup of [column, sheet]) {
+      expect(markup).not.toContain("truncate");
+      expect(markup).toContain('class="min-w-0 leading-5"');
+    }
+  });
+
+  it("draws 44px rows in the drawer and the artifact's 6px rows in the column", () => {
+    const doc = register();
+    const rowClasses = (markup: string) =>
+      [...markup.matchAll(/class="([^"]*)"[^>]*data-spec-story="/g)].map((match) =>
+        match[1].split(/\s+/),
+      );
+
+    const column = rowClasses(
+      renderToStaticMarkup(
+        createElement(SpecSubmenu, { copy, doc, current: { kind: "overview" } }),
+      ),
+    );
+    const sheet = rowClasses(
+      renderToStaticMarkup(
+        createElement(SpecSubmenu, {
+          copy,
+          doc,
+          current: { kind: "overview" },
+          surface: "sheet",
+        }),
+      ),
+    );
+
+    expect(column.length).toBe(SPEC_STORY_GROUPS.length);
+    expect(sheet.length).toBe(SPEC_STORY_GROUPS.length);
+    // `py-1.5` is `css/admin-project-spec.css:54`; `py-3` is 12 + a 20px line + 12 = 44px.
+    for (const tokens of column) expect(tokens).toContain("py-1.5");
+    for (const tokens of sheet) {
+      expect(tokens).toContain("py-3");
+      expect(tokens).toContain("focus-visible:ring-2");
+    }
+  });
 });
 
 describe("the Validation matrix", () => {
@@ -211,6 +269,30 @@ describe("the Validation matrix", () => {
       /\b(?:bg|text|border|ring|from|to)-(red|rose)\b/.test(token),
     );
     expect(red).toEqual([]);
+  });
+
+  it("draws its chips with the shared primitive, and a tone on top of it", () => {
+    const markup = renderToStaticMarkup(createElement(ValidationMatrix, { copy, doc: register() }));
+    const chips = [...markup.matchAll(/class="([^"]*)" data-spec-status="([^"]+)"/g)];
+    expect(chips.length).toBeGreaterThan(0);
+    for (const [, classList, status] of chips) {
+      const tokens = classList.split(/\s+/);
+      // `components/ui/badge.tsx`'s base string: one radius, one padding, one type step.
+      expect(tokens).toContain("rounded-full");
+      expect(tokens).toContain("px-2.5");
+      expect(tokens).toContain("text-xs");
+      // …and the filled default's white type must be gone, or the word vanishes on the tint.
+      expect(tokens).not.toContain("text-white");
+      expect(classList).toContain("bg-");
+      expect(
+        tokens.some((token) =>
+          /^(bg|text|border)-(synch|deep|pale|small-gap|gap|counterparty|background|muted)/.test(
+            token,
+          ),
+        ),
+        `${status} carries no status tone`,
+      ).toBe(true);
+    }
   });
 });
 
@@ -309,6 +391,25 @@ describe("the frame", () => {
       expect(markup).toContain("Consulting Agreement (NDA, Exhibit C)");
       expect(markup).toContain("data-spec-submenu=");
     }
+  });
+
+  it("draws the confidentiality line in the artifact's initiator tone, not a status colour", () => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        SpecFrame,
+        { copy, doc: register(), current: { kind: "overview" as const } },
+        createElement("p", null, "x"),
+      ),
+    );
+    const note = markup.match(/role="note" class="([^"]*)"/);
+    expect(note).not.toBeNull();
+    const tokens = (note?.[1] ?? "").split(/\s+/);
+    // `css/admin-project-spec.css:65` — `.nda` is `--initiator-line` over `--initiator-tint`.
+    expect(tokens).toContain("border-initiator-line");
+    expect(tokens).toContain("bg-initiator-tint");
+    // It used to borrow the partial status's ochre, which is the one drift the brand-class lint
+    // cannot see: both sides are tokens.
+    expect(tokens.some((token) => token.includes("small-gap"))).toBe(false);
   });
 
   it("draws no submenu when the register could not be read", () => {

@@ -82,9 +82,17 @@ export interface NavItem {
   readonly tourAnchor?: string;
 }
 
-/** A labelled run of rows. The label is a fixture id, like every other word in the rail. */
+/**
+ * A run of rows. `id` is the document's handle for the group — and the only identifier a
+ * **title-less** group has, which is why it is here rather than being inferred from the heading.
+ */
 export interface NavGroup {
-  readonly label: string;
+  readonly id: string;
+  /**
+   * The heading's label id in `data/pages/shell.ts`, resolved to words by the renderer — or
+   * `undefined` for a group drawn with no heading (the project-spec row above the Admin heading).
+   */
+  readonly label?: string;
   readonly items: readonly NavItem[];
 }
 
@@ -131,7 +139,16 @@ function toItem(row: NavRowRecord): NavItem {
 
 /**
  * The alignment rail, in the order the owner's review set — **one order for every role** (#929):
- * the operator's group, then the reader's own work, then the support surfaces.
+ * the project spec, then the operator's group, then the reader's own work, then the support
+ * surfaces.
+ *
+ * **The project spec leads, and it is the one group with no heading.** The owner asked for the row
+ * *above the Admin group title* (2026-11-19), and a row above a group's heading cannot live in that
+ * group — so it has one of its own, ordered first, with `label` omitted: between the top of the rail
+ * and the Admin heading there is nothing to name, and a heading reading "Project Spec" over a row
+ * reading "Project Spec" is the same word twice. A group that omits `label` draws no heading
+ * (`components/layout/nav-menus.tsx::NavGroup`), and `menuFor` drops it whole for the rungs that
+ * cannot read the spec, exactly as it drops any empty group.
  *
  * `needs` gates a row's **visibility only**. A role that cannot reach a row does not see it, and
  * the rows they can see keep the document's order — nobody gets a re-sorted menu. That is why the
@@ -173,6 +190,7 @@ function toItem(row: NavRowRecord): NavItem {
  * is hidden is written beside it, and `scripts/nav-menu.ts --check` refuses one without.
  */
 export const ALIGN_MENU: readonly NavGroup[] = DOCUMENT.groups.map((group) => ({
+  id: group.id,
   label: group.label,
   items: drawnRows(group.items)
     .filter((row) => row.hidden !== true)
@@ -204,6 +222,7 @@ export function menuFor(
 ): NavGroup[] {
   const viewer = role ?? DEFAULT_USER_ROLE;
   return ALIGN_MENU.map((group) => ({
+    id: group.id,
     label: group.label,
     items: group.items.filter(
       (item) =>

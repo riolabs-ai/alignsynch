@@ -8,8 +8,9 @@
  * this proves the *references*:
  *
  *   --check     schema valid; `id`, `href` and label id unique; every `href` resolves in
- *               `content/routes.ts`; every `icon` is a `NavIconName`; every group and row label is
- *               an item of `nav-alignsynch` in `data/pages/shell.ts`; every `needs` is a rung of
+ *               `content/routes.ts`; every `icon` is a `NavIconName`; every row label — and every
+ *               group heading a group *declares* (a title-less group declares none) — is an item of
+ *               `nav-alignsynch` in `data/pages/shell.ts`; every `needs` is a rung of
  *               `content/role-ladder.ts`; every `capability` is a `NAV_CAPABILITY` in
  *               `lib/nav.ts`; every `hidden` row carries a reason. Every failure names
  *               the group and the row it is in, because "groups.2.items.7.icon: invalid" sends the
@@ -210,7 +211,10 @@ function check(): number {
     const groupAt = `group "${group.id}"`;
     if (groupIds.has(group.id)) finding(`${groupAt}: the group id is used twice`);
     groupIds.add(group.id);
-    if (!labelIds.has(group.label)) {
+    // A group may omit `label` (a title-less run above the first heading — `group-project-spec`).
+    // The absence is what says "draw no heading", so the check is on the declared id only: a
+    // heading that *is* declared must still resolve to a word the fixture carries.
+    if (group.label !== undefined && !labelIds.has(group.label)) {
       finding(
         `${groupAt}: heading "${group.label}" is not an item of "nav-alignsynch" in data/pages/shell.ts`,
       );
@@ -322,9 +326,12 @@ function tree(role: UserRole, brand: BrandId): number {
 
   groups.forEach((group, groupIndex) => {
     const lastGroup = groupIndex === groups.length - 1;
-    console.log(
-      `${lastGroup ? "└─" : "├─"} ${pageCopy.itemLabel(navSection, group.label)} (${group.label})`,
-    );
+    // A title-less group prints its id and says so, rather than a resolved heading it does not have.
+    const heading =
+      group.label === undefined
+        ? `(no heading) (${group.id})`
+        : `${pageCopy.itemLabel(navSection, group.label)} (${group.label})`;
+    console.log(`${lastGroup ? "└─" : "├─"} ${heading}`);
     group.items.forEach((item, rowIndex) => {
       const lastRow = rowIndex === group.items.length - 1;
       const trunk = lastGroup ? "   " : "│  ";

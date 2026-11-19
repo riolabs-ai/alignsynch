@@ -1,6 +1,19 @@
 {
-  "version": 2,
+  "version": 3,
   "groups": [
+    {
+      "id": "group-project-spec",
+      "items": [
+        {
+          "id": "admin-spec",
+          "href": "/admin/spec",
+          "icon": "spec",
+          "needs": "stakeholder",
+          "capability": "spec-read",
+          "note": "#1252, re-homed 2026-11-19 at the owner's request — the project spec is a group of its own, drawn above the Admin heading, and it is the only row there. It is not an operator destination: it is the one staff-adjacent surface a stakeholder reads and reviews against. needs: stakeholder is the rung (between member and support), and capability: spec-read is the gate the rung cannot express — support outranks a stakeholder and is refused the spec, so the row names both. The group carries no label on purpose: a one-row group sitting above the first heading does not get one, and any heading would repeat the row's own word. One row, one href."
+        }
+      ]
+    },
     {
       "id": "group-admin",
       "label": "group-admin",
@@ -66,14 +79,6 @@
           "icon": "inbox",
           "needs": "admin",
           "note": "#1138 — the transactional-mail override editor, the third reference row: the docs say how the product works, CRUD says who may do it, and this says what it writes to a person. `inbox` is the glyph the console's own mail surface uses, and it is not drawn by any other row in this group — a distinct letter is the point of a rail. It carries `needs: admin` so a support seat does not see it, which is the issue's own condition."
-        },
-        {
-          "id": "admin-spec",
-          "href": "/admin/spec",
-          "icon": "spec",
-          "needs": "stakeholder",
-          "capability": "spec-read",
-          "note": "#1252 — the project spec: the 13-page reader the stakeholders review against. `needs: stakeholder` is the rung (it sits between member and support on the ladder), and `capability: spec-read` is the gate the rung cannot express — `support` outranks a stakeholder and is refused the spec, so the row names both. It sits after Email Templates and before the audit log because it is the fourth reference row: the docs say how the product works, CRUD says who may do it, Email Templates says what it writes to a person, and this says what is agreed and delivered."
         },
         {
           "id": "admin-audit",
