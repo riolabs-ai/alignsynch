@@ -106,6 +106,12 @@ const DEFAULTS = {
 
 const CHROME = process.env.CHROME ?? "/usr/bin/google-chrome";
 
+/**
+ * The ceiling on one CDP call. A page that never answers is a dead socket, not a slow render, and
+ * the run must record that row rather than wait on it (see `Browser.send`).
+ */
+const CDP_TIMEOUT_MS = 60_000;
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------------------------------------------------------------------------------------------
@@ -311,10 +317,25 @@ class Browser {
   }
 
   send(method, params = {}) {
-    return new Promise((ok) => {
+    /*
+     * **A CDP call is bounded, because a dead socket is not an answer.** A browser that dies
+     * mid-run leaves `pending` holding a callback nobody will ever call, and the previous shape
+     * awaited it forever: one closed tab mid-navigation stalled a 51-row run indefinitely, wrote no
+     * manifest at all, and read exactly like "the capture is slow". The 60 s ceiling turns that into
+     * a thrown error, which the row's own `catch` records as `capture failed: …` — the rest of the
+     * run still lands.
+     */
+    return new Promise((ok, fail) => {
       this.id += 1;
       const id = this.id;
-      this.pending.set(id, ok);
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        fail(new Error(`CDP ${method} did not answer within ${CDP_TIMEOUT_MS} ms`));
+      }, CDP_TIMEOUT_MS);
+      this.pending.set(id, (message) => {
+        clearTimeout(timer);
+        ok(message);
+      });
       this.ws.send(JSON.stringify({ id, method, params }));
     });
   }
@@ -742,7 +763,17 @@ async function capture() {
   for (const role of roles) {
     const browser = await new Browser().start();
     browsers.set(role, browser);
-    const result = await signIn(browser, { base, pin, role });
+    /*
+     * **The first role gets two attempts, because the unlock cookie is written by the act that just
+     * happened.** `/demo`'s form sets the unlock cookie and `/login` reads it back when the role
+     * button posts; for the first role in the list that read can beat the cookie's arrival, the
+     * action refuses with its own sentence, and the page stays on `/login` — which is exactly what
+     * "the role button did not sign in" reports. The second role onward never sees it. Retrying once
+     * is not hiding a refusal (a real one is retried and re-reported with the same sentence); it is
+     * giving the cookie the one round-trip it needs, so a role's capture is not lost to a race.
+     */
+    const first = await signIn(browser, { base, pin, role });
+    const result = first.ok ? first : await signIn(browser, { base, pin, role });
     sessions.set(role, result);
     console.log(
       `design-audit — session ${role}: ${result.ok ? `signed in → ${result.landed}` : `NO SESSION (${result.reason})`}`,

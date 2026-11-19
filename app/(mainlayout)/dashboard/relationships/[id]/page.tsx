@@ -37,6 +37,9 @@ import {
 } from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
+import { readMemberAlignments } from "@/lib/db/member-alignments";
+import { type AlignmentSummary, alignmentSummaryOf } from "@/lib/member/alignment-summary";
+import { membershipPrice } from "@/lib/billing/payment-view";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -118,6 +121,31 @@ export default async function MemberRelationshipPage({
 
   const editSection = sectionOf(dashboardRelationshipDetailPageCopy, RELATIONSHIP_EDIT_SECTION);
 
+  /*
+   * The v2 rectification — **the At a Glance tally.** `readMemberAlignments()` answers every
+   * relationship this account is a party to whose two sheets both exist; the summary the card may
+   * print is the one keyed by the round *this* page is about. The arithmetic is
+   * `alignmentSummaryOf()` over `content/gaps.ts`, the same function the Start page's bar and the
+   * Align screen call, so three screens cannot print three counts about one relationship.
+   *
+   * A failure here is not a 404 and not a zero: the page still renders and the card draws no tally,
+   * because "0 of 5 Aspects Aligned" over answers nobody read would be the invention this screen's
+   * docstrings exist to refuse.
+   */
+  let alignment: AlignmentSummary | null = null;
+  if (view.sessionRecordId !== null) {
+    try {
+      const alignments = await readMemberAlignments(user.userId);
+      const row = alignments.find(
+        (candidate) => candidate.sessionRecordId === view.sessionRecordId,
+      );
+      alignment = row === undefined ? null : alignmentSummaryOf(row.setting, row.answers);
+    } catch (error) {
+      if (!(error instanceof DatabaseUnavailableError)) throw error;
+      console.error("member-relationship: the alignment could not be read", error);
+    }
+  }
+
   return (
     <StageColumn>
       <div className="space-y-6">
@@ -141,6 +169,15 @@ export default async function MemberRelationshipPage({
               ? undefined
               : { mode: editState.mode, setting: editState.setting }
           }
+          /* The At a Glance card's tally, the round it is about, and the price after the trial:
+             three server facts this component cannot read for itself (E34). */
+          alignment={alignment}
+          round={
+            view.round === null || view.round === undefined || view.roundStartedAt == null
+              ? null
+              : { ordinal: view.round, startedAt: view.roundStartedAt }
+          }
+          planPrice={membershipPrice()}
           /*
             #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
             render inline in the 320 px actions rail, so the detail and its editor described the

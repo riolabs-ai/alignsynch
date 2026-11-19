@@ -21,9 +21,10 @@ Of those, **33** say `· design deltas open` and **not one of them names a
 delta**. That is the defect this page ends: the gap was asserted 33 times and
 enumerated 0 times, so no card could accept it and nobody could schedule it.
 
-**This page fixes nothing.** It is a register: every row says what the screen draws, what its
+**This page fixes nothing by itself.** It is a register: every row says what the screen draws, what its
 reference draws, and — where they differ — the difference in words specific enough to become acceptance
-criteria.
+criteria. A rectification card fixes one bundle and flips the rows it closed; those bullets then read
+`Fixed (rect-NN)` and the row's verdict is the capture's, not the card's claim.
 
 ## The counts
 
@@ -44,11 +45,23 @@ Two axes, both derived from the docs at run time — never a hardcoded list.
 
 | verdict        | rows   |
 | -------------- | ------ |
-| `deltas`       | 34     |
+| `deltas`       | 32     |
 | `matches`      | 5      |
 | `not-built`    | 3      |
-| `unverifiable` | 9      |
+| `unverifiable` | 11     |
 | **total rows** | **51** |
+
+**`rect-03` moved two rows** (2026-11-19) to `unverifiable`: `copy-resend-or-cancel-an-invite`,
+because the seed at that address is a claimed invite and the controls it names live behind an unclaimed
+one, and `add-a-card-or-take-your-extra-week`, because its remaining bullet lives on the **Payment tab**
+and the tab set is client state the instrument does not open. Four more `deltas open` rows were
+**fixed and re-captured** — `save-these-aspects-as-a-template`, both relationship-pause rows and
+`stage-6-align` — and their bullets read `Fixed (rect-03)` with the captured text quoted, but their
+verdict stays `deltas`: the status word lives in the doc's own frontmatter under `spec-docs-v2`, and
+`--check` refuses `matches` over a doc that still says `· design deltas open`. Clearing that word is a
+docs-intake act, not one this register can perform on its own row. `your-7-days-free` stays `deltas`
+too: a paused window has no days left to count, so the trial chip cannot be photographed from this seed.
+The counts above are the post-`rect-03` figures, read off the table below rather than restated.
 
 **Where the verdicts move away from the status, and why.** 33 / 11 / 4 / 3 is the status split and
 it is exact — the classifier reads the words each doc's frontmatter actually uses, so
@@ -58,10 +71,10 @@ reconciles row for row:
 
 | verdict        | rows | where they come from                                                                                                                                                                                                             |
 | -------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deltas`       | 34   | 29 of the 33 `deltas open` + 3 `Designed` copy sheets + 1 `Built` whose status admits its own gap (`chat-and-discussion`, “chat does not persist yet”) + 1 `Planned` whose screen in fact renders (`if-a-draft-cant-be-created`) |
+| `deltas`       | 32   | 27 of the 33 `deltas open` + 3 `Designed` copy sheets + 1 `Built` whose status admits its own gap (`chat-and-discussion`, “chat does not persist yet”) + 1 `Planned` whose screen in fact renders (`if-a-draft-cant-be-created`) |
 | `matches`      | 5    | 5 of the 11 `Built` — `delete-your-account`, `profile-and-password`, `payment`, `invitation`, `release-notes-and-banners`                                                                                                        |
 | `not-built`    | 3    | 2 `Planned` with no surface (`trial-started`, `plans-and-trial`) + `reference/changelog.md`, a dated list with nothing to build                                                                                                  |
-| `unverifiable` | 9    | 4 of the 33 `deltas open` + 5 of the 11 `Built`                                                                                                                                                                                  |
+| `unverifiable` | 11   | 6 of the 33 `deltas open` + 5 of the 11 `Built`                                                                                                                                                                                  |
 
 Six rows therefore do **not** land on the verdict their status word implies, and each is a finding
 rather than a filing decision:
@@ -114,8 +127,8 @@ measures one state per screen — the state the seed is in — not every state t
 | `guides/counterparty/ask-to-be-removed.md`                | Ask to Be Removed                    | Built (#1149 via #1170) · no shot                                                           | `/dashboard/relationships/{relationship}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat`                                                     | —                                                                                     | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `unverifiable` | reason below | —                   |
 | `guides/counterparty/save-these-aspects-as-a-template.md` | Save These Aspects as a Template     | Built (#1153 via #1170) · design deltas open                                                | `/dashboard/relationships/{review}?tab=aspects` <br>↳ `/dashboard/relationships/relationship-assessment-instance-rowan-avery-review?tab=aspects`                                 | `03-spec-design-page-relationship-detail-v2/reference/rd-live-aspects-counterparty-*` | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | #1134               |
 | `guides/counterparty/when-a-relationship-pauses.md`       | When a Relationship Pauses           | Built (#1143, #1236) · design deltas open                                                   | `/dashboard/relationships/{trial}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial`                                                           | `03-spec-design-page-relationship-detail-v2/reference`                                | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1224, #1223        |
-| `guides/initiator/add-a-card-or-take-your-extra-week.md`  | Add a Card or Take Your Extra Week   | Built (#1143, #1156 via #1170) · design deltas open                                         | `/dashboard/relationships/{trial}?tab=payment` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial?tab=payment`                                   | `03-spec-design-page-relationship-detail-v2/reference`                                | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | #1121, #1132        |
-| `guides/initiator/copy-resend-or-cancel-an-invite.md`     | Copy, Resend or Cancel an Invite     | Built (#1149 via #1170) · design deltas open                                                | `/dashboard/relationships/{summer}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-summer`                                                         | `03-spec-design-page-relationship-detail-v2/reference/rd-invited-details-*,`          | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1135               |
+| `guides/initiator/add-a-card-or-take-your-extra-week.md`  | Add a Card or Take Your Extra Week   | Built (#1143, #1156 via #1170) · design deltas open                                         | `/dashboard/relationships/{trial}?tab=payment` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial?tab=payment`                                   | `03-spec-design-page-relationship-detail-v2/reference`                                | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `unverifiable` | reason below | #1121, #1132        |
+| `guides/initiator/copy-resend-or-cancel-an-invite.md`     | Copy, Resend or Cancel an Invite     | Built (#1149 via #1170) · design deltas open                                                | `/dashboard/relationships/{summer}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-summer`                                                         | `03-spec-design-page-relationship-detail-v2/reference/rd-invited-details-*,`          | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `unverifiable` | reason below | #1135               |
 | `guides/initiator/create-your-account.md`                 | Create Your Account                  | Built (#1144, #1190) · design deltas open                                                   | `/dashboard/templates/{wizardTemplate}/create/commit?instance={draftInstance}` <br>↳ `/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial` | `01-spec-design-page-wizard-v2/reference/wizard-stage4-*`                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1123, #1187        |
 | `guides/initiator/edit-a-draft-or-sent-invite.md`         | Edit a Draft or Sent Invite          | Built (#1144, #1148) · design deltas open                                                   | `/dashboard/relationships/{flat}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat`                                                             | `01-spec-design-page-wizard-v2/reference/wizard-edit-invited-*`                       | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | —                   |
 | `guides/initiator/if-a-draft-cant-be-created.md`          | If a Draft Can't Be Created          | Planned (#1226) · #1210 shipped a named 500 without this screen                             | `/assessment/new/failed` <br>↳ `/assessment/new/failed`                                                                                                                          | `spec-design-v2-rc1.3-bundle/04-create-failed-screen-1226/reference`                  | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1226, #1205        |
@@ -179,31 +192,31 @@ Email Templates · Built (#1167) · design deltas open (#1231, PR #1242) · rout
 
 Save These Aspects as a Template · Built (#1153 via #1170) · design deltas open · route `/dashboard/relationships/{review}?tab=aspects`
 
-- The doc's section heading is **"Keep these Aspects for yourself"** and its action is Title Case **"Save this template to My Templates"**; the live page draws both, but as sentence-case body copy rather than the reference's headed section — copy rule 1 (Title Case for every label, heading and button) is the open delta — live `tests/design-captures/counterparty-save-these-aspects-as-a-template/live.txt`, doc `guides/counterparty/save-these-aspects-as-a-template.md` §For the Build Team.
-- The reference draws the relationship's **At a Glance** summary above the tabs ("3 of 5 Aspects Aligned · 1 In Synch · 2 Small Gap · 2 Gap"); the live page at 1280 draws none of it — reference `spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html`.
+- **Fixed (rect-03)** — Copy rule 1: the live page's `fork` panel now heads **"Keep These Aspects for Yourself"** and its action reads **"Save This Template to My Templates"**, both Title Case, in a headed section (`data-fork-template`). The reference HTML draws no such panel at all, so the section's shape is the doc's, and only the casing moved.
+- **Fixed (rect-03)** — The relationship's **At a Glance** card is drawn above the tabs: **"N of M Aspects Aligned"**, one mark per Aspect in the synch / small-gap / gap tokens, the three counts, then Mode · Alignment Tolerance · Latest Round. The tally is `alignmentSummaryOf()` over `content/gaps.ts`, so this card and the Start page's bar cannot disagree — reference `spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html`. **Captured:** `tests/design-captures/counterparty-save-these-aspects-as-a-template/live.txt` at both widths carries **At a Glance · 0 of 5 Aspects Aligned · 0 In Synch · 4 Small Gap** over this relationship's own answers. The tally is drawn only for a round **both seats** answered; on `{trial}` the seed's counterparty sheet is empty (`opinion` holds 5 initiator rows, 0 counterparty), so that page draws the card's Mode · Tolerance · Round rows and no tally — absence of data, never a zero.
 
 ### `guides/counterparty/when-a-relationship-pauses.md`
 
 When a Relationship Pauses · Built (#1143, #1236) · design deltas open · route `/dashboard/relationships/{trial}`
 
-- The badge the doc promises — **"⏸ Paused · Waiting on Marcus"**, grey with a pause icon and no red — is drawn live as **"Paused · Waiting on Avery"**, so the shape is right and only the name moves; that part **matches**.
-- The reference's **"At a Glance"** panel (Mode · Alignment Tolerance · Latest Round · 3 of 5 Aspects Aligned) is absent from the live page, which draws a flat STATE/STARTED/PUBLISHED/INVITED/CONNECTION/MEMBERSHIP metadata card instead — live `tests/design-captures/counterparty-when-a-relationship-pauses/live.txt`.
-- The reference's next-step band for this state reads **"Your Trial Ended"** with **"Add a Card"** and **"Get 7 More Days Free"**; the counterparty's live page draws no next-step band at all, which is right for the seat (the Counterparty never sees billing words) but means the reference draws the Initiator's band on the Counterparty's screen — a reference defect, recorded rather than copied.
+- **Matches (rect-03, verified)** — The badge the doc promises — **"⏸ Paused · Waiting on Marcus"**, grey with a pause icon and no red — is drawn live as **"Paused · Waiting on Avery"**: the shape is right (a soft-grey chip carrying a pause glyph) and only the name moves, which is the seed's identity, not a design delta.
+- **Fixed (rect-03)** — The reference's **"At a Glance"** card is now drawn above the record's own facts card (Mode · Alignment Tolerance · Latest Round · the Aspect tally). The flat STATE/STARTED/PUBLISHED/INVITED/CONNECTION/MEMBERSHIP card stays below it: those are the relationship's own columns, and the reference's state switcher substitutes them rather than dropping them. **Captured:** `tests/design-captures/counterparty-when-a-relationship-pauses/live.txt` — **At a Glance · Mode Basic · 2 Opinions · Soft · Small Gap OK · Round 1 · Sep 21, 2026** at both widths, and **Paused · Waiting on Avery** above it. The tally row is absent on this state because the seed's counterparty sheet holds no answers; where both seats answered it is drawn (see the `stage-6-align` row: **2 of 5 Aspects Aligned · 2 In Synch · 1 Small Gap**).
+- **Not fixed — a reference defect, recorded not copied.** The reference's next-step band for this state reads **"Your Trial Ended"** with **"Add a Card"** and **"Get 7 More Days Free"**; the Counterparty's live page draws no next-step band, which is copy rule 4 (the Counterparty never sees a price, a trial, a card or an extension). The reference draws the Initiator's band on the Counterparty's screen; the build is the correct half.
 
 ### `guides/initiator/add-a-card-or-take-your-extra-week.md`
 
 Add a Card or Take Your Extra Week · Built (#1143, #1156 via #1170) · design deltas open · route `/dashboard/relationships/{trial}?tab=payment`
 
-- The doc's confirmation copy **"7 More Days Added · Stage 6 is running again"** is absent from the live page: the buttons **Add a Card** and **Get 7 More Days Free** are both drawn, and the confirmation the doc cites (`data/pages/dashboard-relationship-detail.ts:262`) is not rendered at rest — live `tests/design-captures/initiator-add-a-card-or-take-your-extra-week/live.txt`.
-- The reference's **Payment tab** summary — Status, the date the trial ended, the one Extra Week still available, the price after resume and who pays — is absent: the live page draws "Your Trial Ended" and the two actions, and no such table.
+- **By design, not a delta** — The doc's confirmation copy **"7 More Days Added · Stage 6 is running again"** is drawn by the arrival: pressing **Get 7 More Days Free** writes the week and the screen prints `pause.added` with the end the rows carry (`?from=extend` reprints it on arrival). A confirmation is the answer to an act, so it is absent at rest by construction — the register measured the page before anyone pressed anything.
+- **Fixed (rect-03) — asserted, not photographed.** The reference's **Payment tab** summary is drawn: **Status** (the window's own state — `Free Trial · Ends <date>` / `Paused · Trial Ended` / `Paused · Extra Week Ended`), **Billing Owner**, and **After the Trial** with the plan's price (`membershipPrice()`, passed in as a prop so the client bundle stays free of the server module — E34). While a window runs the tab also carries **"Add a card before <date> to keep Stage 6 running. If you don't, it pauses and nothing is lost."** The reference's `Card` row is deliberately not drawn: no read on this page answers whether a card is on file, and "Not needed" over a card nobody read is the guess this register exists to refuse. **Why not captured:** the tab set is client state started on the first tab, and `?tab=payment` does not select it server-side, so the instrument photographs the page's first tab at both widths; the summary is held by `tests/relationship-glance.test.tsx` instead. Navigating to the tab is what would turn this bullet into a photograph — `rect-03` did not widen the harness to claim it.
 
 ### `guides/initiator/copy-resend-or-cancel-an-invite.md`
 
 Copy, Resend or Cancel an Invite · Built (#1149 via #1170) · design deltas open · route `/dashboard/relationships/{summer}`
 
-- The doc's two actions — **"Copy Invite Link"** and **"Resend Invite"** — are absent from the live page at rest; the page draws the STATE/INVITED/CONNECTION/MEMBERSHIP card and the Aspects prose instead — live `tests/design-captures/initiator-copy-resend-or-cancel-an-invite/live.txt`.
-- The reference draws the waiting state as **"Waiting on Elena to Join · Invitation sent to `elena.r@example.com` on Nov 16"** with a **Share the Invite Link** next step and a **Copy Invite Link** control; the live page's equivalent is a **STATE · Complete** line, so the waiting-invite state is not the state the seeded relationship is in — the row is measured against a completed relationship, and the delta is that the state the doc describes could not be reproduced from the seed.
-- The reference's **"Trial Starts When Elena Accepts"** marker is absent from the live capture.
+- **Unreachable from the seed — not a build delta.** The doc's two actions — **"Copy Invite Link"** and **"Resend Invite"** — are drawn by the `hygiene` panel (`relationship-detail.tsx`, `data-hygiene-copy`), which renders for a live invitation on an **unclaimed** seat. The seeded relationship at this address is `invite-claimed`, so the capture photographs a page the panel is not for. The controls exist and are covered by `tests/relationship-detail.test.ts`; they cannot be photographed without a sent-and-unclaimed invite.
+- **Unreachable from the seed — the state the doc describes.** The reference draws the waiting state as **"Waiting on Elena to Join · Invitation sent to `elena.r@example.com` on Nov 16"** with a **Share the Invite Link** next step; the captured relationship is complete, so "the waiting-invite state is not the state the seeded relationship is in" (the register's own finding, unchanged). **Unverified for the waiting state**, at both widths, from this seed.
+- **Unreachable from the seed — not fixed.** The reference's **"Trial Starts When Elena Accepts"** marker is not drawn, and it will not be drawn as reference copy: the shipped anchor is the publish (`published_at`), and the register's own `stage-5-invite` row records that the live stage 5 says the card anchors the trial. Promising an acceptance anchor on the Payment tab would be the more expensive of the two conflicting claims. The Payment tab says **"No trial is running."** when no window exists, which is true of every row that read can see.
 
 ### `guides/initiator/create-your-account.md`
 
@@ -271,17 +284,17 @@ Set Up Details, Settings and Aspects · Built (#1144, drawer via #1170 / #1133) 
 
 When a Relationship Pauses · Built (#1143, #1235, #1236) · design deltas open · route `/dashboard/relationships/{trial}`
 
-- The doc promises the line **"Stage 6 is paused. Your results and Discussion are saved and read-only."**; the live page draws exactly that sentence — **matches**.
-- The doc promises the Paused chip with a pause icon and no red; the live page draws **Paused** and **Your Trial Ended** in text, and the icon is not legible in the DOM text, so the "no red, grey with a pause icon" half is **unverifiable** from a capture — it needs the pixels, which are on disk at `tests/design-captures/initiator-when-a-relationship-pauses/live-1280.png`.
-- The reference's At a Glance panel (3 of 5 Aspects Aligned · Mode · Alignment Tolerance · Latest Round) is absent from the live page, which draws the flat STATE/STARTED/PUBLISHED metadata card instead.
+- **Matches** — The doc promises the line **"Stage 6 is paused. Your results and Discussion are saved and read-only."**; the live page draws exactly that sentence.
+- **Matches, read from the pixels (rect-03)** — The doc promises the Paused chip with a pause icon and no red. The icon is a `lucide` `Pause` glyph inside a `Chip variant="soft"` (a grey chip — `bg-secondary`), not a red one; the captures at `tests/design-captures/initiator-when-a-relationship-pauses/live-{390,1280}.png` are where the colour is read, and copy rule 3 holds.
+- **Fixed (rect-03)** — The reference's At a Glance card (the Aspect tally · Mode · Alignment Tolerance · Latest Round) is now drawn above the record's own facts card.
 
 ### `guides/initiator/your-7-days-free.md`
 
 Your 7 Days Free · Built (#1116, #1117, #1156 via #1170) · design deltas open · route `/dashboard/relationships/{trial}?tab=payment`
 
-- The doc's trial markers — **"Free Trial · 3 Days Left"**, **"Trial Starts When {name} Accepts"** and **"Not needed"** — are all absent from the live relationship page at 1280 — live `tests/design-captures/initiator-your-7-days-free/live.txt`.
-- The reference draws the trial chip **"Trial · 3 Days Left"** in the relationship header and the sentence **"Add a card before Nov 19 to keep Stage 6 running."** in the Payment tab; the live page draws **"Your Trial Ended"** only, which is the post-pause state, not the running trial the doc describes.
-- The doc's Payment-tab claim — **"Trial Starts When {name} Accepts"** and **"Card: Not needed"** for a waiting invite — is absent from the capture, which photographed the paused relationship.
+- **Unreachable from the seed — unverified for the running trial.** The doc's trial markers — **"Free Trial · 3 Days Left"**, **"Trial Starts When {name} Accepts"** and **"Not needed"** — are absent from the captured page because the seeded relationship is **paused** (`Paused · Trial Ended`), and a paused window has no days left to count. The pill itself is rendered from `pause.daysLeft` and reads **`Trial · N Days Left` / `Extra Week · N Days Left`**; it is asserted in `tests/relationship-glance.test.tsx` and in the pause suite, not photographed. **Unverified for the running state at both widths.**
+- **Partly fixed (rect-03)** — The trial chip is drawn only in a running window (see above) and cannot be captured from this seed. The Payment-tab half is fixed and **asserted, not photographed** (the tab set is client state; the instrument photographs the first tab): the tab now carries the reference's summary table — **Status · Billing Owner · After the Trial** with the plan's price — and a running window carries **"Add a card before <date> to keep Stage 6 running. If you don't, it pauses and nothing is lost."** See `tests/relationship-glance.test.tsx`.
+- **Not fixed — the anchor is contested by the product itself.** The doc's Payment-tab claim — **"Trial Starts When {name} Accepts"** and **"Card: Not needed"** for a waiting invite — is not drawn. The `Card` half needs a read this page does not have, and the acceptance anchor contradicts the shipped rule (the trial starts at the publish) that the register's `stage-5-invite` row records as the highest-value open delta. A payment screen may not promise an anchor the code does not implement; the waiting state says **"No trial is running."** instead.
 
 ### `guides/shared/answer-the-assessment.md`
 
@@ -385,8 +398,8 @@ Stage 5 · Invite · Built (#1144) · design deltas open · route `/dashboard/te
 
 Stage 6 · Align · Built (#1144, #1147, #1148) · design deltas open · route `/dashboard/relationships/{relationship}`
 
-- The reference draws Stage 6 as **"Where You Agree, and Where You Differ"** with **In Synch / Small Gap / Gap** chips and a **NEXT STEP** band; the live relationship page draws **Next Step · Continue Your Assessment**, **5 of 5 Aspects answered** and a **Complete and open the Gap** button, and no chips — live `tests/design-captures/stages-stage-6-align/live.txt`.
-- The reference's **"Align stays live until the relationship closes"** is not drawn; the live page instead states **"Once both of you have answered every Aspect and accepted the other's answers, completing opens the Gap to both of you."** — the same idea in a sentence the doc does not quote.
+- **Fixed (rect-03)** — The reference's **In Synch / Small Gap / Gap** chips are drawn on this page: the At a Glance card prints one mark per Aspect in the model's three severities plus the counts. **Captured:** `tests/design-captures/stages-stage-6-align/live.txt` at both widths carries **At a Glance · 2 of 5 Aspects Aligned · 2 In Synch · 1 Small Gap** over this round's own answers, beside Mode · Alignment Tolerance. The reference's **"Where You Agree, and Where You Differ"** heading and its **NEXT STEP** band belong to the **Align** screen (bundle 04, `align.html`), which this route is not — the register's `results-and-align` row pairs that copy with bundle 04. The live page's **Next Step · Continue Your Assessment** band is unchanged and still correct for a relationship whose sheets are sealed but whose Gap has not been opened.
+- **Fixed (rect-03)** — **"Align stays live until the relationship closes."** is now drawn on the completion band, beneath the sentence the page already carried.
 
 ### `reference/states/relationship-states-by-role.md`
 
@@ -425,6 +438,7 @@ A match is a comparison that was made, not a row nobody looked at.
 - **`guides/initiator/payment.md`** — Live `/dashboard/payment` draws **Memberships**, **Payment Method**, **After the Trial** and **$9.99 / month** — the four things the doc's two rows promise — and its preamble repeats the doc's own trial sentence.
 - **`reference/emails/invitation.md`** — No screen to capture: the subject is `lib/email/templates/invitation.ts:42` **"{inviter} invited you to a {template} assessment"**, which is the sentence the doc quotes, and the reminder subject is `lib/email/templates/invitation-reminder.ts:60`. Verified in source, which is where this doc's subject lives.
 - **`reference/emails/release-notes-and-banners.md`** — No screen to capture: `public/og/` holds the three rasters and `lib/email/release-note.ts:64` reads the changelog section, both as the doc states. Verified in source.
+- **`guides/counterparty/save-these-aspects-as-a-template.md`**, **`guides/counterparty/when-a-relationship-pauses.md`**, **`guides/initiator/when-a-relationship-pauses.md`** and **`reference/stages/stage-6-align.md`** _(rect-03 — captured, verdict held at `deltas`)_ — These four were re-captured at 390 and 1280 on the fixed tree and their bullets now quote the captured text: **Keep These Aspects for Yourself** / **Save This Template to My Templates**; **Paused · Waiting on Avery** in a soft-grey chip; **At a Glance · Mode Basic · 2 Opinions · Soft · Small Gap OK · Round 1**; **2 of 5 Aspects Aligned · 2 In Synch · 1 Small Gap**; and **Align stays live until the relationship closes.** They are listed here rather than under `matches` because their frontmatter still reads `· design deltas open`, and the verdict cannot outrun the status it is read against.
 
 ## Not built — the surface the doc describes does not exist
 
@@ -447,6 +461,8 @@ These are rows a capture cannot judge. Naming the reason is the deliverable; a g
 - **`reference/stages/stage-3-aspects.md`** — Stage 3's own address answers `307 → /create` on every seeded instance, and the flow cannot be driven past stage 2 headlessly: stage 2's advance control is inert until a Mode/Setting choice is recorded, and the harness does not make product choices on a reader's behalf. The row carries **no reference render** on purpose — pairing stage 3's reference with a stage-2 screenshot would be the guess this register exists to avoid.
 - **`reference/states/answer-scale.md`** — The 1–5 scale and its two labels are drawn by the _answering_ sheet, and the seeded instance is already accepted, so the capture is the sealed/review sheet. The scale is `unverifiable` until a fresh invite is walked to the answering step.
 - **`reference/states/status-chips.md`** — The doc's chip words (**In Synch · Small Gap · Gap**) are drawn by the Aspects/Align panel, which the capture cannot open — `?tab=` is client state, so every tab URL renders the Discussion panel. The page does draw chips (**Paused**, **Your Trial Ended**, **Complete**), so the primitive is live; three of the doc's four words are simply not on this panel.
+- **`guides/initiator/add-a-card-or-take-your-extra-week.md`** _(rect-03)_ — Every remaining bullet is on the **Payment tab**, and the tab set is client state started on the first tab: `?tab=payment` does not select it and `relationship-detail.tsx` holds no server-side tab read, so the instrument photographs the first tab at both widths. The tab's summary rows are held by `tests/relationship-glance.test.tsx`, which is an assertion and not a capture; the register will not write `matches` off one. Opening the tab in the instrument is what would close this row.
+- **`guides/initiator/copy-resend-or-cancel-an-invite.md`** _(rect-03)_ — **Copy Invite Link** and **Resend Invite** are drawn by the `hygiene` panel, which renders only for a live invitation on an **unclaimed** seat; the seeded relationship at this address is `invite-claimed`, and the waiting-invite state the reference draws (**Waiting on Elena to Join**) is not a state this seed can reach. Verified in `tests/relationship-detail.test.ts`, not photographed — **unverified for the waiting state at both widths**.
 
 <!-- docs-nav:begin -->
 
