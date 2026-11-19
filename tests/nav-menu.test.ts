@@ -126,6 +126,8 @@ describe("the menu descriptor", () => {
       "/admin/permissions",
       // #1138 — the transactional-mail override editor, the third reference row.
       "/admin/email-templates",
+      // #1252 — the project spec: the fourth reference row, drawn for a stakeholder too.
+      "/admin/spec",
       "/admin/audit",
     ]);
   });
@@ -181,9 +183,10 @@ describe("the menu descriptor", () => {
 });
 
 describe("the ladder decides the rows", () => {
-  /** The four rungs, in order, with the rung each row's floor is met by. */
+  /** The five rungs, in order, with the rung each row's floor is met by. */
   const MENUS: Record<UserRole, string[]> = {
     member: hrefsFor("member"),
+    stakeholder: hrefsFor("stakeholder"),
     support: hrefsFor("support"),
     admin: hrefsFor("admin"),
     owner: hrefsFor("owner"),
@@ -206,6 +209,8 @@ describe("the ladder decides the rows", () => {
     "/admin/permissions",
     // #1138 — the transactional-mail override editor: what the product writes to a person.
     "/admin/email-templates",
+    // #1252 — the project spec, the fourth reference row and before the log.
+    "/admin/spec",
     "/admin/audit",
   ];
 
@@ -236,15 +241,25 @@ describe("the ladder decides the rows", () => {
   it("gives every role the document's own order — needs gates visibility, never the sequence", () => {
     const document = allItems();
     for (const role of USER_ROLES) {
+      // Both gates, in the order `menuFor` applies them: the rung (`needs`) and, since #1252, the
+      // capability a row may also name (`admin-spec` needs stakeholder *and* `spec-read`, which is
+      // how a support seat passes the floor and is still not drawn the row).
+      const capabilities = navViewer(role).capabilities;
       const visible = document
-        .filter((item) => roleAdmits(item.needs, role))
+        .filter(
+          (item) =>
+            roleAdmits(item.needs, role) &&
+            (item.capability === undefined || capabilities.has(item.capability)),
+        )
         .map((item) => item.href);
       expect(hrefsFor(role), `role "${role}" is a re-sort of the document`).toEqual(visible);
       // And the groups a role sees are the document's groups, in the document's order.
       expect(menuFor(role).map((group) => group.label)).toEqual(
         ["group-admin", "group-app", "group-support"].filter((label) =>
-          (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some((item) =>
-            roleAdmits(item.needs, role),
+          hrefsFor(role).some((href) =>
+            (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some(
+              (item) => item.href === href,
+            ),
           ),
         ),
       );
@@ -301,9 +316,27 @@ describe("the ladder decides the rows", () => {
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
     // #901's docs row survived the move, #1095 removed the growth row, #1126 added the CRUD &
-    // Permissions row directly after Docs and #1138 added the mail-override row after that, so ten
-    // rows in the operator group.
-    expect(ADMIN_GROUP).toHaveLength(10);
+    // Permissions row directly after Docs, #1138 added the mail-override row after that and #1252
+    // the project spec before the log, so eleven rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(11);
+  });
+
+  /**
+   * #1252 — the stakeholder seat. It sits **between** member and support on the ladder, and the one
+   * row it draws proves both halves of the new rule: the rung (`needs: stakeholder`) is what a
+   * member lacks, and the capability (`spec-read`) is what support — a rung *above* it — lacks. A
+   * stakeholder therefore gets the spec and nothing else from the operator group, and no
+   * `admin-console` capability to inherit a console row from.
+   */
+  it("gives a stakeholder the spec and nothing else — no console, no inbox", () => {
+    expect(MENUS.stakeholder).toEqual(["/admin/spec", ...MENUS.member]);
+    expect(hrefsFor("stakeholder")).not.toContain("/admin/console");
+    expect(hrefsFor("stakeholder")).not.toContain("/admin/inbox");
+    expect(navViewer("stakeholder").capabilities.has("admin-console")).toBe(false);
+    // …and the row is not drawn for the seat that outranks it, which is the capability's whole job.
+    expect(hrefsFor("support")).not.toContain("/admin/spec");
+    expect(railHrefs("stakeholder")).toContain("/admin/spec");
+    expect(railHrefs("support")).not.toContain("/admin/spec");
   });
 
   /**
@@ -325,16 +358,18 @@ describe("the ladder decides the rows", () => {
     expect(MENUS.owner).toEqual(allItems().map((item) => item.href));
   });
 
-  it("counts one more row per rung, in the ladder's own order", () => {
+  it("counts the rows each rung draws — five rungs, three shapes", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
     // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
-    // row and #1138 the mail-override row (so the two staff rungs carry 17 rather than 15), and
-    // #1131 added Chat to the Workspace group, so every rung that draws it counts one more:
-    // 18 for a staff rung (ADMIN_GROUP 10 + WORKSPACE 4 + SUPPORT_GROUP 4), 6 and 7 below.
-    expect(counts).toEqual([6, 7, 18, 18]);
-    // Not decoration: the first two rungs differ by exactly the row support exists for.
+    // row, #1138 the mail-override row and #1252 the project spec, so a staff rung carries 19
+    // (ADMIN_GROUP 11 + WORKSPACE 4 + SUPPORT_GROUP 4) and the two rungs below it carry 6 and 7.
+    // `stakeholder` and `support` both count 7 by coincidence, not by sharing: the stakeholder's
+    // seventh row is the spec and support's is the inbox (asserted above).
+    expect(counts).toEqual([6, 7, 7, 19, 19]);
+    // Not decoration: the first two rungs differ by exactly the row the second exists for.
     expect(counts[1]).toBe(counts[0] + 1);
-    expect(counts[2]).toBeGreaterThan(counts[1]);
+    expect(counts[2]).toBe(counts[1]);
+    expect(counts[3]).toBeGreaterThan(counts[2]);
   });
 
   it("shows a signed-out visitor the member menu, and never a staff row", () => {
@@ -348,7 +383,7 @@ describe("the ladder decides the rows", () => {
     expect(menuFor("member").map((group) => group.label)).toEqual(["group-app", "group-support"]);
     // #929 — the operator group leads the document, so it is the first heading every staff rung
     // draws; a member's rail drops it entirely rather than drawing an empty Admin heading.
-    for (const role of ["support", "admin", "owner"] as const) {
+    for (const role of ["stakeholder", "support", "admin", "owner"] as const) {
       expect(menuFor(role).map((group) => group.label)).toEqual([
         "group-admin",
         "group-app",
@@ -399,7 +434,14 @@ describe("the rendered rail", () => {
     // from the HTML, not `hidden` in a class a reader could still select.
     const nav = sectionOf(shellPageCopy, "nav-alignsynch");
     const html = railHtml("member");
-    for (const id of ["console", "admin-instances", "admin-audit", "admin-inbox", "admin-health"]) {
+    for (const id of [
+      "console",
+      "admin-instances",
+      "admin-audit",
+      "admin-inbox",
+      "admin-health",
+      "admin-spec",
+    ]) {
       expect(html).not.toContain(`>${itemLabel(nav, id)}<`);
     }
   });

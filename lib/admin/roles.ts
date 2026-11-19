@@ -458,9 +458,21 @@ export function requirementFor(action: AdminAction): UserRole {
  * `null` is nobody signed in, or an account with no profile row (a missing row is
  * `DEFAULT_USER_ROLE`, which `lib/admin/act.ts` applies before it asks) — refused on every action,
  * because every floor is at least `support`.
+ *
+ * **The stakeholder seat takes no action from this table at all (#1252).** That is one sentence of
+ * policy and the rank comparison cannot express it: `stakeholder` sits above `member`, and this
+ * table carries eight member-floored rows (a template draft, the `relationship.*` writes) whose
+ * floor is the *actor's own product*. A reviewer's product is the spec, and the bundle's own
+ * Definition of Done is "every `ACTION_REQUIREMENTS` action refuses a stakeholder" — so the seat is
+ * refused here, once, instead of eight floors being raised above `member` (which would take a
+ * member's own writes away) or the row being trusted to the ownership check (which a stakeholder is
+ * not supposed to reach). Nothing else moves: no member, support, admin or owner gate changes, and
+ * `atLeast()` still compares ranks, because "is this seat high enough to *see* a surface" and "may
+ * this seat *write*" are different questions.
  */
 export function can(role: UserRole | null, action: AdminAction): boolean {
   if (role === null) return false;
+  if (role === "stakeholder") return false;
   return roleRank(role) >= roleRank(requirementFor(action));
 }
 

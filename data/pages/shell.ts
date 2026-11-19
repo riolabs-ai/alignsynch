@@ -371,6 +371,12 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "admin-email-templates", label: "Email Templates" },
           /**
+           * #1252 — the project spec. Two words, like the two rows above it in this group that also
+           * name a *thing* rather than a verb: "Project Spec" is the bundle's own title (AS-05) and
+           * renaming it here would be the screen disagreeing with its card.
+           */
+          { id: "admin-spec", label: "Project Spec" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,

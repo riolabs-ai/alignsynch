@@ -36,6 +36,8 @@ import { adminSessionsPageCopy } from "./admin-instances";
 import { adminPermissionsPageCopy } from "./admin-permissions";
 // #1138 — the transactional-mail override: one register of templates, one editor per template.
 import { adminEmailTemplatesPageCopy } from "./admin-email-templates";
+// #1252 — the project spec: the stakeholder's read-only spine, one fixture for its three routes.
+import { adminSpecPageCopy } from "./admin-spec";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -139,6 +141,12 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // #1138 — the transactional-mail override: the register, then one template's editor.
   "/admin/email-templates": adminEmailTemplatesPageCopy,
   "/admin/email-templates/[id]": adminEmailTemplatesPageCopy,
+  // #1252 — the project spec's R0 spine: one fixture, three depths (the Overview, the Validation
+  // matrix, one group's page). The reader that draws them is the next card, so the words here say
+  // what the spine is and promise the reader rather than inventing its layout.
+  "/admin/spec": adminSpecPageCopy,
+  "/admin/spec/validation": adminSpecPageCopy,
+  "/admin/spec/[group]": adminSpecPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/

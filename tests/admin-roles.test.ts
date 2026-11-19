@@ -32,9 +32,11 @@ function rungBelow(role: UserRole): UserRole | null {
 }
 
 describe("the role ladder", () => {
-  it("is member < support < admin < owner, in that order", () => {
-    expect(ROLE_LADDER).toEqual(["member", "support", "admin", "owner"]);
-    expect(USER_ROLES.map((role) => roleRank(role))).toEqual([0, 1, 2, 3]);
+  it("is member < stakeholder < support < admin < owner, in that order", () => {
+    // #1252 — `stakeholder` is inserted *between* member and support, which is what keeps every
+    // existing `roleAdmits("support" | "admin", …)` floor refusing it.
+    expect(ROLE_LADDER).toEqual(["member", "stakeholder", "support", "admin", "owner"]);
+    expect(USER_ROLES.map((role) => roleRank(role))).toEqual([0, 1, 2, 3, 4]);
   });
 
   it("admits an equal or higher rung on a surface gate, and never a lower one", () => {
@@ -58,7 +60,7 @@ describe("the role ladder", () => {
     for (const action of ADMIN_ACTIONS) expect(can(null, action)).toBe(false);
   });
 
-  it("parses the four rungs and refuses a role that is not one", () => {
+  it("parses the five rungs and refuses a role that is not one", () => {
     for (const role of USER_ROLES) expect(zUserRole.safeParse(role).success).toBe(true);
     expect(zUserRole.safeParse("superuser").success).toBe(false);
   });

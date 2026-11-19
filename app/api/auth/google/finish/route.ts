@@ -53,8 +53,12 @@ import {
   GOOGLE_FAILURE_QUERY,
   GOOGLE_FAILURE_VALUE,
   googleFailedLoginPath,
+  AFTER_SIGN_IN_BY_BRAND,
   safeNextPath,
+  signInLanding,
 } from "@/lib/auth/paths";
+import { roleOfUser } from "@/lib/auth/require-role";
+import { brand, brandIdOf } from "@/data/brand";
 import {
   appOriginOf,
   clearFlowCookieHeader,
@@ -68,6 +72,32 @@ import { exchangeVerifier } from "@/lib/auth/google-flow-neon";
 
 /** The session is per request and the query is Neon's: this route is never prerendered or cached. */
 export const dynamic = "force-dynamic";
+
+/**
+ * Where this just-signed-in browser lands (#1252) — the one place a Google sign-in can ask the role.
+ *
+ * The exchange has just said **who** signed in (`exchanged.userId`) but the browser does not hold
+ * the session cookie yet: it is in the `Set-Cookie` headers of the response this function's caller
+ * is still building, so a session read here would answer "signed out". The user id is enough — the
+ * role is a `user_profile` row keyed by it — and it is the only moment this handler can ask.
+ *
+ * A failed profile read is **not** a failed sign-in: the person is signed in and the destination
+ * they would have had before this card is right, so it is logged and `settled` is kept. `null`
+ * (a body this build could not read) takes the same path with no log noise.
+ */
+async function landingOf(userId: string | null, settled: string): Promise<string> {
+  const destination = AFTER_SIGN_IN_BY_BRAND[brandIdOf(brand)];
+  if (userId === null) return signInLanding(null, settled, destination);
+  try {
+    return signInLanding(await roleOfUser(userId), settled, destination);
+  } catch (error) {
+    console.warn(
+      "[auth:google-finish] landing=destination reason=role-read-failed — the sign-in stands, the role does not",
+      error instanceof Error ? error.message : error,
+    );
+    return settled;
+  }
+}
 
 /**
  * One round trip: verifier + challenge → session cookies on this origin → 307 to the destination.
@@ -161,7 +191,7 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
-  const target = new URL(safeNextPath(next), origin.origin);
+  const target = new URL(await landingOf(exchanged.userId, next), origin.origin);
   console.info(
     `[auth:google-finish] req=${requestId} ok cookies=${exchanged.setCookies.length}` +
       ` target=${target.toString()}`,

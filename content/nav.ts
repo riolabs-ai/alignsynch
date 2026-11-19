@@ -64,6 +64,9 @@ export const NAV_ICON_NAMES = [
   "broadcast",
   "review",
   "audit",
+  // #1252 — the project spec. Its own glyph: `ClipboardCheck` is the review shelf's and
+  // `ScrollText` is the audit log's, and the spec is neither a to-do list nor a log.
+  "spec",
 ] as const;
 
 export type NavIcon = (typeof NAV_ICON_NAMES)[number];
@@ -87,6 +90,16 @@ export const zNavRow = z
     icon: zNavIcon,
     /** The lowest rung shown this row — the ladder in `content/role-ladder.ts`, never a new word. */
     needs: z.enum(USER_ROLES),
+    /**
+     * A capability the row additionally requires (#1252) — `spec-read` is the one value today.
+     *
+     * A **string** here rather than an enum, and deliberately: the vocabulary is
+     * `lib/nav.ts::NAV_CAPABILITIES`, which is chrome, and this module is the document's contract —
+     * `content/` never imports `lib/`. `scripts/nav-menu.ts --check` resolves the value against that
+     * list (a gate step in every lane), which is the same half-schema/half-validator split `href`
+     * and `needs` already use.
+     */
+    capability: z.string().min(1).optional(),
     /**
      * Match this row's own address only. Overview is the case the field exists for: a prefix rule
      * lit it beside whichever `/dashboard/*` page the reader was on.

@@ -10,7 +10,8 @@
  *   --check     schema valid; `id`, `href` and label id unique; every `href` resolves in
  *               `content/routes.ts`; every `icon` is a `NavIconName`; every group and row label is
  *               an item of `nav-alignsynch` in `data/pages/shell.ts`; every `needs` is a rung of
- *               `content/role-ladder.ts`; every `hidden` row carries a reason. Every failure names
+ *               `content/role-ladder.ts`; every `capability` is a `NAV_CAPABILITY` in
+ *               `lib/nav.ts`; every `hidden` row carries a reason. Every failure names
  *               the group and the row it is in, because "groups.2.items.7.icon: invalid" sends the
  *               reader to a JSON pointer instead of to the line an editor typed.
  *   --tree      the rail as ASCII, resolved through `lib/nav-menu.ts::menuFor` — the same filter
@@ -46,6 +47,7 @@ register("./ts-modules.mjs", import.meta.url);
 
 type NavModule = typeof import("../content/nav");
 type NavMenuModule = typeof import("../lib/nav-menu");
+type ChromeNavModule = typeof import("../lib/nav");
 type PageCopyModule = typeof import("../lib/page-copy");
 type RouteManifestModule = typeof import("../content/route-manifest");
 type RoutesModule = typeof import("../content/routes");
@@ -71,6 +73,7 @@ type BrandId = (typeof BRANDS)[number];
 
 let nav: NavModule;
 let navMenu: NavMenuModule;
+let chrome: ChromeNavModule;
 let pageCopy: PageCopyModule;
 let routeManifestModule: RouteManifestModule;
 let routes: RoutesModule;
@@ -81,6 +84,7 @@ let shell: ShellModule;
 async function load(): Promise<void> {
   nav = await import("../content/nav");
   navMenu = await import("../lib/nav-menu");
+  chrome = await import("../lib/nav");
   pageCopy = await import("../lib/page-copy");
   routeManifestModule = await import("../content/route-manifest");
   routes = await import("../content/routes");
@@ -192,6 +196,7 @@ function check(): number {
   const labelIds = new Set((navSection.items ?? []).map((item) => item.id));
   const icons = new Set<string>(nav.NAV_ICON_NAMES);
   const rungs = new Set<string>(ladder.USER_ROLES);
+  const capabilities = new Set<string>(chrome.NAV_CAPABILITIES);
 
   const groupIds = new Set<string>();
   const rowIds = new Set<string>();
@@ -228,6 +233,11 @@ function check(): number {
       if (!rungs.has(row.needs)) {
         finding(
           `${at}: needs "${row.needs}" is not a rung of content/role-ladder.ts (${ladder.USER_ROLES.join(" < ")})`,
+        );
+      }
+      if (row.capability !== undefined && !capabilities.has(row.capability)) {
+        finding(
+          `${at}: capability "${row.capability}" is not a NAV_CAPABILITY in lib/nav.ts (${[...capabilities].join(", ")})`,
         );
       }
       if (routeManifestModule.matchRoute(routes.routeManifest, row.href) === undefined) {
@@ -319,6 +329,7 @@ function tree(role: UserRole, brand: BrandId): number {
       const lastRow = rowIndex === group.items.length - 1;
       const trunk = lastGroup ? "   " : "│  ";
       const marks: string[] = [item.needs];
+      if (item.capability !== undefined) marks.push(`cap:${item.capability}`);
       if (item.exact === true) marks.push("exact");
       if (item.tourAnchor !== undefined) marks.push(`tour:${item.tourAnchor}`);
       console.log(

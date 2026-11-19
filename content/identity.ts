@@ -102,13 +102,19 @@ export const zUserId = z.string().min(1).max(128);
  * ------------------------------------------------------------------ */
 
 /**
- * The vocabulary, closed at four, **in rank order — lowest rung first**.
+ * The vocabulary, closed at five, **in rank order — lowest rung first**.
  *
- *   member    everything a signed-in person may do. The column default, and what a missing row is.
- *   support   reads the admin surfaces and may act on a person's behalf: a note, a resend.
- *   admin     manages people and content — invitations, role changes, deletions.
- *   owner     everything an admin has, plus the one act no admin may take: handing ownership on.
- *             At most one row holds it (`user_profile_one_owner`, migration 0023).
+ *   member        everything a signed-in person may do. The column default, and what a missing row is.
+ *   stakeholder   reads the project spec and nothing else (#1252). It sits **below** `support` on
+ *                 purpose: a reviewer's seat must not inherit a support seat's powers by ranking
+ *                 above it, and the only thing a stakeholder is admitted to is the explicit
+ *                 `SPEC_READERS` set in `content/role-ladder.ts`, never a rung comparison. An
+ *                 `admin` grants it through the existing `role.change` action; the column accepts it
+ *                 since migration 0043.
+ *   support       reads the admin surfaces and may act on a person's behalf: a note, a resend.
+ *   admin         manages people and content — invitations, role changes, deletions.
+ *   owner         everything an admin has, plus the one act no admin may take: handing ownership on.
+ *                 At most one row holds it (`user_profile_one_owner`, migration 0023).
  *
  * #183 shipped two values and said, in this spot, that a third was "a new decision, arriving with
  * the pages that need it". #501 is that decision and its pages, so the order above is now
@@ -122,8 +128,10 @@ export const zUserId = z.string().min(1).max(128);
  */
 export {
   DEFAULT_USER_ROLE,
+  readsSpec,
   roleAdmits,
   roleRank,
+  SPEC_READERS,
   USER_ROLES,
   type UserRole,
 } from "./role-ladder";

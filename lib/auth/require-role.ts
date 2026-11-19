@@ -34,7 +34,7 @@
  */
 import { notFound, redirect } from "next/navigation";
 
-import { DEFAULT_USER_ROLE, roleAdmits, type UserRole } from "@/content/identity";
+import { DEFAULT_USER_ROLE, readsSpec, roleAdmits, type UserRole } from "@/content/identity";
 import { loginPathFor, AFTER_SIGN_IN } from "@/lib/auth/paths";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser, type SessionUser } from "@/lib/auth/session";
@@ -74,6 +74,12 @@ export interface RoleQuestion {
 }
 
 /**
+ * The three things every gate knows, before a policy decides — the half `RoleQuestion` and the
+ * spec-reader gate share (#1252).
+ */
+export type RoleStanding = Omit<RoleQuestion, "needed">;
+
+/**
  * The whole decision, as a value.
  *
  * A missing profile row is **not** a privilege: `null` is normalised to `DEFAULT_USER_ROLE`
@@ -85,13 +91,35 @@ export interface RoleQuestion {
  * The `next` handed to `/login` goes through `loginPathFor`, which refuses an absolute or
  * protocol-relative value — an open redirect built out of a URL that looks like a login page is
  * exactly what that function exists to stop.
+ *
+ * **One refusal rule, two policies.** `answerFor` below is the three states; the rung comparison
+ * and the spec-reader set are the two predicates that fill it. That is deliberate: a second copy of
+ * the redirect would be a second place a refusal could become a 403.
  */
 export function roleAnswerFor(question: RoleQuestion): RoleAnswer {
+  return answerFor(question, (role) => roleAdmits(question.needed, role));
+}
+
+/**
+ * The spec-reader gate's policy (#1252) — the same three answers, **membership instead of a rung**.
+ *
+ * `stakeholder`, `admin` and `owner` are admitted; `support` is not, even though it outranks
+ * `stakeholder` on the ladder. Reading the ladder here (`roleAdmits("stakeholder", role)`) would
+ * hand the spec to a support seat, which is the one thing the bundle's AS-03 forbids — so the
+ * predicate is `readsSpec`, the explicit set in `content/role-ladder.ts`, and a member or a support
+ * seat gets the same 404 an unknown URL returns.
+ */
+export function specReaderAnswerFor(question: RoleStanding): RoleAnswer {
+  return answerFor(question, (role) => readsSpec(role));
+}
+
+/** The three states, once. Whatever `admits` says is this surface's policy. */
+function answerFor(question: RoleStanding, admits: (role: UserRole) => boolean): RoleAnswer {
   if (!question.signedIn) {
     return { kind: "redirect", to: loginPathFor(question.next ?? DEFAULT_ROLE_NEXT) };
   }
   const role = question.role ?? DEFAULT_USER_ROLE;
-  if (!roleAdmits(question.needed, role)) return { kind: "not-found" };
+  if (!admits(role)) return { kind: "not-found" };
   return { kind: "allow", role };
 }
 
@@ -158,10 +186,41 @@ export async function requireRole(
   needed: UserRole,
   options: { readonly next?: string } = {},
 ): Promise<RoleGrant> {
+  return gate((standing) => roleAnswerFor({ ...standing, needed }), options);
+}
+
+/**
+ * The spec-reader gate (#1252) — `/admin/spec` and its two children.
+ *
+ * The same three answers as `requireRole`, with one difference that matters: the policy is the
+ * `SPEC_READERS` set, so **`support` is refused** even though it is one rung above `stakeholder`.
+ * A member or a support seat gets `notFound()` — the byte-for-byte 404 an unknown URL returns,
+ * never a 403 and never a redirect, because either of those confirms the page exists (s04). A
+ * signed-out visitor is sent to `/login?next=<where they were going>`.
+ *
+ * It is a named function rather than `requireRole("stakeholder", …)` because the rung comparison
+ * would admit support: the gate's *question* is "is this role in the reader set", and the name is
+ * where that is written down.
+ */
+export async function requireSpecReader(
+  options: { readonly next?: string } = {},
+): Promise<RoleGrant> {
+  return gate(specReaderAnswerFor, options);
+}
+
+/**
+ * Resolve the session and the role once, ask the policy, and act on its answer.
+ *
+ * Shared by both gates so there is exactly one place a refusal is performed — `redirect()` and
+ * `notFound()` both throw, so a caller cannot continue past either.
+ */
+async function gate(
+  decide: (standing: RoleStanding) => RoleAnswer,
+  options: { readonly next?: string } = {},
+): Promise<RoleGrant> {
   const user = await currentUser();
   const role = user === null ? null : await roleOfUser(user.userId);
-  const answer = roleAnswerFor({
-    needed,
+  const answer = decide({
     signedIn: user !== null,
     role,
     ...(options.next === undefined ? {} : { next: options.next }),
