@@ -44,6 +44,7 @@
     "release": "bash scripts/release.sh",
     "release:cut": "node scripts/release-cut.mjs",
     "release:preflight": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release-preflight.mjs",
+    "release:postcheck": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release-postcheck.mjs",
     "release:approvals": "node scripts/release-record.mjs approvals",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",

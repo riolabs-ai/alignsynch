@@ -57,6 +57,45 @@ not a step in CI: the gate runs on every push, and this runs where it is read, w
 `tests/release-preflight.test.ts` holds one case per check, both sides, plus ten cases where exactly
 one check fails alone.
 
+## The postcheck: seven facts, after the cut
+
+`pnpm release:postcheck <version>` prints seven lines, one per fact a **completed** cut must still be
+true, and exits 1 if any of them is false. It is the mirror of the preflight and asks the opposite
+question: the preflight asks whether a cut may start, this asks whether the one that happened landed
+— against the tag, the published Release, production and the health record, not against the working
+tree.
+
+It runs **last**: both cut modes call it once the Release is published, and its exit code is ignored
+on purpose, because the tag is on the remote by then and a published tag is never moved. A `✗` here
+is follow-up work — usually the next version — never a re-cut, and the script says so in its own
+output.
+
+| #   | check                    | how                                                                      |
+| --- | ------------------------ | ------------------------------------------------------------------------ |
+| 1   | tag is annotated         | `git cat-file -t v<version>` is `tag`, not `commit`                      |
+| 2   | bump is at the tag       | `git show v<version>:package.json` names `<version>`                     |
+| 3   | tag is on `origin/main`  | `git merge-base --is-ancestor <tag-commit> origin/main`                  |
+| 4   | GitHub release published | `gh release view`, not a draft, `isPrerelease` matches the `-suffix`     |
+| 5   | production names the cut | `GET https://alignsynch.com/api/version`, at a commit containing the tag |
+| 6   | CI green at the tag      | `gh api …/commits/<sha>/check-runs`, no failing check                    |
+| 7   | entry and record agree   | `CHANGELOG.md` Known limits bullets, and the health record naming it     |
+
+Check 2 is the top historical failure: the bump merged, the tag landed on the commit before it, and
+the released tree shipped the previous version. Check 5 compares **containment**, not equality —
+production deploys every `main` merge and is routinely a few commits past the tag — so the live
+commit either is the tag's commit or contains it.
+
+**A known-flaky job is named, never dropped.** `reset and reseed the demo branch` seeds the shared
+demo branch and fails for environmental reasons (the branch ceiling, two seeds overlapping). It is
+printed as `⚠` with its run URL and counted beside the verdict, which is how the check that failed
+the `v2.0.0-rc1.3` cut stays visible in the table instead of being swallowed — and why it was found
+only because a human looked.
+
+It reads a tag and a live endpoint, neither of which exists on a pull request, so it is **not** a
+step in `scripts/verify.sh` and not a step in CI, for the same reason the preflight is not.
+`tests/release-postcheck.test.ts` holds one case per check plus the negative self-test: run against a
+version production and the record have moved past, it exits 1 and names what failed.
+
 ## The run order
 
 Eight steps, in this order. Each names the command it runs; the sections below are the reasons, and
@@ -312,6 +351,10 @@ re-run prints `already sent for v…` and sends nothing. The Known limits block 
 
 A pushed tag is never moved. A botched cut is abandoned — delete the tag and the Release — and the
 next number is cut (_Failure path_).
+
+Both cut modes then print the **postcheck** — seven facts read after the Release is published (above),
+with a `✗` and its remedy per failure and a verdict line. Its exit code never fails a cut: by then the
+tag is published. `pnpm release:postcheck <version>` re-runs it on any later day.
 
 ### 7. Post-deploy proof
 

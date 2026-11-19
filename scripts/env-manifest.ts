@@ -625,6 +625,10 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "PARITY_REASON", why: "the sentence a parity hash rewrite records" },
   { name: "PARITY_UPDATE", why: "rewrites the parity manifest instead of comparing it" },
   { name: "PAYMENT_E2E_STATE", why: "the handoff file `pnpm payment:e2e setup` writes" },
+  {
+    name: "POSTCHECK_PRODUCTION_URL",
+    why: "the host `pnpm release:postcheck` asks in place of alignsynch.com — a preview or a harness; the check itself is an unauthenticated public read",
+  },
   { name: "PROTOTYPE_SAVE_PORT", why: "the loopback sink the review artifact's Save posts to" },
   { name: "QA_ATLAS_ARCHIVE_DIR", why: "archive directory for the release atlas capture" },
   { name: "QA_ATLAS_BASE", why: "the base URL the atlas capture drives" },
