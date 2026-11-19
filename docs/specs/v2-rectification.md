@@ -109,6 +109,29 @@ draws a trial chip and the live header does not", and it cannot say "the chip is
 claim that needs the eye is marked `unverifiable` with that reason and the PNGs are on disk. It also
 measures one state per screen — the state the seed is in — not every state the bundles draw.
 
+## Role and state coverage — one seat per capture, and what that leaves unverified
+
+A doc's `audience:` is not the same thing as the seat that can render its surface, and a capture is one
+seat in one state. Each row above was photographed as the role
+`docs/specs/v2-surface-routes.json` declares for its route; this table names what that means for the
+surfaces this pass touched, and what a reader should not read into a `matches`.
+
+| surface                                   | doc audience                                                             | seat captured      | covered                                                                                                                                                     | unverified, and why                                                                                                                                                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/assessment/new/failed`                  | Initiator                                                                | initiator          | the drawn screen at 390 + 1280, **and** the signed-out arrival — `200` with the same heading and the same promise, because the page reads no session at all | the Counterparty seat. Nothing on the page is seat-dependent, but no counterparty capture exists: the demo holds one identity per party                                                                                                                    |
+| `/admin/email-templates`                  | Admin, Build team                                                        | admin              | the register as an admin reads it, at both widths                                                                                                           | any non-admin seat. The gate answers `307 → /login?next=/admin/email-templates` (measured on this build), so there is no reader variant of this surface to capture — and that absence is the correct answer, not a gap                                     |
+| `/dashboard/relationships`                | Initiator, Counterparty                                                  | initiator          | the chip row in the seed's live state, at both widths                                                                                                       | the Counterparty seat, and the waiting / trial-ended / paused states of the same list. The seed holds one identity per party and one relationship per state, so a second role-switched capture needs a second seeded account, which the demo does not have |
+| `/assessment/instances/{instance}/answer` | Initiator, Counterparty                                                  | initiator          | the **sealed** sheet — the seed's instance is already accepted                                                                                              | the answering state, for either seat. It needs a fresh invite walked end to end, which the harness cannot do without making product choices                                                                                                                |
+| the three pause/join emails               | Initiator (joined, paused-initiator); Counterparty (paused-counterparty) | source, not a seat | both seats: one template per seat, each verified in the file that sends it, and rendered in `tests/email-templates.test.ts`                                 | nothing — an email has no screen and no seat-dependent chrome                                                                                                                                                                                              |
+
+**Two things this table is not.** It is not a claim that a member surface was seen by a stakeholder:
+the Build-team audience reads the same member shell, none of the nine surfaces draws operator-only
+chrome, and the one Admin surface is gated to `admin`. And it is not a claim that the prototypes' state
+switcher is missing: every bundle draws one (`PROTOTYPE ONLY`), the app replaces it with real seeds and
+real seats, and no doc in this bundle asks a screen to draw a role switch — so its absence is not
+counted as a delta here. What it does mean is that **a `matches` on this page is a `matches` for one
+seat in one state**, and the rows above say which.
+
 ## The register
 
 | doc                                                       | title                                | status                                                                                      | route                                                                                                                                                                            | bundle reference                                                                      | doc checked at                                                | verdict        | deltas                   | issue               |
