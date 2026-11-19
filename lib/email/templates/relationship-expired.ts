@@ -9,13 +9,12 @@
  * ladder that carries no stamp, because expiry is a stored fact and delivery is not what makes it
  * true.
  *
- * **The two bodies differ by exactly one sentence, and it is the sentence the product already
- * writes.** The payer is told their fee was not paid and that nothing further will be charged. The
- * counterparty gets no billing detail at all: `lib/relationship/membership.ts` owns the lapse
- * clause both parties read ("the payment for it did not go through, so the initiator's membership
- * ended with it") and this template says the same thing in one line — never a figure, never "your
- * fee", never an accusation. PRD R6: the counterparty's surface reads only that the relationship is
- * waiting or ended.
+ * **The two bodies differ by what each seat already knows.** The payer is told their fee was not
+ * paid and that nothing further will be charged. The counterparty gets no billing detail at all:
+ * `lib/relationship/membership.ts` owns the lapse clause, and this mail does not repeat it — the
+ * body says only that the relationship ended before it was published and can no longer be
+ * completed, then the link (#1225). Never a figure, never "your fee", never an accusation. PRD R6:
+ * the counterparty's surface reads only that the relationship is waiting or ended.
  *
  * **Nothing is invented.** The date is `relationship_payment.expired_at` printed as its calendar
  * date; the title is the template's; the link is the relationship's own screen. There is no
@@ -80,13 +79,9 @@ export function relationshipExpiredDocument(facts: RelationshipExpiredFacts): Em
         : [
             {
               kind: "paragraph",
-              text: `Hi ${facts.name}, ${facts.template} expired on ${ended} before it was published, so it can no longer be completed.`,
+              text: `Hi ${facts.name}, ${facts.template} ended on ${ended} before it was published, so it can no longer be completed.`,
             },
-            {
-              kind: "paragraph",
-              text: "The payment for it did not go through, so the initiator's membership ended with it.",
-            },
-            { kind: "paragraph", text: `Open it: ${facts.link}` },
+            { kind: "paragraph", text: `Open the Relationship: ${facts.link}` },
           ],
   };
 }
