@@ -179,6 +179,10 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/assessment/instances/[instanceId]/answer", mode: "column" },
   { path: "/assessment/instances/[instanceId]/report", mode: "column" },
   { path: "/assessment/instances/[instanceId]/sent", mode: "column" },
+  // #1226 — the create-failed screen: one status card in the column, the same left edge as the
+  // stage that failed its post. The artifact draws `mx-auto max-w-3xl`; the width is kept as a
+  // measure inside `StageColumn`, and the centring is not (#858).
+  { path: "/assessment/new/failed", mode: "column" },
   { path: "/invite/[token]", mode: "column" },
   // #1109 — the create flow, at the dashboard address it shares with the member's template library.
   // The segment is `[id]` and the value a `/create` URL carries is a template **slug**: Next refuses

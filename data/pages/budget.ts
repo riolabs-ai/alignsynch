@@ -720,6 +720,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-sent",
     budget: 0,
   },
+  // #1226 — the create-failed screen. Budget 0 from the first commit: the heading, the one sentence
+  // and the two action labels are `data/pages/assessment-create-failed.ts`, and the surface has no
+  // other word to say — no error code, no column name, no retry counter. Attribution is
+  // reachability, so this row counts `create-failed.tsx` and the column it renders inside.
+  "/assessment/new/failed": {
+    page: "app/(mainlayout)/assessment/new/failed/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create-failed",
+    budget: 0,
+  },
   "/dashboard/templates/[id]/create": {
     page: "app/(mainlayout)/dashboard/templates/[id]/create/page.tsx",
     // #1109 — the stage module moved out of `app/` into `components/flow/template-create/`, so the

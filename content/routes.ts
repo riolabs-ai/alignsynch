@@ -66,6 +66,10 @@ const STATIC_ROUTES = [
   // replaced `/assessment/instances`, which is now a 308 here (`next.config.mjs`); the session's
   // own page stays in `DYNAMIC_ROUTES` below.
   "/assessments",
+  // #1226 — the screen a browser form post lands on when the create transaction throws. A static
+  // segment below the POST-only endpoint (`route.ts` in the parent), which is why it is a page and
+  // not a route of its own: the write is the endpoint, the screen is a GET a person reads after it.
+  "/assessment/new/failed",
   "/battle",
   "/categories",
   "/chat",
