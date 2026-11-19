@@ -42,6 +42,17 @@
 # preflight adds refusals and removes none: the checkout, dirty-tree, gate and tag refusals below are
 # unchanged and still run, after it.
 #
+# **Both cut modes end with `scripts/release-postcheck.mjs`, and its exit code is ignored.** Seven
+# facts a cut must *still* be true are read after the Release is published (card t_244fc00a): the tag
+# annotated; the bump present in the tagged tree; the tag an ancestor of `origin/main`; a published
+# Release whose `prerelease` flag matches the version; production naming the version at a commit that
+# contains the tag; no failing CI at the tag's own commit; and the entry's Known limits beside a
+# health record that names the version. It is a **verdict, not a gate**: the tag is on the remote by
+# then and a published tag is never moved, so a ✗ there is the next version's work — never a reason
+# to fail a cut that already happened. `pnpm release:postcheck <version>` runs it on any later day,
+# and the v2.0.0-rc1.3 cut — where the demo reseed was found only because a human looked — is why it
+# exists at all.
+#
 # Why the record step exists (#961): a tag is immutable, so the record *on* a tag is a snapshot of
 # whatever the last `pnpm health:record` measured — v1.17.0 was cut with `--tag-only` and the file on
 # the tag read `tree.packageVersion 1.15.0`, while `/admin/health` reads the committed record and so
@@ -590,6 +601,15 @@ require_cut_checkout() { # the three states a cut cannot start from, each refuse
 #   --allow-open-prs   check 10 (no merges in flight) — the open queue is known and accepted
 PREFLIGHT_TOOL="scripts/release-preflight.mjs"
 
+# --- the postcheck (card t_244fc00a) --------------------------------------------
+# Seven facts a cut must *still* be true, read after the Release is published, as a verdict rather
+# than a gate. It is called at the end of both cut modes and its exit code is **ignored on purpose**:
+# by the time it runs the tag is on the remote, and a published tag is never moved, so a ✗ means "the
+# next version" and never "fail this cut". The whole point is that the all-clear stops being a
+# person's memory — on the v2.0.0-rc1.3 cut six checks passed and the seventh, the demo reseed, was
+# found only because a human looked.
+POSTCHECK_TOOL="scripts/release-postcheck.mjs"
+
 release_preflight() { # <version>
   local version="$1" flags=()
   if [ "$NO_RECORD" -eq 1 ]; then flags+=(--no-record); fi
@@ -726,6 +746,27 @@ record_step() { # <version> <tag-sha>
   say "    git commit -m \"chore(health): re-record platform health at v$version\""
 }
 
+# --- the postcheck step (card t_244fc00a) ---------------------------------------
+# The verdict on the cut that just happened, printed after the Release is published. It cannot fail
+# the cut and does not try: `node` exits 1 when a check is ✗, the code is read into `status` and the
+# function returns 0 regardless. Saying so out loud is the point — an operator who sees a ✗ must know
+# the tag is already published and that the fix is the next version, not a re-cut.
+postcheck_step() { # <version>
+  local version="$1" status=0
+  step "postcheck ($POSTCHECK_TOOL — the seven after-cut facts)"
+  node "$ROOT/$POSTCHECK_TOOL" "$version" || status=$?
+  if [ "$status" -ne 0 ]; then
+    say ""
+    say "  the postcheck reported $status, and the cut still stands: v$version's tag is on the remote"
+    say "  and a published tag is never moved. This is a verdict, not a gate — each ✗ above names the"
+    say "  act that clears it, and the usual one is the next version."
+  else
+    say ""
+    say "  the postcheck passes — the cut is verified against the tag, the Release, production and the record"
+  fi
+  return 0
+}
+
 cmd_tag_only() { # <version> — the version and entry are already merged on main
   local version="$1"
   # First, before the checkout guard and the gate: the ten facts, each with its own line and remedy.
@@ -742,6 +783,7 @@ cmd_tag_only() { # <version> — the version and entry are already merged on mai
   fi
   tag_and_publish "$version"
   record_step "$version" "$TAGGED_SHA"
+  postcheck_step "$version"
 }
 
 cmd_release() { # <version> <limits-file>
@@ -805,6 +847,7 @@ cmd_release() { # <version> <limits-file>
   git push origin main
 
   tag_and_publish "$version"
+  postcheck_step "$version"
 }
 
 cmd_dry_run() { # <version> <limits-file>
