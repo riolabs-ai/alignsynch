@@ -34,6 +34,11 @@ and **cap the one step that saturates the box**.
 | **Database**            | `db/**` (plain-SQL migrations) — `lib/db/**` is already inside `lib/**`                                               | classifies as **code** (no shortcut for a path the classifier does not know); the `db:*` scripts are **not** gate steps, so no lane ever needs a connection string |
 | **Documentation**       | `docs/**`, `*.md`                                                                                                     | `git diff --check` + relative-link existence only                                                                                                                  |
 
+**A migration's number is a rule, and it costs no lane anything.** `db/migrations/<number>_<slug>.sql`
+— one number, one step, and an applied file is never renumbered (its name is its
+`schema_migrations` key). The check lives in `db:migrate`'s own preflight rather than in a lane:
+[Migrations](migrations.md).
+
 The layers are **read-only facts about the tree** — no import moved, no path
 rewritten, no file relocated. That is deliberate: seven cards were in flight
 against this tree while the lanes landed, and a change of that kind is a
