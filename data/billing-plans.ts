@@ -37,6 +37,14 @@
  * interval. Neither types a price the other can disagree with: `membershipPlanProblems()` and
  * `tests/plan-catalogue.test.ts` compare them row for row.
  *
+ * **The Family plan is gone; its tier and its amounts are not** (owner, 2026-11-19). The catalogue
+ * now sells Single and Single Annual, and the `principal` rows below are a **tier** no plan claims
+ * rather than a plan this file advertises: they stay, exactly as seeded, because a `billing_plan`
+ * row is what a checkout charges and what `billing_plan` is seeded from, and delisting a plan is
+ * not archiving a Price in Stripe — that is a dashboard act, and a card that deleted the row here
+ * would leave the seed and the provider disagreeing. The one row whose amount is authored and not
+ * a formula is `principal/year`, left at the amount it was created with.
+ *
  * **`yearlyCents` is the amount charged once a year**, not the monthly-equivalent the card prints:
  * `$99` beside "/mo, billed yearly" is `9_900 / 12`. A `billing_plan` row is what a checkout
  * charges, so it holds 9_900 — an amount the page renders but a checkout never charges would be
@@ -45,11 +53,11 @@
  * "2 months free"), so it is an authored amount and the test asserts the number rather than a
  * formula that would round it.
  *
- * **Family is sold monthly only.** The approved catalogue has no Family annual plan, so no plan
- * maps the `principal/year` row and `alignsynch_principal_year` stays unclaimed — see
- * `data/membership-plans.ts`. The row itself is left exactly as it was seeded rather than repriced,
- * because there is no approved amount to put in it; the card's handoff names that as the one open
- * catalogue item for the owner.
+ * **The `principal` tier is unclaimed since the Family plan was removed (2026-11-19).** No
+ * membership plan maps either `principal` row and `alignsynch_principal_month` /
+ * `alignsynch_principal_year` are both unclaimed — see `data/membership-plans.ts`. The rows are
+ * left exactly as they were seeded rather than repriced or deleted, because there is no approved
+ * amount to put in them and deleting one is a provider-side change no card here makes.
  */
 
 /** The tiers, in the order the page draws them: cheapest first, the recommended one in the middle. */
@@ -178,8 +186,9 @@ export const billingPlans: readonly BillingPlan[] = [
     name: "Principal",
     description: "For a practice running several relationships at once",
     monthlyCents: 1_999,
-    // Left exactly as seeded: the approved catalogue sells Family monthly only, so no plan maps this
-    // row and `alignsynch_principal_year` is unclaimed. Repricing it would invent a Family annual.
+    // Left exactly as seeded: the Family plan was removed from the catalogue on 2026-11-19, so no
+    // plan maps this row and `alignsynch_principal_year` is unclaimed. Repricing or deleting it is
+    // a provider-side act this tree does not make.
     yearlyCents: 16_272,
     features: [
       "Everything in Basic",

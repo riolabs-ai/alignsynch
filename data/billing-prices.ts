@@ -24,10 +24,11 @@
  *   Principal month alignsynch_principal_month 19.99   …GrIxC4rz96cc…    …hvKKtWHoLhLR…
  *   Principal year  alignsynch_principal_year 162.72   …GsIxC4rz96cc…    …hwKKtWHoLhLR…
  *
- * The first three are the approved catalogue (`data/membership-plans.ts`, #1127): Single, Family and
- * Single Annual. The fourth is a **Family Annual** key that no approved plan claims — the amounts
+ * The first three rows are the keys a `/pricing` card has mapped since #1127; since the Family plan
+ * was removed on 2026-11-19 only two of them are claimed (Single, Single Annual), and the two
+ * **`principal`** keys — Family's tier, monthly and year — are carried but unclaimed. The amounts
  * here are what the account's Price objects were created with, so a plan priced below must be a
- * Price the account holds, and the one row with no plan behind it is named rather than repriced.
+ * Price the account holds, and the rows with no plan behind them are named rather than repriced.
  * The amounts are the account's, not this tree's: `data/billing-plans.ts` authors what the page
  * prints, and a lookup key only says which Price a checkout renews against.
  *

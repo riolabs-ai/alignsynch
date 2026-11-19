@@ -50,18 +50,18 @@ import { lifecycleStageSection } from "./lifecycle";
  * figure, while stage 5 of the create flow asked the same person for a different pair over the
  * identical two choices. Three prices, one relationship, no gate anywhere that compared them.
  *
- * So the rows are **derived, never typed**: `data/membership-plans.ts` names the three plans
- * (Single `$9.99`/mo · Family `$19.99`/mo, up to four relationships · Single Annual `$99`/yr), and
- * every amount in this section is `formatCurrency(spec.priceCents)` read out of it. A plan that
- * stops existing is a thrown error at import — a screen with a missing price is a screen that
- * would otherwise print `$0.00`.
+ * So the rows are **derived, never typed**: `data/membership-plans.ts` names the plans
+ * (Single `$9.99`/mo · Single Annual `$99`/yr — the owner removed the third, Family, on
+ * 2026-11-19), and every amount in this section is `formatCurrency(spec.priceCents)` read out of
+ * it. A plan that stops existing is a thrown error at import — a screen with a missing price is a
+ * screen that would otherwise print `$0.00`.
  */
 
 /**
  * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
  *
- * The `plans` section below is keyed by the row ids the artifact draws (`single`, `family`,
- * `annual`), and each row's figure is read from the plan of that id. That tier is what a checkout
+ * The `plans` section below is keyed by the row ids the artifact draws (`single`, `annual`), and
+ * each row's figure is read from the plan of that id. That tier is what a checkout
  * must be asked for, and it is declared once — in `data/membership-plans.ts`, re-exported here
  * under the name every reader already imports — a second map anywhere else is how the two
  * vocabularies drifted apart in the first place.
@@ -186,10 +186,10 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * choosing one commits nothing — the card step is where a card is taken, and it charges
        * nothing either.
        *
-       * **#1127 replaced the two rows with the owner's approved three** — Single `$9.99`/mo,
-       * Family `$19.99`/mo for up to four relationships, Single Annual `$99`/yr — and each row now
-       * carries its own interval, because a plan is a (tier, interval) pair and the annual row is
-       * not a monthly one.
+       * **#1127 replaced the two rows with the owner's approved catalogue**, and the owner then
+       * removed its Family plan on 2026-11-19 — leaving Single `$9.99`/mo and Single Annual
+       * `$99`/yr. Each row carries its own interval, because a plan is a (tier, interval) pair and
+       * the annual row is not a monthly one.
        *
        * **#911 changed what this step is for.** It used to be a soft prompt beside a send that went
        * through unpaid. Now the walk's first step is where the money is *decided*: the two things
@@ -209,9 +209,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "legend", label: "Choose a plan" },
         /*
-          One row per plan, built from the catalogue so the three plans, their order, their names,
+          One row per plan, built from the catalogue so the plans, their order, their names,
           their capacities and their amounts cannot be a second list (#1127). `single-price` is
-          `$9.99`, `family-note` is the capacity in words, and `annual-interval` is `/yr` — all read
+          `$9.99`, `annual-note` is the capacity in words, and `annual-interval` is `/yr` — all read
           from `data/membership-plans.ts`, none typed here.
         */
         ...MEMBERSHIP_PLANS.flatMap((plan) => [
@@ -499,7 +499,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         /**
          * **The plan the reader chose on `/pricing`, said after the trial** (#1127, bundle 01).
          *
-         * The rail's membership row reads `Free Trial · Starts When Elena Accepts · then Family`:
+         * The rail's membership row reads `Free Trial · Starts When Elena Accepts · then Single`:
          * the trial is what opens at acceptance, and the plan is what carries on after it — one
          * row, because a reader deciding whether to invite someone wants both facts in the place
          * they look for the relationship's state. `{plan}` is filled from

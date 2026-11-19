@@ -12,8 +12,8 @@
  *   1. every row's label equals the plan catalogue's own amount, at the row's own interval;
  *   2. the fixture types **no** dollar amount of its own, so the next edit cannot reintroduce a
  *      second home for a price;
- *   3. the three rows are the three plans the owner approved — `Single $9.99/mo`,
- *      `Family $19.99/mo`, `Single Annual $99/yr` — with their capacities named on the row.
+ *   3. the rows are the two plans the catalogue sells — `Single $9.99/mo`, `Single Annual
+ *      $99/yr` — with their capacities named on the row.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,7 +26,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** One row's amount as the card prints it — the catalogue's cents, never a typed figure. */
-function planPrice(id: "single" | "family" | "annual"): string {
+function planPrice(id: "single" | "annual"): string {
   const plan = membershipPlan(id);
   if (plan === undefined) throw new Error(`data/membership-plans.ts has no "${id}" plan`);
   return formatCurrency(plan.priceCents, { trimZeroCents: true });
@@ -57,29 +57,25 @@ describe("the create flow's plan prices", () => {
     expect(typed).toEqual([]);
   });
 
-  it("labels the three choices, and each row carries its own interval", () => {
+  it("labels the choices, and each row carries its own interval", () => {
     const plans = sectionOf(assessmentCreatePageCopy, "plans");
     expect(itemLabel(plans, "single")).not.toBe("");
-    expect(itemLabel(plans, "family")).not.toBe("");
     expect(itemLabel(plans, "annual")).not.toBe("");
     // A monthly plan and a yearly plan cannot share one suffix: `$99 /mo` would be a price the
     // catalogue does not carry.
     expect(itemLabel(plans, "single-interval")).toBe("/mo");
-    expect(itemLabel(plans, "family-interval")).toBe("/mo");
     expect(itemLabel(plans, "annual-interval")).toBe("/yr");
   });
 
   it("names each row with the plan the catalogue sells, so one plan has one vocabulary", () => {
-    // The rows read `Single`, `Family` and `Single Annual` — the names in
-    // `data/membership-plans.ts`, which are the owner's (#1127) and the artifact's
-    // (`docs/specs/v2-bundles/02-…/pricing.html`, `data-plan-card="single|family|annual"`).
+    // The rows read `Single` and `Single Annual` — the names in `data/membership-plans.ts`, which
+    // are the owner's (#1127, narrowed on 2026-11-19 when the Family plan was removed).
     const plans = sectionOf(assessmentCreatePageCopy, "plans");
     expect(itemLabel(plans, "single")).toBe("Single");
-    expect(itemLabel(plans, "family")).toBe("Family");
     expect(itemLabel(plans, "annual")).toBe("Single Annual");
-    // The capacity is the row's own note, and the numbers are the catalogue's: Family is four.
+    // The capacity is the row's own note, and the numbers are the catalogue's: one each, now that
+    // the four-relationship plan is gone.
     expect(itemLabel(plans, "single-note")).toBe("1 relationship");
-    expect(itemLabel(plans, "family-note")).toBe("Up to 4 relationships");
     expect(itemLabel(plans, "annual-note")).toContain("1 relationship");
     // And the already-entitled row states the plan without explaining it through the Mode: what
     // the account holds is the plan, and `{plan}` supplies its name.
