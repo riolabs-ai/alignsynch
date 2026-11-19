@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1.3](v2-0-0-rc1-3.md)
+
+- **Released** 2026-11-19
+- **Tag** [`v2.0.0-rc1.3`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.3)
+- **Pull requests named** 13
+- **Theme:** the UI/UX pool — the relationship reads correctly from whichever seat is looking, every notification is worded for its reader, and the catalogue is one plan.
+- **Headline:** `feat(billing)` — one plan — Basic at $9.99/month for one relationship (#1241)
+
 ### [v2.0.0-rc1.2](v2-0-0-rc1-2.md)
 
 - **Released** 2026-11-18

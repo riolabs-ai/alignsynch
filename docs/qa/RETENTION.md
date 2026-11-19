@@ -126,6 +126,7 @@ and re-justified.
 | `release-1.22.0`           | 0.20 MB  | keep     | cited by `docs/changelog/v1-22-0.md` — the six-tab relationship detail at 1440, at this release's own commit                  |
 | `release-2.0.0-rc1`        | 2.31 MB  | keep     | cited by `docs/changelog/v2-0-0-rc1.md` — eight stills of the v2 surfaces at 1440, at this candidate's own commit             |
 | `release-2.0.0-rc1.1`      | 0.25 MB  | keep     | cited by `docs/reference/billing.md` — the production test-mode checkout for #1053: session, mode, return URL, rows, decline  |
+| `release-2.0.0-rc1.3`      | 0.20 MB  | keep     | cited by `docs/changelog/v2-0-0-rc1-3.md` — `/pricing` at 1440 on this candidate's own tree, the one-plan card #1241 ships    |
 | `review-admin`             | 0.82 MB  | keep     | cited by `docs/changelog/v1-7-0.md`                                                                                           |
 | `screenshots`              | 3.26 MB  | archived | twelve route screenshots at two widths — no open issue, no pointer, no release cut                                            |
 | `sent`                     | 0.24 MB  | archived | the Sent screen at two widths — no open issue, no pointer, no release cut                                                     |
