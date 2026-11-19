@@ -178,6 +178,11 @@
           "question": "How is a migration numbered, and why can an applied one never be renumbered?"
         },
         {
+          "path": "operations/migration-inventory.md",
+          "title": "Migration inventory",
+          "question": "What is applied on each branch, what would replaying it cost, and what is unverified?"
+        },
+        {
           "path": "operations/orchestration.md",
           "title": "Orchestration rules",
           "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
