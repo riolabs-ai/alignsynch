@@ -173,6 +173,11 @@
           "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
         },
         {
+          "path": "operations/migrations.md",
+          "title": "Migrations",
+          "question": "How is a migration numbered, and why can an applied one never be renumbered?"
+        },
+        {
           "path": "operations/orchestration.md",
           "title": "Orchestration rules",
           "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
