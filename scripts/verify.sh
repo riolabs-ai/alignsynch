@@ -57,6 +57,19 @@
 # or a column page whose view still centres itself all fail here. The registry is data, the check
 # is a script, the pages are app — three lanes, one check, ~0.4 s.
 #
+# THE MD-NORMALISED STEP IS IN EVERY LANE, AND THE DOCS LANE IS WHY (#1251, #1257, #1265).
+# `tests/md-normalised.test.ts` holds `tests/fixtures/md-normalised.json` against the word sequence of
+# every page under `docs/`, and it rides inside `pnpm test` — a step the docs lane does not run, because
+# 127 s of vitest for a prose edit buys nothing. The result was three red `main`s in four hours: a
+# `docs/**`-only diff classified as `lane=docs`, so the gate skipped the one step that can see the
+# drift the diff causes, and each PR was green on its own head over a broken `main`. The step below is
+# the generator in its read-only mode — it recomputes the snapshot over the tree, names every page
+# whose word sequence moved and exits 1. **It never writes**: a check that regenerates the fixture it
+# is checking reports the drift as green, which is the failure the fixture exists to catch.
+# Regenerating stays a deliberate act (`node scripts/md-normalise.mjs --write`, said in the PR). Like
+# the glossary, registry and release steps it runs before the lane branch: the pages are `docs/`, the
+# generator and this line are `scripts/`, the fixture is `tests/` — three lanes, one check, ~0.3 s.
+#
 # THE TREE-HYGIENE STEP IS A REPORT AND NEVER A FAILURE (#1178). `scripts/tree-hygiene.mjs` names the
 # writer of every changed path — `next dev` rewrites `AGENTS.md`, `gitnexus analyze` writes
 # `CLAUDE.md`, `pnpm gen` writes `data/generated/` — and the command that clears it. It runs first in
@@ -141,9 +154,9 @@
 #   lane=docs      15–41 s   (n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6, 2026-11-17)
 #                 — a tree that changed nothing still pays every step that runs
 #                 in EVERY lane (glossary, ui-registry, release:check,
-#                 changelog:check, docs:check, md:check, nav:menu, env:check,
-#                 lint, format:check), and those dominate it. A docs-only diff
-#                 lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2).
+#                 changelog:check, docs:check, md:check, md:normalised:check,
+#                 nav:menu, env:check, lint, format:check), and those dominate it. A
+#                 docs-only diff lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2).
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
@@ -602,6 +615,23 @@ if has_script "md:check"; then
   run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
 else
   skip_step "md:check" "no md:check script in package.json"
+fi
+
+# The docs fixture, as a gate step instead of a step the docs lane skips (#1251, #1257, #1265).
+# `tests/fixtures/md-normalised.json` is held against the word sequence of every page under `docs/`
+# by `tests/md-normalised.test.ts`, which rides inside `pnpm test` — and the docs lane runs no `test`,
+# because 127 s of vitest for a prose edit buys nothing. So a `docs/**`-only diff skipped the one
+# check that can see the drift it causes: three of them landed green over a red `main` in four hours.
+# This is the generator's read-only mode — recompute, name every page whose word sequence moved, exit
+# 1. **It never writes**: regenerating the fixture is how a legitimate edit is landed and is always a
+# deliberate act (`node scripts/md-normalise.mjs --write`, named in the PR), never a repair a check
+# performs on the drift it exists to catch. Above the lane branch for the same reason as the steps
+# around it: the pages are `docs/`, the generator and this line are `scripts/`, the fixture is
+# `tests/` — three lanes, one check. ~0.3 s (0.24 s over 114 pages, measured 2026-11-19).
+if has_script "md:normalised:check"; then
+  run_step "md-normalised (tests/fixtures/md-normalised.json matches the docs/ prose)" pnpm md:normalised:check || fail
+else
+  skip_step "md:normalised:check" "no md:normalised:check script in package.json"
 fi
 
 # The email bodies. `content/email-bodies.md` is where every template's prose is written and
