@@ -21,7 +21,8 @@
  *   4. a recorder that fails fails the cut, naming the command to re-run;
  *   5. `--no-record`: publishes the tag, runs no recorder, prints the exact command, exits 0;
  *   6. no demo credentials and no `--no-record`: refuses before the recorder, naming both ways out;
- *   7. `--no-record` on a mode with no record step is a usage error, not a silent no-op.
+ *   7. `--no-record` on a mode with no record step is a usage error, not a silent no-op;
+ *   8. the cut ends with the postcheck (card t_244fc00a), and a ✗ in it never fails the cut.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -156,6 +157,9 @@ function probe(): Probe {
     "release-version.mjs",
     "release-record.mjs",
     "release-preflight.mjs",
+    // The cut ends with the postcheck (card t_244fc00a), so the probe carries it too: without the
+    // file the last step would be a `node` module-not-found that proves nothing about the wiring.
+    "release-postcheck.mjs",
   ]) {
     cpSync(join(ROOT, "scripts", file), join(repo, "scripts", file));
   }
@@ -223,6 +227,10 @@ function release(p: Probe, args: string[], fake: Fake = {}) {
     PNPM_FAKE_SHA: fake.sha ?? p.sha,
     PNPM_FAKE_EXIT: String(fake.exit ?? 0),
     PNPM_FAKE_WRITE: fake.write === false ? "0" : "1",
+    // The postcheck's one network read, pointed at a closed port on loopback: it refuses in
+    // milliseconds, so check 5 is ✗ without this suite ever reaching the internet. That is the
+    // state the last case wants anyway — a verdict that fails, on a cut that still stands.
+    POSTCHECK_PRODUCTION_URL: "http://127.0.0.1:9",
   };
   if (fake.credentials === true) env.DATABASE_URL = "postgres://demo@example.test/neondb";
   return spawnSync("bash", ["scripts/release.sh", ...args], { cwd: p.repo, env, encoding: "utf8" });
@@ -336,5 +344,33 @@ describe("--no-record is an escape that is not silent", () => {
 
     expect(run.status).toBe(2);
     expect(run.stderr).toContain("--no-record belongs to --tag-only");
+  });
+});
+
+describe("the postcheck runs last, and a ✗ in it never fails the cut", () => {
+  /**
+   * The card's hardest requirement (t_244fc00a): the seventh step is a **verdict**, not a gate. The
+   * probe's production read is a closed loopback port, so check 5 is ✗ on every case in this file —
+   * which is not a nuisance but the fixture: a cut that heard a ✗ and still exited 0, printed the
+   * reason, and left its tag published.
+   *
+   * Which rows are ✗ here depends on how much of the seven the probe's two shims can answer (its `gh`
+   * speaks the pipe format `release.sh` reads, not the JSON the postcheck asks for), so the case pins
+   * the **contract** — exit 0, the verdict printed, the reason printed, the tag still published — and
+   * `tests/release-postcheck.test.ts` pins the seven rules themselves.
+   */
+  it("exits 0 on a cut whose postcheck failed, and says why the cut still stands", () => {
+    const p = probe();
+
+    const run = release(p, ["--tag-only", VERSION, "--no-record"]);
+
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("postcheck (scripts/release-postcheck.mjs");
+    expect(run.stdout).toContain("✗");
+    expect(run.stdout).toMatch(/verdict: \d of 7 checks failed \(\d(, \d)*\)/);
+    expect(run.stdout).toContain("the postcheck reported 1, and the cut still stands");
+    expect(run.stdout).toContain("a published tag is never moved");
+    // The step runs after the tag exists, and the tag is on the remote: nothing to undo.
+    expect(tagsOnOrigin(p)).toContain(`refs/tags/v${VERSION}`);
   });
 });
