@@ -17,8 +17,13 @@
  *
  *   node scripts/md-normalise.mjs --write && pnpm test -- md-normalised
  *
- * and says in its PR which pages it moved. It is not a gate step of its own — it rides in `pnpm
- * test`, so the cost is one read of `docs/`.
+ * and says in its PR which pages it moved. The read-only half — `pnpm md:normalised:check`, this file
+ * with no `--write` — is a gate step in **every** lane (`scripts/verify.sh`), which is the repair for
+ * #1251 / #1257 / #1265: riding only inside `pnpm test` meant a `docs/**`-only diff took the docs lane,
+ * which runs no `test`, so the one check that can see a drifted page was skipped and the PR landed
+ * green over a red `main` — three times in four hours. The step never regenerates: a check that writes
+ * the fixture it is checking reports the drift as green, which is the failure the fixture exists to
+ * catch.
  *
  * WHAT IS DELIBERATELY NOT NORMALISED AWAY: link targets, image paths and code fence *contents*, so
  * a rewrite that points a link somewhere else or edits pasted evidence is still visible in a diff (a

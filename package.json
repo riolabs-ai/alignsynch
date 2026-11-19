@@ -56,6 +56,7 @@
     "qa:retention:prune": "node scripts/capture-retention.mjs --prune",
     "md:check": "markdownlint-cli2 && node scripts/md-style.mjs --check",
     "md:fix": "markdownlint-cli2 --fix && node scripts/md-style.mjs && biome format --write docs",
+    "md:normalised:check": "node scripts/md-normalise.mjs",
     "release:note": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/release-notify.mjs",
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",
     "db:seed": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs",
