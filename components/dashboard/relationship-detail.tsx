@@ -1149,7 +1149,9 @@ export function RelationshipDetail({
                 <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                 {itemLabel(alignCopy, "next-step")}
               </p>
-              <h3 className="mt-1 text-base font-semibold">{itemLabel(alignCopy, "next-heading")}</h3>
+              <h3 className="mt-1 text-base font-semibold">
+                {itemLabel(alignCopy, "next-heading")}
+              </h3>
               <p className="mt-1 text-sm text-action-foreground/90">
                 {fillLabel(itemLabel(alignCopy, "next-body"), {
                   aspect: nextStep.prompt,
