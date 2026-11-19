@@ -14,6 +14,11 @@
  * every branch — a 403 from a grant that lost its scope, a socket that never answered, a 200 whose
  * body is an HTML page — is exercised against a stub. `unstable_cache` is never imported here: the
  * policy it wraps is `specIssuesAnswerOf`, which is pure.
+ *
+ * **The stills.** The rendered proof — a filed row with its number, state, tier and both pills, a
+ * row nobody filed drawing the em dash, and the page with a broken token — lives in
+ * `docs/qa/spec-issues/` with the asserts each frame was taken under, because these cases can prove
+ * the markup and only a browser can prove the picture.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

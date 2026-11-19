@@ -130,6 +130,7 @@ and re-justified.
 | `review-admin`             | 0.82 MB  | keep     | cited by `docs/changelog/v1-7-0.md`                                                                                           |
 | `screenshots`              | 3.26 MB  | archived | twelve route screenshots at two widths — no open issue, no pointer, no release cut                                            |
 | `sent`                     | 0.24 MB  | archived | the Sent screen at two widths — no open issue, no pointer, no release cut                                                     |
+| `spec-issues`              | 0.89 MB  | keep     | cited by `tests/spec-issues.test.ts` — the GitHub column, the em dashes, the broken-token run                                 |
 | `stage-shell`              | 0.18 MB  | archived | the flow's stage shell at two widths — no open issue, no pointer, no release cut                                              |
 | `stage5`                   | 0.41 MB  | keep     | cited by `tests/admin-docs.test.ts`                                                                                           |
 | `support-inbox`            | 0.37 MB  | archived | the support inbox's refusal states — no open issue, no pointer, no release cut                                                |
