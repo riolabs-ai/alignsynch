@@ -40,11 +40,14 @@ import {
   type SpecValidation,
 } from "@/content/spec";
 import { adminSpecSectionNotes } from "@/data/pages/admin-spec";
+import { ADMIN_SPEC_VALIDATION_PATH } from "@/lib/admin/spec-paths";
 import { specEvidenceLink } from "@/lib/spec/evidence";
+import { specIssueFor, type SpecIssue, type SpecIssuesRead } from "@/lib/spec/issues";
 import { pageItemOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { LeavingLink } from "@/components/layout/leaving-link";
 
+import { SpecIssueFacts, SpecIssuesBar, SpecIssueUnfiled } from "./spec-issues";
 import { SpecCheckBox, SpecParityChip, SpecStatusChip } from "./spec-status";
 import { SpecStatusBox } from "./spec-status-box";
 
@@ -79,7 +82,20 @@ function ReleaseMap({ copy, row }: { copy: PageCopy; row: SpecRow }) {
 }
 
 /** One row: the requirement's own column, then the release evidence beside it. */
-function RegisterRow({ copy, row, main }: { copy: PageCopy; row: SpecRow; main: string }) {
+function RegisterRow({
+  copy,
+  row,
+  main,
+  issue,
+  issues,
+}: {
+  copy: PageCopy;
+  row: SpecRow;
+  main: string;
+  issue: SpecIssue | null;
+  /** Whether the GitHub column is drawn at all — false when the read produced no set. */
+  issues: boolean;
+}) {
   const words = (id: string) => pageItemOf(copy, id).label;
   const review = `${row.review.pm}, ${row.review.design}`;
   const approval = `${row.approval.jaden}, ${row.approval.walt}`;
@@ -126,6 +142,14 @@ function RegisterRow({ copy, row, main }: { copy: PageCopy; row: SpecRow; main: 
       </div>
 
       <div className="grid min-w-0 content-start gap-2 border-t bg-muted/40 px-3 py-2.5 sm:border-l sm:border-t-0">
+        {issues ? (
+          issue === null ? (
+            <SpecIssueUnfiled copy={copy} />
+          ) : (
+            <SpecIssueFacts copy={copy} issue={issue} />
+          )
+        ) : null}
+
         <ReleaseMap copy={copy} row={row} />
 
         <div>
@@ -208,9 +232,23 @@ function GroupHeading({ group }: { group: SpecSectionGroup }) {
   );
 }
 
-export function ValidationMatrix({ copy, doc }: { copy: PageCopy; doc: SpecValidation }) {
+export function ValidationMatrix({
+  copy,
+  doc,
+  issues = null,
+}: {
+  copy: PageCopy;
+  doc: SpecValidation;
+  /**
+   * The GitHub read, or `null` when there is none. `null` and `unavailable` both draw no issue
+   * block — the register is `data/spec/validation.json` and it renders exactly as it does today,
+   * with the bar saying why the column is missing.
+   */
+  issues?: SpecIssuesRead | null;
+}) {
   const words = (id: string) => pageItemOf(copy, id).label;
   const sections = specSectionsOf(doc.rows);
+  const column = issues !== null && issues.kind === "ready";
 
   return (
     <div className="space-y-4">
@@ -221,6 +259,8 @@ export function ValidationMatrix({ copy, doc }: { copy: PageCopy; doc: SpecValid
         <h1 className="text-2xl font-semibold tracking-tight">{words("matrix-heading")}</h1>
         <p className="max-w-prose text-sm text-muted-foreground">{words("matrix-subtitle")}</p>
       </header>
+
+      <SpecIssuesBar copy={copy} read={issues} next={ADMIN_SPEC_VALIDATION_PATH} />
 
       <div className="grid items-start gap-4 xl:grid-cols-[212px_minmax(0,1fr)]">
         <SpecStatusBox copy={copy} doc={doc} sections meta className="xl:sticky xl:top-0" />
@@ -289,7 +329,14 @@ export function ValidationMatrix({ copy, doc }: { copy: PageCopy; doc: SpecValid
                     </p>
                   ) : null}
                   {group.rows.map((row) => (
-                    <RegisterRow key={row.id} copy={copy} row={row} main={doc.main} />
+                    <RegisterRow
+                      key={row.id}
+                      copy={copy}
+                      row={row}
+                      main={doc.main}
+                      issue={specIssueFor(issues, row.id)}
+                      issues={column}
+                    />
                   ))}
                 </div>
               ))}
