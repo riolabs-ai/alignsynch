@@ -12,7 +12,7 @@
 
 <!-- bundle-nav:end -->
 
-**Priority:** P1 · **Issues:** [#1136](https://github.com/riolabs-ai/alignsynch/issues/1136) (epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)) · **Prepared:** 2026-11-16 · **Repo path:** `docs/specs/v2-bundles/11-spec-design-page-account-settings-v2/`
+**Priority:** P1 · **Issues:** [#1136](https://github.com/riolabs-ai/alignsynch/issues/1136) (epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)) · **Prepared:** 2026-11-16 · **Revised:** 2026-11-19 ([#1233](https://github.com/riolabs-ai/alignsynch/issues/1233) — Notifications card removed, renders re-captured) · **Repo path:** `docs/specs/v2-bundles/11-spec-design-page-account-settings-v2/`
 
 This folder is the self-contained handoff for the approved v2 Account menu and Account Settings.
 
