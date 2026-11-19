@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**195 documents in 9 sections.** Every page carries the same nav block, generated
+**196 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,7 +40,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 19 documents
+- [Operations](#operations) — 20 documents
 - [Specs & design briefs](#specs-design-briefs) — 84 documents
 - [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
@@ -95,6 +95,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/history/V1-PROTOTYPE.md`](operations/history/V1-PROTOTYPE.md) — **V1 prototype** — What is the clickable `/v1/**` prototype, and who is it for?
 - [`operations/history/V1-RETIREMENT.md`](operations/history/V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`operations/iteration.md`](operations/iteration.md) — **Iteration rhythm** — Which loop do I run for this edit — `check:fast` or the full gate?
+- [`operations/migration-inventory.md`](operations/migration-inventory.md) — **Migration inventory** — Is every migration applied and verified, and what stands between the tree and 2.0 official?
 - [`operations/orchestration.md`](operations/orchestration.md) — **Orchestration rules** — How does the orchestrator behave — decisions, blocking, re-carding?
 - [`operations/release-train.md`](operations/release-train.md) — **Release-train card template** — What does a release-train card carry — children, sequence, cutoff, proof?
 - [`operations/releasing.md`](operations/releasing.md) — **Releasing** — Which four artefacts must agree for a release, and how is the tag cut?

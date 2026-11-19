@@ -173,6 +173,11 @@
           "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
         },
         {
+          "path": "operations/migration-inventory.md",
+          "title": "Migration inventory",
+          "question": "Is every migration applied and verified, and what stands between the tree and 2.0 official?"
+        },
+        {
           "path": "operations/orchestration.md",
           "title": "Orchestration rules",
           "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
