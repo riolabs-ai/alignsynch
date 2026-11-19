@@ -24,9 +24,9 @@
  *   Principal month alignsynch_principal_month 19.99   …GrIxC4rz96cc…    …hvKKtWHoLhLR…
  *   Principal year  alignsynch_principal_year 162.72   …GsIxC4rz96cc…    …hwKKtWHoLhLR…
  *
- * The first three rows are the keys a `/pricing` card has mapped since #1127; since the Family plan
- * was removed on 2026-11-19 only two of them are claimed (Single, Single Annual), and the two
- * **`principal`** keys — Family's tier, monthly and year — are carried but unclaimed. The amounts
+ * One of the four rows is claimed by a plan: since the Family plan went and then the yearly SKU
+ * with it (2026-11-19), `alignsynch_basic_month` is Basic and the other three —
+ * `alignsynch_basic_year` and both **`principal`** keys — are carried but unclaimed. The amounts
  * here are what the account's Price objects were created with, so a plan priced below must be a
  * Price the account holds, and the rows with no plan behind them are named rather than repriced.
  * The amounts are the account's, not this tree's: `data/billing-plans.ts` authors what the page
@@ -35,8 +35,9 @@
  * Ids are deliberately not written here: an id in this file is a value that belongs to one account,
  * and the whole point of the lookup key is that no such value lives in the tree.
  *
- * The yearly pair exists because `/pricing` sells both intervals (`pricing-plans.ts`'s switch posts
- * `interval: "year"`); a tier/interval this file has no key for is a checkout the adapter refuses
+ * The yearly rows exist because the Prices do and because a re-listed yearly plan must resolve to
+ * the Price the account already holds rather than to a new one — not because a card sells a year
+ * today. A tier/interval this file has no key for is a checkout the adapter refuses
  * (`not-for-sale`), so the fixture and this file have to agree row for row.
  * `tests/billing-prices.test.ts` asserts that they do, that every key is unique, and that the key
  * names the plan and interval it is filed under.

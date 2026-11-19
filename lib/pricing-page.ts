@@ -1,12 +1,13 @@
 /**
- * `/pricing`'s model — the v2 bands, joined (#1127).
+ * `/pricing`'s model — the v2 bands, joined (#1127, narrowed to one plan on 2026-11-19).
  *
  * The page used to be a grid of `billing_plan` rows with a monthly/yearly switch: every tier had
  * two intervals, so the reader picked a tier and then a frequency. Bundle 02 draws it the other
  * way — **one card per plan, each with one interval**, and the interval is a property of the plan
- * (`Single Annual` is a card, not a toggle position). That is also what the owner approved on
- * #1127 (Single · Family · Single Annual) — **less Family, removed from the catalogue on
- * 2026-11-19** — so the switch is gone rather than defaulted and the band now draws two cards.
+ * (`Single Annual` was a card, not a toggle position). That is also what the owner approved on
+ * #1127 (Single · Family · Single Annual) — **Family removed from the catalogue first, then Single
+ * Annual, both on 2026-11-19** — so the switch is gone rather than defaulted and the band now
+ * draws the one card the catalogue sells: **Basic, $9.99 a month, 1 relationship**.
  *
  * **This module types no amount.** A card's figure is `formatCurrency(plan.priceCents)` over
  * `data/membership-plans.ts`, which reads the money out of `data/billing-plans.ts` — the same
@@ -26,20 +27,20 @@ import { pricingCataloguePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /**
- * **The plan the artifact marks "Most Popular".**
+ * **The plan the artifact marked "Most Popular".**
  *
- * One plan carries the ribbon, and the artifact puts it on **Single** — the plan whose one
- * relationship and no-card start is what a first reader buys. It is named here rather than
- * derived from the catalogue's order, because "the first row is the popular one" is a fact about
- * an array's sort, not about the product; a catalogue re-order would move a marketing claim.
- * `tests/pricing-page-v2.test.tsx` pins that exactly one card carries it.
+ * With one plan in the catalogue that is the only card, and it still carries the ribbon: the
+ * artifact put it on the monthly card — the one relationship and no-card start a first reader buys
+ * — and a catalogue that grows again should not have to relearn which plan is the recommended one.
+ * It is named here rather than derived from the catalogue's order, because "the first row is the
+ * popular one" is a fact about an array's sort, not about the product; a catalogue re-order would
+ * move a marketing claim. `tests/pricing-page-v2.test.tsx` pins that exactly one card carries it.
  */
 export const POPULAR_PLAN_ID: MembershipPlanId = "single";
 
 /** One plan's feature lines, as item ids into the `plans` section of `data/pages/pricing.ts`. */
 const FEATURE_IDS: Readonly<Record<MembershipPlanId, readonly string[]>> = {
   single: ["feature-single-1", "feature-single-2", "feature-single-3", "feature-single-4"],
-  annual: ["feature-annual-1", "feature-annual-2", "feature-annual-3", "feature-annual-4"],
 };
 
 /** The hero: the promise, and the eyebrow above it. */
@@ -110,7 +111,7 @@ export function pricingHero(copy: PageCopy): PricingHeroModel {
   };
 }
 
-/** The two cards, in the catalogue's order — one projection from plans to cards. */
+/** The cards, in the catalogue's order — one projection from plans to cards. */
 export function pricingCards(input: {
   readonly copy: PageCopy;
   readonly entitledPlanId: BillingPlanId | null;

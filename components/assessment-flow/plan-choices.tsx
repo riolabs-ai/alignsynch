@@ -3,7 +3,7 @@
 // template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the Mode single-choice — a fieldset of label-wrapped radio rows — carrying a price and a note instead of an explanation, and writing nothing itself: the selection is reported upward, and it is the walk's panel that turns the report into the card step and the session behind it)
 
 /**
- * `PlanChoices` — the two plans, as one single-choice group (#690).
+ * `PlanChoices` — the plan catalogue's rows, as one single-choice group (#690).
  *
  * **The rows are native radios, and that is the point.** Stage 2's Mode and Setting are a
  * `<fieldset>` of `<label>`-wrapped `<input type="radio">`, and the plans are the same single
@@ -14,9 +14,10 @@
  * script all of that and would still have been a button pretending to be a radio.
  *
  * Nothing is selected by default: a pre-selected plan would be this screen choosing a tier for
- * somebody who has not read the two rows yet — the same reason stage 2's Mode is not pre-selected.
- * The reviewed card's price is beside the name, right-aligned, so the two numbers are comparable
- * without reading the notes.
+ * somebody who has not read the row yet — the same reason stage 2's Mode is not pre-selected. The
+ * reviewed card's price is beside the name, right-aligned, so the figure is readable without
+ * reading the note. There is one row today (Basic, $9.99/month) and the group is built from the
+ * catalogue, so a second plan is a row in `data/membership-plans.ts` and no change here.
  *
  * **It writes nothing; the walk decides what the choice opens.** The rows report the selection
  * upward and keep no state of their own, so this component can be drawn by any panel that has a
@@ -28,7 +29,7 @@
  * **Every word is the fixture's.** Labels, notes, prices and the `/mo` / `/yr` suffixes all come
  * from `data/pages/assessment-create.ts` through `sectionOf`/`itemLabel` (E23 counts what a component
  * writes, and this one writes no sentence at all). The row ids are structure, not copy, and they are
- * the plan catalogue's own (`single`, `annual`).
+ * the plan catalogue's own (`single`).
  */
 import type { PageCopy } from "@/content/pages";
 import { MEMBERSHIP_PLANS, MEMBERSHIP_PLAN_IDS } from "@/data/membership-plans";

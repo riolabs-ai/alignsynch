@@ -1,17 +1,22 @@
 /**
- * `data/membership-plans.ts` — the plan catalogue the owner approved on #1127 (2026-11-17) and
- * narrowed to **two plans** on 2026-11-19: **Single $9.99/month · Single Annual $99/year.**
+ * `data/membership-plans.ts` — the plan catalogue: **one plan**, **Basic $9.99/month for one
+ * relationship**, with a 7-day free trial and a 7-day free extension.
  *
- * ## Two plans, because Family was the only one that counted relationships
+ * ## One plan (owner, 2026-11-19)
  *
- * The approved catalogue used to carry a third row, Family — `$19.99`/month for up to four
- * relationships — and every open question about how relationships are counted existed only to
- * answer it. The owner removed the plan on 2026-11-19: the class of drift goes with it instead of
- * being specified. **Delisting a plan is not a provider act**: the `principal` tier, its
- * `billing_plan` rows and the Stripe price behind them are all untouched, because archiving a Price
- * is a dashboard change to a live account and no live Family membership existed to grandfather
- * (the card's step 0 counted them first). A tier no plan claims is the same shape this file already
- * described for the unclaimed annual key, one row over.
+ * The catalogue the owner approved on #1127 carried three rows and this file then carried two:
+ * Family `$19.99`/month for up to four relationships, removed first, and Single Annual `$99`/year,
+ * removed in the same decision because a second interval of the same tier is a choice the product
+ * does not ask anybody to make. What is left is one card — **Basic, $9.99 a month, one
+ * relationship**. The trial copy is #1224's and is not this file's: seven days free, plus a
+ * seven-day extension, decided by `TRIAL_DAYS` and `METHOD_TRIAL_DAYS` in `data/billing-prices.ts`.
+ *
+ * **Delisting a plan is not a provider act.** The `basic/year` row, the `principal` tier, their
+ * `billing_plan` rows and the Stripe Prices behind them are all untouched: archiving a Price is a
+ * dashboard change to a live account, and no live annual membership existed to grandfather (the
+ * card's step 0 read production first — 9 subscriptions, every one `basic`/`month`, **0** at
+ * `year`). Re-adding the yearly SKU later is a row here and no new provider object. A tier no plan
+ * claims is a shape this file already described for the two unclaimed `principal` keys.
  *
  * ## One catalogue, and this file holds no amount
  *
@@ -24,23 +29,23 @@
  * `999` here would pass every type check and put two prices in one product, which is the defect
  * `tests/create-plan-prices.test.ts` was written for (#975).
  *
- * ## Two plans, four provider keys, and two of them unclaimed
+ * ## Four provider keys, and three of them unclaimed
  *
  * A subscription renews against a provider **Price**, named by a lookup key
  * (`data/billing-prices.ts`), and the account still holds exactly four:
  *
  *   plan            tier / interval   lookup key
- *   Single          basic / month     alignsynch_basic_month
- *   Single Annual   basic / year      alignsynch_basic_year
+ *   Basic           basic / month     alignsynch_basic_month
+ *   (no plan)       basic / year      alignsynch_basic_year
  *   (no plan)       principal / month alignsynch_principal_month
  *   (no plan)       principal / year  alignsynch_principal_year
  *
- * The two `principal` keys are the Family tier's, and they are **carried but unmapped** — the tier
- * and its prices stay in the account and in `data/billing-plans.ts`, because deleting a key is a
- * provider-side change this card is told not to touch, and re-selling the tier as a plan is the
- * removal this card is. `tests/plan-catalogue.test.ts` pins that shape: two plans, two distinct
- * keys, and the two unclaimed keys named rather than quietly dropped. A future plan at that tier is
- * a row here and no new provider object.
+ * Three of the four are **carried but unmapped**: `basic/year` was the yearly plan's and the two
+ * `principal` keys were Family's. The tiers and their amounts stay in the account and in
+ * `data/billing-plans.ts`, because deleting a key is a provider-side change this card is told not to
+ * touch, and selling a tier no plan names is the removal this card is. `tests/plan-catalogue.test.ts`
+ * pins that shape: one plan, one claimed key, and the three unclaimed keys named rather than quietly
+ * dropped. A future plan at either tier is a row here and no new provider object.
  *
  * ## Capacity is a fact about the plan, and it is not enforced by this file
  *
@@ -58,8 +63,8 @@
 import { type BillingInterval, billingPlans, planPriceCents } from "./billing-plans";
 import { billingPriceLookupKeyFor, type PaidPlanId } from "./billing-prices";
 
-/** The two plans, in the order the pricing artifact and the plan panel draw them. */
-export const MEMBERSHIP_PLAN_IDS = ["single", "annual"] as const;
+/** The plan — one entry, in the order the pricing artifact's card list draws it. */
+export const MEMBERSHIP_PLAN_IDS = ["single"] as const;
 
 export type MembershipPlanId = (typeof MEMBERSHIP_PLAN_IDS)[number];
 
@@ -67,7 +72,7 @@ export type MembershipPlanId = (typeof MEMBERSHIP_PLAN_IDS)[number];
 export interface MembershipPlan {
   /** The stable id — the row's `data-plan` value and the create fixture's copy-key prefix. */
   readonly id: MembershipPlanId;
-  /** What the card's title renders: `Single`, `Single Annual`. */
+  /** What the card's title renders: `Basic`. */
   readonly name: string;
   /** The capacity in words, printed under the name: `1 relationship`. */
   readonly summary: string;
@@ -123,17 +128,18 @@ function plan(
 }
 
 /**
- * The two plans the catalogue sells.
+ * The one plan the catalogue sells.
  *
- * The words are the approved artifact's — `docs/specs/v2-bundles/02-spec-design-page-onboarding-v2/
- * pricing.html` draws the same names and summaries on its Single and Single Annual cards, and the
- * artifact's third card is the one the owner removed — and the amounts arrive from the price
- * fixture. `2 months free` is the artifact's own phrase for the annual plan: $9.99 × 12 is $119.88,
- * and $99 is the owner's round price for paying once.
+ * The name and the summary are the words a reader meets on the card; the amount arrives from the
+ * price fixture, so `$9.99` is `basic/month` in `data/billing-plans.ts` and never a literal here.
+ *
+ * **The id stays `single` while the display name changed to `Basic`.** The id is a handle — the
+ * `data-plan` value a rendered row carries and the copy-key prefix `data/pages/assessment-create.ts`
+ * derives its rows from — so renaming it would rewrite markup and copy ids for a name change. What a
+ * reader sees now matches the `billing_plan` mirror, whose `basic` rows are already named `Basic`.
  */
 export const MEMBERSHIP_PLANS: readonly MembershipPlan[] = [
-  plan("single", "Single", "1 relationship", 1, "basic", "month"),
-  plan("annual", "Single Annual", "1 relationship · 2 months free", 1, "basic", "year"),
+  plan("single", "Basic", "1 relationship", 1, "basic", "month"),
 ];
 
 /** The plan, or `undefined` when a string names none. Never a default. */
@@ -145,27 +151,26 @@ export function membershipPlan(id: string): MembershipPlan | undefined {
  * The plan row that buys a (tier, interval), or `null`.
  *
  * This is the crossing the create flow needs in both directions: a `/pricing` card carries a tier
- * and an interval, and the plan panel draws rows keyed by plan id. The exact pair is matched first,
- * so `basic/year` resolves to Single Annual rather than to Single; a pair no plan claims — either
- * `principal` key, and any interval at that tier — resolves to `null` rather than to a row, which
- * is what makes a stale cookie carrying the removed plan select nothing (`lib/flow/plan-intent.ts`).
+ * and an interval, and the plan panel draws rows keyed by plan id. An interval that is handed in is
+ * matched **exactly** — `basic/month` resolves to Basic, and `basic/year` resolves to `null` rather
+ * than falling back to the monthly row, so a carried year is never drawn at a monthly price and then
+ * posted as a monthly charge. A pair no plan claims — either `principal` key, `basic/year`, and any
+ * interval at those tiers — resolves to `null`, which is what makes a stale cookie carrying a
+ * removed plan select nothing (`lib/flow/plan-intent.ts`). With no interval, the tier's own row is
+ * the answer.
  */
 export function membershipPlanFor(
   tier: PaidPlanId,
   interval?: BillingInterval,
 ): MembershipPlan | null {
   const forTier = MEMBERSHIP_PLANS.filter((row) => row.tier === tier);
-  if (interval !== undefined) {
-    const exact = forTier.find((row) => row.interval === interval);
-    if (exact !== undefined) return exact;
-  }
+  if (interval !== undefined) return forTier.find((row) => row.interval === interval) ?? null;
   return forTier[0] ?? null;
 }
 
 /** The row id each tier is drawn by, for the walk's map — `PLAN_BILLING_TIER` is built from this. */
 export const MEMBERSHIP_PLAN_TIERS: Readonly<Record<MembershipPlanId, PaidPlanId>> = {
   single: "basic",
-  annual: "basic",
 };
 
 /**
