@@ -5,6 +5,7 @@
 
 import { Header } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar";
+import { RailSheetProvider } from "@/components/layout/rail-sheet-slot";
 import type { SearchIndex } from "@/content/search";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
@@ -15,7 +16,7 @@ import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { FOCUS_FLOW_BACK_HREF, isFocusedFlow } from "@/lib/shell/focus-flow";
 import { usePathname } from "next/navigation";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 /**
  * The shell. `copy` is `data/pages/shell.ts`, parsed by `app/(mainlayout)/layout.tsx` and
@@ -111,6 +112,22 @@ export function MainLayout({
   const pathname = usePathname();
 
   /**
+   * **The navigation sheet's slot (#1252).** A surface whose own screen carries a second column
+   * hands that column here, and the drawer draws it above the rail's groups — so below `md` a
+   * phone opens one menu, not two. The page cannot pass a prop to the layout (the layout is above
+   * it), so the handover is context: `RailSheetProvider` publishes this setter and
+   * `RailSheetSection` calls it. `null` is the ordinary state and renders nothing new.
+   *
+   * The value is memoised on the section alone because `RailSheetSection`'s effect keys on the
+   * setter: a new object every render would re-register the block on every keystroke elsewhere.
+   */
+  const [railSheetSection, setRailSheetSection] = useState<React.ReactNode>(null);
+  const railSheet = useMemo(
+    () => ({ section: railSheetSection, setSection: setRailSheetSection }),
+    [railSheetSection],
+  );
+
+  /**
    * The focused flow is a chrome decision, never an authorization one: every route in the list
    * carries its own gate (`requireRole`, `notFound`), and this only decides whether a rail is
    * drawn beside it.
@@ -143,42 +160,45 @@ export function MainLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar
-        copy={copy}
-        mark={mark}
-        brandId={brandId}
-        viewer={viewer}
-        hiddenNav={hiddenNav}
-        collapsed={railCollapsed}
-        open={navigationOpen}
-        onClose={closeNavigation}
-        notice={notice}
-      />
-      <div className="min-w-0 flex-1">
-        <Header
+    <RailSheetProvider value={railSheet}>
+      <div className="flex min-h-screen">
+        <AppSidebar
           copy={copy}
           mark={mark}
           brandId={brandId}
           viewer={viewer}
-          account={account}
-          searchIndex={searchIndex}
           hiddenNav={hiddenNav}
-          navigationOpen={navigationOpen}
-          onOpenNavigation={openNavigation}
+          collapsed={railCollapsed}
+          open={navigationOpen}
+          onClose={closeNavigation}
           notice={notice}
+          sheetSection={railSheetSection}
         />
-        {/*
-          The 1440px content cap (#1129, DESIGN-NOTES §8 row 16). `max-w-content` is 90rem in
-          `tailwind.config.ts`; the wrapper is centred, so a 1920px monitor gets margins rather than
-          a line of text two feet long. It is `w-full` so the column still fills a narrow viewport,
-          and it is inside `<main>` so the scrollbar stays at the viewport's edge rather than the
-          cap's.
-        */}
-        <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">
-          <div className="mx-auto w-full max-w-content">{children}</div>
-        </main>
+        <div className="min-w-0 flex-1">
+          <Header
+            copy={copy}
+            mark={mark}
+            brandId={brandId}
+            viewer={viewer}
+            account={account}
+            searchIndex={searchIndex}
+            hiddenNav={hiddenNav}
+            navigationOpen={navigationOpen}
+            onOpenNavigation={openNavigation}
+            notice={notice}
+          />
+          {/*
+            The 1440px content cap (#1129, DESIGN-NOTES §8 row 16). `max-w-content` is 90rem in
+            `tailwind.config.ts`; the wrapper is centred, so a 1920px monitor gets margins rather than
+            a line of text two feet long. It is `w-full` so the column still fills a narrow viewport,
+            and it is inside `<main>` so the scrollbar stays at the viewport's edge rather than the
+            cap's.
+          */}
+          <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">
+            <div className="mx-auto w-full max-w-content">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </RailSheetProvider>
   );
 }

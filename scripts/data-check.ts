@@ -76,6 +76,7 @@ import { searchIndex } from "../data/searchdata";
 import { surfaceRegistry, surfaceRegistryProblems, zSurface } from "../data/surface-registry";
 import { users } from "../lib/data/users";
 import { isFileMedia, zMediaRegistry, type MediaEntry } from "../content/media";
+import { specRegisterProblems, zSpecValidation } from "../content/spec";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
@@ -1958,6 +1959,61 @@ for (const issue of checkSocialInstants(
   DEMO_NOW_ISO,
 )) {
   err("E10", `social "${issue.id}" ${issue.field} ${issue.reason}`);
+}
+
+/* ------------------------------------------------------------------ *
+ * E42 — the project spec's register is generated, valid and quote-free
+ *
+ * `data/spec/validation.json` is the reader's whole content (#1252): every row, its
+ * Definition of Done, its release map and its citations. It is *generated* by
+ * `scripts/spec-validation-json.py` from `spec-scope-v2/VALIDATION.csv`, a register that
+ * lives outside this repo because it carries one agreement quote per row — so the file in
+ * this tree is the quote-free projection, and the two properties that make it publishable
+ * are gated here rather than trusted:
+ *
+ *   schema        `zSpecValidation` (`content/spec.ts`) validates it, and that schema
+ *                 pins `quotesIncluded: false` and `quote: null` — a file written with
+ *                 `--with-quotes` is refused by name, which is the AS-10 rule as code.
+ *   data          `specRegisterProblems` refuses an ID twice, a group no story and no
+ *                 `Beyond the Agreement` claims, and a story with no row — the three
+ *                 defects a schema cannot see and a reader would meet as a blank page.
+ *
+ * The *counts* (28 / 20 / 13 / 27 and 44 of 76 met) are deliberately not asserted here:
+ * they are the register's own figures, they move when the agreement moves, and
+ * `tests/admin-spec.test.ts` pins the current ones so a regeneration that changes them is
+ * a reviewed diff rather than a silent one.
+ * ------------------------------------------------------------------ */
+
+const specRegisterPath = join(process.cwd(), "data/spec/validation.json");
+if (!existsSync(specRegisterPath)) {
+  err(
+    "E42",
+    "data/spec/validation.json is missing — the project spec's pages have nothing to read",
+  );
+} else {
+  let specRegister: unknown;
+  try {
+    specRegister = JSON.parse(readFileSync(specRegisterPath, "utf8"));
+  } catch {
+    err(
+      "E42",
+      "data/spec/validation.json is not JSON — it is generated, so re-run scripts/spec-validation-json.py",
+    );
+  }
+
+  const specParsed = zSpecValidation.safeParse(specRegister);
+  if (!specParsed.success) {
+    for (const issue of specParsed.error.issues.slice(0, 8)) {
+      err(
+        "E42",
+        `data/spec/validation.json: ${issue.path.join(".") || "the document"} — ${issue.message}`,
+      );
+    }
+  } else {
+    for (const problem of specRegisterProblems(specParsed.data)) {
+      err("E42", `data/spec/validation.json: ${problem}`);
+    }
+  }
 }
 
 /* ------------------------------------------------------------------ *
