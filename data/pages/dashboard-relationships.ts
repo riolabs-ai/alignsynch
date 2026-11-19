@@ -93,18 +93,31 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The filter row, in the v2 vocabulary (#1129, bundle 05). `All` is the default and the other
-       * four are the card's own words — Live · Waiting on Invite · Draft · Paused — so the filter and
-       * the chip a row shows are the same four states (`lib/member/start.ts::cardStateOf`). The
-       * stored lifecycle values (`pending`, `complete`, `void`) are not filters: `pending` and
+       * The filter row, in bundle 05's own words (#1129, and the rectification of 2026-11-19).
+       *
+       * **The filter is a handle; the card is the statement, and bundle 05 draws them differently.**
+       * `spec-design-v2-bundles/05-spec-design-page-start-my-relationships-v2/my-relationships.html`
+       * prints the row as `All · Live · Waiting · Drafts · Paused` with a count beside each, while
+       * the chip on the same page reads `Stage 6 Live` / `Waiting on Invite` / `Draft` / `Paused`.
+       * This fixture used to repeat the chip words in the row, which read as one vocabulary but
+       * dropped the reference's shorter handles — and `Draft` against the reference's `Drafts` was
+       * the one word genuinely absent. `guides/initiator/my-relationships-and-start.md`'s At a
+       * Glance prints the same five: **All · Live · Waiting · Drafts · Paused**.
+       *
+       * The chip words themselves are unchanged, and they are still the owner's four
+       * (`sectionOf(copy, "card-v2")`): the row selects a set, the chip names the state one row is
+       * in, and a filter labelled `Live` over a chip labelled `Stage 6 Live` is bundle 05's pairing,
+       * not a second vocabulary. `Paused` is the one word the two rows share verbatim.
+       *
+       * The stored lifecycle values (`pending`, `complete`, `void`) are not filters: `pending` and
        * `complete` print as Draft and Stage 6 Live, and `void` is drawn nowhere on this screen.
        */
       id: "tabs",
       items: [
         { id: "all", label: "All" },
-        { id: "live", label: "Stage 6 Live" },
-        { id: "waiting", label: "Waiting on Invite" },
-        { id: "draft", label: "Draft" },
+        { id: "live", label: "Live" },
+        { id: "waiting", label: "Waiting" },
+        { id: "draft", label: "Drafts" },
         { id: "paused", label: "Paused" },
       ],
     },

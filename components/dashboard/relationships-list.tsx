@@ -9,9 +9,12 @@
  * the same component `/dashboard` uses — and projected by
  * `components/dashboard/relationship-card-model.ts`, so a relationship cannot look live on one
  * screen and paused on the other. The four chips (Stage 6 Live · Waiting on Invite · Draft ·
- * Paused) are the card's own words, mapped once from the seven stored lifecycle values, and the
- * filter row above the grid uses exactly those words: a filter that said `Running` over a card that
- * said `Stage 6 Live` would be two vocabularies for one state.
+ * Paused) are the card's own words, mapped once from the seven stored lifecycle values. The filter
+ * row above the grid uses bundle 05's shorter handles for the same four states — **All · Live ·
+ * Waiting · Drafts · Paused** — because the reference draws the two rows differently: the filter is
+ * a handle on a set, the chip is the statement a row makes (`data/pages/dashboard-relationships.ts`,
+ * `tabs`). A filter that said `Running` over a card that said `Stage 6 Live` would be two
+ * vocabularies for one state; `Live` over `Stage 6 Live` is the bundle's own pairing.
  *
  * **`void` is not on this screen.** An operator ended it, so there is nothing to do and nothing to
  * resume (#503 settled the same question for voided sessions); the record is preserved and the

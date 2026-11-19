@@ -9,9 +9,16 @@
  * carrying one of the four state words rather than a stored lifecycle value.
  *
  * **The vocabulary changed with #1129 and the counts moved with it.** The six stored-lifecycle tabs
- * are now the bundle's five chips — All · Stage 6 Live · Waiting on Invite · Draft · Paused — so
- * `active` and `complete` share a chip, `draft` and `pending` share one, and `expired` prints
- * `Paused`. `All` counts what the grid can draw, which is every row except a `void` one.
+ * are now the bundle's five filter handles — All · Live · Waiting · Drafts · Paused — so `active`
+ * and `complete` share a filter, `draft` and `pending` share one, and `expired` prints `Paused`.
+ * `All` counts what the grid can draw, which is every row except a `void` one.
+ *
+ * **The filter row and the card chip do not print the same words, deliberately.** Bundle 05 draws
+ * `Live · Waiting · Drafts · Paused` in the row and `Stage 6 Live · Waiting on Invite · Draft ·
+ * Paused` on the card, and the correction of 2026-11-19 moved this screen's row onto the bundle's
+ * handles. So the chip assertions below (`rel-running` reads `Stage 6 Live`) and the filter
+ * assertions (the second chip reads `Live`) are two different strings on purpose; a reader who
+ * "fixed" one of them to match the other would undo the rectification.
  *
  * Two things are deliberately *not* asserted here. The card's own states are pinned by
  * `tests/start-next-steps.test.ts` (the mapping) and `tests/member-relationship-cards.test.ts` (the
@@ -151,11 +158,12 @@ describe("the relationships list", () => {
 
     const expected: { label: string; count: number }[] = [
       { label: "All", count: 6 },
-      // `active` and `complete` are one word now.
-      { label: "Stage 6 Live", count: 2 },
-      { label: "Waiting on Invite", count: 1 },
-      // `draft` and `pending` are one word now.
-      { label: "Draft", count: 2 },
+      // `active` and `complete` are one filter — bundle 05's handle, `Live`, over the card's
+      // `Stage 6 Live`.
+      { label: "Live", count: 2 },
+      { label: "Waiting", count: 1 },
+      // `draft` and `pending` are one filter, and the bundle pluralises it.
+      { label: "Drafts", count: 2 },
       { label: "Paused", count: 1 },
     ];
     chunks.forEach((chunk, index) => {
