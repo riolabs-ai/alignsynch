@@ -141,8 +141,8 @@
 #   lane=docs      15–41 s   (n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6, 2026-11-17)
 #                 — a tree that changed nothing still pays every step that runs
 #                 in EVERY lane (glossary, ui-registry, release:check,
-#                 changelog:check, docs:check, md:check, nav:menu, env:check,
-#                 lint, format:check), and those dominate it. A docs-only diff
+#                 changelog:check, docs:check, conformance, md:check, nav:menu,
+#                 env:check, lint, format:check), and those dominate it. A docs-only diff
 #                 lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2).
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
@@ -585,6 +585,20 @@ if has_script "docs:check"; then
   run_step "docs:check (hub, nav, links and images)" pnpm docs:check || fail
 else
   skip_step "docs:check" "no docs:check script in package.json"
+fi
+
+# Conformance (#1252). `docs/specs/v2-conformance.md` is the one page that maps a requirement id to the
+# artifact that proves it — a test file and the case in it, a fixture, a script — and
+# `scripts/conformance-check.mjs` re-reads every citation against the tree: a renamed test, a moved
+# file, a deleted `package.json` script is a red build instead of a sentence nobody re-reads. It fails
+# a **dangling** citation and never fails an `unproven` row, which is the honest state and is counted
+# on every run. In every lane for the eighth time and the same reason as the steps above: the page is
+# `docs/`, the script is `scripts/`, and the citations are `tests/`, `lib/`, `app/` and `data/` — four
+# paths, four lanes, one check. ~0.05 s.
+if has_script "conformance:check"; then
+  run_step "conformance (every requirement's cited artifact still resolves)" pnpm conformance:check || fail
+else
+  skip_step "conformance" "no conformance:check script in package.json"
 fi
 
 # Markdown style (#937). `docs/` is 142 pages and nothing enforced their shape: Biome formats them

@@ -50,6 +50,7 @@
     "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",
     "docs:nav": "node scripts/docs-nav.mjs --write",
     "docs:check": "node scripts/docs-check.mjs",
+    "conformance:check": "node scripts/conformance-check.mjs",
     "qa:retention": "node scripts/capture-retention.mjs",
     "qa:retention:report": "node scripts/capture-retention.mjs --report",
     "qa:retention:prune": "node scripts/capture-retention.mjs --prune",

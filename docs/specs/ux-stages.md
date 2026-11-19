@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md) · next [v2 coverage matrix — the 23 screens, measured](v2-coverage-matrix.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md) · next [v2 conformance — 25 requirements, and the artifact that proves each](v2-conformance.md)
 
 <!-- docs-nav:end -->
 
@@ -194,6 +194,6 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md) · next [v2 coverage matrix — the 23 screens, measured](v2-coverage-matrix.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md) · next [v2 conformance — 25 requirements, and the artifact that proves each](v2-conformance.md)
 
 <!-- docs-nav:end -->
