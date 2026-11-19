@@ -21,10 +21,12 @@
  *   progress   `Round 1 · Aspect n of 5`, the segmented bar, and the save state.
  *   the card   `AspectAnswerCard` (one Aspect) or `AnswerReview` (the last position).
  *
- * **Three shapes, one route** (`lib/flow/answer-gate.ts`): the live sheet for the seat that may
- * answer, the viewer's own reviewed sheet drawn sealed once they have accepted, and a coach band
- * with no sheet at all. A lapsed membership keeps the sheet writable (#848: the lapse closes the
- * Gap, not the pairing) and draws its own note beside the sealed copy once the seat has accepted.
+ * **Four shapes, one route** (`lib/flow/answer-gate.ts`): the live sheet for the seat that may
+ * answer, the viewer's own reviewed sheet drawn sealed once they have accepted, a coach band
+ * with no sheet at all, and a lapsed relationship, which draws the paused pane above whichever of
+ * the first two the viewer would otherwise get. A lapsed membership keeps the sheet writable
+ * (#848: the lapse closes the Gap, not the pairing) — the pane names the pause, it never takes
+ * the form away.
  *
  * Client, and only for the reason the card needs it: the `Saved` line is a fact about a request
  * that has just returned. Nothing here reads a server module — the words come from the fixture, the
@@ -211,19 +213,72 @@ export function AnswerSheet({
         ? itemLabel(progress, "save-failed")
         : itemLabel(progress, "saving");
 
+  /**
+   * Whether this viewer has a form at all. `lapsed` answers this from `maySubmit()` rather than
+   * from its name (#848): the lapse is a fact about the relationship, and a lapsed trial closes
+   * the Gap, not the pairing.
+   */
+  const writable = gate.action !== null;
+
+  /** The Counterparty's copy, which never carries a billing word (the locked rule for this page). */
+  const counterpartySeat = viewer.role === "counterparty";
+
+  /**
+   * #1223 — the paused pane, drawn **above** the sheet rather than in place of it.
+   *
+   * The approved surface (`assessment.html?state=lapsed&role=initiator|counterparty`) replaces the
+   * whole screen with this pane, because the prototype has no writable lapsed state. This build
+   * does: #848's decision is that a lapse closes the Gap, not the pairing, so taking the form away
+   * here is the exact regression that card fixed. What carries over from the bundle is the pane
+   * itself — the status icon, the word, and the fact that the answers are saved — and the copy
+   * splits by seat, because the Counterparty never reads a membership, trial, payment or plan word.
+   */
+  const paused =
+    gate.state === "lapsed" ? (
+      <section
+        data-paused=""
+        role="status"
+        aria-labelledby="answer-sheet-paused-heading"
+        className="flex flex-col gap-4 rounded-lg border border-status-line bg-status p-5 text-card-foreground sm:flex-row sm:items-start"
+      >
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-md bg-status-chip text-deep"
+        >
+          <svg
+            className="size-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+        </span>
+        <div className="min-w-0 space-y-2">
+          <h2
+            id="answer-sheet-paused-heading"
+            className="text-xl font-bold tracking-tight text-primary"
+          >
+            {counterpartySeat ? itemLabel(lapsed, "heading-counterparty") : lapsed.heading}
+          </h2>
+          <p className="text-base text-foreground">
+            {counterpartySeat ? itemLabel(lapsed, "body-counterparty") : sectionBody(lapsed)}
+          </p>
+          {counterpartySeat ? null : (
+            <p className="text-sm text-muted-foreground">{itemLabel(lapsed, "lapsed-note")}</p>
+          )}
+        </div>
+      </section>
+    ) : null;
+
   /** The sealed copy of the sheet: what the viewer said, and what happens next. */
   const sealed = (
     <div className="space-y-4">
-      {gate.state === "lapsed" ? (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-xl font-semibold text-amber-900">{lapsed.heading}</h2>
-          <p className="mt-1 text-sm text-amber-900">{sectionBody(lapsed)}</p>
-          <p className="mt-3 text-sm font-medium text-amber-900">
-            {itemLabel(lapsed, "lapsed-note")}
-          </p>
-        </section>
-      ) : null}
-
       <section
         data-frozen-status={resultsReady === true ? "ready" : "waiting"}
         className="rounded-lg border bg-card p-4"
@@ -258,9 +313,10 @@ export function AnswerSheet({
   return (
     <div className="space-y-4">
       {heading}
+      {paused}
       {privacyNote}
 
-      {gate.state !== "sheet" || answered === 0 || position.review ? null : (
+      {!writable || answered === 0 || position.review ? null : (
         <div
           data-resume=""
           role="status"
@@ -292,11 +348,11 @@ export function AnswerSheet({
           role="alert"
           className="rounded-md border border-billing-line bg-billing p-3 text-sm text-foreground"
         >
-          {refusalSentence(copy, refused)}
+          {refusalSentence(copy, refused, counterpartySeat)}
         </p>
       )}
 
-      {gate.state === "sheet" ? (
+      {writable ? (
         <>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
@@ -368,11 +424,19 @@ function pageLabel(copy: PageCopy): string {
  * refusal path that 500s because a code arrived that this fixture has no sentence for would be a
  * worse failure than the refusal itself. `unknown` is the fallback, and every code the store can
  * return has its own row in `refusals`.
+ *
+ * `counterparty` asks for the `<code>-counterparty` row first (#1223): `lapsed` and
+ * `payment-method-required` are the two codes that reach that seat with a billing cause behind
+ * them, and the locked rule for this page is that the Counterparty never reads a membership,
+ * trial, payment or plan word — not even in the sentence that refuses them.
  */
-function refusalSentence(copy: PageCopy, code: string): string {
+function refusalSentence(copy: PageCopy, code: string, counterparty: boolean): string {
   const section = sectionOf(copy, "refusals");
-  const found =
-    section.items?.find((item) => item.id === code) ??
-    section.items?.find((item) => item.id === "unknown");
-  return found?.label ?? "";
+  const lookup = (id: string) => section.items?.find((item) => item.id === id);
+  return (
+    (counterparty ? lookup(`${code}-counterparty`) : undefined)?.label ??
+    lookup(code)?.label ??
+    lookup("unknown")?.label ??
+    ""
+  );
 }
