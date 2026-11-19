@@ -157,9 +157,10 @@ describe("the pricing page reads one list", () => {
   /**
    * **Where the band's words and figures come from since #1127.** The band is no longer a grid of
    * `billing_plan` rows rendered by `components/pricing/pricing-plans.tsx` directly: the v2 page
-   * draws three *plans* (Single · Family · Single Annual), and `lib/pricing-page.ts` is the one
-   * projection that joins the fixture's words to the catalogue's names and amounts. So the same
-   * three questions are asked of the module that now answers them.
+   * draws one card per *plan* — Single and Single Annual, since the owner removed Family on
+   * 2026-11-19 — and `lib/pricing-page.ts` is the one projection that joins the fixture's words to
+   * the catalogue's names and amounts. So the same three questions are asked of the module that now
+   * answers them.
    */
   const projection = readFileSync(join(process.cwd(), "lib/pricing-page.ts"), "utf8");
   const code = () => projection.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
@@ -192,7 +193,7 @@ describe("the pricing page reads one list", () => {
     expect(projection).not.toMatch(/\bid\s*===\s*["'](?:family|annual)["']/);
     const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
     expect(cards.filter((card) => card.popular)).toHaveLength(1);
-    // …and the three cards are the three plans the catalogue sells, in its order.
+    // …and the cards are exactly the plans the catalogue sells, in its order.
     expect(cards.map((card) => card.id)).toEqual(MEMBERSHIP_PLANS.map((plan) => plan.id));
   });
 });

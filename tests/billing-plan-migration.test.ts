@@ -141,8 +141,8 @@ describe("the migrations write the fixture's catalogue", () => {
     const price = (id: string, interval: string) => held.get(`${id}/${interval}`)?.priceCents;
     expect(price("free", "month")).toBe(0);
     expect(price("free", "year")).toBe(0);
-    // Single $9.99 / month, Single Annual $99 / year, Family $19.99 / month — and the unclaimed
-    // Family Annual row left at the amount it was created with.
+    // Single $9.99 / month, Single Annual $99 / year — and the `principal` rows left at the amounts
+    // they were created with, now that the Family plan has been removed from the catalogue.
     expect(price("basic", "month")).toBe(999);
     expect(price("basic", "year")).toBe(9_900);
     expect(price("principal", "month")).toBe(1_999);

@@ -6,7 +6,7 @@
  *
  *   1. **the hero** — the promise, and the three facts a reader deciding needs (a trial, no card,
  *      the invitee pays nothing);
- *   2. **the plans** — three cards, one per plan the catalogue sells. The **names, summaries and
+ *   2. **the plans** — two cards, one per plan the catalogue sells. The **names, summaries and
  *      amounts are not here**: they are `data/membership-plans.ts` (which reads its money out of
  *      `data/billing-plans.ts`), so a price typed into this file would be a second source for the
  *      one number a checkout charges. What *is* here is everything around the figure — the ribbon,
@@ -15,8 +15,9 @@
  *   4. **How Billing Works** — three steps, because the plan is chosen here and sold nowhere;
  *   5. **the questions** and **the closing band**.
  *
- * **No price, no currency and no fourth plan.** The three feature lists are the artifact's own
- * lines for the three approved plans; `tests/pricing-page-v2.test.tsx` pins that nothing under
+ * **No price, no currency and no third plan.** The two feature lists are the artifact's own lines
+ * for the two plans the catalogue sells (the artifact's third card, Family, was removed on
+ * 2026-11-19); `tests/pricing-page-v2.test.tsx` pins that nothing under
  * `components/pricing/**` holds a `$` figure, and the catalogue's own invariants
  * (`membershipPlanProblems()`) pin the plan set.
  *
@@ -59,10 +60,6 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         { id: "feature-single-2", label: "Basic and Advanced Mode" },
         { id: "feature-single-3", label: "Align, Chat and Next Step" },
         { id: "feature-single-4", label: "Invitee never pays" },
-        { id: "feature-family-1", label: "Up to 4 relationships" },
-        { id: "feature-family-2", label: "Everything in Single" },
-        { id: "feature-family-3", label: "Save and reuse My Templates" },
-        { id: "feature-family-4", label: "Invitees never pay" },
         { id: "feature-annual-1", label: "1 relationship for a year" },
         { id: "feature-annual-2", label: "Everything in Single" },
         { id: "feature-annual-3", label: "2 months free vs monthly" },
