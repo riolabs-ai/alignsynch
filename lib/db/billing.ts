@@ -18,8 +18,8 @@
  *     is `active | trialing | past_due` while it entitles; those are the states the index covers.
  *     `canceled` rows accumulate as history, which is what an audit wants and what a plain
  *     `UNIQUE (user_id)` would refuse.
- *   - **`activeInstanceCount()` is a query, not a column.** Free is "one active assessment", and
- *     "active" is derived from the same counts `instanceStatusOf` uses — an instance the account
+ *   - **`activeSessionCount()` is a query, not a column.** Free is "one active assessment", and
+ *     "active" is derived from the same counts `sessionStatusOf` uses — a session the account
  *     holds a seat on and that is not complete. A boolean or a counter column would be a second
  *     truth every write path has to remember to update, and the first missed update is a person
  *     paying for a plan the product does not give them.
@@ -35,9 +35,11 @@ import {
 } from "@/lib/billing/publish-trial";
 import {
   syncRelationshipsWithSubscription,
+  type Sql,
   type SubscriptionConsequence,
   type SyncDirection,
 } from "@/lib/relationship/enforcement";
+import { TRIAL_INTERVAL, TRIAL_PLAN_ID, trialEndsAt } from "@/lib/billing/trial";
 import {
   type BillingProvider,
   type Plan,
@@ -157,6 +159,82 @@ export async function grantPublishTrial(input: {
       PUBLISH_TRIAL_INTERVAL,
       publishTrialSubscriptionId(input.userId),
       publishTrialEndsAt(input.publishedAt).toISOString(),
+      ENTITLING_STATUSES,
+    ],
+  );
+  return rows.length > 0 ? "granted" : "nothing-written";
+}
+
+/**
+ * Open the trial a relationship starts **when the Counterparty accepts it** (#1115, spec D3).
+ *
+ * The anchor is the acceptance, and it is the owner's ruling — the week opens at the moment the
+ * pair is *connected*: the second seat is taken, the relationship turns `active`, and both people
+ * can reach the dashboard and the first assessment session. A **draft** and a **pending
+ * invitation** consume no trial days at all: an invitation nobody answers costs nothing, so a
+ * creator is never spending the week they are waiting on somebody else to start.
+ *
+ * That is why the writer lives here and is called from one place — `claimInvite()`, inside the
+ * transaction that binds the Counterparty's seat and flips the relationship to `active` — and from
+ * no place else. The two earlier anchors are retired: the publish grant (`grantPublishTrial()`,
+ * above, kept for the publish path's own retirement) and #1115's first attempt at creation. A row
+ * written at either of those instants is a week spent before anybody accepted.
+ *
+ * **It runs inside the claim's transaction**, which is why it takes the caller's handle (`Sql`)
+ * instead of reading on the pool the way `grantPublishTrial` does. Two facts follow, and both are
+ * the point: an acceptance that commits has a trial, and a trial never exists without one — a throw
+ * after this statement rolls the trial back with the seat.
+ *
+ * **One trial per account, by construction.** The statement is the publish writer's shape:
+ *
+ *   - the provider id is a function of the **user** (`publishTrialSubscriptionId`), NOT the
+ *     relationship, so a second acceptance — or a create, or a publish — writes nothing; a replayed
+ *     claim and a repeated acceptance are the same single row, and the clock is never restarted;
+ *   - `NOT EXISTS` over the entitling statuses refuses an account that already holds a live
+ *     subscription (a paid one included, so an upgrade is never overwritten by a trial);
+ *   - `ON CONFLICT DO NOTHING` covers the partial unique index on `user_id` for a concurrent write
+ *     that slips past the check.
+ *
+ * **The row belongs to the relationship's Initiator**, which is the account the week is for: the
+ * Counterparty joins a pair that is already paid for and never buys anything (spec US-2), so the
+ * caller passes `initiator_user_id` and not the claimer.
+ *
+ * `mock` + `livemode = false`: no money moved, and no provider subscription exists during the
+ * trial (D2) — the row is ours, and the upgrade action (a later card) converts it in place.
+ *
+ * `relationshipId` is provenance, not a column: `0009_billing.sql` keys a subscription to the
+ * account, and the relationship is the **trigger**. It is carried so the call site can name what
+ * granted the row in a log line, and so a reader of this function knows what opens it.
+ */
+export async function grantAcceptanceTrial(
+  sql: Sql,
+  input: {
+    readonly userId: string;
+    readonly relationshipId: string;
+    readonly now: Date;
+  },
+): Promise<"granted" | "nothing-written"> {
+  const { rows } = await sql.query<{ provider_subscription_id: string }>(
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode,
+        current_period_end)
+     SELECT $1, $2, $3, 'mock', $4, 'trialing', false, $5
+      WHERE NOT EXISTS (
+              SELECT 1
+                FROM billing_subscription
+               WHERE user_id = $1
+                 AND (status = ANY($6::text[]) OR provider_subscription_id = $4)
+            )
+     ON CONFLICT DO NOTHING
+     RETURNING provider_subscription_id`,
+    [
+      input.userId,
+      TRIAL_PLAN_ID,
+      TRIAL_INTERVAL,
+      // The same key `grantPublishTrial()` writes, on purpose: one account, one trial, whichever
+      // of the two writers gets there first.
+      publishTrialSubscriptionId(input.userId),
+      trialEndsAt(input.now).toISOString(),
       ENTITLING_STATUSES,
     ],
   );
@@ -361,18 +439,18 @@ export async function listSubscriptionsFor(userId: string): Promise<Subscription
 }
 
 /**
- * How many assessment instances this account is actively holding.
+ * How many assessment sessions this account is actively holding.
  *
- * The same three facts `instanceStatusOf` derives, in SQL: the account holds a party row on the
- * instance, the instance has Aspects, and at least one seat has not answered every Aspect. An
- * instance both parties have finished does not hold a slot — which is what makes the free plan
+ * The same three facts `sessionStatusOf` derives, in SQL: the account holds a party row on the
+ * session, the session has Aspects, and at least one seat has not answered every Aspect. A
+ * session both parties have finished does not hold a slot — which is what makes the free plan
  * usable for ever rather than once.
  *
  * Signed-out creators hold no seat (their `party.user_id` is NULL), so they are not counted and
  * cannot be gated; the gate is a property of an account, and the anonymous flow is the pre-#213
  * behaviour the product still supports.
  */
-export async function activeInstanceCount(userId: string): Promise<number> {
+export async function activeSessionCount(userId: string): Promise<number> {
   const rows = await queryRows<{ n: number }>(
     `SELECT count(*)::int AS n
        FROM party vp
@@ -421,7 +499,7 @@ export async function livePlanGrantIds(userId: string, now: Date): Promise<strin
  * How many relationships this account has **started** and not finished (#505).
  *
  * The plan's own count, and the one `relationshipGateRefusal()` is asked with. "Active" is the same
- * predicate `activeInstanceCount()` uses, one level up: a relationship counts while it holds a
+ * predicate `activeSessionCount()` uses, one level up: a relationship counts while it holds a
  * session that is voided nowhere and still has an Aspect one of the parties has not answered. A
  * relationship both parties have finished stops holding a slot, which is what makes the free plan
  * usable for ever rather than once.
@@ -430,7 +508,7 @@ export async function livePlanGrantIds(userId: string, now: Date): Promise<strin
  * Counterparty on five relationships is not five purchases, and `initiator_user_id` is the column
  * 0013 records for "the thing bought once by the Initiator". A relationship with no initiator
  * account (a seeded one, or one started signed out) belongs to nobody and is counted for nobody —
- * the same rule `activeInstanceCount` states for an unbound party.
+ * the same rule `activeSessionCount` states for an unbound party.
  */
 export async function activeRelationshipCount(userId: string): Promise<number> {
   const rows = await queryRows<{ n: number }>(

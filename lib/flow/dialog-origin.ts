@@ -3,7 +3,7 @@
  * the history since (#979 B).
  *
  * **Why this is module state and not a search param.** The dialog is mounted by an intercepted
- * route: the address is the stage's own (`/templates/relationship/<slug>/create/…`), which is what
+ * route: the address is the stage's own (`/dashboard/templates/<slug>/create/…`), which is what
  * makes a refresh, a shared link and the back button land on the same screen. The *origin* is the
  * page underneath, and nothing in the URL carries it — stamping a `?from=` onto every stage address
  * would put a second fact in an address whose whole job is to name one screen, and a person who

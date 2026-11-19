@@ -5,7 +5,7 @@
  * ## Why this exists instead of `pnpm db:seed`
  *
  * The catalogue at `/relationship-templates` advertises every purchasable relationship type, and
- * each card's action is `/templates/relationship/<slug>/create`, which resolves the template from
+ * each card's action is `/dashboard/templates/<slug>/create`, which resolves the template from
  * the **database** (`readLibraryTemplate`). Production had only ever received the four fixture-era
  * template rows, so 25 of the 27 advertised create links answered 404 — the demo served them all,
  * which is why nobody saw it.
@@ -53,7 +53,7 @@
  *
  * `--check` is accepted as a synonym for the default dry run, so the question reads the same as
  * `db:seed:check`. A refusal — an authored row holding a catalogue slug, a slug that is an
- * instance, a drifted non-template count — exits 1 and names itself.
+ * session, a drifted non-template count — exits 1 and names itself.
  */
 import { Client } from "pg";
 import { platformTemplates } from "../lib/platform-templates.ts";
@@ -251,14 +251,14 @@ try {
   console.log(`  templates   ${censusLine(before)}   ← before`);
   console.log(`  untouched   ${guardLine(before)}`);
 
-  const instanceSlugs = existing
+  const sessionSlugs = existing
     .filter((row) => row.sessions > 0 && templates.some((template) => template.slug === row.slug))
     .map((row) => row.slug);
-  if (instanceSlugs.length > 0) {
+  if (sessionSlugs.length > 0) {
     // The plan refuses these too (a row with a session is not a template); this line names them
     // before the plan's per-slug report so the reason is impossible to miss.
     fail(
-      `these catalogue slugs are held by an instance record, not a template: ${instanceSlugs.join(", ")} — the import will not rewrite a record that has a session`,
+      `these catalogue slugs are held by a session record, not a template: ${sessionSlugs.join(", ")} — the import will not rewrite a record that has a session`,
     );
   }
   if (plan.refuse.length > 0) {

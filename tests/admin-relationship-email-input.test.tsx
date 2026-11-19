@@ -63,7 +63,7 @@ function seat(overrides: Partial<AdminSeat> = {}): AdminSeat {
 /** A live relationship with an unclaimed invitation — the row that offers the reissue band. */
 function detail(): AdminRelationshipDetail {
   return {
-    instanceRecordId: "inst-1",
+    sessionRecordId: "inst-1",
     relationshipId: "relationship-inst-1",
     slug: "avery-rowan",
     name: "Avery & Rowan",
@@ -178,7 +178,7 @@ describe("the reissue band's address field is controlled (#980)", () => {
     expect(submitted).toHaveLength(1);
     expect(submitted[0]).toMatchObject({
       repair: "resend",
-      instanceRecordId: "inst-1",
+      sessionRecordId: "inst-1",
       email: CORRECTED,
     });
   });

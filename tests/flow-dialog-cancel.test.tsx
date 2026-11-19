@@ -35,7 +35,7 @@ declare global {
 }
 
 /** Stage 5's own address — a stage path, so the dialog has something to describe. */
-const STAGE_PATH = "/templates/relationship/relationship-basics/create/invite";
+const STAGE_PATH = "/dashboard/templates/relationship-basics/create/invite";
 /** The relationship the payment was opened from: the relationship's own screen. */
 const ORIGIN_PATH = "/dashboard/relationships/relationship-pay-door";
 
@@ -78,7 +78,7 @@ afterEach(() => {
 /** The stage's own foot, exactly as `CreateRelationship` draws it on every stage. */
 const STAGE_FOOT = (
   <StageFoot
-    backHref="/templates/relationship/relationship-basics/create/commit"
+    backHref="/dashboard/templates/relationship-basics/create/commit"
     backLabel="Back"
     cancelHref={TEMPLATE_LIBRARY_PATH}
     cancelLabel="Cancel"
@@ -91,7 +91,6 @@ function mount(mount: "page" | "dialog"): void {
       <RelationshipFlowShell
         mount={mount}
         stage={5}
-        copy={assessmentCreatePageCopy}
         title={assessmentCreatePageCopy.heading}
         closeLabel="Close"
         closeHref={TEMPLATE_LIBRARY_PATH}

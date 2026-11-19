@@ -15,7 +15,7 @@
  *                  computed by, and the comment that defines it).
  *   glossary-line  the term list in the file's leading comment — `content/record.ts`'s
  *                  "Terms are the glossary's, used exactly" block. Record, Item and
- *                  Instance have no JSDoc of their own, and that list is where the schema
+ *                  Session have no JSDoc of their own, and that list is where the schema
  *                  defines them. A paragraph written here instead would be exactly the
  *                  drift this generator exists to prevent.
  *
@@ -62,7 +62,7 @@ const TERMS = [
   { term: "Record", type: "Record", from: { kind: "glossary-line" } },
   { term: "Item", type: "Item", from: { kind: "glossary-line" } },
   { term: "Template", type: "Template", from: { kind: "doc", declaration: "zTemplate" } },
-  { term: "Instance", type: "AssessmentInstance", from: { kind: "glossary-line" } },
+  { term: "Session", type: "AssessmentSession", from: { kind: "glossary-line" } },
   { term: "Aspect", type: "Aspect", from: { kind: "doc", declaration: "zAspect" } },
   { term: "Opinion", type: "Opinions", from: { kind: "doc", declaration: "zOpinionsObject" } },
   { term: "Gap", type: "Gap", from: { kind: "doc", declaration: "gapOf" } },

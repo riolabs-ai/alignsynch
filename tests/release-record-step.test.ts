@@ -148,7 +148,15 @@ function probe(): Probe {
 
   mkdirSync(join(repo, "scripts"), { recursive: true });
   mkdirSync(bin);
-  for (const file of ["release.sh", "release-version.mjs", "release-record.mjs"]) {
+  // The preflight is part of the cut now (card t_3c37542f), so the probe tree carries it and
+  // satisfies it: the release's own page exists, and the `gh` shim below answers `run list` and
+  // `pr list`.
+  for (const file of [
+    "release.sh",
+    "release-version.mjs",
+    "release-record.mjs",
+    "release-preflight.mjs",
+  ]) {
     cpSync(join(ROOT, "scripts", file), join(repo, "scripts", file));
   }
   writeFileSync(join(repo, "scripts", "verify.sh"), "#!/usr/bin/env bash\nexit 0\n", {
@@ -159,6 +167,11 @@ function probe(): Probe {
     `${JSON.stringify({ name: "probe", version: VERSION }, null, 2)}\n`,
   );
   writeFileSync(join(repo, "CHANGELOG.md"), CHANGELOG);
+  mkdirSync(join(repo, "docs", "changelog"), { recursive: true });
+  writeFileSync(
+    join(repo, "docs", "changelog", `v${VERSION.replace(/\./g, "-")}.md`),
+    `# v${VERSION} — the probe\n`,
+  );
   writeFileSync(limits, "- nothing is stored: the probe serves fixtures.\n");
   chmodSync(join(repo, "scripts", "release.sh"), 0o755);
 
@@ -168,6 +181,8 @@ function probe(): Probe {
 case "$1 $2" in
   "release create") ;;
   "release view") printf '%s|false|false|https://example.test/releases/tag/%s\\n' "$3" "$3" ;;
+  "run list") printf '[{"status":"completed","conclusion":"success","url":"https://example.test/run/1"}]\\n' ;;
+  "pr list") printf '[]\\n' ;;
 esac
 `,
     { mode: 0o755 },
@@ -219,6 +234,14 @@ const pnpmCalls = (p: Probe): string =>
 const healthRecord = (p: Probe) => join(p.repo, "data", "health", "platform-health.json");
 
 const tagsOnOrigin = (p: Probe): string => gitOut(p.repo, "ls-remote", "--tags", "origin");
+
+/** The ref names `git ls-remote --tags` printed, without the shas two separate probes disagree on. */
+const tagRefs = (p: Probe): string[] =>
+  tagsOnOrigin(p)
+    .split("\n")
+    .map((line) => line.trim().split("\t")[1] ?? "")
+    .filter((ref) => ref.length > 0 && !ref.endsWith("^{}"))
+    .sort();
 
 describe("--tag-only holds the platform record to the version it tagged", () => {
   it("fails the cut when the recorder writes a record naming the previous version", () => {
@@ -295,17 +318,23 @@ describe("--no-record is an escape that is not silent", () => {
     expect(tagsOnOrigin(p)).toContain(`refs/tags/v${VERSION}`);
   });
 
-  it("refuses to run the recorder with no demo credentials, naming both ways out", () => {
+  it("refuses before the tag when the shell has no demo credentials, naming both ways out", () => {
     const p = probe();
 
     const run = release(p, ["--tag-only", VERSION]);
 
     expect(run.status).toBe(1);
-    expect(run.stderr).toContain("carries no DATABASE_URL");
-    expect(run.stderr).toContain("withenv.sh");
-    expect(run.stderr).toContain("--no-record");
+    // The check moved *earlier* with the preflight (card t_3c37542f): the same missing URL is now caught
+    // before the tag rather than after it, so `--tag-only` no longer publishes a tag it cannot
+    // record. That is a strengthening — the old refusal is still in `record_step`, and unreachable
+    // from here because the preflight refuses first.
+    expect(run.stdout).toContain("DATABASE_URL is unset and --no-record was not passed");
+    expect(run.stdout).toContain("withenv.sh");
+    expect(run.stdout).toContain("--no-record");
+    expect(run.stderr).toContain("the preflight refused this cut");
     expect(pnpmCalls(p)).toBe("");
-    expect(tagsOnOrigin(p)).toContain(`refs/tags/v${VERSION}`);
+    // And nothing was published: the refusal is before the tag now, not after it.
+    expect(tagsOnOrigin(p)).not.toContain(`refs/tags/v${VERSION}`);
   });
 
   it("is a usage error on a mode that has no record step", () => {
@@ -315,5 +344,89 @@ describe("--no-record is an escape that is not silent", () => {
 
     expect(run.status).toBe(2);
     expect(run.stderr).toContain("--no-record belongs to --tag-only");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * #1248 — the tagged spelling and the bare one are one cut
+ * ------------------------------------------------------------------ */
+
+/**
+ * Found by the `v2.0.0-rc1.3` cut: `pnpm release:preflight v2.0.0-rc1.3` passed all ten checks and
+ * `bash scripts/release.sh --tag-only v2.0.0-rc1.3` exited 2 with "'v2.0.0-rc1.3' is not a semantic
+ * version" — a refusal discovered against a real release, one verb after the verb next door had
+ * accepted the same string. And `release-record.mjs check v2.0.0-rc1.3` answered two false ✗, one of
+ * them naming `vv2.0.0-rc1.3`, because it prefixed `v` to a version that already carried one.
+ *
+ * These two cases run the real scripts, so the claim is the cut's behaviour rather than a helper's.
+ */
+describe("the tagged spelling is the same cut (#1248)", () => {
+  it("publishes the same tag for `v<version>` as for `<version>`, and never a doubled prefix", () => {
+    const bare = probe();
+    const tagged = probe();
+
+    const bareRun = release(bare, ["--tag-only", VERSION, "--no-record"]);
+    const taggedRun = release(tagged, ["--tag-only", `v${VERSION}`, "--no-record"]);
+
+    expect(taggedRun.status).toBe(bareRun.status);
+    expect(taggedRun.status).toBe(0);
+    // The two probes are separate repositories, so the tag *names* are compared, not the commit shas
+    // ls-remote prints beside them.
+    expect(tagRefs(tagged)).toEqual(tagRefs(bare));
+    expect(tagRefs(tagged)).toContain(`refs/tags/v${VERSION}`);
+    expect(tagsOnOrigin(tagged)).not.toContain(`refs/tags/vv${VERSION}`);
+    // The transcript says which spelling it was given, so the log answers it without a guess.
+    expect(taggedRun.stdout).toContain(
+      `release: version ${VERSION} (given 'v${VERSION}'; the tag is v${VERSION}, never vv${VERSION})`,
+    );
+    expect(bareRun.stdout).not.toContain("(given '");
+    expect(taggedRun.stdout).toContain(`chore(health): re-record platform health at v${VERSION}`);
+  });
+
+  it("reaches the same record verdict for both spellings", () => {
+    const p = probe();
+    const record = join(p.root, "record.json");
+    writeFileSync(
+      record,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          recordedAt: "2026-11-19T10:00:00Z",
+          tree: {
+            packageVersion: VERSION,
+            latestTag: `v${VERSION}`,
+            headSha: p.sha,
+            mainSha: p.sha,
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const check = (version: string) =>
+      spawnSync(
+        process.execPath,
+        [
+          join(p.repo, "scripts", "release-record.mjs"),
+          "check",
+          version,
+          p.sha,
+          "--record",
+          record,
+        ],
+        { cwd: p.repo, env: CHILD_ENV, encoding: "utf8" },
+      );
+
+    const bare = check(VERSION);
+    const tagged = check(`v${VERSION}`);
+
+    expect(tagged.status).toBe(bare.status);
+    expect(tagged.status).toBe(0);
+    expect(bare.stdout).toContain(`release-record: the record names v${VERSION}`);
+    expect(tagged.stdout).toContain(`release-record: the record names v${VERSION}`);
+    // The double prefix was the tell: no verb may print `vv<version>` anywhere.
+    expect(bare.stdout + bare.stderr).not.toContain(`vv${VERSION}`);
+    expect(tagged.stdout + tagged.stderr).not.toContain(`vv${VERSION}`);
+    expect(tagged.stdout).toContain(`version ${VERSION} (given 'v${VERSION}'`);
   });
 });

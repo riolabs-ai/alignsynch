@@ -7,7 +7,7 @@
     "response_option": 0,
     "relationship": 31,
     "session": 31,
-    "session_invite": 28,
+    "session_invite": 31,
     "party": 56,
     "opinion": 205,
     "billing_plan": 6,
@@ -22,7 +22,7 @@
     "email_event": 2,
     "news_signup": 5,
     "plan_grant": 1,
-    "relationship_payment": 1,
+    "relationship_payment": 2,
     "review_issue": 2,
     "review_issue_comment": 2,
     "review_todo": 3
@@ -37,7 +37,7 @@
     {
       "path": "/pricing",
       "status": 200,
-      "mustContain": ["Simple, transparent pricing", "$8.95", "$16.95"],
+      "mustContain": ["Simple, transparent pricing", "$9.99", "$19.99"],
       "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
     },
     {

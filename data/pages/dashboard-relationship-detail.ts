@@ -32,6 +32,7 @@
  *   unreadable the database did not answer
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { aspectDrawerSection } from "../../content/aspect-drawer";
 
 /**
  * The id of the shared Aspect editor's section on this page.
@@ -50,6 +51,16 @@ export const ASPECT_EDITOR_SECTION = "aspect-editor";
  */
 export const RELATIONSHIP_EDIT_SECTION = "edit";
 
+/**
+ * The id of the live Aspects band's section on this page (#1133).
+ *
+ * Stage 6 is running, so the panel draws the two sentences and **no writing control** — the
+ * pencils, the Add and the drag are gone, and `saveAspects` refuses the write inside its own
+ * transaction even if one came back. The page names the section through this constant for the
+ * same E23 reason as the two above.
+ */
+export const ASPECTS_LIVE_SECTION = "aspects-live";
+
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
@@ -61,12 +72,35 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "published", label: "Published" },
     { id: "invited", label: "Invited" },
     { id: "trial", label: "Trial ends" },
+    /**
+     * #1115 task 5 — the connection row. `connected` is drawn from `connectionOf()` (both seats
+     * bound to an account and the session exists — never from an answer or an opinion count), so
+     * the words here are only the two states it can be in.
+     */
+    { id: "connection", label: "Connection" },
+    { id: "connected", label: "Connected" },
+    { id: "waiting", label: "Waiting on {name}" },
+    /**
+     * #1121 — the facts card's membership row: the window, the pause, or the other person's cover.
+     * The four values are the pause section's own items, so the fact and the badge never say two
+     * things about one account.
+     */
+    { id: "membership", label: "Membership" },
     { id: "none", label: "—" },
     /** #533 phase 3 — the badge the derived lapse draws beside the stored status. */
     { id: "read-only", label: "Read-only" },
     /** #706 — the viewer's own seat, from their party row. */
     { id: "role-initiator", label: "Initiator" },
     { id: "role-counterparty", label: "Counterparty" },
+    {
+      /**
+       * #1124 — what the tab strip says when the fixture hands it no sections at all. E40 gives an
+       * empty list an explicit bordered block, and this is the sentence that block carries: a
+       * binding nobody can read, said out loud rather than drawn as blank space.
+       */
+      id: "tabs-empty",
+      label: "This relationship has no sections to open — support can repair the binding.",
+    },
   ],
   sections: [
     {
@@ -115,6 +149,11 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "invite-claimed", label: "Published. The other person has joined." },
         { id: "invite-revoked", label: "Published. An operator revoked the invitation link." },
         {
+          id: "invite-declined",
+          label:
+            "Published. {counterparty} declined the invitation — send a new one when you are ready.",
+        },
+        {
           id: "invite-missing",
           label: "Published with no invitation row — that is a defect; support can repair it.",
         },
@@ -148,6 +187,87 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The Aspects, publishing and invitation on this relationship belong to the account that started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
         },
+      ],
+    },
+    {
+      /**
+       * #1128 — **the Next Step a live, answering relationship draws.**
+       *
+       * The bundle's own sentence for the state (03, `joined`): the eyebrow, the heading, the
+       * three-minute promise and the one button. It is the door the issue says was missing —
+       * "Next Step 'Start Assessment' goes nowhere" — and the verb comes from the reader's own
+       * answered count, so a second visit says `Continue`.
+       */
+      id: "assessment",
+      items: [
+        { id: "next-step", label: "Next Step" },
+        { id: "start-heading", label: "Start Your First Assessment" },
+        { id: "continue-heading", label: "Continue Your Assessment" },
+        {
+          id: "body",
+          label:
+            "{count} Aspects, about 3 minutes. Your answers stay private until you both finish.",
+        },
+        { id: "start", label: "Start Assessment" },
+        { id: "continue", label: "Continue Assessment" },
+        { id: "progress", label: "{answered} of {count} Aspects answered" },
+      ],
+    },
+    {
+      /**
+       * #1121 — **Stage 6's pause, in the owner's words.**
+       *
+       * Every string here is verbatim from the issue's state table (and the ported bundle,
+       * `docs/specs/v2-bundles/03-spec-design-page-rel-detail-v2/`): *Paused*, *Your Trial Ended*,
+       * *Add a Card*, *Get 7 More Days Free*, *Waiting on Marcus*, *See Your Results*, *Paused ·
+       * Trial Ended*, *Covered by Marcus*. The Counterparty's column is the half of the table that
+       * may not carry a price, the word *trial*, a card ask or an extension — so their four labels
+       * are the only ones that name the pause from the outside, and `tests/trial-pause-no-leak`
+       * fails on any of those words reaching their render.
+       *
+       * `{initiator}` is the initiating account's name, filled by the view; `{days}` and `{instant}`
+       * are the trial window's, so the pill, the Payment fact and the arrival banner cannot disagree
+       * about a date the read already knows.
+       */
+      id: "pause",
+      heading: "Stage 6 is paused",
+      body: "Nothing is lost. Both of you can still read the results and the Discussion; Stage 6 runs again the moment a card is added.",
+      items: [
+        { id: "badge", label: "Paused" },
+        { id: "badge-waiting", label: "Paused · Waiting on {initiator}" },
+        {
+          id: "line",
+          label: "Stage 6 is paused. Your results and Discussion are saved and read-only.",
+        },
+        {
+          id: "line-waiting",
+          label: "Stage 6 is paused until {initiator} resumes it. Everything is saved.",
+        },
+        { id: "trial-ended-heading", label: "Your Trial Ended" },
+        {
+          id: "trial-ended-body",
+          label: "Add a card or get 7 more days free. Either one resumes Stage 6 right away.",
+        },
+        { id: "extra-ended-heading", label: "Your Extra Week Ended" },
+        { id: "extra-ended-body", label: "Add a card to resume Stage 6. Everything is saved." },
+        { id: "waiting-heading", label: "Waiting on {initiator}" },
+        { id: "waiting-body", label: "Nothing to do. You can still read your results." },
+        { id: "add-card", label: "Add a Card" },
+        { id: "extend", label: "Get 7 More Days Free" },
+        { id: "extending", label: "Adding the week…" },
+        { id: "see-results", label: "See Your Results" },
+        { id: "read-only", label: "Read-only while Stage 6 is paused." },
+        {
+          id: "added",
+          label: "7 More Days Added · Stage 6 is running again. Your extra week ends {instant}.",
+        },
+        { id: "membership-trial", label: "Free Trial · Ends {instant}" },
+        { id: "membership-extra", label: "Extra Week · Ends {instant}" },
+        { id: "membership-trial-ended", label: "Paused · Trial Ended" },
+        { id: "membership-extra-ended", label: "Paused · Extra Week Ended" },
+        { id: "membership-covered", label: "Covered by {initiator}" },
+        { id: "pill-trial", label: "Trial · {days} Days Left" },
+        { id: "pill-extra", label: "Extra Week · {days} Days Left" },
       ],
     },
     {
@@ -205,6 +325,29 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         },
       ],
     },
+    /**
+     * The Aspect drawer (#1133), shared vocabulary from `content/aspect-drawer.ts` — the same sheet
+     * Stage 3 and a My Template's Edit open, mounted here for a `draft`/`pending` relationship.
+     */
+    aspectDrawerSection(),
+    {
+      /**
+       * The live Aspects band (#1133) — Stage 6 is running, so **no control on this panel writes**.
+       *
+       * The two sentences are the owner's rule and the bundle's reason, in that order: the rule
+       * (`Changes are proposed and agreed by both of you.`) is the issue's own wording, and the
+       * state (`Aspects are locked while Stage 6 is live.`) is
+       * `03-spec-design-page-relationship-detail-v2`. Together they answer the question a person
+       * asks when the pencils are gone: *why can't I edit this*.
+       */
+      id: ASPECTS_LIVE_SECTION,
+      heading: "Aspects are Locked",
+      items: [
+        { id: "locked-now", label: "Aspects are locked while Stage 6 is live." },
+        { id: "rule", label: "Changes are proposed and agreed by both of you." },
+      ],
+    },
+
     {
       id: "publish",
       heading: "Publish",
@@ -244,46 +387,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "publishing", label: "Publishing…" },
         { id: "expiry", label: "The invitation expires {instant}." },
         { id: "checkout", label: "A checkout has to complete first." },
-      ],
-    },
-    {
-      /**
-       * #690 / #1010 R2 — the hard gate at publish.
-       *
-       * Publishing needs a live **membership** — bought at stage 5, one subscription covering both
-       * parties — so the screen draws **no publish control at all** while there is none, and names
-       * the place one is bought. A disabled button would be worse than nothing: it would say "you
-       * cannot publish yet" and leave the person to guess what would change that.
-       *
-       * There is no "add a payment method" door anywhere in this band, and no sentence offering one:
-       * a card reaches an account by buying the membership, which is what the door is.
-       */
-      id: "publish-gate",
-      heading: "A membership is needed to publish",
-      /**
-       * The artifact's own publish-lock sentence (`s11.publishBlocked`), re-worded for #1010: what
-       * the membership unlocks is the Gap and the parity views, and both seats can still answer
-       * without it. The old line named a payment method, which this build no longer captures
-       * separately from the membership.
-       */
-      body: "Publish is locked until this account's membership is running — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
-      items: [
-        { id: "publish-help", label: "Publishing waits until the membership is running." },
-        { id: "plans", label: "See plans and prices" },
-        /**
-         * #912 — **the door the band actually needs.** `/pricing` sells the membership without the
-         * relationship in hand, so a band that named only the plans could not resolve the refusal it
-         * drew. This is the pay modal's own label — the owner's words — and the band draws it as the
-         * primary door whenever the relationship has a session for stage 5 to read.
-         */
-        { id: "invite-members", label: "Invite Members" },
-        /**
-         * #958 — **the same door, named for the act it performs.** On a draft the pay modal's Send
-         * *is* the publish, so the band offers both of the owner's verbs rather than implying one
-         * act lives on a different screen. Same label as the card's (`dashboard-relationships.ts`),
-         * deliberately: one act, one word, whichever surface draws it.
-         */
-        { id: "publish-to-counterparty", label: "Publish to Counterparty" },
       ],
     },
     {
@@ -518,9 +621,115 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #1135 — **invitation hygiene**, the three courtesies on a live invitation.
+       *
+       * Bundle 03's pass-10 list, in the order the artifact draws them: Copy Invite Link (copies,
+       * then confirms), Resend Invite (rate-limited by `lib/flow/resend.ts`, then confirms), and
+       * Cancel Invite behind a neutral × confirm whose sentence is the artifact's own — "the link
+       * stops working… your draft stays and you can invite again".
+       *
+       * The resend has three sentences rather than one because the mail has three outcomes
+       * (`sent|unset|failed`): a deployment with no key still minted a working link, and claiming an
+       * email nobody sent would be the one lie this screen could tell.
+       */
+      id: "hygiene",
+      heading: "Invitation",
+      body: "The invitation works until it is claimed, cancelled, or it expires. Copy the link to share it yourself, resend it to the same address, or cancel it — the draft stays, and you can invite again.",
+      items: [
+        { id: "copy", label: "Copy Invite Link" },
+        { id: "copied", label: "Link Copied" },
+        { id: "copy-failed", label: "The clipboard is not available in this browser." },
+        { id: "link", label: "The link" },
+        { id: "resend", label: "Resend Invite" },
+        { id: "resending", label: "Resending…" },
+        { id: "resent", label: "Invitation Resent · the new link is live until {instant}." },
+        {
+          id: "resent-unset",
+          label: "Resent · no email left this deployment, so share the link below.",
+        },
+        { id: "resent-failed", label: "Resent · the email did not go, so share the link below." },
+        { id: "cancel", label: "Cancel Invite" },
+        {
+          id: "cancel-confirm",
+          label:
+            "Cancel this invitation? The link stops working the moment you do. Your draft stays and you can invite again.",
+        },
+        { id: "cancelling", label: "Cancelling…" },
+        { id: "cancelled", label: "Invitation Cancelled at {instant}. This is a draft again." },
+        { id: "keep", label: "Keep It" },
+      ],
+    },
+    {
+      /**
+       * #1135 — **close or leave, never delete.**
+       *
+       * One panel, two roles: either party may Leave (Stage 6 closes for both, answers stay
+       * readable), and the Counterparty has the ghost control the crud-matrix flagged as missing —
+       * Request My Removal, whose reason only support reads. There is deliberately **no "Delete
+       * Relationship"**: the confirm copy is where the rule is stated to the reader, and the writers
+       * (`lib/member/relationship-close.ts`) write a status, never a delete.
+       */
+      id: "close",
+      heading: "Close This Relationship",
+      body: "Leaving closes Stage 6 for both of you. Your answers and the Discussion stay where they are, and you can both still read them.",
+      items: [
+        { id: "leave", label: "Leave Relationship" },
+        {
+          id: "leave-confirm",
+          label:
+            "Leave this relationship? Stage 6 closes for both of you, and your answers and Discussion stay readable to both of you.",
+        },
+        { id: "leaving", label: "Leaving…" },
+        { id: "left", label: "Relationship Closed at {instant}." },
+        { id: "closed-badge", label: "Relationship Closed" },
+        { id: "keep", label: "Stay" },
+        { id: "request", label: "Request My Removal" },
+        {
+          id: "request-confirm",
+          label:
+            "Ask support to remove your name and your answers? They are removed within 30 days, and the relationship closes when they are.",
+        },
+        {
+          id: "request-reason",
+          label: "Anything support should know — they keep it to themselves.",
+        },
+        { id: "requesting", label: "Requesting…" },
+        {
+          id: "requested",
+          label: "Removal Requested · support removes your name and answers within 30 days.",
+        },
+        { id: "requested-at", label: "Removal Requested at {instant} · support has it." },
+      ],
+    },
+    {
+      /**
+       * #1135 — **Abandon Draft**, drawn only for a draft nobody was invited to.
+       *
+       * The confirm says what abandoning is (terminal) rather than softening it: `void` has no
+       * outgoing edge, so "starting again is a new relationship" is the honest sentence and the
+       * reason field is what the audit row and the row's own `void_reason` keep.
+       */
+      id: "abandon",
+      heading: "Abandon This Draft",
+      body: "Nothing has been sent, so there is nobody to tell. Abandoning ends this draft for good.",
+      items: [
+        { id: "submit", label: "Abandon Draft" },
+        {
+          id: "confirm",
+          label:
+            "Abandon this draft? It ends here and cannot be reopened — starting again is a new relationship.",
+        },
+        { id: "reason", label: "Why you are abandoning it (optional)" },
+        { id: "keep", label: "Keep the Draft" },
+        { id: "abandoning", label: "Abandoning…" },
+        { id: "done", label: "Draft Abandoned at {instant}." },
+      ],
+    },
+    {
       id: "closed",
       heading: "This relationship is closed",
-      body: "Nothing more happens to a relationship in this state. Starting a new one is a new relationship with its own invitation.",
+      body: "Stage 6 is closed for both of you. Nothing more happens to this relationship, and your answers and Discussion stay readable.",
     },
     {
       id: "refusals",
@@ -595,8 +804,185 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "invalid-window", label: "The invitation window is 1 to 60 whole days." },
         { id: "no-such-version", label: "That version is not one of this relationship's." },
         { id: "no-change", label: "Nothing in this form differs from the relationship." },
+        /* #1121 — the free week's three dead ends, one sentence each, each naming the way back so a
+         * refusal is a next step rather than a wall. */
+        {
+          id: "not-paused",
+          label:
+            "Stage 6 is not paused right now, so there is no free week to add. Add a card if you want to keep it running.",
+        },
+        {
+          id: "no-trial",
+          label:
+            "This account has no free trial to extend. Adding a card is the way to resume Stage 6.",
+        },
+        {
+          id: "extension-used",
+          label:
+            "Your one free week has already been used on this account. Adding a card resumes Stage 6.",
+        },
+        /* #1135 — the ending verbs' dead ends, one sentence each. */
+        {
+          id: "already-closed",
+          label: "This relationship is already closed — there is nothing left to end.",
+        },
+        {
+          id: "already-joined",
+          label: "The other person has already joined, so there is no link to cancel.",
+        },
+        { id: "invite-dead", label: "That invitation already ended. Send a new one instead." },
+        {
+          id: "not-published",
+          label:
+            "An invitation is cancelled on a relationship that was sent — this one is a draft.",
+        },
+        { id: "not-a-draft", label: "Only a draft that was never sent can be abandoned." },
+        {
+          id: "not-running",
+          label:
+            "Stage 6 is not running yet, so there is nothing to leave. Cancel the invitation instead.",
+        },
+        {
+          id: "removal-already-requested",
+          label: "You have already asked support to remove you — they have it.",
+        },
+        /* #275 — the four ways a resend is refused before it writes. */
+        {
+          id: "cooldown",
+          label: "This invitation was resent very recently. Try again in a few hours.",
+        },
+        {
+          id: "cap-reached",
+          label:
+            "This invitation has been resent as many times as it can be. Cancel it and invite again instead.",
+        },
+        {
+          id: "already-claimed",
+          label: "The other person has already joined, so the invitation needs no resending.",
+        },
+        {
+          id: "not-initiator",
+          label: "Only the person who started the relationship can resend its invitation.",
+        },
+        {
+          id: "instance-complete",
+          label: "Both of you have answered everything, so there is no invitation left to resend.",
+        },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
+      ],
+    },
+    {
+      /**
+       * #1124 — **the six-tab layer, and it is the whole of the content column.**
+       *
+       * The sections below this one are its panels: the record is one page with six views of it,
+       * not six pages. The labels are the owner's words from the approved bundle
+       * (`docs/specs/v2-bundles/03-spec-design-page-relationship-detail-v2/`), in the bundle's
+       * order, and the `heading` is the tablist's accessible name rather than a drawn heading —
+       * the layer never prints it.
+       */
+      id: "tabs",
+      heading: "Relationship sections",
+      items: [
+        { id: "discussion", label: "Discussion" },
+        { id: "aspects", label: "Aspects" },
+        { id: "members", label: "Members" },
+        { id: "details", label: "Details" },
+        { id: "settings", label: "Settings" },
+        { id: "payment", label: "Payment" },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Discussion panel.
+       *
+       * **The thread has no model yet** (#921 owns it), so the panel draws what the read can
+       * support: the heading and one honest empty state. It is not a fake composer and it is not
+       * a comment box that would write nowhere — the layer ships the tab, and the thread lands
+       * when the model does.
+       */
+      id: "discussion",
+      heading: "Relationship Discussion",
+      body: "One thread for the two of you, beside the Aspects you are answering.",
+      items: [{ id: "empty", label: "Nothing has been said here yet." }],
+    },
+    {
+      /**
+       * #1124 — the Members panel: the two seats, and what has happened to the invitation.
+       *
+       * Read from the relationship itself — the initiator's name, the Counterparty's seat, and
+       * the invitation row — so a draft (no seat bound) says so instead of drawing two blanks.
+       * The owner-named labels are the bundle's: `(You)` marks the viewer, and `Invitation
+       * History` is the subheading.
+       */
+      id: "members",
+      heading: "Members",
+      items: [
+        { id: "you", label: "(You)" },
+        { id: "seat-empty", label: "Not joined yet" },
+        { id: "history", label: "Invitation History" },
+        { id: "no-invite", label: "No invitation has been sent yet." },
+        { id: "sent", label: "Invite sent {date}." },
+        { id: "expires", label: "The link stops working {date}." },
+        { id: "claimed", label: "The other person has joined." },
+        { id: "revoked", label: "An operator revoked the link." },
+      ],
+    },
+    {
+      /** #1124 — the Details panel: the record's own facts, then its timeline. */
+      id: "details",
+      heading: "Relationship Information",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "invitation", label: "Invitation" },
+        { id: "seat", label: "Your Seat" },
+        { id: "timeline", label: "Timeline" },
+        { id: "created", label: "Created {date}." },
+        { id: "published", label: "Published {date}." },
+        { id: "trial-started", label: "7-day free trial started {date}." },
+        { id: "empty-timeline", label: "Nothing has happened to this relationship yet." },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Settings panel: the two values the assessment was configured with, and the
+       * one sentence about when a change takes effect. The values are read; the editor that
+       * writes them is the relationship's own edit panel (#623), so this panel never grows a
+       * second one.
+       */
+      id: "settings",
+      heading: "Assessment Settings",
+      items: [
+        { id: "mode", label: "Mode" },
+        { id: "setting", label: "Alignment Tolerance" },
+        { id: "next-round", label: "Changes apply from the next round." },
+        {
+          id: "by-starter",
+          label: "The person who started this relationship sets these.",
+        },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Payment panel, and the no-leak rule is the whole design.
+       *
+       * The Initiator reads the membership and its trial; the Counterparty reads one sentence
+       * and nothing else — no plan, no price, no card, no countdown. Billing itself is #1132's
+       * surface; this panel mirrors the facts the relationship already carries and adds no
+       * control, so there is exactly one place money is decided.
+       */
+      id: "payment",
+      heading: "Relationship Membership",
+      items: [
+        { id: "membership", label: "Membership" },
+        { id: "billing-owner", label: "Billing Owner" },
+        { id: "you", label: "You" },
+        { id: "open", label: "Running" },
+        { id: "lapsed", label: "Read-only" },
+        { id: "trial-ends", label: "Trial ends {date}." },
+        { id: "no-trial", label: "No trial is running." },
+        { id: "covered", label: "{name} covers this relationship. You’re never charged." },
       ],
     },
     {

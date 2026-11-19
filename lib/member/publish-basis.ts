@@ -99,6 +99,16 @@ export interface InviteFactsLike {
   readonly claimed: boolean;
   readonly expiresAt: Date;
   readonly revoked?: boolean;
+  /**
+   * #1135 — `revoked_by = 'counterparty'`: the person the invitation was sent to declined it.
+   *
+   * A decline is the same row write as a revocation (`lib/flow/invite-state.ts`) and different
+   * news to the Initiator: an operator withdrew a link, a person they invited said no thanks.
+   * Reading the marker is what keeps the detail screen from printing "support revoked this" about
+   * somebody's decision — the acceptance line #1135 states ("the Initiator sees it on Relationship
+   * Detail") is exactly this sentence.
+   */
+  readonly declined?: boolean;
 }
 
 /** What the detail screen's status band reports, as one value rather than four conditionals. */
@@ -113,6 +123,11 @@ export const PUBLISH_VIEWS = [
   "invite-claimed",
   /** Published, invitation revoked by support (#503). Re-publish is offered. */
   "invite-revoked",
+  /**
+   * Published, invitation **declined by the person it was sent to** (#1135). Re-publish is
+   * offered: the link is dead and the Initiator may invite them again, or somebody else.
+   */
+  "invite-declined",
   /** Published with no invitation row at all — a defect, and the band says so rather than guessing. */
   "invite-missing",
 ] as const;
@@ -125,7 +140,7 @@ export interface PublishViewFacts {
   readonly now: Date;
 }
 
-/** Which of the six the screen draws. */
+/** Which of the seven the screen draws. */
 export function publishViewOf(facts: PublishViewFacts): PublishView {
   if (publishable(facts.status)) return "not-published";
   if (facts.status !== "published") {
@@ -138,6 +153,9 @@ export function publishViewOf(facts: PublishViewFacts): PublishView {
   const state: InviteDisplayState = inviteStateOf(facts.invite, facts.now);
   if (state === "unclaimed") return "invite-live";
   if (state === "claimed") return "invite-claimed";
+  // #1135 — `declined` before `revoked`, the same order `inviteStateOf()` keeps: the two are one
+  // row write and only the actor column tells them apart.
+  if (state === "declined") return "invite-declined";
   if (state === "revoked") return "invite-revoked";
   return "invite-expired";
 }
@@ -153,7 +171,10 @@ export function publishViewOf(facts: PublishViewFacts): PublishView {
  * that papers over it.
  */
 export function republishable(view: PublishView): boolean {
-  return view === "invite-expired" || view === "invite-revoked";
+  // #1135 — `invite-declined` is the fourth dead link, and the one a *person* ended. The recovery is
+  // the same re-mint: the Aspects were never the problem, and the invitation can go to them again
+  // or to somebody else.
+  return view === "invite-expired" || view === "invite-revoked" || view === "invite-declined";
 }
 
 /**
@@ -246,6 +267,36 @@ export const MEMBER_REFUSALS = [
   "invalid-window",
   "no-such-version",
   "no-change",
+  /**
+   * #1121 — the free week's three dead ends, one code each because each has its own sentence.
+   *
+   *   not-paused       the relationship is closed, or its trial is still running: nothing to resume
+   *   no-trial         the account holds no `trialing` row — a card is the only way back
+   *   extension-used   this account already took its one free week (server-enforced, not a hidden
+   *                    button: `claimTrialExtension()` re-asks it under a row lock)
+   */
+  "not-paused",
+  "no-trial",
+  "extension-used",
+  /**
+   * #1135 — the five ending verbs' dead ends, one code each because each has its own sentence and
+   * a shared "failed" would tell the reader nothing about which moment they are in.
+   *
+   *   already-closed            the decision was already made (`complete`/`void`)
+   *   already-joined            the invitation was claimed: there is no link to cancel
+   *   invite-dead               the link already ended (declined, revoked, or cancelled twice)
+   *   not-published             cancel-invite on a row that is not sent yet
+   *   not-a-draft               abandon on a row somebody was invited to
+   *   not-running               leave on a Stage 6 that has not started (or already stopped)
+   *   removal-already-requested the Counterparty asked once; support has it
+   */
+  "already-closed",
+  "already-joined",
+  "invite-dead",
+  "not-published",
+  "not-a-draft",
+  "not-running",
+  "removal-already-requested",
   "failed",
 ] as const;
 

@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/instance-view.tsx   (variation: the operator's relationship page — seats, subscription and a session list that says scored or open and nothing a party answered, with the archive action behind a confirmation and a restore that is one click)
+// template-ancestor: components/assessment-flow/session-view.tsx   (variation: the operator's relationship page — seats, subscription and a session list that says scored or open and nothing a party answered, with the archive action behind a confirmation and a restore that is one click)
 "use client";
 
 import {

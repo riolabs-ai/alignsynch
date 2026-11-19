@@ -90,6 +90,21 @@ function dumpPage(name, html) {
   }
 }
 
+/**
+ * The claim form's own fields (#1115 task 4).
+ *
+ * The screen renders inside the app's shell, and the shell's header carries the search input — so a
+ * count over the whole document counts chrome and reports three fields for a two-field form. The
+ * form that posts to `/claim` *is* the screen: its inputs are the two the counterparty is asked
+ * for. Hidden inputs are excluded for the same reason (a machine-read field is not an ask).
+ */
+function claimFieldsOf(html) {
+  const form = html.match(/<form[^>]*action="[^"]*\/claim"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? "";
+  return (form.match(/<(?:input|textarea|select)\b[^>]*>/g) ?? []).filter(
+    (field) => !/type="hidden"/i.test(field),
+  );
+}
+
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
 /** The same fixture row's `slug` — what every stage's URL carries since #794. */
@@ -161,13 +176,14 @@ function acceptFormAction(html) {
 }
 
 /**
- * The Alignment rows of one Aspect on the relationship screen (#692).
+ * The Alignment rows of one Aspect on the relationship screen (#692, re-read for #1122).
  *
- * The completed screen draws one `data-alignment-gap-kind` row per Gap the Aspect has, and each
- * row prints the two Opinions it subtracts beside the number, so this reads the numbers off the
- * markup instead of parsing a sentence — the same discipline the old `data-feel-gap` attributes
- * carried. Returns `[[kind, gap], …]` in glossary order; `[]` when the Aspect is not drawn (the
- * report is still locked, or the id is not on the page).
+ * The v2 surface draws one `data-alignment-row` line per **Opinion pair it shows** — Feel and
+ * Wish — and each line carries the Gap it computed between the two parties' answers
+ * (`data-alignment-gap`). The eight glossary kinds are still what the model computes; the Align
+ * screen draws the two cross-party rows the bundle draws, and the prediction kinds are read on
+ * the report page (`/report`) instead. Returns `[[kind, gap], …]` in draw order; `[]` when the
+ * Aspect is not drawn (the report is still locked, or the id is not on the page).
  */
 function alignmentGaps(html, itemId) {
   const start = html.indexOf(`data-alignment-aspect="${itemId}"`);
@@ -175,7 +191,7 @@ function alignmentGaps(html, itemId) {
   const next = html.indexOf('data-alignment-aspect="', start + 1);
   const section = html.slice(start, next === -1 ? undefined : next);
   return [
-    ...section.matchAll(/data-alignment-gap-kind="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
+    ...section.matchAll(/data-alignment-row="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
   ].map((match) => [match[1], Number(match[2])]);
 }
 
@@ -276,14 +292,14 @@ class Jar {
  * ------------------------------------------------------------------ */
 
 /**
- * `/templates/relationship/<slug>/create` — the stem every create stage hangs off (#688, #794).
+ * `/dashboard/templates/<slug>/create` — the stem every create stage hangs off (#688, #794).
  *
  * The segment is the template's **slug**, because that is what the app redirects with: stage 1's
  * handler resolves the posted id to the slug before it answers, so an assertion built from the id
  * would be asserting the address the app deliberately does not use.
  */
 function createStem(templateSlug = TEMPLATE_SLUG) {
-  return `/templates/relationship/${templateSlug}/create`;
+  return `/dashboard/templates/${templateSlug}/create`;
 }
 
 /**
@@ -773,7 +789,7 @@ async function main() {
     "a card's use action is the create flow's stage 1, carrying the template it sells",
     /^\/templates\/relationship\/[a-z-]+\/create$/.test(startHref),
     startHref === ""
-      ? "no `/templates/relationship/<slug>/create` action on the page"
+      ? "no `/dashboard/templates/<slug>/create` action on the page"
       : `href = "${startHref}"`,
   );
   const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
@@ -1101,11 +1117,14 @@ async function main() {
     !initiatorInvite.html.includes("Accept and answer"),
   );
 
-  const selfClaim = await initiator.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // #1115 task 4 — the three onboarding steps are retired, so the refusal a claim comes back with
+  // carries the code and no `?step=`: the page resolves both shapes, and this pins the one the
+  // endpoint actually writes.
+  const selfClaim = await initiator.post(`/invite/${token}/claim`, { name: "Rowan E2E" });
   check(
     "the Initiator's own claim is refused with already-a-party",
     selfClaim.status === 303 &&
-      (selfClaim.location ?? "").endsWith(`/invite/${token}?step=3&claim=already-a-party`),
+      (selfClaim.location ?? "").endsWith(`/invite/${token}?claim=already-a-party`),
     `${selfClaim.status} ${selfClaim.location}`,
   );
   const selfRefusal = await initiator.get(`/invite/${token}?step=3&claim=already-a-party`);
@@ -1149,13 +1168,20 @@ async function main() {
   );
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
-  // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
-  // #710 — and that wizard now renders inside the flow's modal, under the six-stage rail at
-  // Connect, closing onto the dashboard. Three facts, because a shell that only *looks* modal
-  // (a client overlay that mounts after hydration) would still 404 the deep link.
+  // #1115 task 4 — the invitation lands on **one screen with two fields**: the name the invitation
+  // carries (prefilled) and the address it was sent to. No wizard, no password, no plan.
+  // #710 — and that screen renders inside the flow's modal, under the five-stage rail at Account,
+  // closing onto the dashboard. Three facts, because a shell that only *looks* modal (a client
+  // overlay that mounts after hydration) would still 404 the deep link.
+  const claimFields = claimFieldsOf(invitePage.html);
   check(
-    "it opens on step 1 of the wizard",
-    invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+    "it opens on the two-field claim screen, name and email and nothing else",
+    claimFields.length === 2 &&
+      claimFields[0].includes('name="name"') &&
+      claimFields[1].includes('name="email"') &&
+      claimFields[0].includes('value="Rowan E2E"') &&
+      !invitePage.html.includes('type="password"'),
+    `${claimFields.length} field(s)`,
   );
   check(
     "the response renders inside the flow's modal, in the server's own HTML",
@@ -1175,22 +1201,22 @@ async function main() {
       ) &&
       invitePage.html.includes('data-step-cell="5"'),
   );
-  const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
-  dumpPage("invite-step-2", stepTwo.html);
+  // #1115 task 4 — the three steps are retired as screens, but the addresses a mail client already
+  // holds still have to resolve: an old `?step=3` link lands on the same two-field claim.
+  const oldStep = await counterparty.get(`/invite/${token}?step=3`);
+  dumpPage("invite-old-step-3", oldStep.html);
   check(
-    // The shell is the contract; the sentence on the step is copy and changes without notice.
-    "a ?step=2 deep link survives a refresh and lands on the same shell",
-    stepTwo.status === 200 &&
-      stepTwo.html.includes('data-stage-shell="true"') &&
-      stepTwo.html.includes("Stage 4 of 5"),
-    `status ${stepTwo.status}`,
+    "an old ?step=3 link survives a refresh and lands on the same claim screen",
+    oldStep.status === 200 &&
+      oldStep.html.includes('data-stage-shell="true"') &&
+      oldStep.html.includes("Stage 4 of 5") &&
+      claimFieldsOf(oldStep.html).length === 2,
+    `status ${oldStep.status}`,
   );
-  const stepThree = await counterparty.get(`/invite/${token}?step=3`);
   check(
-    "step 3 is the account gate and claims nothing on a GET",
-    stepThree.html.includes("Accepting costs you nothing") &&
-      stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
-      stepThree.html.includes('data-stage-shell="true"'),
+    "and the screen says who pays, so the counterparty never wonders",
+    invitePage.html.includes("Accepting costs you nothing") &&
+      invitePage.html.includes("You are joining as Rowan E2E, the Counterparty."),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -1205,18 +1231,33 @@ async function main() {
     ).rows[0].claimed_at === null,
   );
 
-  const unconfirmed = await counterparty.post(`/invite/${token}/claim`, {});
+  // The invitation's own address, which is the one the claim has to name (#1115 task 4).
+  const CLAIM_EMAIL = "rowan-e2e@example.com";
+  const noAddress = await counterparty.post(`/invite/${token}/claim`, { name: "Rowan E2E" });
   check(
-    "a claim that confirms nothing is refused with unconfirmed",
-    unconfirmed.status === 303 &&
-      (unconfirmed.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
-    `${unconfirmed.status} ${unconfirmed.location}`,
+    "a claim with no address is refused with email-mismatch, not a 500",
+    noAddress.status === 303 &&
+      (noAddress.location ?? "").endsWith(`/invite/${token}?claim=email-mismatch`),
+    `${noAddress.status} ${noAddress.location}`,
   );
-  const wrongName = await counterparty.post(`/invite/${token}/claim`, { confirm: "Avery E2E" });
+  const wrongAddress = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: "someone-else@example.com",
+  });
+  check(
+    "a claim naming a different address is refused with email-mismatch",
+    wrongAddress.status === 303 &&
+      (wrongAddress.location ?? "").endsWith(`/invite/${token}?claim=email-mismatch`),
+    `${wrongAddress.status} ${wrongAddress.location}`,
+  );
+  const wrongName = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Avery E2E",
+    email: CLAIM_EMAIL,
+  });
   check(
     "a claim that confirms the other party's name is refused with unconfirmed",
     wrongName.status === 303 &&
-      (wrongName.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
+      (wrongName.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
     `${wrongName.status} ${wrongName.location}`,
   );
   const afterRefusals = await db.query(
@@ -1231,14 +1272,24 @@ async function main() {
     `claimed_at=${afterRefusals.rows[0].claimed_at} parties=${afterRefusals.rows[0].parties}`,
   );
 
-  const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
-  // #710 — the exit is `afterClaimTarget()`: a signed-in claimer closes onto `/dashboard`, and a
-  // signed-out one (this run — it posted the endpoint directly, which the screens never offer
-  // because step 3 asks for an account) stays on the relationship it just bound, where the party
-  // cookie it was given is what makes the screen readable.
+  // #1115 task 4 — the claim resolves the account its address names, and **creates** it when the
+  // address names none: that is the journey this run proves (303 onto `/dashboard`, signed in, no
+  // password). The harness therefore owns its own address, so a leftover account for it — one a
+  // crashed run left behind, or a branch somebody else is walking — would take the found-account
+  // path and land on the relationship instead. Clear it first, so the claim is the one measured.
+  await clearLeftoverAccount(CLAIM_EMAIL);
+
+  const claim = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: CLAIM_EMAIL,
+  });
+  // #1115 task 4 — the claim resolves the account the address names, creating it through the
+  // branch's own sign-up when it names none, and relays that sign-up's session cookie. So a claim
+  // that started signed out now ends **signed in on the dashboard**, which is the journey the
+  // issue asks for: both parties reach the dashboard and the first assessment session.
   check(
-    "claiming answers 303 to the relationship for a signed-out claimer",
-    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
+    "claiming answers 303 onto the dashboard, with an account and a seat",
+    claim.status === 303 && (claim.location ?? "").endsWith("/dashboard"),
     `${claim.status} ${claim.location}`,
   );
   check(
@@ -1249,6 +1300,22 @@ async function main() {
   check(
     "the Counterparty's party cookie is set",
     counterparty.cookies.has(`flow_party_${instanceId}`),
+  );
+  // #1115 task 4 — the claim created (or found) the account the address names. The auth user is
+  // real debris on a shared branch, so it joins `createdAccounts` and `cleanup()` deletes it with
+  // this run's other accounts.
+  const boundSeats = await db.query(
+    `SELECT user_id FROM party
+      WHERE session_record_id = $1 AND role = 'counterparty' AND user_id IS NOT NULL`,
+    [instanceId],
+  );
+  for (const row of boundSeats.rows) {
+    createdAccounts.push({ email: CLAIM_EMAIL, userId: row.user_id });
+  }
+  check(
+    "the seat is bound to an account, not just a cookie",
+    boundSeats.rows.length === 1,
+    `${boundSeats.rows.length} bound seat(s)`,
   );
   const claimed = await db.query(
     "SELECT claimed_at,(SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties FROM session_invite WHERE session_record_id = $1",
@@ -1283,21 +1350,47 @@ async function main() {
       (counterpartyRevisit.html.match(/You are answering as [^<]*\./) ?? ["(not found)"])[0],
   );
 
-  const secondClaim = await stranger.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
-  // The refusal keeps whatever step the wizard had reached (#538 put `?step=` on this URL), so the
-  // assertion is the page and the code, not the whole query string.
-  const secondClaimUrl = new URL(secondClaim.location ?? "http://invalid.invalid/");
+  // #1115 task 4 — a spent invitation has two answers now, and the address is what tells them
+  // apart: somebody else's address is refused (the seat is not theirs to take), and the
+  // invitation's own address resumes the seat in a new browser instead of dead-ending on
+  // "used already" — the person clicking their own link twice is not an error.
+  const takenClaim = await stranger.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: "someone-else@example.com",
+  });
+  const takenClaimUrl = new URL(takenClaim.location ?? "http://invalid.invalid/");
   check(
-    "a second claim of the spent token is refused",
-    secondClaim.status === 303 &&
-      secondClaimUrl.pathname === `/invite/${token}` &&
-      secondClaimUrl.searchParams.get("claim") === "claimed",
-    `${secondClaim.status} ${secondClaim.location}`,
+    "a second claim from a different address is refused",
+    takenClaim.status === 303 &&
+      takenClaimUrl.pathname === `/invite/${token}` &&
+      takenClaimUrl.searchParams.get("claim") === "claimed",
+    `${takenClaim.status} ${takenClaim.location}`,
   );
-  const secondClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
+  const takenClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
   check(
-    "the second claim lands on the 'used already' band",
-    secondClaimPage.html.includes("This invitation was used already"),
+    "that claim lands on the 'used already' band",
+    takenClaimPage.html.includes("This invitation was used already"),
+  );
+  const resumedClaim = await stranger.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: CLAIM_EMAIL,
+  });
+  check(
+    "the invitation's own address resumes the seat instead, onto the relationship",
+    resumedClaim.status === 303 && (resumedClaim.location ?? "").endsWith(instancePath),
+    `${resumedClaim.status} ${resumedClaim.location}`,
+  );
+  const afterResume = await db.query(
+    `SELECT (SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties,
+            (SELECT count(*) FROM neon_auth."user" u
+               JOIN party p ON p.user_id = u.id::text
+              WHERE p.session_record_id = $1 AND p.role = 'counterparty')::int AS accounts`,
+    [instanceId],
+  );
+  check(
+    "the resume added no party row and no second account",
+    afterResume.rows[0].parties === 2 && afterResume.rows[0].accounts === 1,
+    `parties=${afterResume.rows[0].parties} accounts=${afterResume.rows[0].accounts}`,
   );
 
   /* 3c. a bound session cannot record the other party's opinion ------ */
@@ -1831,14 +1924,30 @@ async function main() {
     advInvitePage.status === 200,
     `status ${advInvitePage.status}`,
   );
+  // #1115 task 4 — the claim is the two fields: the seat's name, and the address the invitation was
+  // sent to. Posting the retired `confirm` field answered 303 too (a refusal is a redirect), which
+  // is why the seat went unbound and the Counterparty's later submit was a 403. So this asserts the
+  // seat as well as the redirect.
+  await clearLeftoverAccount("iris-e2e@example.com");
   const advClaim = await advCounterparty.post(`/invite/${advToken}/claim`, {
-    confirm: "Iris E2E",
+    name: "Iris E2E",
+    email: "iris-e2e@example.com",
   });
-  check(
-    "claiming the Advanced invitation answers 303",
-    advClaim.status === 303,
-    `status ${advClaim.status}`,
+  const advSeat = await db.query(
+    `SELECT user_id FROM party
+      WHERE session_record_id = $1 AND role = 'counterparty' AND user_id IS NOT NULL`,
+    [advInstanceId],
   );
+  check(
+    "claiming the Advanced invitation binds the Counterparty's seat",
+    advClaim.status === 303 &&
+      advCounterparty.cookies.has(`flow_party_${advInstanceId}`) &&
+      advSeat.rows.length === 1,
+    `status ${advClaim.status} · ${advSeat.rows.length} bound seat(s)`,
+  );
+  for (const row of advSeat.rows) {
+    createdAccounts.push({ email: "iris-e2e@example.com", userId: row.user_id });
+  }
 
   const shortSheet = await advInitiator.post(`${advPath}/answers`, answers({ feel: 2, wish: 5 }));
   check(
@@ -1900,30 +2009,20 @@ async function main() {
   const advReport = await advInitiator.get(advPath);
   const advRow = alignmentGaps(advReport.html, TIME);
   check(
-    "the Advanced report draws all eight Gap kinds (#219)",
-    advRow.length === 8 &&
-      gapOfKind(advRow, "feel") === 3 &&
-      gapOfKind(advRow, "wish") === 2 &&
-      gapOfKind(advRow, "initiator") === 3 &&
-      gapOfKind(advRow, "counterparty") === 2 &&
-      // A prediction against the other party's actual: Initiator Think 4 vs Counterparty
-      // Feel 5 → 1; Initiator Guess 1 vs Counterparty Wish 3 → 2; Counterparty Think 3 vs
-      // Initiator Feel 2 → 1; Counterparty Guess 4 vs Initiator Wish 5 → 1.
-      gapOfKind(advRow, "initiator-think") === 1 &&
-      gapOfKind(advRow, "initiator-guess") === 2 &&
-      gapOfKind(advRow, "counterparty-think") === 1 &&
-      gapOfKind(advRow, "counterparty-guess") === 1,
+    "the Advanced report draws the two cross-party rows the Align surface carries (#1122)",
+    advRow.length === 2 && gapOfKind(advRow, "feel") === 3 && gapOfKind(advRow, "wish") === 2,
     `${advRow.length} rows: ${advRow.map(([kind, gap]) => `${kind} ${gap}`).join(" · ")}`,
   );
+  // The prediction kinds are still *computed* (`content/gaps.ts` reads all eight off the same
+  // pairs) and still printed on the report page; the v2 Align card draws no Think/Guess row, so
+  // its absence here is the surface's shape rather than a lost number (#1128 owns that screen).
   const advGapAttributes = (advReport.html.match(/data-alignment-gap="/g) ?? []).length;
   check(
-    "every Aspect carries eight Gaps (5 × 8)",
-    advGapAttributes === ASPECT_IDS.length * 8,
+    "every Aspect carries its two drawn rows (5 × 2)",
+    advGapAttributes === ASPECT_IDS.length * 2,
     `${advGapAttributes} gap attributes`,
   );
-  note(
-    `rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
-  );
+  note(`rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2`);
 
   /* 11. a template the member authored is usable (#870) -------------- */
   // The report the card came from: the owner wrote a template in the app, walked four stages with
@@ -2048,7 +2147,7 @@ async function main() {
 
   // Stage 1 is the door, so the same template must be *accepted* there rather than refused: the
   // guard asks the store's own question, and a published, versioned template answers it yes.
-  const authoredStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const authoredStageOne = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   check(
     "stage 1 draws the form for it — the guard lets a copyable template through",
     authoredStageOne.status === 200 &&
@@ -2059,7 +2158,7 @@ async function main() {
 
   // And the refusal that started all of this: archive the template, and stage 1 refuses **before**
   // a field is collected, with the author's own publish control under the sentence.
-  const archivedPost = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+  const archivedPost = await author.post(`/dashboard/templates/${authoredSlug}/status`, {
     status: "archived",
   });
   check(
@@ -2067,7 +2166,7 @@ async function main() {
     archivedPost.status === 303,
     `${archivedPost.status} ${archivedPost.location}`,
   );
-  const refusedStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const refusedStageOne = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   dumpPage("stage1-refused", refusedStageOne.html);
   check(
     "stage 1 refuses an archived template at the door, before any field is collected",
@@ -2079,14 +2178,14 @@ async function main() {
   check(
     "and the refusal carries the author's one-click publish, pointed back at this stage",
     refusedStageOne.html.includes('data-create-publish="true"') &&
-      refusedStageOne.html.includes(`action="/templates/relationship/${authoredSlug}/status"`) &&
+      refusedStageOne.html.includes(`action="/dashboard/templates/${authoredSlug}/status"`) &&
       refusedStageOne.html.includes('value="create"'),
     "no publish control under the band",
   );
 
   // Pressing it is the existing status transition, and it comes back to stage 1 rather than the
   // library — the person is mid-flow, not browsing.
-  const republished = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+  const republished = await author.post(`/dashboard/templates/${authoredSlug}/status`, {
     status: "published",
     return: "create",
   });
@@ -2094,10 +2193,10 @@ async function main() {
     "publishing from the refusal answers 303 back to stage 1",
     republished.status === 303 &&
       new URL(republished.location ?? "/", BASE_URL).pathname ===
-        `/templates/relationship/${authoredSlug}/create`,
+        `/dashboard/templates/${authoredSlug}/create`,
     `${republished.status} ${republished.location}`,
   );
-  const reopened = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const reopened = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   check(
     "and stage 1 draws the form again — one click, no research project",
     reopened.status === 200 &&
@@ -2185,6 +2284,34 @@ async function authUserTable() {
   );
   const names = rows.map((row) => row.table_name);
   return names.find((name) => name === "user" || name === "users") ?? null;
+}
+
+/**
+ * Removes any account an earlier run left behind for **one harness-owned address** (#1115 task 4).
+ *
+ * The two-field claim resolves the account its address names and creates one when the address names
+ * none. That second path is the journey the walk proves — signed in on the dashboard, no password —
+ * so the run has to start from "no account" for its own address. A crashed run, or a concurrent walk
+ * on the same shared branch, can leave one behind; the found-account path is a correct answer, but a
+ * *different* one, and a harness that silently measured it instead would be proving nothing.
+ *
+ * Scoped to the address the caller passes, never a pattern: this deletes real auth rows on a branch
+ * other people read.
+ */
+async function clearLeftoverAccount(email) {
+  const users = await authUserTable();
+  if (users === null) return;
+  const { rows } = await db.query(
+    `SELECT id::text AS id FROM neon_auth."${users}" WHERE lower(email) = lower($1)`,
+    [email],
+  );
+  const ids = rows.map((row) => row.id);
+  if (ids.length === 0) return;
+  await db.query("UPDATE party SET user_id = NULL WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query("DELETE FROM relationship_member WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query("DELETE FROM user_profile WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query(`DELETE FROM neon_auth."${users}" WHERE id::text = ANY($1::text[])`, [ids]);
+  console.log(`· cleared ${ids.length} leftover account(s) for ${email}`);
 }
 
 /**

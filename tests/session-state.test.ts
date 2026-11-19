@@ -12,9 +12,9 @@
  *     progress: it is live. Counting it as a draft would delete the demo's "sent, being answered"
  *     screen, which is why the state is not `accepted`.
  *   * **a draft is invisible to the dashboard's counts.** `overviewCountsOf()` counts three
- *     predicates over `MyInstanceState`, and a `draft` row matches none of them — so the four numbers
+ *     predicates over `MySessionState`, and a `draft` row matches none of them — so the four numbers
  *     on `/dashboard` cannot report a session nobody has accepted, whichever read produced the row.
- *   * **a draft reads as a draft, never as a session with 0 answers.** `myInstanceStateOf()` answers
+ *   * **a draft reads as a draft, never as a session with 0 answers.** `mySessionStateOf()` answers
  *     `draft` before it looks at the viewer's answered count, so an unsent session with an empty
  *     sheet says "not sent yet" rather than "you owe six Aspects".
  *
@@ -23,22 +23,22 @@
 import { describe, expect, it } from "vitest";
 
 import { seededLifecycleOf, sessionStateOf } from "@/content/assessment";
-import type { MyInstanceState } from "@/lib/flow/state";
-import { assessmentInstances } from "@/data/assessments";
-import type { MyInstance } from "@/lib/db/my-instances";
+import type { MySessionState } from "@/lib/flow/state";
+import { assessmentSessions } from "@/data/assessments";
+import type { MySession } from "@/lib/db/my-sessions";
 import {
   OVERVIEW_FILTERS,
   matchesOverviewFilter,
   overviewCountsOf,
   overviewFiltered,
 } from "@/lib/flow/overview";
-import { myInstanceStateOf } from "@/lib/flow/state";
+import { mySessionStateOf } from "@/lib/flow/state";
 
-/** The lifecycle each authored instance carries, through the model's one derivation. */
-const lifecycles = assessmentInstances.map((instance) => ({
-  id: instance.id,
-  status: instance.lifecycle?.status ?? "complete",
-  lifecycle: seededLifecycleOf(instance),
+/** The lifecycle each authored session carries, through the model's one derivation. */
+const lifecycles = assessmentSessions.map((session) => ({
+  id: session.id,
+  status: session.lifecycle?.status ?? "complete",
+  lifecycle: seededLifecycleOf(session),
 }));
 
 describe("the state a lifecycle implies", () => {
@@ -88,11 +88,11 @@ describe("the state a lifecycle implies", () => {
 });
 
 describe("a draft session is invisible to the dashboard's counts", () => {
-  /** A row as `listMyInstances()` produces it — the state is already derived from the rows. */
-  function row(state: MyInstanceState, instanceRecordId: string): MyInstance {
+  /** A row as `listMySessions()` produces it — the state is already derived from the rows. */
+  function row(state: MySessionState, sessionRecordId: string): MySession {
     return {
-      instanceRecordId,
-      slug: instanceRecordId,
+      sessionRecordId,
+      slug: sessionRecordId,
       templateTitle: "Relationship Basics",
       viewerRole: "initiator",
       viewerName: "Avery",
@@ -118,7 +118,7 @@ describe("a draft session is invisible to the dashboard's counts", () => {
   it("is not counted even beside live rows", () => {
     const rows = [row("draft", "i-draft"), row("yours-to-answer", "i-yours")];
     expect(overviewCountsOf(rows)["yours-to-answer"]).toBe(1);
-    expect(overviewFiltered(rows, "yours-to-answer").map((r) => r.instanceRecordId)).toEqual([
+    expect(overviewFiltered(rows, "yours-to-answer").map((r) => r.sessionRecordId)).toEqual([
       "i-yours",
     ]);
   });
@@ -127,7 +127,7 @@ describe("a draft session is invisible to the dashboard's counts", () => {
 describe("a draft reads as a draft, not as a session with 0 answers", () => {
   it("answers `draft` before it counts the viewer's sheet", () => {
     expect(
-      myInstanceStateOf({
+      mySessionStateOf({
         aspectCount: 6,
         hasCounterparty: false,
         initiatorAnswered: 0,
@@ -145,7 +145,7 @@ describe("a draft reads as a draft, not as a session with 0 answers", () => {
     // The difference the state is *not* allowed to blur: a `pending` relationship has a draft
     // **session** and a sent invitation, so the person who created it does owe their sheet.
     expect(
-      myInstanceStateOf({
+      mySessionStateOf({
         aspectCount: 6,
         hasCounterparty: false,
         initiatorAnswered: 0,

@@ -2,12 +2,12 @@
  * `/assessment/instances/[instanceId]/accept` — the acceptance step, live since R2 (#427).
  *
  * Acceptance first: the decision, then the two seats side by side, then the Aspect detail beneath
- * them. Every fact on it is read from the instance's own rows: each seat's acceptance is
+ * them. Every fact on it is read from the session's own rows: each seat's acceptance is
  * `party.accepted_at` (`0016_party_acceptance.sql`), and the control posts to the `/accepts`
  * endpoint, which records **this** party's acceptance and — when it makes both accepted — derives
  * the relationship's Steps in the same transaction.
  *
- * **The read is `readFlowScreen()`**, the gated projection the instance and report screens use, and
+ * **The read is `readFlowScreen()`**, the gated projection the session and report screens use, and
  * not a second query. That is the blind rule for this page: the viewer is resolved from the cookie
  * and then the account (a stranger gets a 404, as on every sibling route), the projection carries
  * the viewer's **own** answers per Aspect and no other-party value, and the component draws exactly
@@ -18,7 +18,7 @@
  * report, which is the surface that composes both sheets.
  *
  * **The refusal band.** A POST that is refused redirects back here with `?accept=<code>` — the
- * `?problem=` pattern the instance screen and the create form already use — and the page turns the
+ * `?problem=` pattern the session screen and the create form already use — and the page turns the
  * code into the fixture's sentence. A code it does not know renders nothing.
  *
  * `force-dynamic`, and no `generateStaticParams`: this route reads a database and must not do so
@@ -33,7 +33,7 @@ import {
 import { assessmentAcceptPageCopy } from "@/data/pages/assessment-accept";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
-import { acceptsPath, answerSheetPath, instancePath, reportPath } from "@/lib/flow/paths";
+import { acceptsPath, answerSheetPath, sessionPath, reportPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
 import type { Metadata } from "next";
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 /**
  * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
  *
- * The same helper the instance and report screens carry: `currentUser()` already answers `null`
+ * The same helper the session and report screens carry: `currentUser()` already answers `null`
  * for "no session", and `authConfigured()` adds the "is auth configured here at all" question so
  * the gate's database-free run renders the route as it did before.
  */
@@ -72,11 +72,11 @@ export default async function AssessmentAcceptPage({
 
   const jar = await cookies();
   const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     viewerUserId: await viewerUserId(),
   });
-  // Not a party to it (or no such instance): the screen does not exist for this request, exactly
+  // Not a party to it (or no such session): the screen does not exist for this request, exactly
   // as on `/answer` and `/report`. There is nothing to leak by saying so.
   if (screen === undefined) notFound();
 
@@ -113,7 +113,7 @@ export default async function AssessmentAcceptPage({
       acceptAction={acceptsPath(instanceId)}
       answerHref={answerSheetPath(instanceId)}
       reportHref={reportPath(instanceId)}
-      backHref={instancePath(instanceId)}
+      backHref={sessionPath(instanceId)}
     />
   );
 }

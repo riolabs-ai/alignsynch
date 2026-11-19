@@ -28,6 +28,7 @@
     "scripts/client-graph.ts",
     "scripts/column-refs.ts",
     "scripts/worktree-prune-rules.ts",
+    "scripts/migration-prefixes-rules.ts",
     "scripts/template-ancestor.ts",
     "scripts/ui-refs.ts",
     "scripts/metric-refs.ts",

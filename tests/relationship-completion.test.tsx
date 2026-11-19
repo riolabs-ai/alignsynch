@@ -84,7 +84,6 @@ function viewOf(input: {
     template,
     aspectsEditable: false,
     publishable: false,
-    hasMembership: true,
     completion: input.gate,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -136,6 +135,8 @@ function mount(
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
         onComplete: complete,
         onFork: async () => ({ ok: false as const, code: "failed" }),
+        /* #1121 — this suite presses the completion band; the free week's stub never resolves. */
+        onClaimExtension: async () => ({ ok: false as const, code: "failed" }),
         templatesHref: "/templates/relationship?view=mine",
       }),
     );
@@ -283,7 +284,7 @@ describe("completing a relationship cannot charge", () => {
 
   it("gates the Gap on the membership, never on the card the deleted capture wrote", () => {
     /*
-     * `instanceStatusOf()` is where `awaiting_payment` is decided, and the projection is what feeds
+     * `sessionStatusOf()` is where `awaiting_payment` is decided, and the projection is what feeds
      * it. With the capture deleted nothing can write `relationship_payment.method_captured_at` any
      * more, so a projection that still read that row would shut every sealed sheet for ever — the
      * exact regression deleting the fee could leave behind. The publish gate and the claim already

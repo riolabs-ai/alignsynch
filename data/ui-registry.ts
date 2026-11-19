@@ -251,6 +251,66 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/permissions",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The CRUD & Permissions matrix: one read-only row per object × action × role cell, with the prototype's answer beside what upstream already has, narrowed by Object · Role · Status · Priority in the address, and the eleven P0 gaps and the six role × action rules above it.",
+    notes:
+      "#1126 — the ancestor is `/admin/docs`: the same two gates in the same order (`requireAdminProduct()` before `requireAdmin()`, a member answered with the 404 an unknown URL gets and never a 403), `force-dynamic`, and one honest panel when the source cannot be read. The source is `docs/specs/v2-prototype/crud-matrix.md` (committed by #1158, 169 rows), parsed per request into the issue's own columns (`object, action, role, prototype, selector, upstream, mvp, rationale`) by `lib/admin/crud-matrix.ts`, which is pure and touches no filesystem so the view can label a row without pulling `node:fs` into the browser graph; `lib/admin/crud-matrix-file.ts` is the one module that opens the file and is unreachable from a client. The rank is read from a `priority` column when the header names one and otherwise from `mvp` — the committed source's shape, where `mvp` is the priority — so the counts band is derivable from a file that carries no ninth column; the table draws the columns the header names, which is eight for this source. Nothing is invented: an absent source draws the failure panel naming the path, a source that does not parse throws a named error with the line, an unknown status is refused rather than defaulted, and no row is fabricated to make the table look finished. Every figure in the counts band is `countsOf()`'s over the whole matrix (filters narrow the table, never the header), which is what makes `169 cells · 124 applicable · 69 covered / 9 hinted / 46 missing · 34 P0 / 23 P1 / 29 P2 / 15 Won't · 4 conflicts` checkable rather than copied. Read-only structurally: no form, no input, no server action, no `use client` in the surface. `data/pages/admin-permissions.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
+    surface: "/admin/email-templates",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The register of transactional mail, and what production is sending: one row per member-facing template — its class (transactional or marketing), the seat that receives it, whether the send path is on the code default, a published override or a draft waiting behind one, and who last edited it — with the row opening the template's editor.",
+    notes:
+      '#1138 — the ancestor is `/admin/templates` (`components/admin/template-registry.tsx`): the same `StageColumn`, the same header, the same row-link-to-an-editor, and the axis that varies is the data source plus the missing create band. **The rows come from the register, never from the table**: `lib/email/templates/index.ts` is the single source of truth and `memberFacingTemplates()` filters it, so a template added in code appears here with no edit to this file, and a `email_template_version` row whose id is no longer in the register is invisible rather than dangling. The operator\'s own `stakeholder-release-note` is excluded (`memberFacingTemplate()`), which is the issue\'s own scope line. **Two badges, not one**: a published override and a pending draft coexist, so the state column is what the send path reads and a quieter second badge marks the draft beside it — one badge would print a draft badge while production sent the older published words. `status: db` because the live rows are one statement (`listEmailTemplateLive()`, `DISTINCT ON (template_id, status)`); a database that cannot be read draws a panel naming the reason, never a list of `default` badges, because \\"nothing is overridden\\" and \\"the overrides could not be read\\" are different claims. Gates in `/admin/docs` order (`requireAdminProduct()` then `requireAdmin()`, a member answered with the 404 an unknown URL gets, never a 403), `force-dynamic`, and `data/pages/admin-email-templates.ts` holds every word at E23 budget 0.',
+  },
+  {
+    kind: "route",
+    surface: "/admin/email-templates/[id]",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One transactional mail: its three editable fields (subject, preheader, body) with the template's own `{{placeholders}}` one click away, a live preview rendered through the real send band, the refused state when the words break a rule, Send Test to the signed-in admin's own address, Save draft · Publish · Reset to Default, and the version history with restore.",
+    notes:
+      "#1138 — the ancestor is `components/admin/template-editor.tsx` (one field set, then the save/publish pair); what varies is that the preview runs **through the real band** rather than a sample renderer, so what an admin reads is what a mailbox receives, and the history restores by saving a new version rather than by rewriting an old one. **The register stays the source of truth for everything but the body paragraph**: `renderTemplate(..., { override })` hands the override only to `bodyBlocks()`, so the template's own sentences and its band frame are not the admin's to delete. Three rule families are checked before any write and again in the action (`lib/email/override.ts::overrideProblems`): an unknown `{{variable}}`, a blank field, and the Counterparty's silence about price, trial, card, plan, extension and `$` — checked on the **rendered** words too, because a `{{plan}}` would hide behind a clean source. A save is refused, never partially applied: the screen prints each problem by name. Writes go through `act()` with `email-template.save|publish|reset` and an `email_template_version` audit row, and the actor is read from `currentUser()`, never from the payload. Test send writes nothing — it renders the sample facts with `mode test` and mails the signed-in admin at their own address, so it is not an `AdminAction`. A body that lives in code (`relationship-expired`) renders read-only with the reason instead of an empty textarea. Gates, `force-dynamic` and the copy fixture are the list's.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/spec",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The project spec's front page and a stakeholder's landing: the confidential notice, what the spine is, where the Validation matrix sits one click away, and one group's page per segment below it. Read-only — there is no form, no action and no write on any of the three routes.",
+    notes:
+      "#1252 — the R0 spine, and deliberately not the reader: the submenu, the pinned Validation column, the eleven story pages and their met/total counts are the next card (t_f5458e3d), parented on this one, so what this surface draws is the architecture — heading, confidential notice, the two promises — and nothing the reader will redraw. **The gate is the card.** `requireAdminProduct()` first (#509), then `requireSpecReader()` (`lib/auth/require-role.ts`), which is membership of `SPEC_READERS` — `stakeholder`, `admin`, `owner` — and *not* a rung comparison: `support` outranks `stakeholder` and is refused, and a member or a support seat is answered with the byte-for-byte unknown-URL 404, never a 403 and never a redirect, because either would confirm the page exists. Signed out goes to `/login?next=/admin/spec`. `force-dynamic`; `Cache-Control: private, no-store` and `X-Robots-Tag: noindex` come from `next.config.mjs` for the whole route family, so a fourth spec page cannot forget them. The template is `/admin/permissions` (`components/admin/permissions/permissions-console.tsx`): the same `StageColumn`, the same two-gate order, the same honest panel; the axis that varies is the data source (three static depths of one fixture instead of a parsed matrix) and the absence of a filter band. `data/pages/admin-spec.ts` holds every word at E23 budget 0 for all three routes; `data/surface-columns.ts` records all three as `column`. The route answers on both brands today because the console capability does, but the content is the alignment product's own spec, which is why `templates` names `alignsynch`.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/spec/validation",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The spec's Validation route: the address the pinned submenu row and the landing's own call to action point at, behind the same two gates.",
+    notes:
+      "#1252 — the same gates in the same order as `/admin/spec` (`requireAdminProduct()` then the spec-reader gate), the same unknown-URL 404 for a member or a support seat, and the same fixture at E23 budget 0. The matrix itself — three columns, the sticky status box, 76 rows in four sections — is the next card; the address exists now so the refusal is provable at the depth the submenu links to rather than only at the parent. A static segment beside `[group]`, so Next resolves it before the group page.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/spec/[group]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "One spec group's page: the segment the landing's eleven entries name, drawn in the fixture's own sentence.",
+    notes:
+      "#1252 — the third route of the same family and the same two gates. **The segment is not a vocabulary check in this card**: eleven group ids exist in the source the reader card reads, and a 404 on a mistyped group would be indistinguishable from the gate's 404 — which is the one answer that has to stay unambiguous — so the page renders whatever the address named and the reader card decides what a group id means. `params` is awaited before the gate (Next 16), so the `next` handed to `/login` is the address the person actually asked for. `force-dynamic`, the same headers, the same fixture.",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],
@@ -455,17 +515,27 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create",
+    surface: "/assessment/new/failed",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "Read calmly that the relationship could not be created, and try again or go back to the dashboard.",
+    notes:
+      "The browser outcome of `POST /assessment/new` when the create's transaction throws and the throw is not one of the person's own refusals (#1226). The screen is `create-failed.html` from the v2 bundle: one status card — an icon chip, `Couldn't Create This Draft`, `Try Again Shortly.`, and two actions — so nothing on it explains the cause. The cause is `console.error(\"create-failed\", sqlstate, message)` in the route handler, unchanged from #1205, and it is the only place the SQLSTATE and the driver's sentence exist; neither reaches the page nor the address. The split is by request shape, not by a form field: a browser form post sends `Accept: text/html` and is answered 303 here, while a `curl`, a QA walk or any other caller keeps the named JSON 500 it reads today — which is also why `tests/create-error-shape.test.ts` still passes untouched. `?template=<slug>` is the only value in the address and it is validated as a slug, so `Try Again` reopens that template's create stage (where the draft is still in the cookie) and a crafted value falls back to the library. `Back to Dashboard` is `/dashboard`. The column is `StageColumn`'s, not the artifact's `mx-auto`, per #858; the copy is `data/pages/assessment-create-failed.ts` at budget 0, and no red appears anywhere on the surface.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/templates/[id]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
       "Create a relationship from one template, stage 1 (Who): the template and its two seats, the counterparty's address, and the card title both parties will read.",
     notes:
-      "Split into two stages by #688. Stage 1 posts `templateRecordId`, both seats, the address, the title and an optional description to `POST /assessment/new/who`, which validates them server-side (`lib/flow/create-draft.ts`), writes one draft cookie (`flow_draft_<templateId>`, 24 h) and answers a 303 to `…/create/mode`. A refusal is a 303 back to this path carrying `?problem=<reason>&field=<field>`, so the band names the field by its own label from `data/pages/assessment-create.ts` — never a column name. Coming back to this stage renders the saved values into the inputs. A child of the template's own address, so the template being copied is the route's fact; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. A signed-out visitor still gets the account gate (#618).",
+      "Split into two stages by #688. Stage 1 posts `templateRecordId`, both seats, the address, the title and an optional description to `POST /assessment/new/who`, which validates them server-side (`lib/flow/create-draft.ts`), writes one draft cookie (`flow_draft_<templateId>`, 24 h) and answers a 303 to `…/create/mode`. A refusal is a 303 back to this path carrying `?problem=<reason>&field=<field>`, so the band names the field by its own label from `data/pages/assessment-create.ts` — never a column name. Coming back to this stage renders the saved values into the inputs. A child of the template's own address, so the template being copied is the route's fact; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. A signed-out visitor still gets the account gate (#618). Since #1123 all five stages render inside the v2 wizard shell (`components/assessment-flow/relationship-flow-shell.tsx`): a 260px rail carrying the setup gauge, the five stage rows, the dashed `Align` preview and the live `Your Relationship` summary, beside one stage card (`flow-stage-card.tsx`). The rail is drawn once, by the shell, so no stage can number or name itself differently, and the reference is `docs/specs/v2-bundles/01-spec-design-page-wizard-v2/wizard.html`.",
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/mode",
+    surface: "/dashboard/templates/[id]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -475,7 +545,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/aspects",
+    surface: "/dashboard/templates/[id]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -485,7 +555,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/commit",
+    surface: "/dashboard/templates/[id]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -495,11 +565,11 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/invite",
+    surface: "/dashboard/templates/[id]/create/invite",
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Stage 5 of the create flow (Invite): the payment walk as a soft prompt, the address the invitation goes to, and the two acts — send it, or keep the draft.",
+      "Stage 5 of the create flow (Invite): the plans as a comparison beside the account's free week (no card at any step), the address the invitation goes to, and the two acts — send it, or keep the draft.",
     notes:
       "The decision the flow exists to reach (#825). `Send and Continue` posts to `POST /assessment/instances/[id]/send`, which calls `sendDraftInvitation()`: the token is reissued first (`resendInvite` owns one-token-per-instance and the cooldown), then the status flips `draft → published` through `canTransition()` with `published_at` stamped, and the email goes out after that commit — the order is what stops a published relationship with a token nobody sent. `Continue as Draft` is a plain link to `/dashboard`, where the draft is listed; it sends nothing and charges nothing. The walk (#771: plan, account, method, confirmation, done) is `components/assessment-flow/invite-walk.tsx`, one client component so the server column stays server-rendered; choosing a plan writes nothing, the method step defers the capture to publish, and the stage's foot no longer depends on which panel is open — the send is the stage's act, not the walk's. The relationship is read through `readFlowScreen()` with this browser's `flow_party_*` cookie and then the signed-in account, so a crafted id, somebody else's relationship and a dead one all land back on Details.",
   },
@@ -582,9 +652,19 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.",
+      "Start — the v2 shell's signed-in landing (#1129): a greeting, the one conversation the numbers point at (the widest Gap across the viewer's live relationships), up to two small jobs (a paused relationship a card would resume, a draft whose invite has not gone out), the two relationships in play and four templates to start from.",
     notes:
-      "Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.",
+      "The page authors no figure. `lib/member/start.ts` maps the seven stored lifecycle values onto the card's four words and orders the jobs (conversation, then one job of each kind); `lib/member/alignment-summary.ts` derives each card's bar and its Next Step over `content/gaps.ts`, so the landing cannot disagree with the Align screen about the same numbers and no Gap is stored. The rows are read by `listMyRelationships` + `readMemberAlignments` — the second is scoped to `party.user_id = $1` and selects no party name, no `user_id` and no invitation row — and a failed read draws the failure panel instead of a zero (`DatabaseUnavailableError`), which is the same rule `/assessment/instances` follows (#213). The four counts the console Overview drew here until #1129 are gone from this route: the approved bundle draws a greeting and two shelves, and each count's list still answers at `/assessments?filter=<id>`.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/payment",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The member's Payment page: one panel per relationship they initiated — Status, the trial's end or the pause, the price after the trial, and the card — with Add a Card, Continue Setup or Get 7 More Days Free as its actions; the account's Payment Method, Billing History and How Trials Work beside it; and a Counterparty's view that is one sentence and no money.",
+    notes:
+      "Every state is derived (`lib/billing/payment-view.ts`): the week from `trialStateOf()` over the account's live subscription, the pause from `pauseOf()` (#1121), the invitation from the row, and the price from `data/billing-plans.ts` Basic's `monthlyCents` — the prototype's `$9.99` is fixture data and is not ported. Panels are drawn only for relationships the viewer **initiated**, so the Counterparty's render holds no price, trial, card or extension to leak; a relationship they were invited into contributes one coverage band. The free week is offered only while `pauseOf()` says it is available — the claim is a `plan_grant` row, so the button is absent, not disabled, once used. The extension's write is #1121's own server action (`claimExtensionAction`), not a second one.",
   },
   {
     kind: "route",
@@ -592,9 +672,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The relationships this member started: a table of their own initiator rows with the stored status on each, and the create band that copies one of their templates into a new relationship's own record.",
+      "My Relationships (#1129): every relationship this member is a party to, drawn as the v2 card — one state word, the five-mark alignment bar and one action — behind five filter chips in the card's own vocabulary (All · Stage 6 Live · Waiting on Invite · Draft · Paused), with a search over the relationship's own title and the other party's name, a sort over the rows in hand, and the create band that copies a template into a new relationship's own record.",
     notes:
-      "Reads `relationship.initiator_user_id = $1` and nothing else, so the list cannot show a counterparty's row. The status column is the stored `relationship.status` (0029/0030) — never derived from the parties — because phase 3's expiry sweep needs one column to move. Create is the only write on the page; Aspects belong to the detail screen.",
+      "Reads `listMyRelationships(user.userId)` (both seats: the rows this account started and the rows it was invited into) plus `readMemberAlignments(user.userId)` for the bar, so the card here and the card on `/dashboard` are one projection (`components/dashboard/relationship-card-model.ts`) over one verdict (`content/gaps.ts`). The five chips are `lib/member/start.ts::cardStateOf`'s four words plus All — a stored `pending` prints as Draft, `complete` as Stage 6 Live, and `void` is drawn on neither screen (#503). Create is the only write on the page; Aspects belong to the detail screen.",
   },
   {
     kind: "route",
@@ -642,9 +722,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
+      "One Templates page, two tabs (#620, #1130): Library is the shelf a member can start a relationship from — a featured template, a category filter with counts (All / Family / Couples / Friends / Work / Home), a search, and cards carrying the shelf chip, the Aspect count and the plan's one price — and My Templates is the copies they own, each opening its own page plus the blank and clone bands.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the Library, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value — and the pre-#1130 `catalogue` — on the Library). The filter and search are `?filter=` and `?q=` over the rows already read, never a second query: the category is the relationship type's (`data/template-categories.ts`), not the record's. Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the Library and `listMemberLibrary(userId)` for My Templates — with `requireRole` resolving the id from the session. `Create Relationship` opens `/dashboard/templates/<id>/create`, the shipped create step; nobody here says \\\"start an instance\\\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -652,9 +732,29 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "One private template's editor: the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
+      "One of the member's own templates, in two modes at one address (#1130): the bare page draws the template — its Aspects on the locked 1–5 band, About, Used In, Share It With Others (Propose to Library) and the retire band (Archive, Restore, Delete Permanently only when unused) — and `?edit=1` is the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
     notes:
-      '`band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`), so the editor\'s props are a convenience and not the gate.',
+      'The editor half is `band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`) and in `readMyTemplate()`, so the editor\'s props are a convenience and not the gate. The delete control is a neutral ×, and a template any relationship was created from passes no `onDelete` at all — the store would refuse it, so the band says "archive only" instead of offering a control that cannot succeed.',
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/templates/[id]/propose",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Propose a Template: a member's own template offered to the admin-curated Library as a reviewed request — name, category, who it is for, an optional note and a required consent box.",
+    notes:
+      '`#1130`. One route, one form (`components/dashboard/template-proposal-form.tsx`) and one aside that lists what is shared and what is never shared. The action (`proposeToLibrary`) validates with `lib/member/proposal.ts::validateProposal` and writes **nothing durable**: the review queue behind a proposal is undecided (crud-matrix "Conflicts: Propose to Library"), so the sent panel says the queue is not open rather than implying a reviewer. It cannot publish — there is no path from this action to a `record` or a `template_version` write, and consent must be the boolean `true`, never a field\'s presence.',
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/chat",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One thread per relationship (#1131): a conversation list carrying an unread count and each thread's state, and — for the thread that is open — party-tinted messages where a message may carry an Aspect chip and that Aspect's current Align status, a composer with the five Aspects as toggle tags, a waiting state that says when chat opens, and a paused state that is read-only with one action for the Initiator.",
+    notes:
+      "The v2 bundle (`docs/specs/v2-bundles/07-spec-design-page-chat-v2/`) ported over the member's own rows: `listMyRelationships()` lists the threads (the viewer's id comes from the session, never the URL) and `readRelationshipById()` reads only the open one, so the Aspects and the report behind a status chip are the same gated projection `/assessment/instances/[instanceId]` draws. The thread is `?relationship=<id>` and the search is `?q=`, both GETs; no `?state=` and no `?role=` — the state is derived (`chatThreadStateOf` over `connectionOf()` and `pauseOf()`), so a waiting thread and a paused one render for whichever seat is reading, and a closed relationship is left out rather than drawn as paused. A tag's status is `alignmentStatusOf()` over the Aspect's widest cross-party Gap and is absent until both parties have accepted, which is the blind rule; the chip links to that Aspect on Align. The composer appends to the session and writes nothing durable — the thread model is #921's and that issue ships no schema, so `data/chat-threads.ts` holds the demo bodies and the write is stated as a known limit. This is NOT `/chat`, which stays the quiz product's surface and answers 404 on this brand (#300).",
   },
   {
     kind: "route",
@@ -923,27 +1023,17 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/relationship-types",
-    status: "fixture",
-    templates: ["quizhub", "alignsynch"],
-    capability:
-      "The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. `/pricing`, a type's own page and its `/demo` sheet are public, and since #1042 all 27 start actions are the create flow's stage 1 for every viewer — the template in the path, no `/register` detour and no session-shaped action.",
-    notes:
-      "**Retained as a landing variation since #905, and the composition the canonical door renders again since #1040**: `/relationship-templates` is the catalogue's endpoint and, since #1040, renders this same #889 composition on both builds — one screen at two addresses, from one model. Nothing links this page as the catalogue; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` was what every card linked from #867 until #1042 — the account first, the wizard after — and asking somebody with an account to make one was the defect #979 names. Since #1042 the cards link the flow's stage 1 directly (`/templates/relationship/<slug>/create`), for a visitor and a member alike: stage 1 renders without a session (#690) and the account is stage 4 of that same wizard, on the draft. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
-  },
-  {
-    kind: "route",
-    surface: "/relationship-types/[slug]",
+    surface: "/relationship-templates/[slug]",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
       "One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No clock and no app tables, and since #1042 no session read either: the one start action is the create flow's stage 1 for every viewer, carrying this template in the path, so the page is prerenderable per slug again (#979 removed the member-shaped action; #1042 removed the visitor's `/register` detour).",
     notes:
-      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand.",
+      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand. It moved under the catalogue's own path in #1127 (`/relationship-types/[slug]` is a 308): the list and one row of it are one noun, and there is no second catalogue address for a card to link at.",
   },
   {
     kind: "route",
-    surface: "/relationship-types/[slug]/demo",
+    surface: "/relationship-templates/[slug]/demo",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
@@ -1020,6 +1110,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/flow",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The create flow's five stage modules — Details, Settings, Aspects, Account, Invite — held where no address reaches them, because the same module is both a page and the dialog a slot mounts over the shelf. The address is `/dashboard/templates/[id]/create{,/mode,/aspects,/commit,/invite}` — a template **slug** in a segment Next names `id`, because Next refuses two dynamic segment names at one level and the editor next door is `/dashboard/templates/[id]`; the URL a person sees is `/dashboard/templates/<slug>/create…`. #1109 phase 2 moved these files out of `app/(mainlayout)/templates/relationship/[slug]/create/**/page.tsx` with `git mv`, and nothing about a stage changed in the move.",
+    notes:
+      'The rule this directory exists to keep is **a stage is written once and mounted twice**: each module takes `mount?: FlowMount` (default `"page"`), the route file under `dashboard/templates/[id]/create` renders it bare, and the `@flow` interceptors in `dashboard/templates` (`(.)`), `dashboard/relationships` and `assessment` (`(...)`) render it with `mount={FLOW_MOUNT_DIALOG}` — held by `tests/flow-entry-convergence.test.ts` and `tests/flow-dialog-shell.test.tsx`. `db`, like `components/assessment-flow` beside it: the stages read and write through `lib/flow/store.ts` over `lib/db/**`, and no stage changed a query in the move. Keeping the stages out of `app/` is what let the address change without the components knowing, and the five kept their `[slug]` dynamic-param signature because they are still page components.',
+  },
+  {
+    kind: "domain",
     surface: "components/auth",
     status: "live",
     templates: ["quizhub", "alignsynch"],
@@ -1031,12 +1131,12 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   {
     kind: "domain",
     surface: "components/billing",
-    status: "mock",
+    status: "db",
     templates: ["alignsynch"],
     capability:
-      "The provider's frame, and only the frame: `stripe-frame.tsx` mounts Stripe's embedded checkout for a client secret a server minted, draws the caption that sits under the mount point until the iframe lands, and reports completion or failure upward.",
+      "The money surfaces: `stripe-frame.tsx` mounts the provider's embedded checkout for a client secret a server minted, and `payment-view.tsx` draws the member's Payment page — one trial panel per relationship, the account's Payment Method, Billing History and How Trials Work, and the Counterparty's one coverage sentence.",
     notes:
-      "Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.",
+      "`stripe-frame.tsx` — `The provider's frame, and only the frame.` Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits. `payment-view.tsx` (#1132) is `db` for the domain's status since it landed: it reads no row itself — every panel is derived from rows the page passes in (`lib/billing/payment-view.ts`) — but the module it renders is reachable from `lib/member/relationships.ts`, so the domain is no longer the read-nothing `mock` it was when the frame was alone.",
   },
   {
     kind: "domain",

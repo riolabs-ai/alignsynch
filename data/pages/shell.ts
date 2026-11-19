@@ -33,7 +33,7 @@
  * footer logo render, and `footer-legal/copyright` is the same word in a sentence; both
  * read `brand.name` from `data/brand.ts`, so the projection is a function of the brand
  * record (`shellCopy(brand)`) and the two strings a second brand must change are the
- * ones it actually prints. `shellPageCopy` stays the shipped record's instance, so every
+ * ones it actually prints. `shellPageCopy` stays the shipped record's session, so every
  * caller keeps importing a `PageCopy` and nothing else moved. Every other rendered
  * literal in `app/`, `components/` and `data/` reads the same record, so a skin is a
  * second `Brand` and not a find-and-replace.
@@ -191,7 +191,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The AlignSynch navigation (issue #156) — the alignment product's own destinations.
        *
        * It is a *second section in the same fixture*, not a second fixture: E23 resolves every
-       * `itemLabel()` a component asks for against the one instance this module exports, so a
+       * `itemLabel()` a component asks for against the one session this module exports, so a
        * menu that only existed when `BRAND=alignsynch` would fail the gate that runs on the
        * default brand. The view picks the section by brand (`components/layout/nav-menus.tsx`),
        * and the words are here either way.
@@ -274,8 +274,19 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "home", label: "Home" },
           { id: "dashboard", label: "Dashboard" },
+          /**
+           * #1129 — the v2 rail's first row. "Start" is the page's own `<h1>` subject (Start
+           * greets rather than names itself), and it is one word because every other row in the
+           * group is: the v2 prototype draws Start · My Relationships · Templates · Chat · Payment.
+           */
+          { id: "start", label: "Start" },
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
+          /**
+           * #1131 — Chat, beside the relationships it is about. The owner's word, and the v2 rail's
+           * own row (`docs/specs/v2-bundles/07-…/chat.html`): a thread per relationship.
+           */
+          { id: "chat", label: "Chat" },
           /**
            * #877 — the sessions, beside the relationships they belong to. The owner's word is
            * plural and it is the page's own `<h1>`: one string, one home.
@@ -345,6 +356,27 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "admin-docs", label: "Docs" },
           /**
+           * #1126 — the CRUD & Permissions matrix, the second reference row. It sits directly after
+           * Docs because the pair is one idea: the docs say how the product works, this says which
+           * role may do what. The label is the issue's own words, not abbreviated to one word like
+           * the rest of the group, because "CRUD & Permissions" is the name the v2 spec uses.
+           */
+          { id: "admin-permissions", label: "CRUD & Permissions" },
+          /**
+           * #1138 — the transactional-mail override editor. It sits after the two reference rows
+           * because it is the same kind of thing: the docs say how the product works, CRUD says who
+           * may do it, and this says what it writes to a person. The label is the issue's own title,
+           * and it is two words where the rest of the group is one — "Email Templates" is the name
+           * #1138 uses and renaming it here would be the screen disagreeing with its card.
+           */
+          { id: "admin-email-templates", label: "Email Templates" },
+          /**
+           * #1252 — the project spec. Two words, like the two rows above it in this group that also
+           * name a *thing* rather than a verb: "Project Spec" is the bundle's own title (AS-05) and
+           * renaming it here would be the screen disagreeing with its card.
+           */
+          { id: "admin-spec", label: "Project Spec" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,
@@ -381,7 +413,7 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        * The header palette is chrome, so its placeholder is on every AlignSynch page, and it
        * used to promise a search over quizzes on a page that has none. The words now match
-       * what the palette actually searches on this brand: the assessment *instances* in
+       * what the palette actually searches on this brand: the assessment *sessions* in
        * `data/assessments.ts` and the three pages an alignment visitor can reach
        * (`lib/nav.ts`'s `ALIGNMENT_ROUTES`). `data/searchdata.ts` builds that index; the
        * placeholder and the group heading below are its description.
@@ -435,7 +467,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The alignment build's tab words — the two tabs its index can fill.
        *
        * `all` is the same tab on both brands; `pages` is what `searchIndexFor` really holds on
-       * this build (the instances in `data/assessments.ts` and the three `ALIGNMENT_ROUTES`),
+       * this build (the sessions in `data/assessments.ts` and the three `ALIGNMENT_ROUTES`),
        * and `search-alignsynch`'s `group-pages` already words that group the same way. There is
        * no `quizzes`, `categories` or `creators` item: no tab renders them here, and a label
        * for a filter with no rows behind it is the defect this section deletes rather than a
@@ -576,6 +608,13 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "signed-out", label: "Sign In" },
           { id: "sign-up", label: "Sign Up" },
+          /**
+           * The avatar trigger's accessible name (#1136). The button carried none — an icon button
+           * with no label is announced as "button" — so the v2 bundle's `aria-label="Account menu"`
+           * becomes a fixture row and both brands use it. It is an affordance of the shell, not
+           * product vocabulary, which is why this one id is not paired.
+           */
+          { id: "menu", label: "Account menu" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -598,6 +637,45 @@ export function shellCopy(brand: Brand): PageCopy {
            * click and the session ending, and the failure said out loud rather than swallowed
            * (issue #272's rule, on the header's control rather than the rail's).
            */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
+        ],
+      },
+      /**
+       * The account menu's v2 words (#1136), the AlignSynch expression of the same slot.
+       *
+       * **Paired rather than renamed, the way `nav`/`nav-alignsynch` is.** The v2 bundles are the
+       * AlignSynch build's visual authority (#1119), and they name two controls the quiz build
+       * spells differently: **Account Settings** (this build said "Settings") and **Sign Out**
+       * ("Log out"). QuizHub is a shipped product whose own words are its own — an epic about the
+       * alignment surface does not get to rewrite the quiz app's menu — so the two live side by
+       * side and `accountCopyFor()` in `lib/shell-copy.ts` picks one, exhaustively, per brand.
+       *
+       * The v2 menu draws **one line per row**: name + address, then Account Settings and Sign Out
+       * with an icon each (`settings.html`). There are no hint subtitles here for that reason, and
+       * the reader asks for them with `itemLabelOr` so a brand that draws none is not an error.
+       *
+       * `menu` is the avatar button's accessible name, verbatim from the bundle's `aria-label`; the
+       * trigger used to carry no name at all, which is what made it a decorative disc (#1136).
+       */
+      {
+        id: "account-alignsynch",
+        items: [
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
+          { id: "menu", label: "Account menu" },
+          { id: "profile", label: "My Profile" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "quizzes", label: "My Quizzes" },
+          { id: "settings", label: "Account Settings" },
+          { id: "logout", label: "Sign Out" },
+          /**
+           * What the confirmation says once the session is gone (`lib/shell/account-sign-out.ts`).
+           * The bundle's own sentence: the toast is the only place this build tells a person the
+           * revocation actually happened, and a silent redirect to a catalogue reads as "the page
+           * changed", not "you are signed out".
+           */
+          { id: "logout-toast", label: "You’re signed out." },
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],
@@ -826,7 +904,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * The version badge (issue #269) — the words the sidebar and the footer print under the
        * build's version number.
        *
-       * One section for both mounts because both read this one instance: a sidebar that said
+       * One section for both mounts because both read this one session: a sidebar that said
        * "Version" and a footer that said "Build" would be two names for one fact. It is not
        * brand-selected — a version is the same fact on both builds, and the tag it links to is
        * one tag.
@@ -851,7 +929,7 @@ export function shellCopy(brand: Brand): PageCopy {
 }
 
 /**
- * The shell as the app renders it today — the shipped record's instance of `shellCopy`.
+ * The shell as the app renders it today — the shipped record's session of `shellCopy`.
  *
  * Still a parsed `PageCopy` at module scope, so the layout, the eleven pages that mount
  * the footer, `data/pages/index.ts` and the E23 ratchet need no change: they import a

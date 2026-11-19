@@ -17,7 +17,7 @@
  * so nothing here can reach Postgres (`data:check` E34 walks this graph).
  *
  * A chart on this screen is never a summary of two rows — the route withholds it below the
- * population floor (`lib/admin/gap-aggregates.ts::MIN_COMPLETE_INSTANCES`) — and recharts paints
+ * population floor (`lib/admin/gap-aggregates.ts::MIN_COMPLETE_SESSIONS`) — and recharts paints
  * nothing until the browser measures the container, so the table beside it is what a reader
  * without JavaScript still gets.
  */

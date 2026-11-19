@@ -1446,14 +1446,14 @@ function countQueries() {
  */
 function bundleKeys(seededRowTotals) {
   return {
-    record: (payload) => payload.templates.length + payload.instances.length,
+    record: (payload) => payload.templates.length + payload.sessions.length,
     item: (payload) =>
-      [...payload.templates, ...payload.instances].reduce(
+      [...payload.templates, ...payload.sessions].reduce(
         (total, record) => total + record.items.length,
         0,
       ),
     response_option: (payload) =>
-      [...payload.templates, ...payload.instances].reduce(
+      [...payload.templates, ...payload.sessions].reduce(
         (total, record) =>
           total +
           record.items.reduce(
@@ -1463,12 +1463,12 @@ function bundleKeys(seededRowTotals) {
           ),
         0,
       ),
-    session: (payload) => payload.instances.length,
-    relationship: (payload) => payload.instances.length,
+    session: (payload) => payload.sessions.length,
+    relationship: (payload) => payload.sessions.length,
     party: (payload) =>
-      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).parties, 0),
+      payload.sessions.reduce((total, session) => total + seededRowTotals(session).parties, 0),
     opinion: (payload) =>
-      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).opinions, 0),
+      payload.sessions.reduce((total, session) => total + seededRowTotals(session).opinions, 0),
   };
 }
 

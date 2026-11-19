@@ -7,7 +7,7 @@
  * catalogue (`/v1/templates`) and the dashboard library (`/v1/[persona]/templates`) both draw it,
  * and the only difference between the two is the action row the surface owns. This module is the
  * same decision for the app's two catalogue surfaces — `/assessment` (pick a template, then create
- * an instance from it) and `/templates/relationship` (the catalogue: open, use, duplicate, archive) —
+ * a session from it) and `/dashboard/templates` (the catalogue: open, use, duplicate, archive) —
  * so a card looks the same wherever a person meets a template, and neither surface re-implements
  * one.
  *
@@ -29,19 +29,19 @@
  *
  * **`Create Relationship` is a door, never a write (#957).** The primary action is an anchor to
  * `createRelationshipPath(template.slug)` — stage 1 of the one create flow — so this card is the
- * *single* create path on both surfaces that draw it (`/assessment` and `/templates/relationship`).
+ * *single* create path on both surfaces that draw it (`/assessment` and `/dashboard/templates`).
  * `/assessment` used to add a form beside it that posted straight to the create endpoint and
  * published the relationship in one press; that form is deleted, and because the door lives here,
  * the two surfaces cannot drift back apart without deleting this anchor.
  *
  * **A card states the record's own facts, and one price that is the plan's.** The title, the
  * summary, `count(item)` for the Aspect count, and the type/realm/roles/price the catalogue
- * authors. The price is not per relationship: `RELATIONSHIP_PRICE_CENTS` ($9.99) predates the
- * pricing rewrite, which sells Basic at $8.95/month with unlimited relationships, so a card
- * charging $9.99 beside a plan page selling $8.95 would be two price models in one product. The
- * card therefore prints **one month of Basic** — `CATALOGUE_PRICE_CENTS`, read from the pricing
- * fixture — which is what using any type here actually costs. No people, no rating and no "N
- * people use this": nothing here measures one.
+ * authors. The price is not per relationship: `RELATIONSHIP_PRICE_CENTS` predates the pricing
+ * rewrite, which sells the Single plan at a monthly figure with unlimited relationships, so a card
+ * charging that taxonomy amount beside a plan page selling Single's own price would be two price
+ * models in one product. The card therefore prints **one month of the entry plan** —
+ * `CATALOGUE_PRICE_CENTS`, read from the pricing fixture — which is what using any type here
+ * actually costs. No people, no rating and no "N people use this": nothing here measures one.
  */
 import { LeavingLink } from "@/components/layout/leaving-link";
 import { Chip, CHIP_TAG } from "@/components/ui/badge";
@@ -101,7 +101,7 @@ export const CATALOGUE_PRICE_CENTS: number = CATALOGUE_PLAN.monthlyCents;
 /**
  * The narrow shape both reads satisfy: `TemplateSummary` (`lib/flow/store.ts`) and
  * `LibraryTemplate` (`lib/flow/template-library.ts`). A card draws only these four facts, so it
- * cannot start reading an authorship or an instance count that one of the two reads does not
+ * cannot start reading an authorship or a session count that one of the two reads does not
  * carry.
  *
  * `status` is optional for the same reason `TemplateSummary` does not have one: the picker only
@@ -148,7 +148,7 @@ export interface CatalogueCardCopy {
    * says which plan the catalogue is included in rather than a bare figure beside nine cards.
    */
   readonly priceOf: (plan: string, cents: number) => string;
-  /** The card's primary action: start an instance from this template. */
+  /** The card's primary action: start a session from this template. */
   readonly useTemplate: string;
   /** The exemplar link, drawn only where a finished sheet exists. */
   readonly seeExample: string;
@@ -270,7 +270,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
           <dt className="sr-only">{copy.priceLabel}</dt>
           {/*
            * One price per card, and it is the plan's: no type is sold on its own. The plan's name
-           * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
+           * is in the visible chip, because a bare figure beside nine cards reads as nine
            * subscriptions.
            */}
           <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>
@@ -283,7 +283,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
         {createable(template) ? (
           /*
            * The door, and it opens the flow **in place** (#979 B). This card is drawn by
-           * `/assessment` and `/templates/relationship`, and both segments declare the intercepted
+           * `/assessment` and `/dashboard/templates`, and both segments declare the intercepted
            * route that turns that address into the flow's dialog over them — `FlowEntryLink` is the
            * soft navigation and the remembered origin the dialog needs, in one component, so the
            * two surfaces cannot be mounted differently. A bare `<a>` here would be a document load:

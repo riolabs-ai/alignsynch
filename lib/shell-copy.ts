@@ -37,6 +37,33 @@ export function searchSectionFor(copy: PageCopy, brandId: BrandId): PageCopySect
 }
 
 /**
+ * The account menu's words for this brand (#1136).
+ *
+ * The third paired section, and the same rule as the search and footer pairs: the v2 bundles are
+ * the AlignSynch build's visual authority, and they name the two account rows **Account Settings**
+ * and **Sign Out** where the quiz build shipped "Settings" and "Log out". QuizHub is a shipped
+ * product and an alignment epic does not rewrite its words, so both sections exist and this switch
+ * — exhaustive over `BrandId`, so a third brand fails `tsc` rather than inheriting the quiz menu —
+ * decides which one the header renders.
+ *
+ * The ids are identical on both sides; only `settings` and `logout` move, plus the `menu` label the
+ * trigger announces itself with (the v2 bundle draws `aria-label="Account menu"`; the quiz slot has
+ * no such item and announces itself with the avatar's own label).
+ */
+export function accountCopyFor(copy: PageCopy, brandId: BrandId): PageCopySection {
+  switch (brandId) {
+    case "quizhub":
+      return sectionOf(copy, "account");
+    case "alignsynch":
+      return sectionOf(copy, "account-alignsynch");
+    default: {
+      const unhandled: never = brandId;
+      throw new Error(`no account copy for brand ${String(unhandled)}`);
+    }
+  }
+}
+
+/**
  * The **public chrome's** slice of the shell fixture — the marketing header's words and nothing else.
  *
  * The shell fixture is one document for both chromes: it carries the quiz menu's fifteen rows, the

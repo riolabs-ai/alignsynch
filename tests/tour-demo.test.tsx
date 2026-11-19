@@ -27,7 +27,7 @@ import { DemoFill } from "@/components/tour/demo-fill";
 import { opinionKindsFor } from "@/content/assessment";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import { assessments } from "@/data/assessments";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { tourDemoAnswers, tourPageCopy } from "@/data/pages/tour";
 import {
   demoAspectsOf,
@@ -74,7 +74,7 @@ function mount(): void {
     root.render(
       <DemoFill
         copy={tourPageCopy}
-        sheetCopy={assessmentInstancePageCopy}
+        sheetCopy={assessmentSessionPageCopy}
         aspects={aspects}
         answers={tourDemoAnswers}
         exampleTitle={template?.title ?? ""}

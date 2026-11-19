@@ -1,0 +1,597 @@
+/**
+ * template-ancestor: none — approved #336
+ *
+ * `/assessment/instances/[instanceId]` — the one screen both parties share (#146).
+ *
+ * Three states, and the third one is the only one that draws a score:
+ *
+ *   awaiting_counterparty   the Initiator's invite panel (with the link whenever no email
+ *                          carried it, and one sentence for whether the mailer was absent,
+ *                          refused, or accepted), the waiting band, and the Initiatior's own
+ *                          answer sheet
+ *   answering               the same sheet, with the other party's answers absent — not
+ *                          hidden, absent (`FlowScreen.report` is `null` and the view model
+ *                          has no field to carry them)
+ *   complete                the Alignment, Aspect by Aspect (`AlignmentView`, #692): both
+ *                          sheets, both opinions and the difference, drawn from the same
+ *                          `screen.report` every Gap in it computes through `gapOf()`
+ *
+ * A refusal (`?problem=frozen` and friends) is rendered here too, for the one case that is
+ * a redirect; the submit endpoint itself answers 409/403 with `problem-page.tsx`, so an
+ * edit after the freeze is an error status and not a page that looks like a success.
+ *
+ * **Which party this is, is on the screen.** The band under the header names the viewer and
+ * the role their answers are recorded under, on every visit and in every state (#202) — a
+ * session that finds itself answering as somebody else has no way to notice otherwise, and
+ * that silence is what made a link click able to corrupt a whole session's Gap.
+ *
+ * **Which mode this is, is on the screen too** (#213): a badge under the title names the mode
+ * the session was played in (`data-mode` for a test), because a reader looking at a report
+ * has to be able to tell a two-score sheet from a four-score one. The mode is a fact about
+ * the session, so it is drawn, not chosen — there is no control here that changes it.
+ *
+ * **The invitation panel draws its state, not a flag** (#266). `screen.invite.state` is
+ * `unclaimed`, `expired` or `claimed`, derived at read time from `expires_at` and `claimed_at`
+ * (`lib/flow/invite-state.ts`); each state has its own sentence and its own tone, and the
+ * deadline is filled into the two that are not `claimed`. The link is drawn only for
+ * `unclaimed` — the store withholds it otherwise, so this panel cannot offer a copy control for
+ * a URL the claim path would refuse.
+ *
+ * **One stage sentence, and never a bar** (#274). `lib/flow/stage.ts` maps the derived status
+ * onto Invited / Connected / Sharing, and the sentence above the bands names the stage and who
+ * acts next. There is no progress display here at all — no bar, no dots, no percentage — for the
+ * reasons `docs/specs/ux-stages.md` records: the transitions are the other party's actions (and
+ * one of them is nobody's), an invitation can expire, and "Aligned" is Setting-relative
+ * arithmetic on the finished Gap, so it is drawn only by the report's verdict band and never as
+ * a step on this screen.
+ *
+ * Literal-free: the words are `data/pages/assessment-instance.ts` (E23), except the two mode
+ * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
+ * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
+ */
+import { AlignmentView } from "@/components/assessment-flow/alignment-view";
+import { AnswerForm } from "@/components/assessment-flow/answer-form";
+import { InviteLink } from "@/components/assessment-flow/invite-link";
+import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
+import { StepsPanel } from "@/components/assessment-flow/steps-panel";
+import { SubmissionConfirmation } from "@/components/assessment-flow/submission-confirmation";
+import { Chip } from "@/components/ui/badge";
+import { MODE_LABELS } from "@/content/assessment";
+import type { Step } from "@/content/steps";
+import { formatDate } from "@/content/core";
+import { STAGE_LABELS } from "@/content/stages";
+import type { PageCopy } from "@/content/pages";
+import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { answersPath, acceptPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
+import type { InviteDisplayState } from "@/lib/flow/invite-state";
+import type { ResendRefusal } from "@/lib/flow/resend";
+import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
+import type { FlowScreen } from "@/lib/flow/screen";
+import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
+import Link from "next/link";
+
+/** The one glyph an absent figure is drawn as — never `0`, never an empty cell. */
+const ABSENT = "—";
+
+/**
+ * What was paid, as the read sliced it (#409).
+ *
+ * `null` is **not** this viewer's fact — the read hands it to the Initiator alone — so the panel
+ * below is not drawn from a value that was withheld at render time; the component was never given
+ * one. Two columns and no arithmetic: the plan and the instant it was bought. There is no total
+ * because there is one purchase, and a sum of one number is not a fact about anything.
+ */
+export interface RelationshipPaid {
+  readonly plan: string | null;
+  readonly purchasedAt: string | null;
+}
+
+/** The codes a `?invite=` query may carry. Anything else is ignored, not rendered. */
+const INVITE_NOTICES = ["sent", "unset", "failed"] as const;
+
+/**
+ * `sent` / `unset` / `failed` — the creation redirect's own fact (#220).
+ *
+ * Three, not two: `unset` is a deployment with no mailer, `failed` a send that was attempted
+ * and refused, and the screen says something different for each. A value this build does not
+ * know renders nothing at all, rather than a guess at which of the two it was.
+ */
+export type InviteNotice = (typeof INVITE_NOTICES)[number];
+
+export function inviteNoticeOf(value: string | undefined): InviteNotice | undefined {
+  return INVITE_NOTICES.find((notice) => notice === value);
+}
+
+/** The codes a `?problem=` query may carry. Anything else is ignored, not rendered. */
+const PROBLEM_CODES = ["frozen", "incomplete", "not-a-party", "no-such-instance"] as const;
+
+export type ProblemCode = (typeof PROBLEM_CODES)[number];
+
+export function problemCodeOf(value: string | undefined): ProblemCode | undefined {
+  return PROBLEM_CODES.find((code) => code === value);
+}
+
+/**
+ * The invitation panel's tone, one per state — the "at a glance" half of #266.
+ *
+ * The sentence already says which state it is; the panel's colour is what a reader catches
+ * before they read it. `unclaimed` is the neutral panel this band has always been, `claimed` is
+ * the emerald the report band uses for a thing that is done, and `expired` is red because it is
+ * news the Initiator has to act on (start again by other means). The three hues are status
+ * colours, which the brand rule deliberately leaves alone; no palette step and no gradient.
+ */
+const INVITE_TONES: Record<InviteDisplayState, string> = {
+  unclaimed:
+    "border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200",
+  expired:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  claimed:
+    "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+  // #503 — a withdrawal is news too, and the same red as an expiry: there is nothing the
+  // Initiator can do with this link either. #1125's decline is the same colour for the same
+  // reason — the seat is gone — and a different sentence, because a person said no rather than an
+  // operator deciding.
+  revoked:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  declined:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+};
+
+export function AssessmentSessionView({
+  screen,
+  copy,
+  problem,
+  inviteNotice,
+  resendRefusal,
+  submitted = false,
+  paid = null,
+  steps = [],
+}: {
+  screen: FlowScreen;
+  copy: PageCopy;
+  problem?: ProblemCode;
+  /**
+   * Whether this visit is the one a submit created (`?submitted=1`, #t_0aa81144), so the
+   * confirmation band is drawn above the ordinary screen. A state, not a route: the read is the
+   * same `readFlowScreen()` the page already made.
+   */
+  submitted?: boolean;
+  /** `sent` / `unset` / `failed` from the creation redirect; absent on a later visit. */
+  inviteNotice?: InviteNotice;
+  /**
+   * The re-invite's refusal code, from `?resend=` (#275). Rendered as the fixture's sentence for
+   * that code, above the panels and never inside them: `instance-complete` arrives on a session
+   * whose screen is the report, where the invitation panel is not drawn at all, so a sentence
+   * placed inside the panel would be a refusal nobody could read.
+   */
+  resendRefusal?: ResendRefusal;
+  /**
+   * What was paid — `null` for every viewer who is not the Initiator (#409).
+   *
+   * The default is `null`, not an empty object, so a caller that forgets it draws nothing rather
+   * than a panel of dashes claiming nothing was paid. `lib/db/assessments.ts::readRelationshipById`
+   * is the only producer, and it slices the money facts to the Initiator's seat before this
+   * component ever sees them.
+   */
+  paid?: RelationshipPaid | null;
+  /**
+   * The relationship's Steps (#478) — read by the page, drawn only in the report state.
+   *
+   * The default is `[]` so a caller that has not read them draws the panel's empty state rather than
+   * a crash. The list is the relationship's, not the session's: a Step outlives the session that
+   * agreed it, which is the whole point of storing it. A coach is handed it like a party (the plan is
+   * shared) and simply gets no controls.
+   */
+  steps?: readonly Step[];
+}) {
+  const waiting = sectionOf(copy, "waiting");
+  const reportBand = sectionOf(copy, "report");
+  const inviteBand = sectionOf(copy, "invite");
+  const problems = sectionOf(copy, "problems");
+  const viewerBand = sectionOf(copy, "viewer");
+  const stageBand = sectionOf(copy, "stage");
+  const partiesBand = sectionOf(copy, "parties");
+  const paidBand = sectionOf(copy, "paid");
+  // #533 phase 3 — the membership band. Resolved unconditionally (a fixture section is not a
+  // branch), drawn only when the read says the membership lapsed.
+  const membershipBand = sectionOf(copy, "lapsed");
+  const membershipLapsed = screen.membership?.state === "lapsed";
+  const membershipValues = {
+    endedAt: screen.membership?.endedAt?.toISOString() ?? "",
+  };
+  const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
+  const resendLabel =
+    resendRefusal === undefined
+      ? undefined
+      : fillLabel(itemLabel(inviteBand, resendRefusal), {
+          counterparty: screen.invite?.counterpartyName ?? screen.counterpartyName ?? "",
+        });
+  const answered = screen.aspects.some((aspect) => aspect.own !== null);
+  // A coach reads the relationship, never answers it: the badge is drawn and every answering
+  // control is withheld. `readFlowScreen` resolved the role from membership, so this flag cannot
+  // be true for a party and the store is still the authority — the view only decides what is
+  // drawn, not what is allowed.
+  const isCoach = screen.viewer.role === "coach";
+  // The re-invite is the Initiator's action, and only while the invitation is unclaimed: `claimed`
+  // is terminal (the seat is taken), so the panel says so and offers nothing. The store is the
+  // authority — this only decides what is drawn.
+  const canReinvite =
+    screen.invite !== null &&
+    screen.invite.state !== "claimed" &&
+    screen.viewer.role === "initiator";
+
+  /**
+   * #617 — the acceptance entry point.
+   *
+   * `acceptPath()` existed, its page existed, its form posted, and **no surface linked to it**, so
+   * a person who had answered every Aspect had no way to do the one thing that completes a
+   * session. This is that route, drawn from the facts the endpoint itself requires — the viewer is
+   * one of the two parties, their own sheet is complete, their own `party.accepted_at` is null, and
+   * the session is still `answering` — so the link is offered exactly when the click would be
+   * recorded. Nothing here reads the other party's answers: the sentence only names them.
+   */
+  const acceptSection = sectionOf(copy, "accept");
+  const ownSheetComplete =
+    screen.aspects.length > 0 && screen.viewerAnswered >= screen.aspects.length;
+  const otherName =
+    screen.viewer.role === "initiator" ? (screen.counterpartyName ?? "") : screen.initiatorName;
+  const acceptHref =
+    !isCoach && screen.status === "answering" && ownSheetComplete && !screen.viewerAccepted
+      ? acceptPath(screen.sessionRecordId)
+      : null;
+
+  const names = screen.waiting.map((role) =>
+    role === "initiator" ? screen.initiatorName : (screen.counterpartyName ?? ""),
+  );
+
+  // #274 — the stage, derived from the same status the bands below are drawn from, and the
+  // sentence that names it. `stageCopyId` picks the expired-invite row from the invitation's
+  // own derived state; `connected-unknown` covers the degenerate copy with no names to list, so
+  // the sentence can never read "Connected —  still to answer."
+  //
+  // #503 — a voided session is **off the ladder**: `relationshipStage()` answers `null`, so this
+  // screen draws the operator's notice instead of a badge. It is not a fourth stage; it is the
+  // absence of one, which is why the type refuses the value rather than the view filtering it.
+  const stage = relationshipStage(screen.status);
+  const stageId =
+    stage === null
+      ? "voided"
+      : stage === "connected" && names.length === 0
+        ? "connected-unknown"
+        : stageCopyId(stage, screen.invite?.state ?? null, screen.status);
+  const counterpartyName = screen.invite?.counterpartyName ?? screen.counterpartyName ?? "";
+  const stageSentence = fillLabel(itemLabel(stageBand, stageId), {
+    counterparty: counterpartyName,
+    names: names.join(", "),
+  });
+
+  return (
+    <div className="py-10">
+      <header className="mb-6">
+        <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          {copy.heading}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
+          {/* The ladder's word, drawn beside the title. `data-stage` stays the sentence's own
+              attribute — the stage is said once in words and once as a badge, and neither is a
+              progress bar (#274). A voided session (#503) has no rung to name, so the badge is
+              the operator's own word and the ladder is not drawn at all. */}
+          <Chip variant="tint" data-stage-badge={stage ?? "voided"}>
+            {stage === null ? itemLabel(stageBand, "voided-badge") : STAGE_LABELS[stage]}
+          </Chip>
+        </div>
+        <p
+          data-mode={screen.mode}
+          className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+        >
+          {MODE_LABELS[screen.mode]}
+          {isCoach ? (
+            <Chip variant="neutral" className="ml-2" data-coach-badge="true">
+              {itemLabel(viewerBand, "coach-badge")}
+            </Chip>
+          ) : null}
+        </p>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
+      </header>
+
+      <p
+        data-stage={stage ?? "voided"}
+        className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100"
+      >
+        {stageSentence}
+      </p>
+
+      <p
+        data-answering-as={screen.viewer.role}
+        className="mb-6 rounded-lg border border-gray-200 bg-white p-3 text-sm font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+      >
+        {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
+      </p>
+
+      {/* #t_0aa81144 — the confirmation a submit lands on. Drawn only for the visit the submit
+          created, only for a party (a coach answered nothing), and only while the report is still
+          closed: once both parties have accepted, the report is the answer. */}
+      {submitted && !isCoach && screen.report === null ? (
+        <div className="mb-6">
+          <SubmissionConfirmation
+            copy={copy}
+            sessionRecordId={screen.sessionRecordId}
+            otherName={otherName}
+            acceptHref={acceptHref}
+          />
+        </div>
+      ) : null}
+
+      {/* #533 phase 3 — the lapse, said on both seats. The sentence names the initiator's
+          membership because the invited party bought nothing, and a band that said "your
+          membership ended" would read to them as their own failure. */}
+      {membershipLapsed ? (
+        <section
+          data-membership="lapsed"
+          data-membership-reason={screen.membership?.reason ?? "unrecorded"}
+          className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
+        >
+          <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            {membershipBand.heading}
+          </h2>
+          <p className="mt-2 text-sm text-amber-900 dark:text-amber-200">
+            {fillLabel(sectionBody(membershipBand), membershipValues)}
+          </p>
+          <p className="mt-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+            {itemLabel(membershipBand, "lapsed-note")}
+          </p>
+        </section>
+      ) : null}
+
+      {/* The two seats (#409) — the block `components/my-quizzes/quiz-details.tsx` draws for a
+          quiz's players, on a relationship's parties. The parties are always legible; what either
+          of them wrote is not, and nothing here is a count. `you` comes from the role the read
+          resolved, so a card cannot mark the wrong seat. */}
+      <section
+        data-parties="true"
+        className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {partiesBand.heading}
+        </h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          <li
+            data-party="initiator"
+            className="rounded-md border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {itemLabel(partiesBand, "initiator")}
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+              {screen.initiatorName === "" ? ABSENT : screen.initiatorName}
+              {screen.viewer.role === "initiator" ? (
+                <span className="ml-2 rounded bg-gray-100 px-1 text-xs uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {itemLabel(partiesBand, "you")}
+                </span>
+              ) : null}
+            </p>
+          </li>
+          <li
+            data-party="counterparty"
+            className="rounded-md border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {itemLabel(partiesBand, "counterparty")}
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+              {screen.counterpartyName ?? itemLabel(partiesBand, "unclaimed")}
+              {screen.viewer.role === "counterparty" ? (
+                <span className="ml-2 rounded bg-gray-100 px-1 text-xs uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {itemLabel(partiesBand, "you")}
+                </span>
+              ) : null}
+            </p>
+          </li>
+        </ul>
+        {screen.viewer.role === "coach" ? (
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            {itemLabel(partiesBand, "coach")}
+          </p>
+        ) : null}
+      </section>
+
+      {/* What was paid (#409). The Initiator alone is handed this — every other viewer's `paid`
+          is `null`, so this panel is not a withheld value drawn as dashes; it is absent from the
+          props. Two facts and no sum. */}
+      {paid === null ? null : (
+        <section
+          data-paid="true"
+          className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+        >
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {paidBand.heading}
+          </h2>
+          <dl className="mt-2 flex flex-wrap gap-x-6 text-sm">
+            <div className="flex gap-2">
+              <dt className="text-gray-500 dark:text-gray-400">{itemLabel(paidBand, "plan")}</dt>
+              <dd className="font-medium text-gray-900 dark:text-gray-100">
+                {paid.plan ?? ABSENT}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+            {paid.purchasedAt === null
+              ? ABSENT
+              : fillLabel(itemLabel(paidBand, "bought"), {
+                  date: formatDate(paid.purchasedAt),
+                })}
+          </p>
+          {paid.plan === null && paid.purchasedAt === null ? (
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {itemLabel(paidBand, "nothing")}
+            </p>
+          ) : null}
+        </section>
+      )}
+
+      {problemLabel === undefined ? null : (
+        <p
+          role="alert"
+          className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+        >
+          {problemLabel}
+        </p>
+      )}
+
+      {resendLabel === undefined ? null : (
+        <p
+          role="alert"
+          data-resend-refusal={resendRefusal}
+          className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+        >
+          {resendLabel}
+        </p>
+      )}
+
+      {screen.report === null ? (
+        <>
+          {isCoach ? null : screen.invite === null ? null : (
+            <section
+              data-invite-state={screen.invite.state}
+              className={`mb-6 rounded-lg border p-4 text-sm ${INVITE_TONES[screen.invite.state]}`}
+            >
+              <p className="font-medium">
+                {fillLabel(itemLabel(inviteBand, screen.invite.state), {
+                  counterparty: screen.invite.counterpartyName,
+                  date: formatDate(screen.invite.expiresAt),
+                })}
+              </p>
+
+              {inviteNotice === undefined ? null : (
+                <p className="mt-1" data-invite-notice={inviteNotice}>
+                  {inviteNotice === "sent"
+                    ? fillLabel(itemLabel(inviteBand, "sent"), { email: screen.invite.email })
+                    : itemLabel(inviteBand, inviteNotice)}
+                </p>
+              )}
+
+              {/* The link is drawn wherever it exists, whatever the email did — a broken
+                  mailer must never make the invitation unshareable (#220). The copy control
+                  beside it is #257: the link stays text a reader can select, and the button
+                  only saves them the mouse work. */}
+              {screen.invite.link === null ? null : (
+                <p className="mt-2" data-invite-link>
+                  <span className="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {fillLabel(itemLabel(inviteBand, "link-label"), {
+                      counterparty: screen.invite.counterpartyName,
+                    })}
+                  </span>
+                  <InviteLink
+                    link={screen.invite.link}
+                    copy={inviteBand}
+                    counterpartyName={screen.invite.counterpartyName}
+                  />
+                </p>
+              )}
+
+              {/* #275 — the budget, drawn before the button rather than after a refusal: three
+                  is the lifetime cap, and a reader who can see "2 of 3" is not surprised by it. */}
+              {screen.invite.resentCount === 0 ? null : (
+                <p className="mt-2 text-xs" data-resend-count={screen.invite.resentCount}>
+                  {fillLabel(itemLabel(inviteBand, "resend-count"), {
+                    count: screen.invite.resentCount,
+                    cap: RESEND_LIFETIME_CAP,
+                  })}
+                </p>
+              )}
+
+              {/* The one action this panel offers (#275). It reissues the token, so the old link
+                  dies; `resend-note` says so before the click, not after. */}
+              {canReinvite ? (
+                <ReinviteForm
+                  copy={copy}
+                  action={reinvitePath(screen.sessionRecordId)}
+                  email={screen.invite.email}
+                  counterpartyName={screen.invite.counterpartyName}
+                />
+              ) : null}
+            </section>
+          )}
+
+          <section
+            data-waiting-on={screen.waiting.join(",")}
+            className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          >
+            <h2 className="font-semibold">{waiting.heading}</h2>
+            <p className="mt-1">{sectionBody(waiting)}</p>
+            <p className="mt-2 font-medium">
+              {fillLabel(itemLabel(waiting, "waiting-for"), { names: names.join(", ") })}
+            </p>
+          </section>
+
+          {/* #617 — the acceptance step, offered on every visit where the click would be
+              recorded: own sheet complete, own acceptance missing, session still answering. A
+              later visit is the whole reason this band exists beside the submit confirmation —
+              the party who closed the tab, or came back to the session from a bookmark, is here. */}
+          {isCoach || !ownSheetComplete || submitted || screen.status !== "answering" ? null : (
+            <section
+              data-accept-step={acceptHref === null ? "accepted" : "ready"}
+              className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {acceptSection.heading}
+              </h2>
+              {acceptHref === null ? (
+                <p data-accept-waiting="" className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                  {fillLabel(itemLabel(acceptSection, "you-accepted"), { other: otherName })}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                    {fillLabel(sectionBody(acceptSection), { other: otherName })}
+                  </p>
+                  <Link
+                    href={acceptHref}
+                    data-accept-link="true"
+                    className="mt-3 inline-flex rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                  >
+                    {itemLabel(acceptSection, "accept-link")}
+                  </Link>
+                </>
+              )}
+            </section>
+          )}
+
+          {isCoach ? null : (
+            <AnswerForm
+              copy={copy}
+              aspects={screen.aspects}
+              action={answersPath(screen.sessionRecordId)}
+              hasAnswers={answered}
+              mode={screen.mode}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <section className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+            <h2 className="font-semibold">{reportBand.heading}</h2>
+            <p className="mt-1">{sectionBody(reportBand)}</p>
+          </section>
+          <AlignmentView screen={screen} copy={copy} />
+          {/* #478 — the plan the completion derived, drawn on the screen that owns it. A party
+              ticks and rewords; a coach reads. Only in the report state: a Step names the widest Gap
+              on its Aspect, so drawing one before both seats have accepted would hand a party the
+              other's answers by way of the plan. */}
+          <StepsPanel
+            steps={steps}
+            aspects={screen.aspects.map((aspect) => ({
+              itemId: aspect.itemId,
+              prompt: aspect.prompt,
+            }))}
+            action={stepsPath(screen.sessionRecordId)}
+            canMark={!isCoach}
+            aligned={screen.report.verdict.aligned}
+            copy={copy}
+          />
+        </>
+      )}
+    </div>
+  );
+}

@@ -10,18 +10,19 @@ import {
   parseCreateDraft,
 } from "@/lib/flow/create-draft";
 import {
-  createInstanceFromTemplate,
+  createSessionFromTemplate,
   FlowError,
-  type CreatedInstance,
+  type CreatedSession,
   type FlowErrorCode,
 } from "@/lib/flow/store";
 import {
   createCommitPath,
+  createFailedPath,
   createInviteForPath,
   createModePath,
   createRelationshipPath,
-  instancePath,
-  RELATIONSHIP_TEMPLATES_PATH,
+  sessionPath,
+  TEMPLATE_LIBRARY_PATH,
 } from "@/lib/flow/paths";
 import { loginPathFor } from "@/lib/auth/paths";
 import {
@@ -62,7 +63,7 @@ function refusalTarget(
   const slug = templateSlug.trim();
   const back =
     slug === ""
-      ? RELATIONSHIP_TEMPLATES_PATH
+      ? TEMPLATE_LIBRARY_PATH
       : fromDraft
         ? createCommitPath(slug)
         : createRelationshipPath(slug);
@@ -81,17 +82,78 @@ function refusalTarget(
  */
 function fieldTarget(request: Request, templateSlug: string, field: string, reason: string): URL {
   const slug = templateSlug.trim();
-  const target = new URL(
-    slug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(slug),
-    request.url,
-  );
+  const target = new URL(slug === "" ? TEMPLATE_LIBRARY_PATH : createModePath(slug), request.url);
   target.searchParams.set("problem", reason);
   target.searchParams.set("field", field);
   return target;
 }
 
 /**
- * `POST /assessment/new` — create an instance, then redirect to it (#146).
+ * A throw the route could not name as a refusal, in the shape the endpoint answers it (#1205).
+ *
+ * **What went wrong without this.** On 2026-11-18 `POST /assessment/new {draft:"1"}` answered an
+ * **empty-body 500** twice on production. The create's one transaction inserts `session.state`
+ * (`0041_session_state.sql`) and production's ledger stopped at `0039`, so the INSERT raised a
+ * `pg` `DatabaseError` **42703** — which is not a `FlowError`, so this route rethrew it, Next
+ * answered an opaque 500, and the person (and the QA walk) got a blank response with no line
+ * anywhere naming the SQLSTATE, the column or the migration. Zero rows were written, and the only
+ * symptom was "it broke".
+ *
+ * So every remaining throw is answered **by name**, with the same three facts the log gets:
+ *
+ *   `code`      always `create-failed` — the marker a log search and a support script key on.
+ *   `sqlstate`  the driver's SQLSTATE when it gave one, else `null`. It is checked against the
+ *               SQLSTATE alphabet (`^[0-9A-Z]{5}$`) because a Node `code` such as `ECONNREFUSED`
+ *               is a different namespace, and reporting it here would send the reader looking for
+ *               a Postgres error class that does not exist.
+ *   `message`   the throw's own sentence, verbatim — `column "state" of relation "session" does
+ *               not exist` is the answer, and paraphrasing it into "something went wrong" is
+ *               exactly what the empty body already said.
+ *
+ * **It is deliberately not a `?problem=` redirect.** That vocabulary is the person's own errors —
+ * a Mode they did not pick, a Setting the form never offered (#688, #794) — and a database missing
+ * a column must never read as something they can fix by editing the form.
+ *
+ * **The answer depends on who asked, and that is #1226's split.** A browser form post is sent 303 to
+ * `/assessment/new/failed`, a calm screen that says the draft could not be created and offers Try
+ * Again and Back to Dashboard (`fromBrowserForm()` below names the one header that tells them
+ * apart). A `curl`, a QA walk, a server-to-server caller keeps the named JSON 500 with the body
+ * built here: they read a body, and they are how the 2026-11-18 wide-open 500 was diagnosed. Both
+ * answers carry the same `console.error` line, and neither is a `?problem=`.
+ */
+function createFailureOf(error: unknown): {
+  code: "create-failed";
+  sqlstate: string | null;
+  message: string;
+} {
+  const code =
+    typeof error === "object" && error !== null ? (error as { code?: unknown }).code : undefined;
+  const sqlstate = typeof code === "string" && /^[0-9A-Z]{5}$/.test(code) ? code : null;
+  const message = error instanceof Error ? error.message : String(error);
+  return { code: "create-failed", sqlstate, message };
+}
+
+/**
+ * Is this post a person pressing the create stage's own button (#1226)?
+ *
+ * `Accept: text/html` — the header a browser's form submission sends, and the only one that
+ * distinguishes a person from the four other callers this endpoint has (`curl` in a runbook, the
+ * flow's `scripts/flow-e2e.mjs`, a QA walk reading statuses, a support script). It is read as a
+ * **substring** rather than an exact match because Chrome, Safari and Firefox each append their own
+ * `q=` values to it, and a parser here would be a second opinion about a header no product code
+ * cares about.
+ *
+ * A missing header reads as **not a browser**: an absent `Accept` is not a claim of anything, and
+ * the JSON body is what every tool in this repo posts without one. That is the direction the
+ * ambiguity has to resolve, because guessing "browser" for a `curl` would replace the body a
+ * support script greps with a redirect it cannot read.
+ */
+function fromBrowserForm(request: Request): boolean {
+  return (request.headers.get("accept") ?? "").includes("text/html");
+}
+
+/**
+ * `POST /assessment/new` — create a session, then redirect to it (#146).
  *
  * A route handler and not a server action, for two reasons: the flow has to be drivable
  * with a plain HTML form (no client bundle, and `curl` can post it), and the acceptance is
@@ -119,7 +181,7 @@ function fieldTarget(request: Request, templateSlug: string, field: string, reas
  * **The creator's account is read from the session, not from the post** (#213 follow-up). The
  * form carries two names, an address, a mode and a setting; it carries no identity, and none is
  * read from it — `currentUserIfConfigured()` resolves the account from the request's own cookies,
- * and that id is what the store writes on the Initiator's party row. It is what makes the instance
+ * and that id is what the store writes on the Initiator's party row. It is what makes the session
  * appear in the creator's `/assessment/instances` list, which filters by exactly that column.
  * Signed out (or on a tree with no auth env) the id is `null` and the create behaves as it always
  * did. The Counterparty is deliberately left unbound: they are not the person creating it, and
@@ -213,9 +275,9 @@ export async function POST(request: Request): Promise<Response> {
           email: draft.email,
         };
 
-  let created: CreatedInstance;
+  let created: CreatedSession;
   try {
-    created = await createInstanceFromTemplate({
+    created = await createSessionFromTemplate({
       templateRecordId,
       initiatorName: who.initiatorName,
       counterpartyName: who.counterpartyName,
@@ -234,7 +296,7 @@ export async function POST(request: Request): Promise<Response> {
       // the session row; a blank value falls to the schema's documented default (`soft`), so a
       // post that predates the radios still creates what it always created.
       alignmentSetting: draft?.alignmentSetting ?? value("alignmentSetting"),
-      // #689 — stage 3's list. Read as the person left it: `createInstanceFromTemplate` decides
+      // #689 — stage 3's list. Read as the person left it: `createSessionFromTemplate` decides
       // whether it is still the version's copy (ids and order kept, `aspects_authored_at` NULL) or
       // the creator's own list (added, removed or reordered — written as given, with the instant
       // recorded), and V4 is asked the matching question (#699).
@@ -258,18 +320,33 @@ export async function POST(request: Request): Promise<Response> {
         303,
       );
     }
-    throw error;
+    // #1205 — anything else is a deployment that cannot do the write, and it says so. This used to
+    // be `throw error`, which Next turned into an empty 500: the transaction rolled back (zero rows,
+    // correct) and nobody could read why. The refusals above are the person's errors; this is ours,
+    // so it is a named 500 with a body and the same facts in the server log — never a `?problem=`,
+    // which would send them back to the form to fix a column that does not exist.
+    //
+    // #1226 — the person who pressed the button gets a screen instead of a body. The 303 is not a
+    // refusal and carries no code: the address names the write that failed (`?template=` at most),
+    // the log line keeps the cause, and a reload re-reads the screen rather than re-posting the
+    // create. Every other caller keeps the JSON below, unchanged.
+    const failure = createFailureOf(error);
+    console.error("create-failed", failure.sqlstate, failure.message);
+    if (fromBrowserForm(request)) {
+      return NextResponse.redirect(new URL(createFailedPath(templateSlug), request.url), 303);
+    }
+    return NextResponse.json(failure, { status: 500 });
   }
 
   jar.set(
-    partyCookieName(created.instanceRecordId),
+    partyCookieName(created.sessionRecordId),
     created.initiatorToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
   // The Initiator's own copy of the invitation, so the screen can show the link while the
   // invite is unclaimed — the whole degraded path when no email key is configured.
   jar.set(
-    inviteCookieName(created.instanceRecordId),
+    inviteCookieName(created.sessionRecordId),
     created.inviteToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
@@ -288,8 +365,8 @@ export async function POST(request: Request): Promise<Response> {
   return NextResponse.redirect(
     new URL(
       slug === ""
-        ? instancePath(created.instanceRecordId)
-        : createInviteForPath(slug, created.instanceRecordId),
+        ? sessionPath(created.sessionRecordId)
+        : createInviteForPath(slug, created.sessionRecordId),
       request.url,
     ),
     303,

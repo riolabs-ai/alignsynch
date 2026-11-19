@@ -288,6 +288,18 @@ export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
       "the stage-3 editor seeds `rows` from the sheet's Aspects (`.min(1)`) and the flow forbids adding or removing a row (V4), so it cannot reach zero",
   },
   {
+    file: "components/assessment-flow/stage-choice-form.tsx",
+    receiver: "groups",
+    reason:
+      "#1109 — the two groups are the literal `choiceGroups` array `create-relationship.tsx` builds beside this form (Opinions Mode and Alignment Setting, #760), from `MODE_OPTIONS` and `ALIGNMENT_SETTINGS` module constants. The count is the flow's two fixed dimensions, not data: nothing can hand this form one group, and a bordered block for 'no dimensions' would be a frame around a screen that cannot exist",
+  },
+  {
+    file: "components/auth/auth-hero-tiles.tsx",
+    receiver: "tiles.items",
+    reason:
+      "#1109 — the create flow moved under `/dashboard`, which puts stage 4's embedded sign-in form (and so the auth hero) in the census's closure. The tiles are the auth fixture's `stats` copy section (`sectionOf(copy, \"stats\")` in `login-view.tsx` and `register-view.tsx`), authored copy rather than a read, so the count is not data — and this card's remit stops at `/components/auth/**`, which it must not edit",
+  },
+  {
     file: "components/assessment-flow/template-card.tsx",
     receiver: "groups",
     reason:
@@ -304,12 +316,6 @@ export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
     receiver: "cards",
     reason:
       "a fixed strip, not a read: both callers (`console/overview.tsx`, `v1/admin-console-overview.tsx`) pass a literal array of cards",
-  },
-  {
-    file: "components/dashboard/relationship-cards.tsx",
-    receiver: "rows",
-    reason:
-      "the card list is mounted by `relationships-list.tsx`, which owns the panel — `data-relationships-empty` with the fixture's `empty`/`empty-filter` sections and its one action",
   },
   {
     file: "components/dashboard/relationship-detail.tsx",

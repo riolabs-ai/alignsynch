@@ -76,7 +76,7 @@ export async function GET(
   try {
     const exported = await exportReport({
       actorUserId: user.userId,
-      instanceRecordId: id,
+      sessionRecordId: id,
       reason: `report exported as ${format} from the report screen`,
       format,
     });

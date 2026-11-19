@@ -17,7 +17,15 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { requireAdmin, requireRole, roleAnswerFor, roleOfUser } from "@/lib/auth/require-role";
+import {
+  requireAdmin,
+  requireRole,
+  requireSpecReader,
+  roleAnswerFor,
+  roleOfUser,
+  specReaderAnswerFor,
+} from "@/lib/auth/require-role";
+import type { UserRole } from "@/content/role-ladder";
 
 const { notFound, redirect, currentUser, readUserProfileByUserId } = vi.hoisted(() => ({
   notFound: vi.fn((): never => {
@@ -35,7 +43,7 @@ vi.mock("@/lib/auth/session", () => ({ currentUser }));
 vi.mock("@/lib/db/user-profiles", () => ({ readUserProfileByUserId }));
 
 /** A profile row as `readUserProfileByUserId` hands it back — only `role` matters here. */
-const profileWithRole = (role: "member" | "admin") => ({
+const profileWithRole = (role: UserRole) => ({
   userId: "auth-user-1",
   handle: "ada-lovelace",
   displayName: "Ada Lovelace",
@@ -139,6 +147,70 @@ describe("requireRole", () => {
 
     await expect(requireAdmin()).rejects.toThrow(/connection refused/);
     expect(notFound).not.toHaveBeenCalled();
+  });
+});
+
+describe("the spec-reader gate (#1252)", () => {
+  /**
+   * **The one case that matters.** `support` is a rung *above* `stakeholder`, so a rung gate
+   * (`requireRole("stakeholder", …)`) would admit it — and the spec is closed to it. The refusal is
+   * the same 404 a member gets, and the same one an unknown URL gets.
+   */
+  it("refuses support, which outranks a stakeholder", async () => {
+    currentUser.mockResolvedValue({ userId: "auth-user-1", email: "ada@example.com", name: "Ada" });
+    readUserProfileByUserId.mockResolvedValue(profileWithRole("support"));
+
+    await expect(requireSpecReader()).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(notFound).toHaveBeenCalledTimes(1);
+    // Not a 403 and not a redirect: the page never confirms that it exists.
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("refuses a member, and a person with no profile row", async () => {
+    currentUser.mockResolvedValue({ userId: "auth-user-1", email: "ada@example.com", name: "Ada" });
+    readUserProfileByUserId.mockResolvedValue(profileWithRole("member"));
+    await expect(requireSpecReader()).rejects.toThrow("NEXT_NOT_FOUND");
+
+    vi.clearAllMocks();
+    currentUser.mockResolvedValue({ userId: "auth-user-2", email: "new@example.com", name: "" });
+    readUserProfileByUserId.mockResolvedValue(null);
+    await expect(requireSpecReader()).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("admits a stakeholder, an admin and an owner", async () => {
+    for (const role of ["stakeholder", "admin", "owner"] as const) {
+      vi.clearAllMocks();
+      const user = { userId: "auth-user-1", email: "ada@example.com", name: "Ada" };
+      currentUser.mockResolvedValue(user);
+      readUserProfileByUserId.mockResolvedValue(profileWithRole(role));
+
+      await expect(requireSpecReader()).resolves.toEqual({ user, role });
+      expect(redirect).not.toHaveBeenCalled();
+    }
+  });
+
+  it("sends a signed-out visitor to /login with the page they asked for", async () => {
+    await expect(requireSpecReader({ next: "/admin/spec/07-billing" })).rejects.toThrow(
+      "NEXT_REDIRECT:/login?next=%2Fadmin%2Fspec%2F07-billing",
+    );
+    expect(notFound).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The policy half, driven with no request: three answers, and none of them is a forbidden. This is
+   * the assertion that would fail if a later card "improved" the refusal into a 403.
+   */
+  it("has the same three answers as every other gate, and no fourth", () => {
+    const answers = {
+      signedOut: specReaderAnswerFor({ signedIn: false, role: null }),
+      member: specReaderAnswerFor({ signedIn: true, role: "member" }),
+      support: specReaderAnswerFor({ signedIn: true, role: "support" }),
+      reader: specReaderAnswerFor({ signedIn: true, role: "stakeholder" }),
+    };
+    expect(answers.signedOut).toEqual({ kind: "redirect", to: "/login?next=%2Fdashboard%2Fuser" });
+    expect(answers.member).toEqual({ kind: "not-found" });
+    expect(answers.support).toEqual({ kind: "not-found" });
+    expect(answers.reader).toEqual({ kind: "allow", role: "stakeholder" });
   });
 });
 

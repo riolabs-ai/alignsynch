@@ -62,12 +62,20 @@ vi.mock("next/navigation", () => ({
 
 import { GET as pricingStart } from "@/app/(marketing)/pricing/start/route";
 import { InviteWalk } from "@/components/assessment-flow/invite-walk";
+import { PricingCta } from "@/components/pricing/pricing-cta";
 import { PricingPlans } from "@/components/pricing/pricing-plans";
-import { billingPlanRows, BILLING_INTERVALS } from "@/data/billing-plans";
+import { BILLING_INTERVALS } from "@/data/billing-plans";
+import { MEMBERSHIP_PLANS } from "@/data/membership-plans";
 import { assessmentCreatePageCopy, PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { pricingPlans } from "@/lib/billing/catalogue";
+import {
+  POPULAR_PLAN_ID,
+  pricingBands,
+  pricingCards,
+  pricingHero,
+  pricingUnsure,
+} from "@/lib/pricing-page";
 import {
   carriedPlanOf,
   isPaidPlanTier,
@@ -77,7 +85,7 @@ import {
   serializePlanIntent,
   type PlanIntent,
 } from "@/lib/flow/plan-intent";
-import { pricingStartPath, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
+import { pricingCataloguePath, pricingStartPath, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { PLAN_INTENT_COOKIE } from "@/lib/flow/session";
 
 declare global {
@@ -118,6 +126,10 @@ describe("what a plan card can carry, and what it cannot", () => {
     expect(planIntentFromSearch(query({ plan: "principal", interval: "weekly" }))).toBeNull();
     expect(planIntentFromSearch(query({ plan: "enterprise", interval: "month" }))).toBeNull();
     expect(planIntentFromSearch(query({ plan: "principal", interval: "" }))).toBeNull();
+    // Since the Family plan was removed (2026-11-19) its tier is not one a card prices, so an
+    // address naming it carries nothing — a stale link cannot reselect a plan nobody sells.
+    expect(planIntentFromSearch(query({ plan: "principal", interval: "month" }))).toBeNull();
+    expect(planIntentFromSearch(query({ plan: "principal", interval: "year" }))).toBeNull();
   });
 
   it("survives the cookie round trip, and reads junk as nothing carried", () => {
@@ -150,67 +162,101 @@ describe("what a plan card can carry, and what it cannot", () => {
       expect(row === null ? null : PLAN_BILLING_TIER[row]).toBe(tier);
     }
     // …and what stage 5 actually receives keeps both halves of the choice.
-    const carried = carriedPlanOf({ planId: "principal", interval: "year" });
+    const carried = carriedPlanOf({ planId: "basic", interval: "month" });
     expect(carried).not.toBeNull();
-    expect(carried && PLAN_BILLING_TIER[carried.row]).toBe("principal");
-    expect(carried?.interval).toBe("year");
+    expect(carried && PLAN_BILLING_TIER[carried.row]).toBe("basic");
+    expect(carried?.interval).toBe("month");
+    // The monthly plan is that tier's only row, and the pair is matched exactly: the yearly SKU
+    // the owner delisted on 2026-11-19 claims no row, so a carried `basic/year` reads as no plan
+    // carried rather than as the monthly row at a yearly address.
+    expect(carried?.row).toBe("single");
+    expect(carriedPlanOf({ planId: "basic", interval: "year" })).toBeNull();
     expect(carriedPlanOf(null)).toBeNull();
+    // The removed Family plan's tier claims no row any more, so a cookie that still names it reads
+    // as no plan carried at all rather than as a fallback row.
+    const stale = Buffer.from(
+      JSON.stringify({ planId: "principal", interval: "month" }),
+      "utf8",
+    ).toString("base64url");
+    expect(carriedPlanOf(parsePlanIntent(stale))).toBeNull();
   });
 });
 
 describe("every /pricing action opens the flow's door (#1043)", () => {
   /**
-   * The grid as the page builds it, with rows coming from the table so the paid cards are sellable —
-   * the same projection `/pricing` renders, and the same `startHref` it now passes.
+   * The page's bands as `/pricing` builds them (#1127): the one plan the catalogue sells, no
+   * entitlement, so its card offers its own action. Rendered the way the page composes them, so the
+   * assertion is about the render a visitor gets rather than about a component in isolation.
    */
-  function grid(): string {
-    const plans = pricingPlans({
-      rows: billingPlanRows(),
-      source: "table",
-      entitledPlanId: null,
-      startHref: pricingStartPath(),
-    });
-    return renderToStaticMarkup(
-      createElement(PricingPlans, {
-        copy: sectionOf(pricingPageCopy, "plans"),
-        plans,
-        testMode: false,
-      }),
-    );
+  function bands(): { plans: string; cta: string } {
+    const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
+    const model = pricingBands(pricingPageCopy, false);
+    return {
+      plans: renderToStaticMarkup(
+        createElement(PricingPlans, {
+          hero: pricingHero(pricingPageCopy),
+          cards,
+          unsure: pricingUnsure({ copy: pricingPageCopy, cards }),
+          bands: model,
+        }),
+      ),
+      cta: renderToStaticMarkup(
+        createElement(PricingCta, {
+          heading: model.ctaHeading,
+          body: model.ctaBody,
+          label: model.ctaLabel,
+          href: model.ctaHref,
+        }),
+      ),
+    };
   }
 
-  it("carries the tier and the interval from every plan card that sells one", () => {
-    const html = grid();
-    for (const tier of CARRIED_TIERS) {
-      // The month toggle is the grid's default, so the address is the monthly one.
-      expect(html).toContain(
-        `href="${pricingStartPath({ planId: tier, interval: "month" })}"`.replaceAll("&", "&amp;"),
-      );
-      expect(html).toContain(`data-plan-carry="${tier}"`);
-      expect(html).toContain('data-plan-carry-interval="month"');
+  it("carries each plan's own tier and interval to the catalogue from every card", () => {
+    // #1127 — a plan is *chosen* here and *sold* nowhere: the card's action is the catalogue with
+    // its choice in the address (`/relationship-templates?from=pricing&plan=…&interval=…#catalog`),
+    // and no card reaches `/pricing/start` or a checkout any more. Each plan has ONE interval, so
+    // the address is the plan's own pair rather than a toggle position.
+    const { plans } = bands();
+    for (const plan of MEMBERSHIP_PLANS) {
+      const href = pricingCataloguePath({ planId: plan.tier, interval: plan.interval });
+      expect(plans).toContain(`href="${href.replaceAll("&", "&amp;")}"`);
+      expect(plans).toContain(`data-plan-cta="${plan.id}"`);
     }
-    // The carry is per row, not one shared address.
-    expect(CARRIED_TIERS.length).toBeGreaterThan(1);
+    // The carry is per card, not one shared address.
     expect(
-      new Set(CARRIED_TIERS.map((tier) => pricingStartPath({ planId: tier, interval: "month" })))
-        .size,
-    ).toBe(CARRIED_TIERS.length);
+      new Set(
+        MEMBERSHIP_PLANS.map((plan) =>
+          pricingCataloguePath({ planId: plan.tier, interval: plan.interval }),
+        ),
+      ).size,
+    ).toBe(MEMBERSHIP_PLANS.length);
   });
 
   it("leaves the general CTA carrying nothing, and opens no checkout and no sign-up", () => {
-    const html = grid();
-    // The free card's action is the general door: no tier in its address, so nothing to preselect.
-    expect(html).toContain(`href="${pricingStartPath()}"`);
-    expect(html).toMatch(/data-plan-general="free"/);
+    const { plans, cta } = bands();
+    // The closing band's action is the general door: no tier in its address, so nothing to
+    // preselect, and a choice left by an earlier visit is cleared by the route it names.
+    expect(cta).toContain(`href="${pricingCataloguePath()}"`);
     // Nothing on this page starts a checkout any more, and nothing sends a reader to `/register`:
-    // both were doors out of the flow (#1043).
-    expect(html).not.toContain("/api/billing/checkout");
-    expect(html).not.toContain('href="/register"');
-    expect(html).not.toContain('href="checkout"');
-    // The address every action lands on is the public Templates listing, via the one route.
-    for (const path of [TEMPLATE_CATALOGUE_PATH, "/pricing/start"]) {
-      expect(path).not.toBe("/api/billing/checkout");
+    // both were doors out of the flow (#1043). Nor does it collect a card — the create path stays
+    // payment-free (#1115 D3).
+    for (const html of [plans, cta]) {
+      expect(html).not.toContain("/api/billing/checkout");
+      expect(html).not.toContain('href="/register"');
+      expect(html).not.toContain('href="checkout"');
+      expect(html).not.toContain("<input");
     }
+  });
+
+  it("marks exactly one plan Most Popular, and it is the one the strip points at", () => {
+    const cards = pricingCards({ copy: pricingPageCopy, entitledPlanId: null });
+    const popular = cards.filter((card) => card.popular);
+    expect(popular).toHaveLength(1);
+    expect(popular[0]?.id).toBe(POPULAR_PLAN_ID);
+    const unsure = pricingUnsure({ copy: pricingPageCopy, cards });
+    // The strip names the ribboned plan and opens that plan's own door.
+    expect(unsure.body).toContain(popular[0]?.name ?? "");
+    expect(unsure.cta.href).toBe(popular[0]?.cta.href);
   });
 });
 
@@ -221,7 +267,7 @@ describe("the carry route", () => {
 
   it("writes the chosen pair and answers 303 to the catalogue", async () => {
     const response = await pricingStart(
-      new Request("https://alignsynch.test/pricing/start?plan=principal&interval=year"),
+      new Request("https://alignsynch.test/pricing/start?plan=basic&interval=year"),
     );
 
     expect(response.status).toBe(303);
@@ -231,7 +277,7 @@ describe("the carry route", () => {
     expect(written).toHaveLength(1);
     const cookie = written[0];
     expect(cookie?.name).toBe(PLAN_INTENT_COOKIE);
-    expect(parsePlanIntent(cookie?.value)).toEqual({ planId: "principal", interval: "year" });
+    expect(parsePlanIntent(cookie?.value)).toEqual({ planId: "basic", interval: "year" });
     // The flow's own cookie options: httpOnly, sameSite lax, one day.
     expect(cookie?.options).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/" });
     expect(cookie?.options?.maxAge).toBe(24 * 60 * 60);
@@ -267,9 +313,7 @@ let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 let posted: { planId?: string; interval?: string }[] = [];
 
-async function mountWalk(
-  carriedPlan?: PlanIntent & { row: "one" | "unlimited" },
-): Promise<HTMLDivElement> {
+async function mountWalk(carriedPlan?: PlanIntent & { row: "single" }): Promise<HTMLDivElement> {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -277,7 +321,7 @@ async function mountWalk(
     root?.render(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,
@@ -324,19 +368,19 @@ afterEach(async () => {
 
 describe("stage 5 opens with the carried plan already selected", () => {
   it("draws the row checked, names it, and continues with the carried tier and interval", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "year", row: "unlimited" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
 
     // The render says what it carried — the attribute the acceptance quotes.
     const section = where.querySelector("[data-plan-carried]");
-    expect(section?.getAttribute("data-plan-carried")).toBe("principal");
-    expect(section?.getAttribute("data-plan-carried-interval")).toBe("year");
+    expect(section?.getAttribute("data-plan-carried")).toBe("basic");
+    expect(section?.getAttribute("data-plan-carried-interval")).toBe("month");
 
     // …and the row itself is the selected one, before anything is pressed.
     const checked = where.querySelector<HTMLInputElement>('input[name="plan"]:checked');
-    expect(checked?.value).toBe("unlimited");
+    expect(checked?.value).toBe("single");
     // The panel's own recap names the plan the money would buy (#1036's line, now filled).
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "unlimited")} · ${itemLabel(PLANS, "unlimited-price")}${itemLabel(PLANS, "per")}`,
+      `${itemLabel(PLANS, "single")} · ${itemLabel(PLANS, "single-price")}${itemLabel(PLANS, "single-interval")}`,
     );
 
     // A checked row fires no `change`, so the panel carries one control that opens the card step.
@@ -347,24 +391,24 @@ describe("stage 5 opens with the carried plan already selected", () => {
 
     expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
     // The checkout names the tier, and the interval the reader chose on `/pricing`.
-    expect(posted).toEqual([{ planId: "principal", interval: "year" }]);
+    expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
   });
 
   it("carries the row, not the walk's own id, whatever the interval", async () => {
-    const where = await mountWalk({ planId: "basic", interval: "month", row: "one" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
     await press(where, '[data-pay-action="continue"]');
 
     expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
-    expect(posted[0]?.planId).not.toBe("one");
+    expect(posted[0]?.planId).not.toBe("single");
   });
 
   it("restores the carried choice on Back instead of dropping it", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "month", row: "unlimited" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
     await press(where, '[data-pay-action="continue"]');
     await press(where, '[data-pay-action="plan"]');
 
     expect(where.querySelector<HTMLInputElement>('input[name="plan"]:checked')?.value).toBe(
-      "unlimited",
+      "single",
     );
     expect(where.querySelector('[data-pay-action="continue"]')).not.toBeNull();
   });
@@ -380,7 +424,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
     // With nothing carried, choosing the row is still the act (#1031): no continue control.
     expect(where.querySelector('[data-pay-action="continue"]')).toBeNull();
 
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
     expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
   });
 
@@ -388,7 +432,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
     // The page is the only place a cookie can be read: it measures the intent and hands the walk a
     // row. A source assertion because the page needs a database and a session to render.
     const page = readFileSync(
-      join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+      join(process.cwd(), "components/flow/template-create/invite.tsx"),
       "utf8",
     );
     expect(page).toContain("carriedPlanOf(parsePlanIntent(");
@@ -396,10 +440,12 @@ describe("stage 5 opens with the carried plan already selected", () => {
     expect(page).toContain("{...(carriedPlan === null ? {} : { carriedPlan })}");
   });
 
-  it("keeps the plan rows' own words: Basic and Principal, authored in the fixture", () => {
-    // #1043 changes where a plan is chosen, never what it is called (#1035's rows stand).
-    expect(itemLabel(PLANS, "one")).toBe("Basic");
-    expect(itemLabel(PLANS, "unlimited")).toBe("Principal");
+  it("keeps the plan row's own words: the catalogue's one plan", () => {
+    // #1043 changes where a plan is chosen, never what it is called; #1127 set the catalogue and
+    // the owner has narrowed it twice since — Family first, then the yearly SKU (2026-11-19) —
+    // leaving Basic, whose name is now the `billing_plan` mirror's own word for that tier.
+    expect(itemLabel(PLANS, "single")).toBe("Basic");
+    expect(itemLabel(PLANS, "single-note")).toBe("1 relationship");
     // …and the copy that only the deleted checkout button read is gone, so nothing names a state
     // this product no longer has on `/pricing`.
     expect((pricingPageCopy.sections ?? []).flatMap((section) => section.items ?? [])).not.toEqual(

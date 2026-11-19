@@ -32,9 +32,11 @@ function rungBelow(role: UserRole): UserRole | null {
 }
 
 describe("the role ladder", () => {
-  it("is member < support < admin < owner, in that order", () => {
-    expect(ROLE_LADDER).toEqual(["member", "support", "admin", "owner"]);
-    expect(USER_ROLES.map((role) => roleRank(role))).toEqual([0, 1, 2, 3]);
+  it("is member < stakeholder < support < admin < owner, in that order", () => {
+    // #1252 — `stakeholder` is inserted *between* member and support, which is what keeps every
+    // existing `roleAdmits("support" | "admin", …)` floor refusing it.
+    expect(ROLE_LADDER).toEqual(["member", "stakeholder", "support", "admin", "owner"]);
+    expect(USER_ROLES.map((role) => roleRank(role))).toEqual([0, 1, 2, 3, 4]);
   });
 
   it("admits an equal or higher rung on a surface gate, and never a lower one", () => {
@@ -58,7 +60,7 @@ describe("the role ladder", () => {
     for (const action of ADMIN_ACTIONS) expect(can(null, action)).toBe(false);
   });
 
-  it("parses the four rungs and refuses a role that is not one", () => {
+  it("parses the five rungs and refuses a role that is not one", () => {
     for (const role of USER_ROLES) expect(zUserRole.safeParse(role).success).toBe(true);
     expect(zUserRole.safeParse("superuser").success).toBe(false);
   });
@@ -96,23 +98,31 @@ describe("can()", () => {
     expect(can("admin", "owner.transfer")).toBe(false);
   });
 
-  it("lets a member take exactly the seven initiator actions, and nothing else", () => {
+  it("lets a member take exactly the eleven own-row actions, and nothing else", () => {
     // #533 phase 2 lowered five names to `member`: the member's own template and relationship
     // writes, audited through the same `act()` the staff path uses. #619 added the sixth —
     // `relationship.complete`, the payer taking the fee — because the member whose card it is must
     // be able to finish their own relationship. #623 added the seventh, `relationship.edit`, for
     // the same reason from the other end: the row a person created is the row they may correct, and
     // staff reach the identical action by passing `audience: "staff"` rather than by a second name.
+    // #1121 added the eighth (the one free week) and #1135 the last four — cancel an invitation,
+    // abandon a draft, leave a running Stage 6, ask support for removal. Each writes a row the actor
+    // already holds a seat on, and each re-asks that seat inside its transaction.
     // Every other action keeps its support-or-above floor, so this list is the whole of what a
-    // non-staff seat may take — and it is pinned by name, so an eighth rung being lowered is a
+    // non-staff seat may take — and it is pinned by name, so a twelfth rung being lowered is a
     // decision somebody makes here.
     const memberFloor = ADMIN_ACTIONS.filter((action) => requirementFor(action) === "member");
     expect([...memberFloor].sort()).toEqual([
+      "relationship.abandon",
       "relationship.aspects",
+      "relationship.cancel-invite",
+      "relationship.claim-extension",
       "relationship.complete",
       "relationship.create",
       "relationship.edit",
+      "relationship.leave",
       "relationship.publish",
+      "relationship.removal-request",
       "relationship.republish",
       "template.draft",
     ]);

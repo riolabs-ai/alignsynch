@@ -42,12 +42,18 @@ import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
+  abandonRelationshipAction,
+  cancelInviteAction,
+  claimExtensionAction,
   completeRelationshipAction,
   editRelationshipAction,
   forkRelationshipTemplateAction,
+  leaveRelationshipAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
+  requestRemovalAction,
+  resendInviteAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -60,11 +66,16 @@ export const metadata: Metadata = {
 
 export default async function MemberRelationshipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  /** #1121 — `?from=extend` only. Every other fact on this page is read, never passed in. */
+  searchParams?: Promise<{ from?: string | string[] }>;
 }) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
   const { id } = await params;
+  const query = searchParams === undefined ? {} : await searchParams;
+  const queryFrom = Array.isArray(query.from) ? query.from[0] : query.from;
 
   let view: Awaited<ReturnType<typeof readMyRelationship>>;
   try {
@@ -119,6 +130,17 @@ export default async function MemberRelationshipPage({
         <RelationshipDetail
           copy={dashboardRelationshipDetailPageCopy}
           relationship={view}
+          /*
+            #1124 — **the Settings tab's two values.** Read from the same edit state the panel
+            trigger uses (#623), so the tab and the editor cannot disagree about what the
+            relationship is configured with. `undefined` when the read could not answer — the
+            tab then says who owns these rather than printing two defaults nobody chose.
+          */
+          settings={
+            editState === undefined
+              ? undefined
+              : { mode: editState.mode, setting: editState.setting }
+          }
           /*
             #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
             render inline in the 320 px actions rail, so the detail and its editor described the
@@ -177,6 +199,24 @@ export default async function MemberRelationshipPage({
           onRepublish={republishInviteAction}
           onComplete={completeRelationshipAction}
           onFork={forkRelationshipTemplateAction}
+          onClaimExtension={claimExtensionAction}
+          /*
+            #1135 — the five ending verbs. Every one is a server action passed in (E34), and each
+            re-asks the seat inside its own transaction; `view.hygiene` is only what decides which of
+            them this render draws.
+          */
+          onCancelInvite={cancelInviteAction}
+          onResendInvite={resendInviteAction}
+          onAbandon={abandonRelationshipAction}
+          onLeave={leaveRelationshipAction}
+          onRequestRemoval={requestRemovalAction}
+          /*
+            #1121 — `?from=extend` is the one query string this screen keeps, and it is an arrival
+            rather than a state: the banner says a week was just added, and every state on the page
+            is derived from rows. Next 16 hands `searchParams` as a Promise, unwrapped after the
+            gate so a refusal never depends on the URL being well-formed.
+          */
+          arrival={queryFrom === "extend" ? "extend" : null}
           /*
             #785 — where a forked copy lands. Passed rather than imported inside the component:
             `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no database), and the

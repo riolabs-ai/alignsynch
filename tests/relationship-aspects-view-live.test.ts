@@ -4,16 +4,16 @@
  *
  * The owner's report was a display defect, and the trace it came with is one sentence long: view a
  * relationship whose Aspect was added at stage 3 → the Aspect is not in the list. The write was
- * never in question. `createInstanceFromTemplate()` writes the creator's list onto the **instance
+ * never in question. `createSessionFromTemplate()` writes the creator's list onto the **session
  * record** (`session.record_id`) and keeps `relationship.template_id` naming the template it copied
  * (V23 pins the version to that template, so the column cannot move); every reader on the
  * relationship screen read `template_id`, i.e. the catalogue's own Aspects. Saved, and never drawn.
  *
  * So this file drives the customer's own path and then asks the read:
  *
- *   create   `createInstanceFromTemplate()` with three template Aspects and a fourth the creator
+ *   create   `createSessionFromTemplate()` with three template Aspects and a fourth the creator
  *            typed at stage 3 — the flow's list, ids and all, as the browser posts it.
- *   the rows the instance copy holds four; the **template** still holds three. That is the proof
+ *   the rows the session copy holds four; the **template** still holds three. That is the proof
  *            the write path was correct and the read was not.
  *   the read `readMyRelationship()` hands the detail screen the creator's four, the fourth by
  *            name, and `aspectCount` counts them rather than the template's.
@@ -29,7 +29,7 @@ import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Assessment } from "@/content/assessment";
-import { createInstanceFromTemplate } from "@/lib/flow/store";
+import { createSessionFromTemplate } from "@/lib/flow/store";
 import { readMyRelationship, saveAspects } from "@/lib/member/relationships";
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
@@ -85,7 +85,7 @@ function templateOf(): Assessment {
 }
 
 /** Every row this file creates, so `afterAll` can remove exactly them. */
-let instanceRecordId: string | undefined;
+let sessionRecordId: string | undefined;
 let relationshipId: string | undefined;
 
 beforeAll(async () => {
@@ -110,7 +110,7 @@ beforeAll(async () => {
     [VERSION, SOURCE, JSON.stringify(templateOf()), NOW, INITIATOR],
   );
 
-  const created = await createInstanceFromTemplate({
+  const created = await createSessionFromTemplate({
     templateRecordId: SOURCE,
     initiatorName: "Avery",
     counterpartyName: "Rowan",
@@ -137,10 +137,10 @@ beforeAll(async () => {
       { id: "new-1", prompt: ADDED_PROMPT, leftValue: "Never", rightValue: "Daily" },
     ],
   });
-  instanceRecordId = created.instanceRecordId;
+  sessionRecordId = created.sessionRecordId;
   const bound = await pool.query<{ relationship_id: string }>(
     "SELECT relationship_id FROM session WHERE record_id = $1",
-    [created.instanceRecordId],
+    [created.sessionRecordId],
   );
   relationshipId = bound.rows[0]?.relationship_id;
 });
@@ -167,7 +167,7 @@ afterAll(async () => {
   }
   // The version is pinned by the relationship and owned by the record, so it goes between them.
   await pool.query("DELETE FROM template_version WHERE template_record_id = $1", [SOURCE]);
-  for (const recordId of [instanceRecordId, SOURCE]) {
+  for (const recordId of [sessionRecordId, SOURCE]) {
     if (recordId === undefined) continue;
     await pool.query("DELETE FROM opinion WHERE session_record_id = $1", [recordId]);
     await pool.query("DELETE FROM item WHERE record_id = $1", [recordId]);
@@ -181,7 +181,7 @@ live("#936 · a relationship shows the Aspect its creator added", () => {
   it("writes the added Aspect onto the relationship's own copy, not onto the template", async () => {
     const copy = await pool.query<{ item_id: string; prompt: string }>(
       "SELECT item_id, prompt FROM item WHERE record_id = $1 ORDER BY position",
-      [instanceRecordId],
+      [sessionRecordId],
     );
     expect(copy.rows.map((row) => row.prompt)).toEqual([...TEMPLATE_PROMPTS, ADDED_PROMPT]);
     // The placeholder never becomes an id: every row in `item` is a real handle (#699).
@@ -206,7 +206,7 @@ live("#936 · a relationship shows the Aspect its creator added", () => {
     // The count the card prints is the same list's length, not the template's (#936).
     expect(view.aspectCount).toBe(4);
     // The list names the record it came from: the copy, which is what the page's writers send back.
-    expect(view.templateId).toBe(instanceRecordId);
+    expect(view.templateId).toBe(sessionRecordId);
   });
 
   it("round-trips a save through the same copy, and leaves the template alone", async () => {

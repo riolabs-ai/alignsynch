@@ -23,16 +23,15 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { templateSlugOf } from "@/lib/db/template-library";
 import { serializeCreateDraft, whoDraft } from "@/lib/flow/create-draft";
+import { planIntentFromSearch, serializePlanIntent } from "@/lib/flow/plan-intent";
 import {
   CREATE_DRAFT_COOKIE_MAX_AGE,
   createDraftCookieName,
   flowCookieOptions,
+  PLAN_INTENT_COOKIE,
+  PLAN_INTENT_COOKIE_MAX_AGE,
 } from "@/lib/flow/session";
-import {
-  createModePath,
-  createRelationshipPath,
-  RELATIONSHIP_TEMPLATES_PATH,
-} from "@/lib/flow/paths";
+import { createModePath, createRelationshipPath, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
@@ -46,8 +45,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!step.ok) {
     // A post that named no template has no screen to return to; the library lists what can be
     // copied, which is the honest answer to "start over".
-    const back =
-      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createRelationshipPath(templateSlug);
+    const back = templateSlug === "" ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(templateSlug);
     const target = new URL(back, request.url);
     target.searchParams.set("problem", step.problem.reason);
     target.searchParams.set("field", step.problem.field);
@@ -55,7 +53,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (templateRecordId === "") {
-    return NextResponse.redirect(new URL(RELATIONSHIP_TEMPLATES_PATH, request.url), 303);
+    return NextResponse.redirect(new URL(TEMPLATE_LIBRARY_PATH, request.url), 303);
   }
 
   const jar = await cookies();
@@ -65,9 +63,33 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(CREATE_DRAFT_COOKIE_MAX_AGE),
   );
 
+  /**
+   * **The plan the reader chose on `/pricing`, written where the flow reads it (#1127).**
+   *
+   * The pair arrives as two hidden fields on stage 1's form — the address carried it from the
+   * catalogue, and the form is what makes a GET-only address into a write. It is validated again
+   * here with the same reader `/pricing` uses, so a crafted post writes nothing rather than a tier
+   * the catalogue does not sell, and the cookie then rides stages 2–5 exactly as it did when
+   * `/pricing/start` wrote it. Nothing is charged and no row is written: stage 5's own acts are
+   * still the only ones that sell anything.
+   */
+  const planIntent = planIntentFromSearch({
+    get: (name) => {
+      const value = form.get(name);
+      return typeof value === "string" && value !== "" ? value : null;
+    },
+  });
+  if (planIntent !== null) {
+    jar.set(
+      PLAN_INTENT_COOKIE,
+      serializePlanIntent(planIntent),
+      flowCookieOptions(PLAN_INTENT_COOKIE_MAX_AGE),
+    );
+  }
+
   return NextResponse.redirect(
     new URL(
-      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(templateSlug),
+      templateSlug === "" ? TEMPLATE_LIBRARY_PATH : createModePath(templateSlug),
       request.url,
     ),
     303,

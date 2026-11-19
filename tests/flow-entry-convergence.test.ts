@@ -64,50 +64,60 @@ const STAGES = [
 ] as const;
 
 /**
- * The four in-product segments that carry a create door. `dashboard/relationships` is the parent
- * card's (`t_c99072cc`); the other three are this card's — and they are exactly the surfaces whose
- * doors point at a stage address.
+ * The three in-product segments that carry a create door, each with the interceptor directory that
+ * renders a stage into its slot. `dashboard/relationships` is the parent card's (`t_c99072cc`); the
+ * other two are this card's.
+ *
+ * **#1109 phase 2 changed two things here and both are load-bearing.** The retired
+ * `templates/relationship` host went with its tree, and each remaining host's marker changed,
+ * because the flow's address is `/dashboard/templates/<slug>/create…` now: a **child** of the
+ * templates host's own segment — so `(.)` — and a *sibling* of the other two, which therefore read
+ * the path from the root with `(...)`.
  */
 const HOSTS = [
-  "app/(mainlayout)/dashboard/relationships",
-  "app/(mainlayout)/assessment",
-  "app/(mainlayout)/templates/relationship",
-  "app/(mainlayout)/dashboard/templates",
+  {
+    host: "app/(mainlayout)/dashboard/relationships",
+    slot: "(...)dashboard/templates/[slug]/create",
+  },
+  { host: "app/(mainlayout)/assessment", slot: "(...)dashboard/templates/[slug]/create" },
+  { host: "app/(mainlayout)/dashboard/templates", slot: "(.)[slug]/create" },
 ] as const;
 
-const slotPath = (host: string, suffix: string) =>
-  `${host}/@flow/(...)templates/relationship/[slug]/create${suffix === "" ? "" : `/${suffix}`}/page.tsx`;
+const slotPath = (host: (typeof HOSTS)[number], suffix: string) =>
+  `${host.host}/@flow/${host.slot}${suffix === "" ? "" : `/${suffix}`}/page.tsx`;
 
+/**
+ * The stage module each mounting renders — the module home #1109 moved out of `app/`, which is what
+ * lets one component be a page and a slot child at once. The route files are thin wrappers.
+ */
 const stageModule = (suffix: string) =>
-  `app/(mainlayout)/templates/relationship/[slug]/create${suffix === "" ? "" : `/${suffix}`}`;
+  `@/components/flow/template-create/${suffix === "" ? "create" : suffix}`;
 
 describe("every in-product segment draws the flow's dialog over itself", () => {
-  it("declares the slot and a layout that renders it, on all four segments", () => {
-    for (const host of HOSTS) {
-      const layout = source(`${host}/layout.tsx`);
+  it("declares the slot and a layout that renders it, on all three segments", () => {
+    for (const entry of HOSTS) {
+      const layout = source(`${entry.host}/layout.tsx`);
       // The slot is a sibling of the page, not a wrapper with chrome of its own.
-      expect(layout, `${host} does not render its flow slot`).toContain("{flow}");
-      expect(layout, `${host} does not render the page`).toContain("{children}");
-      expect(layout, `${host} draws chrome a page did not ask for`).not.toContain("<main");
+      expect(layout, `${entry.host} does not render its flow slot`).toContain("{flow}");
+      expect(layout, `${entry.host} does not render the page`).toContain("{children}");
+      expect(layout, `${entry.host} draws chrome a page did not ask for`).not.toContain("<main");
       // ...and the closed state draws nothing at all.
       expect(
-        source(`${host}/@flow/default.tsx`),
-        `${host}'s closed slot draws something`,
+        source(`${entry.host}/@flow/default.tsx`),
+        `${entry.host}'s closed slot draws something`,
       ).toContain("return null");
     }
   });
 
   it("intercepts all five stages, each as the stage's own module, mounted as a dialog", () => {
-    for (const host of HOSTS) {
+    for (const entry of HOSTS) {
       for (const [suffix] of STAGES) {
-        const file = slotPath(host, suffix);
+        const file = slotPath(entry, suffix);
         expect(exists(file), `${file} does not exist`).toBe(true);
         const text = source(file);
         // The *same* module a deep link, a refresh and an invitation link land on: one stage
         // component, two mountings — the property the parent card's shell is built on.
-        expect(text, `${file} re-implements a stage`).toContain(
-          `from "@/${stageModule(suffix)}/page"`,
-        );
+        expect(text, `${file} re-implements a stage`).toContain(`from "${stageModule(suffix)}"`);
         expect(text, `${file} does not mount the stage as a dialog`).toContain(
           "mount={FLOW_MOUNT_DIALOG}",
         );
@@ -119,12 +129,14 @@ describe("every in-product segment draws the flow's dialog over itself", () => {
 
   it("declares no slot anywhere a stage is already the screen", () => {
     // A slot on the product shell would intercept one stage navigating to the next (stage 3's
-    // "Continue" is a link) and draw a modal over the flow itself. The four hosts are the set.
+    // "Continue" is a link) and draw a modal over the flow itself. The three hosts are the set —
+    // and the flow's own `[slug]/create` pages carry no slot, which is what keeps a stage advance
+    // a page-to-page navigation.
     const slots = readdirSync(join(ROOT, "app/(mainlayout)"), { recursive: true })
       .map((entry) => String(entry))
       .filter((entry) => entry.split("/").includes("@flow"))
       .map((entry) => `app/(mainlayout)/${entry.split("/@flow")[0]}`);
-    expect([...new Set(slots)].sort()).toEqual([...HOSTS].sort());
+    expect([...new Set(slots)].sort()).toEqual(HOSTS.map((entry) => entry.host).sort());
   });
 });
 
@@ -184,9 +196,19 @@ describe("the marketing surfaces keep navigating", () => {
         "FlowEntryLink",
       );
     }
-    // A marketing action still **navigates** — it is a link, not the intercepted dialog — but since
+    // A marketing action still **navigates** — it is a link, not the intercepted dialog — and since
     // #1042 its destination is the flow's stage 1 for every viewer rather than the sign-up form.
-    expect(source("app/(marketing)/relationship-types/page.tsx")).toContain("startViewer(");
+    // #1127 moved the *catalogue's* own actions one step earlier in the same walk: the v2 hero's
+    // "Browse Templates" and "Start With the Most Popular" open a template's own public page, and it
+    // is that page whose one action is `startPathFor()` — stage 1, carrying the template. Both are
+    // navigations, neither mounts the door, and the stage-1 address is still the only door.
+    const catalogue = source("app/(marketing)/relationship-templates/page.tsx");
+    expect(catalogue).toContain("relationshipTypePath(");
+    expect(catalogue).not.toContain("startViewer(");
+    expect(source("app/(marketing)/relationship-templates/[slug]/page.tsx")).toContain(
+      "TemplateDetail",
+    );
+    expect(source("lib/template-detail.ts")).toContain("startPathFor(");
     expect(source("lib/start-path.ts")).toContain("createRelationshipPath(typeId)");
     expect(source("lib/start-path.ts")).not.toContain("registerPathFor");
   });
@@ -205,6 +227,12 @@ describe("the marketing surfaces keep navigating", () => {
       .sort();
     expect(importers).toEqual([
       "components/assessment-flow/template-card.tsx",
+      /*
+       * #1130 — a My Template's own page draws `Create Relationship` as the same door: it is the same
+       * template the Library shelf opens, so a document load here would lose the interception for the
+       * one entry a member is most likely to take.
+       */
+      "components/dashboard/my-template-detail.tsx",
       "components/dashboard/relationship-cards.tsx",
       /*
        * #975 D10 — a relationship's own screen draws the same doors its card does (the publish gate's

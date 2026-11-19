@@ -1,7 +1,7 @@
 /**
  * A claim binds a browser to one party, and never reassigns a session (#202).
  *
- * The defect this file covers was found against a seeded instance: a signed-in Initiator
+ * The defect this file covers was found against a seeded session: a signed-in Initiator
  * who opened their own invitation link spent the token, and from then on their answers were
  * recorded as the Counterparty's — silently, so the Gap was computed between one person and
  * themselves. Three rules came out of it, and each has a test here:
@@ -18,10 +18,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
-import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
+import { JoinAcceptStep } from "@/components/assessment-flow/join-accept-step";
+import { JoinAccountStep } from "@/components/assessment-flow/join-account-step";
+import { JoinInviteStep } from "@/components/assessment-flow/join-invite-step";
 import { InviteView } from "@/components/assessment-flow/invite-view";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
 import { loginPageCopy } from "@/data/pages/login";
 import { signInDestination } from "@/lib/auth/next-path";
@@ -116,9 +118,9 @@ describe("partyTokensFrom", () => {
     expect(
       partyTokensFrom(
         jar([
-          { name: "flow_party_instance-a", value: "token-a" },
-          { name: "flow_invite_instance-a", value: "invite-a" },
-          { name: "flow_party_instance-b", value: "token-b" },
+          { name: "flow_party_session-a", value: "token-a" },
+          { name: "flow_invite_session-a", value: "invite-a" },
+          { name: "flow_party_session-b", value: "token-b" },
           { name: "theme", value: "dark" },
         ]),
       ),
@@ -126,7 +128,7 @@ describe("partyTokensFrom", () => {
   });
 
   it("ignores a cleared cookie, so an empty value is not a party", () => {
-    expect(partyTokensFrom(jar([{ name: "flow_party_instance-a", value: "" }]))).toEqual([]);
+    expect(partyTokensFrom(jar([{ name: "flow_party_session-a", value: "" }]))).toEqual([]);
     expect(partyTokensFrom(jar([]))).toEqual([]);
   });
 });
@@ -151,15 +153,18 @@ describe("the invite fixture carries every band the page can ask for", () => {
     }
   });
 
-  it("names the party being joined, and the confirmation that says so", () => {
-    const claim = sectionOf(invitePageCopy, "claim");
-    expect(itemLabel(claim, "join")).toContain("{counterparty}");
-    expect(itemLabel(claim, "join")).toContain("the Counterparty");
-    expect(itemLabel(claim, "confirm")).toContain("{counterparty}");
+  it("names the two fields that say who is joining, on the step that asks for them", () => {
+    const account = sectionOf(invitePageCopy, "account");
+    // #1115 task 4 — the confirmation checkbox is retired; the two fields are the statement.
+    expect(itemLabel(account, "name").length).toBeGreaterThan(0);
+    expect(itemLabel(account, "email").length).toBeGreaterThan(0);
+    // #1125 — and they are asked on `Join`, the second of the three steps.
+    expect(itemLabel(sectionOf(invitePageCopy, "steps"), "2")).toBe("Join");
+    expect(sectionOf(invitePageCopy, "accept").heading).toBe("Accept the Invitation");
   });
 
-  it("has an answering-party band on the instance screen for both roles", () => {
-    const viewer = sectionOf(assessmentInstancePageCopy, "viewer");
+  it("has an answering-party band on the session screen for both roles", () => {
+    const viewer = sectionOf(assessmentSessionPageCopy, "viewer");
     expect(itemLabel(viewer, "initiator")).toContain("{name}");
     expect(itemLabel(viewer, "initiator")).toContain("the Initiator");
     expect(itemLabel(viewer, "counterparty")).toContain("the Counterparty");
@@ -173,11 +178,21 @@ describe("the invite fixture carries every band the page can ask for", () => {
 function preview(over: Partial<InvitePreview> = {}): InvitePreview {
   return {
     state: "claimable",
-    instanceRecordId: "instance-1",
+    sessionRecordId: "session-1",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
     templateTitle: "Relationship Basics",
     viewerRole: null,
+    relationshipTitle: "Staying Close",
+    templateSummary: "Relationship Basics, answered by Avery and Rowan.",
+    mode: "basic",
+    setting: "soft",
+    aspects: [
+      {
+        id: "aspect-contact",
+        prompt: "How does how often you are in touch compare to what each wants?",
+      },
+    ],
     ...over,
   };
 }
@@ -186,11 +201,30 @@ function inviteMarkup(input: Parameters<typeof InviteView>[0]): string {
   return renderToStaticMarkup(createElement(InviteView, input));
 }
 
-function wizardMarkup(input: Parameters<typeof CounterpartyWizard>[0]): string {
-  return renderToStaticMarkup(createElement(CounterpartyWizard, input));
+function stepMarkup(input: {
+  step: "invite" | "account" | "accept";
+  refusal?: "email-mismatch" | "already-bound";
+}): string {
+  const copy = invitePageCopy;
+  const token = "token-1";
+  const base = { copy, preview: preview(), token };
+  if (input.step === "invite") return renderToStaticMarkup(createElement(JoinInviteStep, base));
+  if (input.step === "account") {
+    return renderToStaticMarkup(
+      createElement(JoinAccountStep, {
+        ...base,
+        ...(input.refusal === undefined ? {} : { refusal: input.refusal }),
+      }),
+    );
+  }
+  return renderToStaticMarkup(
+    createElement(JoinAcceptStep, {
+      ...base,
+      details: { name: "Rowan", email: "rowan@example.test" },
+      ...(input.refusal === undefined ? {} : { refusal: input.refusal }),
+    }),
+  );
 }
-
-const CLAIM_CONTROL = "Accept the invitation";
 
 describe("the invitation's refusal bands", () => {
   it("refuses the Initiator their own invitation, and offers no control that would take it", () => {
@@ -210,7 +244,7 @@ describe("the invitation's refusal bands", () => {
       preview: preview({ viewerRole: "counterparty" }),
     });
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
-    expect(html).not.toContain(CLAIM_CONTROL);
+    expect(html).not.toContain('data-primary-action="accept"');
   });
 
   it("does not repeat the token's own state as a second refusal", () => {
@@ -225,99 +259,75 @@ describe("the invitation's refusal bands", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The onboarding wizard (#t_0aa81144)
+ * The join's three steps — one primary each, and the claim last (#1125)
  * ------------------------------------------------------------------ */
 
-describe("the counterparty wizard", () => {
-  it("step 1 says who invited them and what this is, and claims nothing", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 1,
-      viewerName: null,
-    });
-    expect(html).toContain("Avery invited you to answer Relationship Basics.");
-    // #825 — the rail is the flow's five stages, and this screen is Account (stage 4).
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain('data-step-state="current"');
-    expect(html).not.toContain('name="confirm"');
+describe("the counterparty's join", () => {
+  it("step 1 invites: one primary that moves to step 2, and a decline that claims nothing", () => {
+    const html = stepMarkup({ step: "invite" });
+    // One primary action, and it addresses the next step rather than posting a claim.
+    expect(html).toContain('data-primary-action="join"');
     expect(html).toContain('href="/invite/token-1?step=2"');
+    expect(html).not.toContain('action="/invite/token-1/claim"');
+    // The quiet control is a POST: a prefetched link must not end somebody's invitation.
+    expect(html).toContain('action="/invite/token-1/decline"');
+    expect(html).toContain("Not for you? Decline the invitation");
   });
 
-  it("step 2 explains the order, and the back link returns to step 1 with the token", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 2,
-      viewerName: null,
-    });
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain("You can change any opinion until you accept the session.");
-    expect(html).toContain('href="/invite/token-1"');
-    expect(html).toContain('href="/invite/token-1?step=3"');
+  it("step 1 says who is being joined, who pays, and what the two of them will answer", () => {
+    const html = stepMarkup({ step: "invite" });
+    expect(html).toContain("Avery invited you to align on Staying Close");
+    expect(html).toContain("You’re never charged.");
+    expect(html).toContain("Avery covers this relationship.");
+    expect(html).toContain("The 1 Aspects");
+    expect(html).toContain("How It Works");
+    expect(html).toContain("Alignment Tolerance");
   });
 
-  it("step 3 signed out offers sign-in and sign-up, both carrying the step URL as next", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: null,
-    });
-    expect(html).toContain("Stage 4 of 5");
-    expect(html).toContain("Accepting costs you nothing");
-    expect(html).toContain(
-      'href="/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
-    );
-    expect(html).toContain(
-      'href="/register?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
-    );
-    expect(html).not.toContain('name="confirm"');
-  });
-
-  it("step 3 signed in is the one screen that can claim", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: "Rowan",
-    });
-    expect(html).toContain("You are signed in as Rowan.");
-    expect(html).toContain('action="/invite/token-1/claim"');
-    expect(html).toContain('name="confirm"');
+  it("step 2 asks for two fields and posts them to the carrier", () => {
+    const html = stepMarkup({ step: "account" });
+    expect(html).toContain('name="name"');
+    expect(html).toContain('name="email"');
     expect(html).toContain('value="Rowan"');
-    expect(html).toContain(CLAIM_CONTROL);
+    expect(html).toContain('action="/invite/token-1/join"');
+    expect(html).not.toContain('type="password"');
+    expect(html).not.toContain('name="confirm"');
     expect(html).not.toContain('href="/login?next=');
+    expect(html).not.toContain('href="/register?next=');
   });
 
-  it("draws the store's refusal sentence on the step the claim was refused from", () => {
-    const html = wizardMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "token-1",
-      step: 3,
-      viewerName: "Rowan",
-      refusal: "unconfirmed",
-    });
-    expect(html).toContain("Nothing was claimed: the claim did not confirm joining as Rowan.");
+  it("step 3 is the one acceptance: the carried fields, the claim, and the suggestion", () => {
+    const html = stepMarkup({ step: "accept" });
+    expect(html).toContain('action="/invite/token-1/claim"');
+    expect(html).toContain('method="post"');
+    expect(html).toContain('data-primary-action="accept"');
+    expect(html).toContain('name="name" value="Rowan"');
+    expect(html).toContain('name="email" value="rowan@example.test"');
+    expect(html).toContain("Accept Invitation");
+    // The bundle's optional suggestion, collapsed, and it edits nothing.
+    expect(html).toContain("<details");
+    expect(html).toContain("Suggest a Change to the Aspects");
+    expect(html).toContain("The Aspects stay as they are unless they change them.");
+  });
+
+  it("draws the store's refusal sentence beside the acceptance that can retry it", () => {
+    const html = stepMarkup({ step: "accept", refusal: "email-mismatch" });
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("this invitation was sent to a different address");
   });
 });
 
 /* ------------------------------------------------------------------ *\
- * What the instance screen renders
+ * What the session screen renders
  * ------------------------------------------------------------------ */
 
 function screen(role: "initiator" | "counterparty"): FlowScreen {
   return {
-    instanceRecordId: "instance-1",
+    sessionRecordId: "session-1",
     relationshipId: "relationship-1",
-    slug: "relationship-basics-instance-1",
+    slug: "relationship-basics-session-1",
     title: "Relationship Basics",
-    summary: "An instance between two people.",
+    summary: "An session between two people.",
     status: "awaiting_counterparty",
     mode: "basic",
     setting: "soft",
@@ -339,12 +349,12 @@ function screen(role: "initiator" | "counterparty"): FlowScreen {
   };
 }
 
-describe("the instance screen names the answering party on every visit", () => {
+describe("the session screen names the answering party on every visit", () => {
   it("says the session answers as the Initiator", () => {
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen("initiator"),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(html).toContain("You are answering as Avery, the Initiator.");
@@ -353,9 +363,9 @@ describe("the instance screen names the answering party on every visit", () => {
 
   it("says the session answers as the Counterparty", () => {
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen("counterparty"),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
@@ -364,10 +374,10 @@ describe("the instance screen names the answering party on every visit", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The addresses the wizard hands around (#t_0aa81144)
+ * The invitation addresses a mail client may still hold (#t_0aa81144, #1115)
  * ------------------------------------------------------------------ */
 
-describe("the wizard's addresses", () => {
+describe("the invitation's addresses", () => {
   it("keeps the token in the path on every step", () => {
     expect(inviteStepPath("token-1", 1)).toBe("/invite/token-1");
     expect(inviteStepPath("token-1", 2)).toBe("/invite/token-1?step=2");
@@ -405,8 +415,8 @@ describe("the wizard's addresses", () => {
     }
   });
 
-  it("lands a submit on the instance's confirmation state", () => {
-    expect(submittedPath("instance-1")).toBe("/assessment/instances/instance-1?submitted=1");
+  it("lands a submit on the session's confirmation state", () => {
+    expect(submittedPath("session-1")).toBe("/assessment/instances/session-1?submitted=1");
   });
 });
 
@@ -473,9 +483,9 @@ describe("invitePromptFor", () => {
 describe("the post-submit confirmation", () => {
   const render = (role: "initiator" | "counterparty", submitted: boolean) =>
     renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen(role),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
         submitted,
       }),
     );
@@ -485,7 +495,7 @@ describe("the post-submit confirmation", () => {
     expect(html).toContain("Thank you — your answers are saved");
     expect(html).toContain("Avery answers the same questions from their side and accepts");
     expect(html).toContain("How to change an opinion");
-    expect(html).toContain('href="/assessment/instances/instance-1/answer"');
+    expect(html).toContain('href="/assessment/instances/session-1/answer"');
     expect(html).toContain('data-submitted-confirmation=""');
   });
 

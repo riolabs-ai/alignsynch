@@ -45,6 +45,7 @@
  */
 import { DEFAULT_USER_ROLE, roleAdmits, type UserRole } from "../content/role-ladder";
 import type { NavDocument, NavIcon, NavRowRecord } from "../content/nav";
+import { navViewer, type NavCapability } from "./nav";
 import navDocumentJson from "../data/nav-menu.json" with { type: "json" };
 
 /** The glyphs a rail row may draw. A name, not a component: this module holds no JSX. */
@@ -63,6 +64,15 @@ export interface NavItem {
    * behind it answers 404 for that role, and a row pointing at a 404 advertises a surface.
    */
   readonly needs: UserRole;
+  /**
+   * A capability the row additionally requires (#1252) — the second, narrower gate beside `needs`.
+   *
+   * It exists because a rung cannot say this: `admin-spec` needs `stakeholder`, and a `support` seat
+   * ranks *above* that rung while being refused the spec. `needs` is the rung the row is drawn for,
+   * `capability` is the answer to the question a rung cannot ask, and a row without one is filtered
+   * by `needs` alone — every row that existed before #1252.
+   */
+  readonly capability?: NavCapability;
   /**
    * Match this row's own address only. Overview is the case: it has no children of its own, and
    * a prefix rule lit it beside whichever `/dashboard/*` page the reader was on.
@@ -112,6 +122,10 @@ function toItem(row: NavRowRecord): NavItem {
   };
   if (row.exact === true) item.exact = true;
   if (row.tourAnchor !== undefined) item.tourAnchor = row.tourAnchor;
+  // The document's `capability` is validated against `NAV_CAPABILITIES` by `nav:menu --check`
+  // (the schema states it as a string — `content/nav.ts` may not import the chrome's module), so
+  // this is the narrowing the schema cannot do.
+  if (row.capability !== undefined) item.capability = row.capability as NavCapability;
   return item;
 }
 
@@ -176,12 +190,26 @@ export const ALIGN_MENU: readonly NavGroup[] = DOCUMENT.groups.map((group) => ({
  * never shown a staff row, because `null` is below every rung.
  *
  * An empty group is not drawn: a heading over no rows is a promise the rail does not keep.
+ *
+ * **`capabilities` is the second gate, and it defaults to the role's own viewer** (#1252). A row
+ * that names a `capability` is drawn only when the viewer carries it; `admin-spec` needs
+ * `stakeholder` *and* `spec-read`, which is how a `support` seat — admitted by the rung — is still
+ * not shown the row. The default is `navViewer(role).capabilities` rather than a hard `false`, so a
+ * caller that only has a role (the validator's `--tree`, `tests/nav-menu.test.ts`) gets exactly the
+ * set the shell would build for that role.
  */
-export function menuFor(role: UserRole | null): NavGroup[] {
+export function menuFor(
+  role: UserRole | null,
+  capabilities: ReadonlySet<NavCapability> = navViewer(role).capabilities,
+): NavGroup[] {
   const viewer = role ?? DEFAULT_USER_ROLE;
   return ALIGN_MENU.map((group) => ({
     label: group.label,
-    items: group.items.filter((item) => roleAdmits(item.needs, viewer)),
+    items: group.items.filter(
+      (item) =>
+        roleAdmits(item.needs, viewer) &&
+        (item.capability === undefined || capabilities.has(item.capability)),
+    ),
   })).filter((group) => group.items.length > 0);
 }
 

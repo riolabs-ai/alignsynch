@@ -6,6 +6,356 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [2.0.0-rc1.3] - 2026-11-19
+
+> **Declared override.** The commit census computes 2.1.0 (minor, 13 commit(s) since v2.0.0-rc1.2); this release is cut as 2.0.0-rc1.3 by decision: the v2.0.0-rc train continues: milestone 27 names this candidate, rc2 is still pending with 16 open issues, and a release candidate is a deliberate boundary the census cannot compute
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+### Added
+
+- `feat(billing)` — one plan — Basic at $9.99/month for one relationship ([#1241](https://github.com/riolabs-ai/alignsynch/pull/1241))
+- `feat(admin)` — #1232 the CRUD matrix reads as icon-plus-word status ([#1245](https://github.com/riolabs-ai/alignsynch/pull/1245))
+- `feat(create)` — #1226 the create-failed screen — the drawn state, not a generic error ([#1244](https://github.com/riolabs-ai/alignsynch/pull/1244))
+
+### Fixed
+
+- `fix(health)` — the record's gate block names the lane it asked for ([#1234](https://github.com/riolabs-ai/alignsynch/pull/1234))
+- `fix(copy)` — #1227 the join notice says the week starts today only on a free trial ([#1240](https://github.com/riolabs-ai/alignsynch/pull/1240))
+- `fix(copy)` — #1228 the get-started answer describes the five stages ([#1238](https://github.com/riolabs-ai/alignsynch/pull/1238))
+- `fix(copy)` — #1231 the email-template labels read in Title Case, as the spec writes them ([#1242](https://github.com/riolabs-ai/alignsynch/pull/1242))
+- `fix(copy)` — #1225 the Counterparty's expired notice carries the copy spec ([#1239](https://github.com/riolabs-ai/alignsynch/pull/1239))
+- `fix(copy)` — #1224 the lapse line is written for the seat reading it ([#1236](https://github.com/riolabs-ai/alignsynch/pull/1236))
+- `fix(answer)` — #1223 the lapsed state is reachable, and it pauses the sheet without closing it ([#1235](https://github.com/riolabs-ai/alignsynch/pull/1235))
+
+### Maintenance
+
+- `docs(specs)` — #1233 bundle 11's settings page drops the Notifications card ([#1243](https://github.com/riolabs-ai/alignsynch/pull/1243))
+- `chore(billing)` — remove the Family plan — the catalogue goes from three plans to two ([#1237](https://github.com/riolabs-ai/alignsynch/pull/1237))
+- `chore(health)` — re-record platform health at v2.0.0-rc1.2 ([#1222](https://github.com/riolabs-ai/alignsynch/pull/1222))
+
+### Known limits
+
+- **The number is declared, and the census disagrees with it.** `v2.0.0-rc1.2..HEAD` is 13 commits — 3 `feat:` and 10 other — so `pnpm release:cut --check` computes `2.1.0` (minor) and both readers agree. This tree is cut as `2.0.0-rc1.3` by decision: `2.0.0` final has never been released and `v2.0.0-rc2` is still open, so a `2.1.0` would sit past a final that does not exist and would claim a stability the candidate line does not have. The banner at the top of this entry is `pnpm release:cut`'s own record of the override, not a note added afterwards.
+
+- **One plan ships, and none of it is a data migration.** `#1237` removed Family and `#1241` narrowed the catalogue to a single card — Basic, `$9.99` a month, one relationship. Both read production in their own step 0 first: 9 `billing_subscription` rows, all `basic/month` (4 active, 5 trialing), **0** at the `principal` tier and **0** at interval `year` — so no subscriber is grandfathered and nothing in Stripe moved. What the tree does not do is clean up after the delisted plan: `billing_plan` keeps its dormant `principal` rows and `alignsynch_principal_year` stays unclaimed on the provider, because repricing or deleting either is a provider-side act.
+
+- **No atlas sweep, and the deferral is on file.** `docs/qa-atlas/DEFERRED.md` carries this release's row (version, date, the commit it is cut from, and the reason). The pool's subjects are the states the atlas cannot reach: a trial that has actually lapsed (`#1223`, `#1224`), the relationship detail's payment tab with a completed engagement, the admin CRUD matrix behind an admin seat (`#1232`, `#1231`), and the create-failed screen, which needs a write that failed (`#1226`).
+
+- **The ten surfaces are proved by the gate and by `tests/`, not by a browser walk on production.** Every change in this window is copy, state reachability or a drawn screen; the evidence is `bash scripts/verify.sh` plus the cases the pull requests added. No part of this cut re-walks the changed screens on a live deployment.
+
+- **The billing checkout is still unproven end to end on production** (`#1053`, open). This release changes the plan catalogue the checkout sells from; it does not re-run the proof that a test-mode checkout completes.
+
+- **Admin surfaces remain gated rather than exercised over HTTP on production.** `#1084` is closed, but `#1202` — creating the two `ADMIN_EMAILS` identities in production — is still open, so the console routes answer for a seat nobody has yet been given.
+
+- **Two migrations share the number `0042`.** `db/migrations/0042_billing_plan_prices.sql` and `db/migrations/0042_email_template_version.sql` both apply — `db:migrate` orders by filename and keys its ledger by full name, so nothing is skipped — but a migration number no longer identifies one step, and a third `0042` would read as out-of-order in review. Renumbering is a follow-up, not part of this cut.
+
+- **This is a pre-release.** A `-suffix` version is published with `--prerelease`, so `v2.0.0-rc1.3` is never `latest`: `v1.22.0` remains the newest stable release, and production's `/api/version` is the only thing that says which build is live.
+
+## [2.0.0-rc1.2] - 2026-11-18
+
+> **Declared override.** The commit census computes 2.0.1 (patch, 6 commit(s) since v2.0.0-rc1.1); this release is cut as 2.0.0-rc1.2 by decision: 2.0.0 final has never been released: a 2.0.1 patch would sit on a version that does not exist and would claim a stability the candidate line does not have, so the rc line stays until 2.0.0 is cut
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+A patch on the candidate, and both of its fixes close a loop a person could get stuck in: **a
+creator who finished stage 4 landed on an empty stage 1 and could never send** (`#1217`), and **a
+seeded `complete` relationship held a report with no money against it** (`#1220`).
+
+The loop was one key with two spellings. The create answers `303 → …/create/invite?instance=<uuid>`,
+and stage 5 read `?session=` — a key nothing has ever written — so it decided the browser had
+created nothing, sent it back to `/create`, and the draft cookie the create had already consumed
+left stage 1 empty. `?instance=` now has one home (`lib/flow/paths.ts::FLOW_RELATIONSHIP_PARAM`) and
+one reader, and stage 5's **Back** re-enters stage 4 on the row it already wrote.
+
+The fee is the same shape in the data: the demo's eight completed sessions carried one hand-authored
+payment row, and production's four carry no plan, no `completed_at` and no obligation — exactly what
+`db:verify` V31 names. `#1220` writes the obligation through the product's own writers, so the
+seeded shape cannot drift from the real one.
+
+The rest of the window is the lane the release is cut from rather than the product: the noun walk
+honours `.gitignore` and fails on a directory it cannot read (`#1214`), `pnpm release:preflight`
+states the ten cut-time facts before the gate (`#1218`), the build's function trace stops carrying
+80 MB of docs no route opens (`#1219`), and the platform record was re-recorded at `v2.0.0-rc1.1`
+(`#1215`).
+
+### Fixed
+
+- `fix(seed)` — a complete relationship carries its fee, written through the product's writers (t_b9679354) ([#1220](https://github.com/riolabs-ai/alignsynch/pull/1220))
+- `fix(flow)` — #1216 stage 5 reads the address the create writes ([#1217](https://github.com/riolabs-ai/alignsynch/pull/1217))
+- `fix(noun)` — #1213 the walk honours .gitignore, and an unreadable directory is a failure not a short green run ([#1214](https://github.com/riolabs-ai/alignsynch/pull/1214))
+
+### Maintenance
+
+- `perf(build)` — the tracer stops carrying 80 MB of never-read docs into every function ([#1219](https://github.com/riolabs-ai/alignsynch/pull/1219))
+- `chore(release)` — release:preflight — the ten cut-time facts, one command, before the gate ([#1218](https://github.com/riolabs-ai/alignsynch/pull/1218))
+- `chore(health)` — re-record platform health at v2.0.0-rc1.1 ([#1215](https://github.com/riolabs-ai/alignsynch/pull/1215))
+
+### Known limits
+
+- **The number is declared, and the census disagrees with it.** `v2.0.0-rc1.1..HEAD` is 6 commits — three `fix:`, two `chore:` and one `perf:` — so `pnpm release:cut --check` computes `2.0.1` (patch) and both readers agree. This tree is cut as `2.0.0-rc1.2` by decision: `2.0.0` final has never been released, so a `2.0.1` would sit on a version that does not exist and would claim a stability the candidate line does not have. The banner at the top of this entry is `pnpm release:cut`'s own record of that decision, not a note added afterwards.
+
+- **The stage-4 → stage-5 loop is closed in code, and proved by `tests/flow-instance-key.test.ts` rather than by a browser walk on production.** `#1217` gives the `?instance=` key one home (`lib/flow/paths.ts::FLOW_RELATIONSHIP_PARAM`) and one reader (`relationshipIdFromSearch()`), and stage 5's **Back** now points at stage 4's own path. What is not re-run here is the production hop: the last end-to-end walk of the create flow on production was the rc1.1 QA run, and it predates this fix.
+
+- **Production's four `V31` rows are still there.** `#1220` gives a seeded `complete` relationship its report _and_ its fee on the **demo** branch — written through the product's own writers (`openPaymentObligation` → `recordMethodCaptured` → `recordChargeResult`), `db:verify` 4 V31 → 0 after the seed. It is not a repair path for production: on a production snapshot the seed refuses at `record holds assessment row(s) this seed does not author`. Production's four rows are separate open work, and this release does not touch them.
+
+- **The billing checkout is still unproven end to end on production** (`#1053`, open). The test-mode run recorded in `docs/qa/release-2.0.0-rc1.1/billing-checkout.md` proved the checkout hop and the decline path; it could not prove the flow's purpose, because stage 4 answered `500` during it and stage 5 did not open. Both of those are fixed in `#1210` and `#1217`; neither fix re-runs the proof.
+
+- **The two `ADMIN_EMAILS` seats still answer `401`** (`#1084`), and `#1202` — creating those identities in production — is open. Admin surfaces remain gated rather than exercised over HTTP on production.
+
+- **`#1219`'s 79.82 MB exclusion is measured against this tree's route set, and it is a keep-set rule a later page must honour.** `outputFileTracingExcludes` in `next.config.mjs` drops the vendored prototype payload, the mockup screenshots and the QA capture archives from every function's trace. A page that starts serving a file from one of those trees will trace a function that cannot open it; the file's keep set is the list to extend, and nothing in the gate reads it.
+
+- **`pnpm release:preflight` is not a gate step, on purpose.** The ten cut-time facts run only from `scripts/release.sh --tag-only` (two of the ten are false mid-development), so they protect the cut and nothing else — a red push, a stale checkout or an open release PR is still found at the cut, not before it.
+
+- **This is a pre-release.** A `-suffix` version is published with `--prerelease`, so `v2.0.0-rc1.2` is never `latest`: `v1.22.0` remains the newest stable release, and the production deployment's `/api/version` is the only thing that says which build is live.
+
+## [2.0.0-rc1.1] - 2026-11-18
+
+> **Declared override.** The commit census computes 2.1.0 (minor, 21 commit(s) since v2.0.0-rc1); this release is cut as 2.0.0-rc1.1 by decision: a prerelease line is in progress and 2.0.0 final has not shipped, so the computed minor would sort above the candidate it belongs to
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+A patch on the candidate, and the fix inside it is the thing a person actually hit: **stage 4 of
+the create flow no longer answers an empty `500`** (`#1205`). The production half landed too —
+`0040`–`0042` applied to the production branch after a snapshot, with the create walked end to end
+and its four rows read back — and `.env.example` became a generated projection, so a store census
+is a build step rather than a checklist somebody remembers.
+
+It is not a health-only window, though, and this entry does not pretend otherwise: six `feat:`
+records landed since `v2.0.0-rc1`, and one chore in that window (`#1195`) carries a **breaking
+bundle-format change that ships here deliberately**. It has its own section below, because a note
+that calls itself maintenance while moving a file format is the kind of note that costs a tenant
+an import.
+
+### Fixed
+
+- `fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code ([#1210](https://github.com/riolabs-ai/alignsynch/pull/1210))
+- `fix(seed)` — a seeded draft carries its invitation, because the create writes it (#1196) ([#1197](https://github.com/riolabs-ai/alignsynch/pull/1197))
+- `fix(auth)` — #1187 stage 4 keeps the return after a demo role sign-in or a sign-up ([#1190](https://github.com/riolabs-ai/alignsynch/pull/1190))
+- `fix(docs)` — the rc1 page says the chat screen warns — only the docstring does (#1188) ([#1191](https://github.com/riolabs-ai/alignsynch/pull/1191))
+- `fix(copy)` — the design artifact promises immediate deletion, matching purge.ts ([#1163](https://github.com/riolabs-ai/alignsynch/pull/1163))
+- `fix(email)` — #1139 — the lapse notice splits by seat, so the Counterparty never reads a plan ([#1168](https://github.com/riolabs-ai/alignsynch/pull/1168))
+- `fix(gate)` — stage5-send-live writes the invitation the send reissues (#1183) ([#1186](https://github.com/riolabs-ai/alignsynch/pull/1186))
+
+### Maintenance
+
+- `chore(env)` — make .env.example a generated projection, census every store, fill Vercel development ([#1203](https://github.com/riolabs-ai/alignsynch/pull/1203))
+- `docs(qa)` — #1053 a test-mode checkout on production — the session, the mode, the row the webhook wrote, and the decline path ([#1204](https://github.com/riolabs-ai/alignsynch/pull/1204))
+- `perf(gate)` — a known-empty diff is the docs lane, unknown stays full (#1000) ([#1206](https://github.com/riolabs-ai/alignsynch/pull/1206))
+- `docs(test)` — re-derive the three line citations #1195 moved in stage5-send-live ([#1208](https://github.com/riolabs-ai/alignsynch/pull/1208))
+- `chore(noun)` — #1106 + #1107 + #1112 as one integration branch — the sweep, the bundle v3 and the create flow under the dashboard ([#1195](https://github.com/riolabs-ai/alignsynch/pull/1195))
+- `chore(deps)` — swiper 12.2.0 → 14.4.0 and jsdom 30.1.3 → 31.0.1 (#1027, #1025) ([#1194](https://github.com/riolabs-ai/alignsynch/pull/1194))
+- `docs(release)` — date the rc1 ledger paragraph, and state that chat does not persist (#1188) ([#1189](https://github.com/riolabs-ai/alignsynch/pull/1189))
+- `chore(health)` — re-record platform health at v2.0.0-rc1 ([#1185](https://github.com/riolabs-ai/alignsynch/pull/1185))
+
+- `ops(db)` — `0040`, `0041` and both `0042` files applied to the production branch after the
+  snapshot `production-preserved-20261118-023745`, with stage 4 walked end to end: `303 →
+  …/create/invite?instance=<uuid>`, one `relationship` (`draft`), one `session` (`state='draft'`),
+  the Initiator `party` and one `session_invite`, read back from the rows
+
+
+### Added
+
+- `feat(release)` — pre-approved cut — a committed approval artifact tags without a TTY ([#1165](https://github.com/riolabs-ai/alignsynch/pull/1165))
+- `feat(email)` — the release note carries the visuals that exist — EmailImage + EmailTable with an asset-exists refusal (#1169) ([#1193](https://github.com/riolabs-ai/alignsynch/pull/1193))
+- `feat(admin)` — email templates — the register, an override, and a page to edit it (#1138) ([#1167](https://github.com/riolabs-ai/alignsynch/pull/1167))
+- `feat(assessment)` — the v2 answer screen — one Aspect, locked 1–5, saved as you go (#1128) ([#1173](https://github.com/riolabs-ai/alignsynch/pull/1173))
+- `feat(admin)` — render the CRUD matrix the source actually carries (#1126) ([#1179](https://github.com/riolabs-ai/alignsynch/pull/1179))
+- `feat(assets)` — three release-comms banners under public/og/, drawn from the brand tokens (#1169) ([#1177](https://github.com/riolabs-ai/alignsynch/pull/1177))
+
+### Breaking change — the bundle format is version 3, and it is included deliberately
+
+`#1195` moved the bundle's record arrays from `payload.instances` to `payload.sessions` under
+`bundleVersion: 3` (`content/bundle.ts:98`). **If you hold a bundle**: a version-1 file still
+imports — it prints one deprecation line, is normalized in memory, and the next export of it is a
+v3 document — while a v3 file still carrying the old key, a v1 file carrying the new one, or a
+payload carrying both is refused as `B9` rather than half-read. Nothing else in the document moved,
+and no row id was rewritten: `assessment-instance-*` remain the handles relationships and party
+rows point at.
+
+The format change was planned for the next candidate; the owner kept the `rc1.1` label and still
+intends a format bump for rc2. It is already on `main`, so it ships — named here rather than
+absorbed into a maintenance line.
+
+### Known limits
+
+- **The number is declared, and the census disagrees with it.** `v2.0.0-rc1..HEAD` is 21 commits
+  including six `feat:` records, so `pnpm release:cut --check` computes `2.1.0` (minor) and both
+  readers agree. This tree is cut as `2.0.0-rc1.1` by decision: the `2.0.0` line is a candidate
+  still in progress and `2.0.0` final has not shipped, so a minor would sort above the release it
+  belongs to and make every `2.0.0` a downgrade. The banner at the top of this entry is
+  `pnpm release:cut`'s own record of that decision, not a note added afterwards.
+
+- **Stage 5 does not open from stage 4's own redirect.** The commit answers
+  `303 → …/create/invite?instance=<uuid>` (`lib/flow/paths.ts:577`) while the invitation stage reads
+  `?session` (`components/flow/template-create/invite.tsx:93`), so a creator who finishes stage 4 is
+  bounced back to stage 1; `?session=<uuid>` renders the stage with the send gate locked. It is live
+  on this tree and on production, and it arrived with `#1195`.
+
+- **The billing checkout is unproven end to end on production** (`#1053`, open). The test-mode run
+  recorded in `docs/qa/release-2.0.0-rc1.1/billing-checkout.md` proved the checkout hop — one paid
+  test session, one `billing_subscription` row, one `billing_event` row, `livemode=false` — and the
+  decline path, which wrote nothing. It could not prove the flow's own purpose: stage 4 answered
+  `500` during that run and stage 5 is broken (above), so no relationship was published, no publish
+  trial was granted and no payment was made for one. This release fixes the `500`; it does not
+  re-run the proof.
+
+- **Production's `pnpm db:verify` reports six violations, and none of them are schema drift.**
+  `V31`×4 and `V30`×2 compare production rows against `data/assessments.ts`, the demo fixture. The
+  same command run against the pre-migration snapshot (`production-preserved-20261118-023745`)
+  reported ten, four of them migration-shaped. Closing the remaining six means running `pnpm
+  db:seed` against production, which no card has authorised and this release does not do.
+
+- **The two `ADMIN_EMAILS` seats still answer `401`** (`#1084`), and `#1202` — creating those
+  identities in production — is open. Admin surfaces are therefore unexercised over HTTP on
+  production: `/admin/console/instances` answers `404` to an account without the `product.admin`
+  capability, so `lib/db/admin-*.ts` is gated rather than proved.
+
+- **The release audit and the amend path are filed, not shipped.** `#1201` (tag, Release, page and
+  ledger row checked together) and `#1199` (`--amend` for a corrected note on a recorded tag) are
+  open issues. Nothing in this release implements either, and this entry does not claim them.
+
+- **Known limits named by the candidate are repeated here rather than re-proved.** The capture under
+  `docs/qa/release-2.0.0-rc1/` still stands as the `rc1` surface evidence; `chat` still writes
+  nothing durable, and no dependency majors moved in this window.
+
+- **This is a pre-release.** A `-suffix` version is published with `--prerelease`, so
+  `v2.0.0-rc1.1` is never `latest`: `v1.22.0` remains the newest stable release and the production
+  deployment's `/api/version` is the only thing that says which build is live.
+
+## [2.0.0-rc1] - 2026-11-17
+
+> **Declared override.** The commit census computes 1.23.0 (minor, 4 commit(s) since v1.22.0); this release is cut as 2.0.0-rc1 by decision: 2.0 is the release-candidate boundary for the v2 surfaces; the commits are feat/minor by shape and would compute 1.23.0
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+### Added
+
+- `feat(v2)` — the nine surfaces of 1.22 as one integration branch ([#1170](https://github.com/riolabs-ai/alignsynch/pull/1170))
+
+### Maintenance
+
+- `chore(repo)` — name the writer of every dirty path — release preflight, gate report, and .agents/ ignored ([#1180](https://github.com/riolabs-ai/alignsynch/pull/1180))
+- `chore(repo)` — commit the gitnexus block and CLAUDE.md, so the shared checkout stops being dirty ([#1176](https://github.com/riolabs-ai/alignsynch/pull/1176))
+- `chore(health)` — re-record platform health at v1.22.0 ([#1175](https://github.com/riolabs-ai/alignsynch/pull/1175))
+
+### Known limits
+
+- **This candidate's number is declared, not computed.** The census of `v1.22.0..HEAD` reads one `feat`
+  commit and would compute `1.23.0`. `v2.0.0-rc1` is the release-candidate boundary for the v2 surface
+  set by decision, and `pnpm release:cut` wrote that decision into the `CHANGELOG.md` entry as a banner
+  rather than leaving a silent number in `package.json`.
+
+- **The nine v2 surfaces arrive as one commit.** `#1170` merges seven branches with `--no-ff` on top of
+  the two v2 landings already on `main`, so the census counts a single commit and the entry names a
+  single pull request: Templates v2 (`#1130`, `#1151`), the account menu (`#1136`, `#1152`), card menus
+  and Save a Copy (`#1134`, `#1153`), Chat v2 (`#1131`, `#1154`), the Aspect drawer (`#1155`), Payment v2
+  (`#1156`) and conversion (`#1127`, `#1159`) — on top of app shell v2 (`#1129`, `#1150`) and invitation
+  hygiene (`#1135`, `#1149`), which shipped in `v1.22.0`'s window.
+
+- **The rest of the queue is excluded by name, and lands in `v2.0.0-rc2` (milestone 26, the pool).**
+  Open and **not** in this candidate: `#1173` the locked 1–5 answer screen (`#1128`), `#1167` admin email
+  templates (`#1138`), `#1168` the lapse notice splitting by seat (`#1139`), `#1163` the immediate-deletion
+  copy fix, `#1112` templates retirement phase 2 (`#1109`), and `#1165` the pre-approved cut artifact —
+  which is why this cut ran through `scripts/release.sh --tag-only` instead of `pnpm release:cut
+  --execute`. `#1161` (the three-plan catalogue) is still open, and the catalogue it carries is already in
+  this tree (`data/membership-plans.ts`, migration `0042`) via the integration branch; it is closed by
+  reference, not re-merged.
+
+- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106` in the
+  code and `#1107` in the bundle format — and both stay deferred under `t_6258b560`, so both nouns are
+  still in this tree's comments, its docs and its schema, and the platform bundle this build writes is
+  still version 2 (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
+
+- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and deferred
+  under `t_6258b560` to `v2.0`. Nothing in the dependency graph moves between `v1.22.0` and this tag.
+
+- **One migration rides this tag, and this tag does not apply it.** `db/migrations/0042_billing_plan_prices.sql`
+  arrives with the approved three-plan catalogue: `Single` `$9.99`/mo, `Family` `$19.99`/mo (≤4), `Single
+  Annual` `$99`/yr, mapped onto the four existing lookup keys, with `principal/year` deliberately left at
+  its seeded amount because no approved plan claims it. It was applied to the demo branch for this
+  candidate's QA. Production's ledger is run by hand — `pnpm db:migrate` — and a create against a
+  production database whose ledger has not been run is a separate, deliberate step, not something this
+  tag performs.
+
+- **The precondition QA covered a capture, not the atlas sweep.** `docs/qa-atlas/DEFERRED.md` records
+  `v1.22.0` as a declared deferral and the sweep for this candidate is deferred the same way, so the
+  evidence for `v2.0.0-rc1` is the capture under `docs/qa/release-2.0.0-rc1/` — the routes it exercised,
+  the assertions each still made, and the stills taken from this tree. Every route outside that capture
+  is gated by `scripts/verify.sh` (4154 tests, `data:check`, `parity`, `next build`) and not by a human
+  eye.
+
+- **This is a pre-release, and GitHub is told so.** A `-suffix` version is published with
+  `--prerelease`, so `v2.0.0-rc1` is never `latest`: `v1.22.0` remains the newest stable release and the
+  production deployment's `/api/version` is the only thing that says which build is live.
+
+- **Production's two `ADMIN_EMAILS` seats still answer `401`** (`#1084`). `walt1@alignsynch.com` and
+  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried from
+  `v1.22.0` unchanged: this candidate provisions neither seat, and the issue is open in the backlog.
+
+## [1.22.0] - 2026-11-17
+
+### Added
+
+- `feat(shell)` — app shell v2 — Start and My Relationships, the rail opens on Start (#1129) ([#1150](https://github.com/riolabs-ai/alignsynch/pull/1150))
+- `feat(crud)` — invitation hygiene, and leave or abandon instead of delete (#1135) ([#1149](https://github.com/riolabs-ai/alignsynch/pull/1149))
+- `feat(admin)` — the CRUD and Permissions matrix — admin-only, read-only, with the honest failure state (#1126) ([#1157](https://github.com/riolabs-ai/alignsynch/pull/1157))
+- `feat(v2)` — #1124 — Relationship Detail's six-tab layer ([#1148](https://github.com/riolabs-ai/alignsynch/pull/1148))
+- `feat(v2)` — #1125 — Counterparty join — a 3-step role flow (Invite · Join · Accept) ([#1147](https://github.com/riolabs-ai/alignsynch/pull/1147))
+- `feat(v2)` — Align v2 — Soft/Full Alignment Tolerance re-score, numbered Aspects (#1122) ([#1145](https://github.com/riolabs-ai/alignsynch/pull/1145))
+- `feat(v2)` — #1123 the Create Relationship wizard draws the v2 rail and one stage card ([#1144](https://github.com/riolabs-ai/alignsynch/pull/1144))
+- `feat(billing)` — trial-ended states — Stage 6 pauses read-only, one free 7-day extension (#1121) ([#1143](https://github.com/riolabs-ai/alignsynch/pull/1143))
+- `feat(onboarding)` — the counterparty claims with two fields, and connected is derived (#1115 tasks 4-5) ([#1117](https://github.com/riolabs-ai/alignsynch/pull/1117))
+- `feat(style)` — port the v2.0 token layer — calm party palette, locked 1–5 answer scale (#1120) ([#1142](https://github.com/riolabs-ai/alignsynch/pull/1142))
+- `feat(onboarding)` — #1115 tasks 1-3 - trial anchored at creation, one trialStateOf() read, payment out of the create path ([#1116](https://github.com/riolabs-ai/alignsynch/pull/1116))
+- `feat(ia)` — #1109 — retire /templates/relationship and move its three writes to the dashboard ([#1111](https://github.com/riolabs-ai/alignsynch/pull/1111))
+
+### Fixed
+
+- `fix(dashboard)` — delete the dead publish gate (#1140) ([#1141](https://github.com/riolabs-ai/alignsynch/pull/1141))
+
+### Maintenance
+
+- `docs(specs)` — bundle 12 Admin CRUD & Permissions + crud-matrix.md (#1126) ([#1158](https://github.com/riolabs-ai/alignsynch/pull/1158))
+- `chore(deps)` — bump next from 16.4.1 to 16.4.5 ([#1118](https://github.com/riolabs-ai/alignsynch/pull/1118))
+- `docs(specs)` — v2.0 UI handoff bundles (01–11) ([#1137](https://github.com/riolabs-ai/alignsynch/pull/1137))
+- `chore(gate)` — routes:check — Next's own router validation over the built manifest (#1113) ([#1114](https://github.com/riolabs-ai/alignsynch/pull/1114))
+- `chore(health)` — re-record platform health at v1.21.0 ([#1110](https://github.com/riolabs-ai/alignsynch/pull/1110))
+
+### Known limits
+
+- **The v2.0 lane is half in this release, and the other half is excluded by name.** Three v2.0 pull
+  requests merged onto `main` before this tag and are **in it**: the app shell v2 — Start and My
+  Relationships, the rail opening on Start (`#1129`, `#1150`) — invitation hygiene and leave-instead-of-
+  delete (`#1135`, `#1149`), and the admin CRUD bundle's docs (`#1158`). The rest are open and are not in
+  this version: `#1151` Templates v2, `#1152` the account menu, `#1153` card menus and Save a Copy,
+  `#1154` Chat v2, `#1155` the Aspect drawer, `#1156` Payment v2, `#1159` conversion, `#1161` the three-plan
+  catalogue, `#1163` the copy-deletion fix, and `#1112` (templates retirement, phase 2). Those land in
+  v2.0.0.
+
+- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106` in the
+  code and `#1107` in the bundle format — and both are deferred to v2.0.0, so both nouns are still in this
+  tree's comments, its docs and its schema, and the platform bundle this build writes is still version 2
+  (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
+
+- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and deferred to
+  v2.0.0. The only dependency that moved in this window is `next` `16.4.1` → `16.4.5` (`#1118`), a patch
+  release taken for an advisory that stopped `next build`.
+
+- **No migration rides this tag.** Nothing under `db/migrations/` changed between `v1.21.0` and this release
+  — the newest file in the tree is `db/migrations/0041_session_state.sql`, applied on the demo branch on
+  2026-11-16. Production's schema is applied by hand with `pnpm db:migrate`, and this release neither adds
+  nor applies a migration, so a create against a production database whose ledger has not been run is a
+  separate, deliberate step rather than something this tag performs.
+
+- **`#1115` is still open.** Its two landings — the trial anchored at creation (`#1116`) and the
+  counterparty claims (`#1117`) — are in this release; the issue itself is not closed by it and moves to
+  v2.0.0, so the trial's acceptance anchor ships without an issue closing behind it.
+
+- **Production's two `ADMIN_EMAILS` seats still answer `401`** (`#1084`). `walt1@alignsynch.com` and
+  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried from
+  v1.21.0 unchanged: this release provisions neither seat, and the issue is open in the backlog.
+
 ## [1.21.0] - 2026-11-16
 
 ### Added
@@ -59,8 +409,11 @@ with a **Known limits** block, because a release that does not say what it canno
   `schema_migrations` ledger names `db/migrations/0039_session_aspects_authored_at.sql` as its newest
   entry and its `session` table carries no `state` column, while `https://alignsynch.com/api/version` answers
   `{"version":"1.20.1","commit":"1ce29064"}` — this release's own base, whose create and acceptance
-  paths write that column (`lib/flow/store.ts::createInstanceFromTemplate` inserts `state = 'draft'`,
-  and the claim flips it to `active`). So the next create or acceptance on production writes a column
+  paths write that column (`lib/flow/store.ts::createSessionFromTemplate` inserts `state = 'draft'`,
+  and the claim flips it to `active`). _(The create path is named
+  ~~`lib/flow/store.ts::createInstanceFromTemplate`~~ at this tag: #1103 phase 2 / #1106 renames it to
+  `createSessionFromTemplate`, and that card is not in this release — corrected on the phase-2 branch,
+  which is where the newer name is the real binding.)_ So the next create or acceptance on production writes a column
   the table does not have until somebody runs `pnpm db:migrate` against production deliberately. No
   gate step can see this: CI has no connection string, and `pnpm build` has no database.
 
@@ -1769,3 +2122,8 @@ The admin console, and relationship templates become products.
 [1.16.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.15.0...v1.16.0
 [1.19.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.18.0...v1.19.0
 [1.21.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.20.1...v1.21.0
+[1.22.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.21.0...v1.22.0
+[2.0.0-rc1]: https://github.com/riolabs-ai/alignsynch/compare/v1.22.0...v2.0.0-rc1
+[2.0.0-rc1.1]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1...v2.0.0-rc1.1
+[2.0.0-rc1.2]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.1...v2.0.0-rc1.2
+[2.0.0-rc1.3]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.2...v2.0.0-rc1.3

@@ -57,6 +57,13 @@
 # or a column page whose view still centres itself all fail here. The registry is data, the check
 # is a script, the pages are app — three lanes, one check, ~0.4 s.
 #
+# THE TREE-HYGIENE STEP IS A REPORT AND NEVER A FAILURE (#1178). `scripts/tree-hygiene.mjs` names the
+# writer of every changed path — `next dev` rewrites `AGENTS.md`, `gitnexus analyze` writes
+# `CLAUDE.md`, `pnpm gen` writes `data/generated/` — and the command that clears it. It runs first in
+# every lane so the table is the first thing a dirty run prints. It must never fail the gate: a
+# worker's worktree is dirty by design mid-card, so a gate that failed on dirt would fail every card.
+# The refusal lives in `scripts/release.sh`, where a cut is made.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -65,11 +72,15 @@
 # classifying — the local ref, else one bounded `git fetch --no-tags origin main`
 # (no checkout, no pull, no branch — see scripts/gate-lanes.sh), and the lane
 # line names the sha and the path that resolved it: `base origin/main@abc1234
-# (local ref)` / `(fetched in 0.4s)`. The fallback is unchanged and stays
-# conservative: no ref, no merge base, or an empty diff — a push to main, where
-# HEAD *is* origin/main — means the full gate, because "I could not tell what
-# changed" is never evidence that a change is cheap. A failed fetch is a reason
-# to run MORE gate, never a reason to fail it.
+# (local ref)` / `(fetched in 0.4s)`. The fallback for an UNKNOWN diff is
+# unchanged and stays conservative: no ref, no merge base, an unmerged index, a
+# detached HEAD, or standing on the base branch itself (`HEAD` *is* `origin/main`
+# — the post-merge push, the one tree no PR run gated) means the full gate,
+# because "I could not tell what changed" is never evidence that a change is
+# cheap. A KNOWN-empty diff is the opposite case and is not unknown: a clean tree
+# on a branch that has not diverged can pay for no step, because no step can see
+# a change. That is the docs lane, and the lane line says so (#1000). A failed
+# fetch is a reason to run MORE gate, never a reason to fail it.
 #
 # GATE SLOTS — one CPU budget for the whole heavy section, not just the build.
 # `next typegen`, `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check`
@@ -127,12 +138,20 @@
 # on an 8-core box that was ALSO running other agents' builds (load 7–14), so
 # every row is "as measured under real fleet load", not on a quiet box:
 #
-#   lane=docs      1–2 s    (n=4: 1.15 / 1.6 / 1.9 / 2.2)
+#   lane=docs      15–41 s   (n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6, 2026-11-17)
+#                 — a tree that changed nothing still pays every step that runs
+#                 in EVERY lane (glossary, ui-registry, release:check,
+#                 changelog:check, docs:check, md:check, nav:menu, env:check,
+#                 lint, format:check), and those dominate it. A docs-only diff
+#                 lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2).
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
 #                 sibling run holds the other slot (n=2: 94.5 / 147.5 — the
 #                 difference is the lock wait, printed by the gate-slot step).
+#                 A fresh worktree is the worst case — no node_modules, no
+#                 .next, a shared box — and measured 331.2 s in-gate (333.1 s
+#                 wall, n=1, 2026-11-17).
 #                 Target: p50 < 90 s. The flat gate was 145 s under the same load.
 #                 The gate slot now covers the whole heavy section rather than the
 #                 build alone; the measured table and why the default is 3 are in
@@ -473,6 +492,30 @@ if [ "$LANE" != "code" ] && printf '%s\n' "$LANE_FILES" |
     "$C_YEL" "$C_OFF" >&2
 fi
 
+# TREE HYGIENE IS A REPORT AND NEVER A FAILURE. **Do not turn this into a check.** A worker's
+# worktree is dirty by design in the middle of a card — the branch *is* the uncommitted work — so a
+# gate that failed on dirt would fail every card the gate exists to check, and the fleet would learn
+# to skip the gate instead of cleaning the tree. What this step buys is the other direction: a path
+# written by a *tool* (`next dev`, `gitnexus analyze`, a generator) rather than by the person
+# running the gate is named with the command that clears it, so the operator reads "`next dev` wrote
+# this" and not thirty lines of `git status` to scroll past. `scripts/tree-hygiene.mjs` prints its
+# rows and always exits 0; the wrapper below returns 0 even when the reporter itself cannot run. The
+# refusal stays where a cut is made — `scripts/release.sh::require_cut_checkout` — never here.
+report_tree_hygiene() {
+  local out rc
+  set +e
+  out="$(node scripts/tree-hygiene.mjs --known-only 2>&1)"
+  rc=$?
+  set -e
+  if [ "$rc" -ne 0 ]; then
+    printf '  tree-hygiene: the reporter could not read the tree (exit %s) — not a gate failure\n' "$rc"
+  fi
+  printf '%s\n' "$out" | sed -e 's/^/  /'
+  return 0
+}
+
+run_step "tree hygiene (who wrote the changed paths — a report, never a failure)" report_tree_hygiene || fail
+
 # Order is deliberate: cheap-and-certain first, the build last.
 run_step "deps (pnpm install --frozen-lockfile)" pnpm install --frozen-lockfile || fail
 
@@ -634,6 +677,12 @@ else
   skip_step "env:check" "no env:check script in package.json"
 fi
 
+# What this step deliberately is NOT: it does not read the stores. `pnpm env:matrix --check` compares
+# the live Bitwarden project and every Vercel scope against `docs/operations/env-stores.md`, and it
+# needs a vault token and the Vercel CLI's session — so it is an operator step before a release, not
+# a gate step. The half that can be proven without a network (the table against `.env.example`,
+# in both directions and in order) is inside the step above, which is why it runs in every lane.
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
@@ -665,11 +714,13 @@ fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as
 # the code lane's: a hand-wrapped doc fails `lint` before CI ever sees it.
-# The step is `pnpm lint` = `biome check && node scripts/lint-brand-classes.mjs`: the brand rule
-# (#187 stage 4) rides inside the existing lint step, in every lane, so there is no second
-# pipeline and no CI-only check. It prints its own census there — `brand classes: N file(s) …
-# 0 palette steps, 0 gradient utilities` — which is what makes it visible in the gate output.
-run_step "lint (biome check + brand classes)" pnpm lint || fail
+# The step is `pnpm lint` = `biome check && node scripts/lint-brand-classes.mjs &&
+# node scripts/noun-check.mjs`: the brand rule (#187 stage 4) and the retired-noun check (#1103
+# phase 2) ride inside the existing lint step, in every lane, so there is no second pipeline and no
+# CI-only check. Each prints its own census there — `brand classes: N file(s) … 0 palette steps, 0
+# gradient utilities` and `noun-check: no retired noun — N files walked … 23 allowlisted` — which is
+# what makes them visible in the gate output.
+run_step "lint (biome check + brand classes + the retired noun)" pnpm lint || fail
 run_step "format:check (biome format)" pnpm format:check || fail
 
 if [ "$LANE" != "docs" ]; then

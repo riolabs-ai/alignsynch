@@ -9,9 +9,9 @@
  *
  *   the vocabulary   two settings, their glossary labels, their sentences, and the two
  *                    thresholds (Soft 1, Full 0) — constants, never columns;
- *   the schema       `setting` is **required**: an instance that omits it or names a third
+ *   the schema       `setting` is **required**: a session that omits it or names a third
  *                    value does not parse, so "Soft ⇔ the author forgot" is unrepresentable;
- *   the fixtures     all four seeded instances author a setting, and noor-iris is the
+ *   the fixtures     all four seeded sessions author a setting, and noor-iris is the
  *                    exceptional one;
  *   the mirror       a DB-shaped row maps back to the fixture it was seeded from, so the
  *                    column cannot quietly disagree with `data/assessments.ts`.
@@ -27,35 +27,35 @@ import {
   SETTING_GAP_LIMITS,
   SETTING_LABELS,
   zAlignmentSetting,
-  zAssessmentInstance,
+  zAssessmentSession,
 } from "@/content/assessment";
-import { assessmentInstanceFromRows, type AssessmentInstanceRows } from "@/lib/db/rows";
-import { assessmentInstances, starterInstances } from "@/data/assessments";
-import type { AssessmentInstance } from "@/content/assessment";
+import { assessmentSessionFromRows, type AssessmentSessionRows } from "@/lib/db/rows";
+import { assessmentSessions, starterSessions } from "@/data/assessments";
+import type { AssessmentSession } from "@/content/assessment";
 
 /** The feature example: Basic Mode, Soft. */
-const avery = assessmentInstances.find((instance) => instance.slug === "avery-rowan");
-/** The Advanced demonstration: the one instance authored under Full. */
-const noor = assessmentInstances.find((instance) => instance.slug === "noor-iris");
+const avery = assessmentSessions.find((session) => session.slug === "avery-rowan");
+/** The Advanced demonstration: the one session authored under Full. */
+const noor = assessmentSessions.find((session) => session.slug === "noor-iris");
 
 if (avery === undefined || noor === undefined) {
   throw new Error("the Avery/Rowan and Noor/Iris fixtures are this file's subject");
 }
 
-/** The rows `db:seed` writes for an instance, for the mirror cases. */
-function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
+/** The rows `db:seed` writes for a session, for the mirror cases. */
+function sessionRows(session: AssessmentSession): AssessmentSessionRows {
   return {
     record: {
-      id: instance.id,
-      slug: instance.slug,
-      record_type: instance.type,
-      status: instance.status,
-      date: instance.date,
-      title: instance.title,
-      summary: instance.summary,
+      id: session.id,
+      slug: session.slug,
+      record_type: session.type,
+      status: session.status,
+      date: session.date,
+      title: session.title,
+      summary: session.summary,
     },
-    items: instance.items.map((item, position) => ({
-      record_id: instance.id,
+    items: session.items.map((item, position) => ({
+      record_id: session.id,
       item_id: item.id,
       position,
       prompt: item.prompt,
@@ -64,21 +64,21 @@ function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
       right_value: item.rightValue,
     })),
     options: [],
-    instance: {
-      record_id: instance.id,
-      template_record_id: instance.templateId,
-      relationship_id: `relationship-${instance.id}`,
-      mode: instance.mode,
-      setting: instance.setting,
+    session: {
+      record_id: session.id,
+      template_record_id: session.templateId,
+      relationship_id: `relationship-${session.id}`,
+      mode: session.mode,
+      setting: session.setting,
     },
-    parties: instance.parties.map((party) => ({
-      session_record_id: instance.id,
+    parties: session.parties.map((party) => ({
+      session_record_id: session.id,
       role: party.role,
       name: party.name,
     })),
-    opinions: instance.parties.flatMap((party) =>
+    opinions: session.parties.flatMap((party) =>
       party.opinions.map((answer) => ({
-        session_record_id: instance.id,
+        session_record_id: session.id,
         role: party.role,
         item_id: answer.itemId,
         feel: answer.opinions.feel,
@@ -117,23 +117,23 @@ describe("the vocabulary", () => {
   });
 });
 
-describe("the instance's setting is a parse-time fact", () => {
+describe("the session's setting is a parse-time fact", () => {
   it("accepts every fixture, each under its authored setting", () => {
-    for (const instance of assessmentInstances) {
-      expect(zAssessmentInstance.safeParse(instance).success, instance.slug).toBe(true);
+    for (const session of assessmentSessions) {
+      expect(zAssessmentSession.safeParse(session).success, session.slug).toBe(true);
     }
   });
 
-  it("rejects an instance that omits the setting — it is required, not defaulted", () => {
+  it("rejects a session that omits the setting — it is required, not defaulted", () => {
     const { setting: _omitted, ...withoutSetting } = avery;
-    const parsed = zAssessmentInstance.safeParse(withoutSetting);
+    const parsed = zAssessmentSession.safeParse(withoutSetting);
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
     expect(parsed.error.issues.some((issue) => issue.path.join(".") === "setting")).toBe(true);
   });
 
   it("rejects a setting the model does not define, naming the field", () => {
-    const parsed = zAssessmentInstance.safeParse({ ...avery, setting: "nonsense" });
+    const parsed = zAssessmentSession.safeParse({ ...avery, setting: "nonsense" });
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
     expect(parsed.error.issues.some((issue) => issue.path.join(".") === "setting")).toBe(true);
@@ -142,9 +142,9 @@ describe("the instance's setting is a parse-time fact", () => {
 
 describe("the fixtures author their setting", () => {
   it("gives every authored demonstration an explicit setting", () => {
-    // The four demonstrations, not the population (#1079): `starterInstances` is the set that
+    // The four demonstrations, not the population (#1079): `starterSessions` is the set that
     // defines the shape, and the rows beneath it are a demo's data.
-    const settings = starterInstances.map((instance) => [instance.slug, instance.setting]);
+    const settings = starterSessions.map((session) => [session.slug, session.setting]);
     expect(settings).toEqual([
       ["avery-rowan", "soft"],
       ["ruth-sam", "soft"],
@@ -154,26 +154,26 @@ describe("the fixtures author their setting", () => {
   });
 
   it("keeps exactly one demonstration under Full, and it is the Advanced one", () => {
-    const full = starterInstances.filter((instance) => instance.setting === "full");
-    expect(full.map((instance) => instance.slug)).toEqual(["noor-iris"]);
+    const full = starterSessions.filter((session) => session.setting === "full");
+    expect(full.map((session) => session.slug)).toEqual(["noor-iris"]);
     expect(noor.mode).toBe("advanced");
   });
 });
 
 describe("the DB-shaped rows round-trip", () => {
   it("maps the alignment_setting column back to the fixture's setting", () => {
-    for (const instance of assessmentInstances) {
-      const parsed = assessmentInstanceFromRows(instanceRows(instance));
-      expect(parsed.setting, instance.slug).toBe(instance.setting);
+    for (const session of assessmentSessions) {
+      const parsed = assessmentSessionFromRows(sessionRows(session));
+      expect(parsed.setting, session.slug).toBe(session.setting);
     }
   });
 
   it("rejects a row whose column says a third setting", () => {
-    const rows = instanceRows(avery);
-    const broken: AssessmentInstanceRows = {
+    const rows = sessionRows(avery);
+    const broken: AssessmentSessionRows = {
       ...rows,
-      instance: { ...rows.instance, setting: "lenient" },
+      session: { ...rows.session, setting: "lenient" },
     };
-    expect(() => assessmentInstanceFromRows(broken)).toThrow(/setting/i);
+    expect(() => assessmentSessionFromRows(broken)).toThrow(/setting/i);
   });
 });

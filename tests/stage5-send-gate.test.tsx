@@ -71,7 +71,7 @@ function stage(paid?: boolean): string {
       template: TEMPLATE,
       draft: DRAFT,
       backHref: "/back",
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       problem: null,
       ...(paid === undefined ? {} : { initialPaid: paid }),
     }),
@@ -83,7 +83,7 @@ function walkStep(step: PayFlowStep): string {
   return renderToStaticMarkup(
     createElement(InviteWalk, {
       copy: assessmentCreatePageCopy,
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       relationshipId: "relationship-brother",
       paid: true,
       onPaid: () => undefined,
@@ -131,14 +131,16 @@ describe("stage 5 — the send is gated by the walk", () => {
     }
   });
 
-  it("keeps the send behind the server's own refusal, not only an absent button", () => {
+  it("keeps the send free of a payment gate — the membership starts at acceptance, not at the send", () => {
     // The UI half is a courtesy; the rule is in the write. Read the source the gate ships.
     const store = readFileSync(join(process.cwd(), "lib/flow/store.ts"), "utf8");
-    expect(store).toContain('code: "no-payment-method"');
-    // #1010 R2 — the rule the write asks is the **membership**, not a captured card: the capture is
-    // deleted, so a gate still reading `methodCaptured` would refuse every send for ever.
-    expect(store).toMatch(/if \(!membershipLive\)/);
+    // #911/#1010 R2 gated the send on a live subscription. #1115 (spec D3) moves the trial to the
+    // Counterparty's acceptance, so no membership can exist when a freshly drafted invitation is
+    // sent — the gate would refuse every send the product depends on. It is gone, and the send is
+    // not replaced by a check on a captured card either.
+    expect(store).not.toMatch(/if \(!membershipLive\)/);
     expect(store).not.toMatch(/methodCaptured === null/);
+    expect(store).toContain("SET status = 'published'");
   });
 });
 
@@ -165,10 +167,12 @@ describe("the binding spec says what the stage is", () => {
     expect(action).toBeGreaterThan(thanks);
   });
 
-  it("gates the send on the membership, in the owner's words", () => {
+  it("sends without a membership, in the owner's words", () => {
+    // #1115 (spec D3) — the send is not gated on a payment: the week opens at the Counterparty's
+    // acceptance, so nothing is live when a draft goes out and a pending invitation costs nothing.
     expect(section).toContain("send email to counterparty now");
-    expect(section).toContain("data-send-gate");
-    expect(section).toContain("no-payment-method");
+    expect(section).toContain("No membership fact is read to authorise a send");
+    expect(section).toContain("pending invitation costs nothing");
     expect(section).toContain("draft");
   });
 

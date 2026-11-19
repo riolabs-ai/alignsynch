@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**148 documents in 9 sections.** Every page carries the same nav block, generated
+**196 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,12 +40,12 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 18 documents
-- [Specs & design briefs](#specs-design-briefs) — 44 documents
-- [Records & QA](#records-qa) — 24 documents
+- [Operations](#operations) — 20 documents
+- [Specs & design briefs](#specs-design-briefs) — 84 documents
+- [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 25 documents
+- [Release notes](#release-notes) — 30 documents
 
 ## Start here
 
@@ -86,6 +86,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/branch-triage.md`](operations/branch-triage.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`operations/brand-release.md`](operations/brand-release.md) — **Two brands, one tree** — How does a brand version ship without moving parity?
 - [`operations/deploying.md`](operations/deploying.md) — **Deploying** — How does this repository reach `alignsynch.com`?
+- [`operations/env-stores.md`](operations/env-stores.md) — **Env stores** — Which store holds each variable, in which scope — and which Preview entry wins?
 - [`operations/env-manifest.md`](operations/env-manifest.md) — **Env manifest** — Which environment variable is required where, and where does its value come from?
 - [`operations/gate.md`](operations/gate.md) — **The gate** — What does `scripts/verify.sh` run, in what order, and what are its current numbers?
 - [`operations/history/p1-migration/MIGRATION.md`](operations/history/p1-migration/MIGRATION.md) — **P1 migration** — What did the P1 content model change, field by field?
@@ -94,6 +95,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/history/V1-PROTOTYPE.md`](operations/history/V1-PROTOTYPE.md) — **V1 prototype** — What is the clickable `/v1/**` prototype, and who is it for?
 - [`operations/history/V1-RETIREMENT.md`](operations/history/V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`operations/iteration.md`](operations/iteration.md) — **Iteration rhythm** — Which loop do I run for this edit — `check:fast` or the full gate?
+- [`operations/migrations.md`](operations/migrations.md) — **Migrations** — How is a migration numbered, and why can an applied one never be renumbered?
 - [`operations/orchestration.md`](operations/orchestration.md) — **Orchestration rules** — How does the orchestrator behave — decisions, blocking, re-carding?
 - [`operations/release-train.md`](operations/release-train.md) — **Release-train card template** — What does a release-train card carry — children, sequence, cutoff, proof?
 - [`operations/releasing.md`](operations/releasing.md) — **Releasing** — Which four artefacts must agree for a release, and how is the tag cut?
@@ -142,6 +144,45 @@ What the product promises, written down before it was built.
 - [`specs/spec-help-center/README.md`](specs/spec-help-center/README.md) — **Help Center design spec (handoff)** — How do I preview the Help Center, and which three files make up the page?
 - [`specs/stages.md`](specs/stages.md) — **Stages** — What are Invited, Connected, Sharing and Aligned, and who decides each?
 - [`specs/two-party-flow.md`](specs/two-party-flow.md) — **The two-party flow** — How do two people get from an invitation to a sealed Gap?
+- [`specs/v2-bundles/README.md`](specs/v2-bundles/README.md) — **v2.0 UI handoff bundles (index)** — What are the eleven v2.0 ingest bundles, in what order are they built, and which owner decisions are still open?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/README.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/README.md) — **Create Relationship wizard v2 (handoff)** — How do I preview wizard Stages 1–5, and which files make up the bundle?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/IMPLEMENTATION-PROMPT.md) — **Create Relationship wizard v2 — implementation brief** — Which QuizHub components, tokens and fixtures does the wizard reuse, and what must not change?
+- [`specs/v2-bundles/01-spec-design-page-wizard-v2/ASSET-SOURCES.md`](specs/v2-bundles/01-spec-design-page-wizard-v2/ASSET-SOURCES.md) — **Create Relationship wizard v2 — asset sources** — Where did each file in the wizard bundle come from, and which copies must the build not use?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/README.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/README.md) — **Onboarding basics v2 (handoff)** — How do I preview the public catalog, the public template page, Pricing → template pick and the Counterparty join?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/AUDIENCE-AND-POSITIONING.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/AUDIENCE-AND-POSITIONING.md) — **Onboarding basics v2 — audience and positioning** — Who are the public pages written for, which claims are still placeholders, and which open conflict does the owner decide?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/IMPLEMENTATION-PROMPT.md) — **Onboarding basics v2 — implementation brief** — Which QuizHub components, tokens and fixtures do the public pages and the join flow reuse, and what must not change?
+- [`specs/v2-bundles/02-spec-design-page-onboarding-v2/ASSET-SOURCES.md`](specs/v2-bundles/02-spec-design-page-onboarding-v2/ASSET-SOURCES.md) — **Onboarding basics v2 — asset sources** — Where did each file in the onboarding bundle come from, and which of them are placeholders?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/README.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/README.md) — **Relationship Detail v2 (handoff)** — How do I preview every Relationship Detail state, in both roles?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/IMPLEMENTATION-PROMPT.md) — **Relationship Detail v2 — implementation brief** — Which rows and components does Relationship Detail reuse, and what does each state and role change?
+- [`specs/v2-bundles/03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md`](specs/v2-bundles/03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md) — **Relationship Detail v2 — asset sources** — Where did each file in the Relationship Detail bundle come from?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/README.md`](specs/v2-bundles/04-spec-design-page-align-v2/README.md) — **Align (Stage 6) v2 (handoff)** — How do I preview Align, and what do the Soft and Full re-scores show?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/04-spec-design-page-align-v2/IMPLEMENTATION-PROMPT.md) — **Align (Stage 6) v2 — implementation brief** — How is Align scored and re-scored in code, and which components does it reuse?
+- [`specs/v2-bundles/04-spec-design-page-align-v2/ASSET-SOURCES.md`](specs/v2-bundles/04-spec-design-page-align-v2/ASSET-SOURCES.md) — **Align (Stage 6) v2 — asset sources** — Where did each file in the Align bundle come from?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/README.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/README.md) — **Start and My Relationships v2 (handoff)** — How do I preview Start and My Relationships, including the empty and paused states?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/IMPLEMENTATION-PROMPT.md) — **Start and My Relationships v2 — implementation brief** — Which shell, cards and card kebabs does the v2 dashboard reuse, and what must not change?
+- [`specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md`](specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md) — **Start and My Relationships v2 — asset sources** — Where did each file in the Start and My Relationships bundle come from?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/README.md`](specs/v2-bundles/06-spec-design-page-templates-v2/README.md) — **Templates in-app v2 (handoff)** — How do I preview the Library and My Templates tabs, the template page and the proposal?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/06-spec-design-page-templates-v2/IMPLEMENTATION-PROMPT.md) — **Templates in-app v2 — implementation brief** — Which components and rows do the Templates tabs, the template detail and the proposal reuse, and what must not change?
+- [`specs/v2-bundles/06-spec-design-page-templates-v2/ASSET-SOURCES.md`](specs/v2-bundles/06-spec-design-page-templates-v2/ASSET-SOURCES.md) — **Templates in-app v2 — asset sources** — Where did each file in the Templates in-app bundle come from?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/README.md`](specs/v2-bundles/07-spec-design-page-chat-v2/README.md) — **Chat v2 (handoff)** — How do I preview Chat in every relationship state?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/07-spec-design-page-chat-v2/IMPLEMENTATION-PROMPT.md) — **Chat v2 — implementation brief** — Which chat components does v2 reuse, and what changes per relationship state?
+- [`specs/v2-bundles/07-spec-design-page-chat-v2/ASSET-SOURCES.md`](specs/v2-bundles/07-spec-design-page-chat-v2/ASSET-SOURCES.md) — **Chat v2 — asset sources** — Where did each file in the Chat bundle come from?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/README.md`](specs/v2-bundles/08-spec-design-page-payment-v2/README.md) — **Payment v2 (handoff)** — How do I preview standalone billing in every state?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/08-spec-design-page-payment-v2/IMPLEMENTATION-PROMPT.md) — **Payment v2 — implementation brief** — Which billing components and routes does v2 reuse, and what must not change?
+- [`specs/v2-bundles/08-spec-design-page-payment-v2/ASSET-SOURCES.md`](specs/v2-bundles/08-spec-design-page-payment-v2/ASSET-SOURCES.md) — **Payment v2 — asset sources** — Where did each file in the Payment bundle come from?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/README.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/README.md) — **v2 design system (handoff)** — How do I preview the v2 tokens, the component sheet and the flow map?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/IMPLEMENTATION-PROMPT.md) — **v2 design system — implementation brief** — How do the v2 tokens, component sheet, shared modal/toast/kebab and flow map port into the app?
+- [`specs/v2-bundles/09-spec-design-system-tokens-v2/ASSET-SOURCES.md`](specs/v2-bundles/09-spec-design-system-tokens-v2/ASSET-SOURCES.md) — **v2 design system — asset sources** — Where did each file in the design-system bundle come from?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/README.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/README.md) — **Assessment (answer screen) v2 (handoff)** — How do I preview the answer screen, including the counter and resume states?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/IMPLEMENTATION-PROMPT.md) — **Assessment v2 — implementation brief** — Which answer-screen components and scale does v2 reuse, and what must not change?
+- [`specs/v2-bundles/10-spec-design-page-assessment-v2/ASSET-SOURCES.md`](specs/v2-bundles/10-spec-design-page-assessment-v2/ASSET-SOURCES.md) — **Assessment v2 — asset sources** — Where did each file in the Assessment bundle come from?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md) — **Account menu and Settings v2 (handoff)** — How do I preview the account menu and the Account Settings sections?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md) — **Account menu and Settings v2 — implementation brief** — Which settings sections does v2 carry, and which components do they reuse?
+- [`specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) — **Account menu and Settings v2 — asset sources** — Where did each file in the Account Settings bundle come from?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md) — **Admin CRUD & Permissions matrix v2 (handoff)** — How do I preview the admin CRUD and permissions matrix, its filters and its broken state?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md) — **Admin CRUD & Permissions matrix v2 — implementation brief** — Which shell and components does the read-only Admin matrix reuse, and what must the React port honour?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md) — **Admin CRUD & Permissions matrix v2 — asset sources** — Where did each file in the Admin CRUD & Permissions matrix bundle come from?
+- [`specs/v2-prototype/crud-matrix.md`](specs/v2-prototype/crud-matrix.md) — **CRUD & Permissions matrix** — Which object × action × role rows does the v2 prototype cover, and where does upstream conflict?
 - [`specs/ui-divergence.md`](specs/ui-divergence.md) — **Divergence table** — Where does each surface deliberately differ from its ancestor?
 - [`specs/ui-mapping.md`](specs/ui-mapping.md) — **Quiz-surface map** — Which quiz surface is this AlignSynch file a variation of?
 - [`specs/ui-ux-audit.md`](specs/ui-ux-audit.md) — **UI/UX audit** — What does the build follow, vary, or quietly diverge from in the purchased template?
@@ -150,6 +191,7 @@ What the product promises, written down before it was built.
 - [`specs/ux-reference-patterns.md`](specs/ux-reference-patterns.md) — **Reference UX patterns** — What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
 - [`specs/ux-stages.md`](specs/ux-stages.md) — **Stage display** — How is each stage shown, and who acts next?
+- [`specs/v2-coverage-matrix.md`](specs/v2-coverage-matrix.md) — **v2 coverage matrix — the 23 screens, measured** — Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?
 
 ## Records & QA
 
@@ -170,6 +212,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/qa-dogfood-p4.md`](qa/qa-dogfood-p4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa/qa-links.md`](qa/qa-links.md) — **QA links** — Which local routes do I click to QA this change range, and what will each one cost me?
 - [`qa/rail-handle/README.md`](qa/rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?
+- [`qa/release-2.0.0-rc1.1/billing-checkout.md`](qa/release-2.0.0-rc1.1/billing-checkout.md) — **A test-mode checkout on production, #1053** — Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?
 - [`qa/rel-detail-edit/README.md`](qa/rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
 - [`qa/stage5/README.md`](qa/stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
 - [`qa/swiper-12/README.md`](qa/swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
@@ -231,6 +274,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-20-0.md`](changelog/v1-20-0.md) — **v1.20.0** — The release that made the version label true — the walk can be paid and sent, and the code it names was already live.
 - [`changelog/v1-20-1.md`](changelog/v1-20-1.md) — **v1.20.1** — Which release connected the billing state machine to the events it was waiting for, and shipped no new surface?
 - [`changelog/v1-21-0.md`](changelog/v1-21-0.md) — **v1.21.0** — Which release made a draft session distinguishable from a live one, and gave an invitation its own relationship?
+- [`changelog/v1-22-0.md`](changelog/v1-22-0.md) — **v1.22.0** — Which release turned the relationship into six sections a reader can address, and made a trial that ends pause instead of close?
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.
 - [`changelog/v1-5-0.md`](changelog/v1-5-0.md) — **v1.5.0** — The release where a person could delete their account.
@@ -239,6 +283,10 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-7-0.md`](changelog/v1-7-0.md) — **v1.7.0** — The release where the review shelf went live.
 - [`changelog/v1-8-0.md`](changelog/v1-8-0.md) — **v1.8.0** — The release where the flow conformed to its six-stage spec.
 - [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
+- [`changelog/v2-0-0-rc1.md`](changelog/v2-0-0-rc1.md) — **v2.0.0-rc1** — What does the v2 surface set look like as one candidate — and what does its capture prove?
+- [`changelog/v2-0-0-rc1-1.md`](changelog/v2-0-0-rc1-1.md) — **v2.0.0-rc1.1** — What does the patch on the candidate fix — and what format change does it carry?
+- [`changelog/v2-0-0-rc1-2.md`](changelog/v2-0-0-rc1-2.md) — **v2.0.0-rc1.2** — Which two loops did the candidate leave open, and what closes them?
+- [`changelog/v2-0-0-rc1-3.md`](changelog/v2-0-0-rc1-3.md) — **v2.0.0-rc1.3** — Which states, notices and plans did the pool make true from each seat?
 
 <!-- docs-hub:end -->
 

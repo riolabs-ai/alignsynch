@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [v2.0 UI handoff bundles (index)](v2-bundles/README.md)
 
 <!-- docs-nav:end -->
 
@@ -21,32 +21,57 @@ at the instant both have submitted.
 | `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report             |
 | `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen            |
 | `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)       |
-| `/invite/[token]`                            | GET    | step 1 of the Counterparty's onboarding wizard; **claims nothing**         |
-| `/invite/[token]?step=2`                     | GET    | what happens next — answer, answer, report; opinions editable until accept |
-| `/invite/[token]?step=3`                     | GET    | the account gate: sign in / sign up, or (signed in) the claim form         |
+| `/invite/[token]`                            | GET    | the Counterparty's two-field claim screen; **claims nothing**              |
+| `/invite/[token]?step=N`                     | GET    | a retired step link — resolves to the same claim screen, parameter ignored |
 | `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen  |
 
 `/invite/[token]` is inert on purpose: the token is single-use, and a GET that consumed it would
 be consumed by the first mail client to preview the link.
 
-## The Counterparty's onboarding (#t_0aa81144)
+## The Counterparty's onboarding — two fields, one screen (#1115 task 4)
 
 The invitation used to be one button whose `POST` answered with the instance screen: a stranger was
 joined to a relationship and dropped into a questionnaire with no sentence saying who had invited
-them, what would happen, or whether anything was owed. It now opens a three-step wizard
-(`components/assessment-flow/counterparty-wizard.tsx`, varying the numbered stepper in
-`components/create/quiz-editor.tsx`):
+them, what would happen, or whether anything was owed. It then became a three-step wizard
+(`?step=1|2|3`) whose last step asked for a password. **That wizard is retired**, and so is its copy:
+`components/assessment-flow/claim-form.tsx` is the whole surface, and it asks for the name the
+invitation already carries (prefilled) and the address it was sent to. Issue #1115 US-2 is the rule —
+"at most two fields before the counterparty can begin answering" — and a claim that asks for a
+password, a card or a plan is the friction it exists to remove. The template ancestor is
+`components/auth/register-view.tsx`; the variation is that there is no password, no plan and no
+second screen.
 
-1. **what this is** — who invited you, which template, and what each of you will see;
-2. **what happens next** — you answer, they answer, then the report opens for both; opinions stay
-   editable until you accept;
-3. **your account** — sign in or create one, and the claim form appears only here, only signed in.
+The three things the wizard used to say are still said, on the one screen: who invited them and
+which template (`sectionOf(invitePageCopy, "claim")`), that their answers are theirs alone until both
+have submitted, and that **accepting costs them nothing** — the Initiator is the one who pays. What
+is gone is the step addressing: `?step=N` still resolves (it lands on this screen, parameter ignored)
+because a link in a mail client cannot be rewritten, but no surface links to it.
 
-Every step's URL is `/invite/<token>?step=N`, so the token stays in the path and the sign-in
-`next` is the step 3 URL itself: `safeNextPath`/`signInDestination` keep it, and the login page
-renders one sentence naming what the person was doing (`lib/auth/invite-prompt.ts`). A token that
-is spent, expired, revoked, lapsed or unknown still draws the refusal bands on `InviteView`, and a
-`?claim=` refusal is carried back to step 3.
+The address is the second credential, now that the password is gone. A claim naming any other address
+is refused `email-mismatch` and writes nothing; a repeat submit from the invitation's own address
+**resumes** the seat — a new browser, the same `party` row, a replaced `access_token_hash`, never a
+second row or a second account. The account the seat binds to is resolved before the claim's
+transaction (`lib/auth/claim-account.ts`): the id an existing address already has, or a new account
+created through the branch's own `sign-up/email`, whose session cookies the route relays. A tree
+with no auth server still claims, bound to the browser's cookie alone.
+
+The refusal bands — spent, expired, revoked, lapsed, unknown, and a browser that is already a party —
+still draw on `InviteView`, and a `?claim=` refusal is carried back to the same page.
+
+## "Connected" is derived, not decided (#1115 task 5)
+
+`connected` is a fact about **the two seats and the session**: both `party` rows bound to an account
+(`user_id IS NOT NULL`) and the session's record existing. `lib/relationship/membership.ts` answers it
+(`connectionOf()`), and it takes exactly three booleans as input — so "waiting on answers" cannot be
+smuggled into the state without widening a type. `lib/member/relationships.ts` computes it into the
+read; `components/dashboard/relationship-detail.tsx` only renders it, as `Connected` or
+`Waiting on {name}`.
+
+**Not from opinions, answers, a `status` column or a report**: submitting, sealing and publishing move
+nothing. The owner's criterion is the test — _both parties able to access the dashboard and the first
+assessment session, not when they share or publish their opinions_ — and `tests/connected-state.test.ts`
+pins both halves: the vocabulary of the derivation, and the connection cell being byte-identical
+before and after `completion: { sealed: true }`.
 
 The claim is the **last** hop. A submit is no longer a bare 303 either: `POST …/answers` redirects
 to `/assessment/instances/<id>?submitted=1`, which draws the confirmation band
@@ -226,6 +251,6 @@ assessment row makes `pnpm db:seed` refuse.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [v2.0 UI handoff bundles (index)](v2-bundles/README.md)
 
 <!-- docs-nav:end -->

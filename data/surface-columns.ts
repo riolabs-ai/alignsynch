@@ -8,7 +8,7 @@
  * `/dashboard/relationships`, `/dashboard/help`, `/assessment/instances`,
  * `/assessment/instances/[instanceId]`, `/my-quizzes` and `/settings` had **no page-level wrapper
  * at all**, and the centring was drawn inside the views — `dashboard-page.tsx`,
- * `relationship-cards.tsx`, `quiz-statistics.tsx`, `instance-view.tsx`, `report-view.tsx`,
+ * `relationship-cards.tsx`, `quiz-statistics.tsx`, `session-view.tsx`, `report-view.tsx`,
  * `stage-shell.tsx`, `invite-view.tsx`, `template-shelf.tsx` — so three pages had three different
  * left edges and a fourth changed its edge at `md`.
  *
@@ -117,6 +117,19 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/admin/instances", mode: "column" },
   { path: "/admin/instances/[id]", mode: "column" },
   { path: "/admin/instances/[id]/report", mode: "column" },
+  // #1126 — the CRUD & Permissions matrix. `StageColumn`, like every other console page: the Nine
+  // column table is a wide *element* inside the column, and it scrolls in its own container rather
+  // than widening the page — the reading measure is the console family's, not the table's.
+  { path: "/admin/permissions", mode: "column" },
+  { path: "/admin/email-templates", mode: "column" },
+  { path: "/admin/email-templates/[id]", mode: "column" },
+  // #1252 — the project spec's three routes, one panel inside `StageColumn` like every other
+  // console page. The reader the next card adds (the pinned Validation column, the 208px submenu)
+  // is a wide *element* inside the column rather than a wider page, and this row is where it says
+  // so: the reading measure is the console family's, not the matrix's.
+  { path: "/admin/spec", mode: "column" },
+  { path: "/admin/spec/validation", mode: "column" },
+  { path: "/admin/spec/[group]", mode: "column" },
   { path: "/admin/review", mode: "column" },
   { path: "/admin/templates", mode: "column" },
   { path: "/admin/templates/[id]", mode: "column" },
@@ -126,10 +139,21 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/help", mode: "column" },
   { path: "/dashboard/relationships", mode: "column" },
   { path: "/dashboard/relationships/[id]", mode: "column" },
+  /**
+   * #1131 — Chat v2. A column, not a bleed: the v2 surface is two panes inside the page's own
+   * `max-w-content` (the conversation list beside the thread), so it takes the same left edge as the
+   * templates and relationships lists next to it. The quiz product's `/chat` — the bleed surface the
+   * mode table's `bleed` reason names — is a different route, and it keeps its own row below.
+   */
+  { path: "/dashboard/chat", mode: "column" },
+  // #1132 — the billing surface: the same left edge as the detail screen it is a sibling of.
+  { path: "/dashboard/payment", mode: "column" },
   { path: "/dashboard/support", mode: "column" },
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },
   { path: "/dashboard/templates/[id]", mode: "column" },
+  /* #1130 — the proposal form is a two-up (form + its two asides), like the template page above it. */
+  { path: "/dashboard/templates/[id]/propose", mode: "column" },
   { path: "/dashboard/user", mode: "column" },
   { path: "/settings", mode: "column" },
   /**
@@ -162,12 +186,20 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/assessment/instances/[instanceId]/answer", mode: "column" },
   { path: "/assessment/instances/[instanceId]/report", mode: "column" },
   { path: "/assessment/instances/[instanceId]/sent", mode: "column" },
+  // #1226 — the create-failed screen: one status card in the column, the same left edge as the
+  // stage that failed its post. The artifact draws `mx-auto max-w-3xl`; the width is kept as a
+  // measure inside `StageColumn`, and the centring is not (#858).
+  { path: "/assessment/new/failed", mode: "column" },
   { path: "/invite/[token]", mode: "column" },
-  { path: "/templates/relationship/[slug]/create", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/aspects", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/commit", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/invite", mode: "column" },
-  { path: "/templates/relationship/[slug]/create/mode", mode: "column" },
+  // #1109 — the create flow, at the dashboard address it shares with the member's template library.
+  // The segment is `[id]` and the value a `/create` URL carries is a template **slug**: Next refuses
+  // two dynamic segment names at one level, so the flow lives under the editor's `[id]` segment
+  // rather than beside it. See `app/(mainlayout)/dashboard/templates/[id]/create/page.tsx`.
+  { path: "/dashboard/templates/[id]/create", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/aspects", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/commit", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/invite", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/mode", mode: "column" },
 
   // ── Authoring. ──────────────────────────────────────────────────────────────────────────────
   { path: "/my-quizzes", mode: "column" },

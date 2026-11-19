@@ -338,7 +338,7 @@ async function main() {
     const entitlement = await billing.entitlementForAccount(account);
     console.log(
       `  plan=${entitlement.planName} paid=${entitlement.paid} ` +
-        `maxActiveInstances=${entitlement.maxActiveInstances} advanced=${entitlement.advancedMode}`,
+        `maxActiveSessions=${entitlement.maxActiveSessions} advanced=${entitlement.advancedMode}`,
     );
     if (entitlement.planId === planId) {
       pass("the account bought the tier and the gate says so", `plan=${entitlement.planName}`);

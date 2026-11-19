@@ -26,6 +26,7 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
 import { LeavingLink } from "@/components/layout/leaving-link";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
+import { registerPathFor } from "@/lib/auth/paths";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
@@ -122,6 +123,7 @@ export function LoginView({
   marks,
   markSrc,
   next,
+  landing,
   prompt = null,
   googleFailure: googleFailureProp,
   demo,
@@ -170,6 +172,15 @@ export function LoginView({
    */
   onSwitchToRegister?: () => void;
   next: string;
+  /**
+   * "Where do I go now that I'm signed in?" — the server action from
+   * `app/(auth)/login/landing-action.ts` (#1252), wired by the page with the raw `?next=` already
+   * bound on the server. `next` above is validated on a **signed-out** request and cannot know the
+   * role; a stakeholder's destination only becomes decidable once the session exists. Optional, so
+   * stage 4's embedded mount keeps the plain destination, and a failed ask falls back to `next` —
+   * a landing question must never fail a sign-in that already succeeded.
+   */
+  landing?: () => Promise<string>;
   /**
    * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
    * every other visit — the words are the login fixture's (`lib/auth/invite-prompt.ts` decides
@@ -277,7 +288,11 @@ export function LoginView({
       return;
     }
 
-    router.push(next);
+    // Where to go is a question for the server once there is a session (#1252): a stakeholder
+    // lands on the project spec, everyone else on the `next` this page already validated. A
+    // refused/failed ask is not a failed sign-in — the destination the page rendered is kept.
+    const destination = landing === undefined ? next : await landing().catch(() => next);
+    router.push(destination);
     router.refresh();
   };
 
@@ -516,7 +531,14 @@ export function LoginView({
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
               {onSwitchToRegister === undefined ? (
-                <Link href="/register" className="text-action">
+                /*
+                 * #1187 — the link carries `next`, so `/register` honours the same return the
+                 * sign-in form does. A bare `/register` dropped the query, and the sign-up then
+                 * landed on the brand's `AFTER_SIGN_IN` with the flow's draft stranded behind a
+                 * cookie nothing read. `registerPathFor()` is `#867`'s builder for this hop; it
+                 * re-runs `safeNextPath`, so a hostile value cannot become an off-site `next`.
+                 */
+                <Link href={registerPathFor(next)} className="text-action">
                   {itemLabel(form, "signup-action")}
                 </Link>
               ) : (
@@ -533,7 +555,9 @@ export function LoginView({
             {/* The demo surfaces, resolved on the server (#218). `off` renders nothing — no
                 disabled control, no hint, the same page this route rendered before the demo. */}
             {demo.kind === "entry" && <DemoEntry copy={copy} />}
-            {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
+            {demo.kind === "roles" && (
+              <DemoRoles copy={copy} action={demo.action} next={demo.next} />
+            )}
           </CardContent>
         </FormSurface>
 

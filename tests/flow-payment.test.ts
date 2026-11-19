@@ -33,7 +33,7 @@ import {
   type PaymentFacts,
 } from "@/lib/flow/payment";
 import { paymentJobKey, paymentJobsOf, retryDue } from "@/lib/flow/payment-jobs";
-import { instanceStatusOf } from "@/lib/flow/state";
+import { sessionStatusOf } from "@/lib/flow/state";
 
 const SEALED = new Date("2026-11-01T12:00:00.000Z");
 const day = (n: number) => new Date(SEALED.getTime() + n * 86_400_000);
@@ -270,7 +270,7 @@ describe("completionRefusalOf — asked only when an obligation exists", () => {
   });
 });
 
-describe("instanceStatusOf — the fee is the last gate", () => {
+describe("sessionStatusOf — the fee is the last gate", () => {
   const sealed = {
     aspectCount: 2,
     hasCounterparty: true,
@@ -281,21 +281,21 @@ describe("instanceStatusOf — the fee is the last gate", () => {
   };
 
   it("is awaiting_payment when both accepted and the fee is unarmed", () => {
-    expect(instanceStatusOf({ ...sealed, paymentArmed: false })).toBe("awaiting_payment");
+    expect(sessionStatusOf({ ...sealed, paymentArmed: false })).toBe("awaiting_payment");
   });
 
   it("is complete when the fee is armed", () => {
-    expect(instanceStatusOf({ ...sealed, paymentArmed: true })).toBe("complete");
+    expect(sessionStatusOf({ ...sealed, paymentArmed: true })).toBe("complete");
   });
 
   it("is complete when nobody measured — the legacy direction", () => {
     // A read path that never learned about payment must not turn every finished session into a
     // paywall; the server action refuses on its own re-read.
-    expect(instanceStatusOf(sealed)).toBe("complete");
+    expect(sessionStatusOf(sealed)).toBe("complete");
   });
 
   it("stays answering before the second acceptance, whatever the money says", () => {
-    expect(instanceStatusOf({ ...sealed, counterpartyAccepted: 0, paymentArmed: false })).toBe(
+    expect(sessionStatusOf({ ...sealed, counterpartyAccepted: 0, paymentArmed: false })).toBe(
       "answering",
     );
   });

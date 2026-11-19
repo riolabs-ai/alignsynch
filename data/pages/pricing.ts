@@ -1,94 +1,109 @@
 /**
- * `/pricing` — the pricing route's copy.
+ * `/pricing` — the pricing route's copy, in bundle 02's bands (#1127).
  *
- * The pricing page is three bands: the plan grid (`PricingPlans`), the FAQ
- * (`PricingFaq`) and the closing banner (`PricingCta`). `app/(marketing)/pricing/page.tsx`
- * resolves one section per band and passes it down, so the words below are the
- * only ones the three components render.
+ * The page is five bands, in the order a reader meets them
+ * (`docs/specs/v2-bundles/02-spec-design-page-onboarding-v2/pricing.html`):
  *
- * **This page sells relationship alignment** (owner, 2026-11-02). It used to carry the QuizHub
- * fixture — "quiz creation and learning needs", a quiz FAQ, a "create amazing quizzes" banner —
- * and none of it described this product. Every line here is now about what the build does: the
- * two-party assessment, the template a practice authors, the blind answer, the report, the Gap,
- * the Steps that follow from it, and the coach seat that runs the session. There is no proof
- * claim anywhere on the page — no customer count, logo, rating, "trusted by", or earnings
- * figure — because the product has no such evidence to show and a pricing page is where a
- * fabricated one would be most expensive.
+ *   1. **the hero** — the promise, and the three facts a reader deciding needs (a trial, no card,
+ *      the invitee pays nothing);
+ *   2. **the plans** — one card, for the one plan the catalogue sells. The **names, summaries and
+ *      amounts are not here**: they are `data/membership-plans.ts` (which reads its money out of
+ *      `data/billing-plans.ts`), so a price typed into this file would be a second source for the
+ *      one number a checkout charges. What *is* here is everything around the figure — the ribbon,
+ *      the trial line, the card's action frame, and one line of features per plan;
+ *   3. **the unsure strip** — the honest nudge for a reader who cannot choose;
+ *   4. **How Billing Works** — three steps, because the plan is chosen here and sold nowhere;
+ *   5. **the questions** and **the closing band**.
+ *
+ * **No price, no currency and no second plan.** The feature list is the artifact's own lines for
+ * the plan the catalogue sells (the artifact's other two cards, Family and Single Annual, were
+ * removed on 2026-11-19 — first one, then the other); `tests/pricing-page-v2.test.tsx` pins that
+ * nothing under `components/pricing/**` holds a `$` figure, and the catalogue's own invariants
+ * (`membershipPlanProblems()`) pin the plan set.
  *
  * Two things the page computes rather than spells:
  *
- *  - `save-badge` carries `{percent}`; the view fills it from
- *    `formatPercentValue(metric("pricing.annualDiscount").value)` — a number
- *    typed here as well would be a second source of truth for a metric. The 20% it prints is
- *    the discount the fixture's `yearlyCents` values actually apply.
- *  - `no-results` carries `{query}`; the view fills it from the live search box.
+ *  - `plan-cta` carries `{plan}`; the view fills it with the catalogue's name, so "Start With
+ *    Single" and the card's title cannot disagree;
+ *  - `unsure-body` carries `{plan}` for the same reason.
  *
- * `price-note` is the line that makes a published price honest now that billing is open: US
- * dollars, monthly or yearly, through a card checkout, with the Free plan working today.
- * `test-mode` is the second half of that honesty: the release candidate runs the hosted adapter
- * on test keys, so the band says on one line that nothing is charged. Both are rendered by the
- * plan band from this fixture, and neither is a claim the code does not keep.
- *
- * **The plan rows themselves are not here on purpose**: their words live in
- * `data/billing-plans.ts` (the plan fixture) and their figures in `billing_plan`, so the grid
- * reads one list rather than a second copy under `data/pages/`. There is likewise no
- * "need a custom plan? contact sales" item any more — that was the removed Enterprise tier's
- * copy, and an invitation to agree terms that no plan in the catalogue offers is a promise the
- * checkout cannot keep.
- *
- * **No address, and therefore no brand import** (owner, 2026-11-02). This fixture used to hold
- * `{ id: "contact-email", label: brand.supportEmail }`, which is why it read the ambient record;
- * the FAQ's contact row links `/help`'s form now, so the words are a label and a link and this
- * file cannot print a mailbox even by accident.
- *
- * `heading` is the route's page heading and the plan band renders it as its `h1`:
- * on this route the first band *is* the hero, so the page line and the section
- * heading spell the same words — the band reads its own section, the top-level
- * pair documents what the page is.
+ * `test-mode` is the honesty line the release candidate needs: the hosted checkout runs on test
+ * keys, so the band says on one line that nothing is charged.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const pricingPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Simple, transparent pricing for relationship alignment",
+  eyebrow: "Pricing",
+  heading: "Simple Pricing. Start Free.",
   subtitle:
-    "Every plan runs the same assessment: templates you author, blind answers from both parties, and a report that names every Gap. The Free plan runs one relationship at a time; the paid plans run as many as your practice can hold.",
+    "Every plan starts with a 7-day free trial and no card. The trial begins when the other person accepts. The person you invite never pays.",
   sections: [
     {
       id: "plans",
-      heading: "Simple, transparent pricing for relationship alignment",
-      body: "Every plan runs the same assessment: templates you author, blind answers from both parties, and a report that names every Gap. The Free plan runs one relationship at a time; the paid plans run as many as your practice can hold.",
       items: [
-        { id: "monthly", label: "Monthly" },
-        { id: "yearly", label: "Yearly" },
-        { id: "save-badge", label: "Save up to {percent}" },
-        {
-          id: "price-note",
-          label:
-            "Prices are in US dollars. The Free plan works today; the paid plans are billed monthly or yearly through a card checkout.",
-        },
+        { id: "most-popular", label: "Most Popular" },
+        { id: "trial-note", label: "After a 7-day free trial · No card to start" },
+        { id: "plan-cta", label: "Start With {plan}" },
+        { id: "price-per-month", label: "/ month" },
+        { id: "price-per-year", label: "/ year" },
+        { id: "current-plan", label: "Your current plan" },
         {
           id: "test-mode",
           label: "Test mode: the card checkout runs on test keys, so no card is charged.",
         },
-        { id: "most-popular", label: "Recommended" },
-        { id: "current-plan", label: "Your current plan" },
         /**
-         * #912 — the word was "buy" ("Not available to buy right now."), and `/pricing` is a
-         * payment surface: the card retires "purchase", "buy" and "save payment method" from every
-         * one of them. The state this row names is a tier a signed-out or unentitled reader cannot
-         * start, which "Not available on this plan right now." says without the shop verb.
+         * The artifact's four lines for the plan's card. They describe what the build does — one
+         * relationship, both modes, the report and its Steps, the invitee paying nothing — and no
+         * line claims a capability the server refuses.
          */
-        { id: "not-available", label: "Not available on this plan right now." },
-        { id: "whats-included", label: "WHAT'S INCLUDED:" },
-        { id: "limitations", label: "LIMITATIONS:" },
-        { id: "price-per-month", label: "mo" },
-        { id: "price-per-month-yearly", label: "mo, billed yearly" },
+        { id: "feature-single-1", label: "1 relationship, any template" },
+        { id: "feature-single-2", label: "Basic and Advanced Mode" },
+        { id: "feature-single-3", label: "Align, Chat and Next Step" },
+        { id: "feature-single-4", label: "Invitee never pays" },
+      ],
+    },
+    {
+      /**
+       * The strip under the grid. It carries no plan *name* of its own: `{plan}` is filled from
+       * the catalogue by whatever plan the ribbon marks, so the nudge cannot point at one plan
+       * while the ribbon sits on another.
+       */
+      id: "unsure",
+      items: [
+        { id: "unsure-lead", label: "Not sure?" },
+        {
+          id: "unsure-body",
+          label:
+            "Start with the most popular: the {plan} plan — one relationship, any template, no card.",
+        },
+        { id: "unsure-cta", label: "Start With the Most Popular" },
+      ],
+    },
+    {
+      id: "billing",
+      heading: "How Billing Works",
+      items: [
+        {
+          id: "step-1",
+          label: "Pick a Template",
+          body: "Your plan is saved while you choose.",
+        },
+        {
+          id: "step-2",
+          label: "Set Up and Invite",
+          body: "Your trial starts when they accept. No card.",
+        },
+        {
+          id: "step-3",
+          label: "Add a Card When Ready",
+          body: "Only after the trial, if you want to keep going.",
+        },
       ],
     },
     {
       id: "faq",
-      heading: "Frequently Asked Questions",
-      body: "Answers about the assessment, the plans and the data behind them",
+      heading: "Questions",
+      body: "Answers about the assessment, the plans and the data behind them.",
       items: [
         { id: "search-placeholder", label: "Search questions..." },
         { id: "no-results", label: 'No results found for "{query}"' },
@@ -100,14 +115,9 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "cta",
-      heading: "Run your first alignment",
-      body: "Start one relationship free: seven days from the moment you send the invitation, everything included. After the seven days, a paid plan keeps the Gap open — card checkout, monthly or yearly.",
-      items: [
-        { id: "perk-free", label: "7 days free, from the invitation you send" },
-        { id: "perk-billing", label: "Paid plans are billed monthly or yearly" },
-        { id: "get-started", label: "Get Started Free" },
-        { id: "view-demo", label: "View Demo" },
-      ],
+      heading: "Start Your First Relationship",
+      body: "7 days free. No card. Your invitee never pays.",
+      items: [{ id: "get-started", label: "Browse Templates" }],
     },
   ],
 });

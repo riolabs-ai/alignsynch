@@ -145,7 +145,9 @@ function probe({
 
   mkdirSync(join(repo, "scripts"), { recursive: true });
   mkdirSync(bin);
-  for (const file of ["release.sh", "release-version.mjs"]) {
+  // The preflight runs first in every `--tag-only` cut (card t_3c37542f), so the probe carries it
+  // and satisfies it: the release's own page exists, and the `gh` shim answers `run list`/`pr list`.
+  for (const file of ["release.sh", "release-version.mjs", "release-preflight.mjs"]) {
     cpSync(join(ROOT, "scripts", file), join(repo, "scripts", file));
   }
   writeFileSync(join(repo, "scripts", "verify.sh"), "#!/usr/bin/env bash\nexit 0\n", {
@@ -156,6 +158,11 @@ function probe({
     `${JSON.stringify({ name: "probe", version }, null, 2)}\n`,
   );
   writeFileSync(join(repo, "CHANGELOG.md"), changelog);
+  mkdirSync(join(repo, "docs", "changelog"), { recursive: true });
+  writeFileSync(
+    join(repo, "docs", "changelog", `v${version.replace(/\./g, "-")}.md`),
+    `# v${version} — the probe\n`,
+  );
   writeFileSync(limits, "- nothing is stored: the probe serves fixtures.\n");
 
   // A prepended script, not a wrapper: the shim has to be what `gh` resolves to on PATH, and it
@@ -175,6 +182,8 @@ case "$1 $2" in
   "release view")
     printf '%s|false|%s|https://example.test/releases/tag/%s\\n' "$3" "$GH_FAKE_PRERELEASE" "$3"
     ;;
+  "run list") printf '[{"status":"completed","conclusion":"success","url":"https://example.test/run/1"}]\\n' ;;
+  "pr list") printf '[]\\n' ;;
 esac
 `,
     { mode: 0o755 },
@@ -251,11 +260,27 @@ describe("--dry-run for a pre-release", () => {
 
   it("refuses the malformed versions a looser pattern would let through", () => {
     const p = probe();
-    for (const version of ["1.1.0.0", "1.1", "v1.1.0"]) {
+    // `v1.1.0` used to be in this list, and it was the defect rather than the rule (#1248): the tag
+    // is `v<version>`, so the tagged spelling is the same release and `--dry-run v1.1.0-rc1` now
+    // prints the entry. What stays refused is a string that is not a version at all — including a
+    // doubled prefix, which is the one a sloppy `replace(/^v/g)` would have accepted.
+    for (const version of ["1.1.0.0", "1.1", "vv1.1.0", "01.1.0"]) {
       const run = release(p, ["--dry-run", version, "--limits", p.limits]);
       expect(run.status, version).toBe(2);
       expect(run.stderr).toContain(`'${version}' is not a semantic version`);
     }
+  });
+
+  it("accepts the tagged spelling and says which one it was given (#1248)", () => {
+    const p = probe();
+    const run = release(p, ["--dry-run", `v${RC}`, "--limits", p.limits]);
+
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain(`release: version ${RC} (given 'v${RC}'; the tag is v${RC}`);
+    // One prefix in the plan: the tag it would write is `v1.1.0-rc1`, never `vv1.1.0-rc1`.
+    expect(run.stderr).toContain(`git tag -a v${RC} -m v${RC} HEAD`);
+    expect(run.stderr).not.toContain(`vv${RC}`);
+    expect(run.stdout).toContain(`## [${RC}] - `);
   });
 });
 

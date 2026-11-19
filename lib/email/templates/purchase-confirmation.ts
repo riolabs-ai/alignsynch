@@ -40,16 +40,23 @@ export interface PurchaseConfirmationFacts {
   readonly link: string;
 }
 
-export function purchaseConfirmationDocument(facts: PurchaseConfirmationFacts): EmailDocument {
+export function purchaseConfirmationDocument(
+  facts: PurchaseConfirmationFacts,
+  body?: string,
+): EmailDocument {
   return {
     subject: PURCHASE_CONFIRMATION_SUBJECT,
     preheader: `The ${facts.plan} plan is active on your account.`,
     blocks: [
-      ...bodyBlocks(PURCHASE_CONFIRMATION_BODY, {
-        recipient: facts.recipient,
-        plan: facts.plan,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        PURCHASE_CONFIRMATION_BODY,
+        {
+          recipient: facts.recipient,
+          plan: facts.plan,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the ${facts.plan} plan is active on your account.`,

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  INSTANCE_NAME_MAX,
+  SESSION_NAME_MAX,
   MODE_LABELS,
   SETTING_DEFINITIONS,
   SETTING_LABELS,
@@ -28,7 +28,7 @@ export type MetaViewer = "initiator" | "counterparty" | "coach" | "admin";
  * The matrix is short and exact, and this panel is its whole UI:
  *
  *   - **Name** — the Initiator and an admin edit it; the Counterparty and the Coach read it. The
- *     rule is `INSTANCE_NAME_MAX`, the model's own `zInstanceName`.
+ *     rule is `SESSION_NAME_MAX`, the model's own `zSessionName`.
  *   - **Mode** — nobody edits it, the admin included. The Mode decides which Opinions the sheet
  *     asks, so a post-hoc change would invalidate answers already given; the honest move for a
  *     different Mode is a new relationship, and the panel says so instead of offering a control.
@@ -104,7 +104,7 @@ export function RelationshipMetadata({ rel, viewer }: { rel: V1Relationship; vie
                 <Input
                   id={`rel-name-${rel.id}`}
                   value={draftName}
-                  maxLength={INSTANCE_NAME_MAX}
+                  maxLength={SESSION_NAME_MAX}
                   onChange={(event) => {
                     setDraftName(event.target.value);
                     setSaved(null);
@@ -122,7 +122,7 @@ export function RelationshipMetadata({ rel, viewer }: { rel: V1Relationship; vie
                   Save name
                 </Button>
                 <span className="text-xs text-muted-foreground">
-                  {draftName.trim().length}/{INSTANCE_NAME_MAX}
+                  {draftName.trim().length}/{SESSION_NAME_MAX}
                 </span>
               </div>
             ) : (

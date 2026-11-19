@@ -32,7 +32,7 @@ describe("every purchasable type has one template, built from the type", () => {
   });
 
   it("takes the type's own Aspects, in order, rather than a second copy of the questions", () => {
-    // The two hand-authored templates keep the Aspects their instances were copied from (E31
+    // The two hand-authored templates keep the Aspects their sessions were copied from (E31
     // pins that), so they are the one deliberate exception; every other type is the source.
     const authored = new Set(["staff-manager", "parent-child"]);
 

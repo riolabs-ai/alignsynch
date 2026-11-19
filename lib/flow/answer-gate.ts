@@ -8,6 +8,11 @@
  *   coach      the viewer holds a `coach` membership and no `party` row. A coach reads the
  *              relationship; they have no answers to give, so there is no form at all — not a
  *              disabled one. The page draws the badge and the reason instead.
+ *   lapsed     the membership behind this relationship ended (#533 phase 3, reachable since
+ *              #1223). The screen names the pause before anything else it could say, and the
+ *              sheet underneath stays exactly what it would have been: #848's rule is that a
+ *              lapse closes the **Gap**, not the pairing, so `action` is still the answers
+ *              endpoint for a viewer `maySubmit()` allows and `null` for one it does not.
  *   readonly   the session is `complete`, so `maySubmit()` is false and the sheet is the record
  *              of what was said. The viewer's own scores are still drawn (they are theirs), but
  *              without a form: a control that can only fail is the silent-success bug arriving
@@ -33,7 +38,7 @@
  */
 import type { PartyRole } from "@/content/assessment";
 import { answersPath } from "@/lib/flow/paths";
-import { maySubmit, type InstanceStatus } from "@/lib/flow/state";
+import { maySubmit, type SessionStatus } from "@/lib/flow/state";
 import type { FlowAspect } from "@/lib/flow/screen";
 import type { Membership } from "@/lib/relationship/membership";
 
@@ -51,21 +56,24 @@ export interface AnswerGate {
    */
   readonly role: PartyRole | null;
   /**
-   * The submit endpoint, for the one state that may write. `null` in the other two: a form whose
+   * The submit endpoint, for the states that may write. `null` when there is no form: a form whose
    * action is absent is a form the markup cannot accidentally submit.
+   *
+   * `lapsed` is the one state whose action is decided by `maySubmit()` rather than by its name —
+   * a lapsed trial no longer takes the form away (#848), and an accepted seat still has none.
    */
   readonly action: string | null;
   /** How many Aspects the viewer has already answered — the resubmit label, and nothing else. */
   readonly answered: number;
-  /** Aspects in the instance's own copy. */
+  /** Aspects in the session's own copy. */
   readonly aspects: number;
 }
 
 export interface AnswerGateInput {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** The seat the read resolved, from Postgres — never from the URL or a form field. */
   readonly viewerRole: PartyRole | "coach";
-  readonly status: InstanceStatus;
+  readonly status: SessionStatus;
   /**
    * Whether the **viewer's own** seat has accepted (#R2). The freeze is per party now, so the
    * status alone cannot answer "may this viewer still edit": a session in `answering` where the
@@ -76,8 +84,9 @@ export interface AnswerGateInput {
   readonly aspects: readonly Pick<FlowAspect, "own">[];
   /**
    * #533 phase 3 — the membership paying for this relationship. `lapsed` outranks every other
-   * state except `coach`: a coach has no seat to lose, and a party whose membership ended keeps
-   * reading their own sheet but cannot write it, whatever the session's status said.
+   * state except `coach`: a coach has no seat to lose, and a party whose membership ended reads
+   * the pause on their sheet. It does **not** take the form away (#848/#1223): the sheet stays
+   * writable and only `screen.report` stays shut.
    */
   readonly membership?: Membership | null;
 }
@@ -96,6 +105,22 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
   if (input.viewerRole === "coach") {
     return { ...counts, state: "coach", role: null, action: null };
   }
+  // #1223 — the state `ANSWER_SHEET_STATES` has named since #533 phase 3 and no branch ever
+  // returned, so the paused screen could not render. It outranks `readonly` (a lapsed viewer who
+  // has also accepted reads the pause first) and never outranks `coach` — a coach has no seat to
+  // lose. What it deliberately does **not** do is take the form away: #848's rule is that a lapse
+  // closes the Gap, not the pairing, so the action is the same `maySubmit()` the sheet branch
+  // asks, and the only thing the state changes is which surface the page draws.
+  if (input.membership?.state === "lapsed") {
+    return {
+      ...counts,
+      state: "lapsed",
+      role: input.viewerRole,
+      action: maySubmit(input.status, input.viewerAccepted)
+        ? answersPath(input.sessionRecordId)
+        : null,
+    };
+  }
   // #848 — a lapsed trial closes the **Gap**, not the pairing. This used to take the form away, so
   // the counterparty who opened the link on day eight could not answer at all and two people were
   // stranded mid-session. The sheet stays writable; `screen.report` is what stays shut, because a
@@ -107,7 +132,7 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
     ...counts,
     state: "sheet",
     role: input.viewerRole,
-    action: answersPath(input.instanceRecordId),
+    action: answersPath(input.sessionRecordId),
   };
 }
 
@@ -116,7 +141,7 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
  *
  * A thin read of `aspect.own` so the view has one function to call per radio group instead of a
  * chain of optional accesses, and so "prefilled" means exactly one thing: the row this viewer
- * wrote. `own` is `null` until they answer, and a Basic instance carries no Think/Guess at all —
+ * wrote. `own` is `null` until they answer, and a Basic session carries no Think/Guess at all —
  * both come back `undefined` here, and neither is ever a default score.
  */
 export function ownScoreOf(

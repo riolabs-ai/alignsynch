@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/quiz/quiz-play.tsx   (variation: the answer sheet as a no-JS POST form — five-notch opinion bands per Aspect, no timer, no stepper, no progress bar)
  *
- * The answer sheet: every Aspect, and the scores **the instance's mode** asks (#146, #213, #273).
+ * The answer sheet: every Aspect, and the scores **the session's mode** asks (#146, #213, #273).
  *
  * `opinionKindsFor(mode)` is the list of kinds asked — `feel` and `wish` for Basic Mode, all
  * four in the glossary's order for Advanced — imported from `content/assessment.ts` rather
@@ -31,7 +31,7 @@
  * guidelines ask 44). The focused segment carries a ring, so keyboard use is visible; arrow
  * keys move within a group because that is what a native radio group does.
  *
- * The mode is a **prop**, decided by the instance row, never a control: a sheet that could
+ * The mode is a **prop**, decided by the session row, never a control: a sheet that could
  * switch would let one party answer Basic and the other Advanced on one relationship, which
  * is the comparison the mode column exists to prevent.
  *

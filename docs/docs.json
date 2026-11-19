@@ -128,6 +128,11 @@
           "question": "How does this repository reach `alignsynch.com`?"
         },
         {
+          "path": "operations/env-stores.md",
+          "title": "Env stores",
+          "question": "Which store holds each variable, in which scope — and which Preview entry wins?"
+        },
+        {
           "path": "operations/env-manifest.md",
           "title": "Env manifest",
           "question": "Which environment variable is required where, and where does its value come from?"
@@ -166,6 +171,11 @@
           "path": "operations/iteration.md",
           "title": "Iteration rhythm",
           "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
+        },
+        {
+          "path": "operations/migrations.md",
+          "title": "Migrations",
+          "question": "How is a migration numbered, and why can an applied one never be renumbered?"
         },
         {
           "path": "operations/orchestration.md",
@@ -390,6 +400,201 @@
           "question": "How do two people get from an invitation to a sealed Gap?"
         },
         {
+          "path": "specs/v2-bundles/README.md",
+          "title": "v2.0 UI handoff bundles (index)",
+          "question": "What are the eleven v2.0 ingest bundles, in what order are they built, and which owner decisions are still open?"
+        },
+        {
+          "path": "specs/v2-bundles/01-spec-design-page-wizard-v2/README.md",
+          "title": "Create Relationship wizard v2 (handoff)",
+          "question": "How do I preview wizard Stages 1–5, and which files make up the bundle?"
+        },
+        {
+          "path": "specs/v2-bundles/01-spec-design-page-wizard-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Create Relationship wizard v2 — implementation brief",
+          "question": "Which QuizHub components, tokens and fixtures does the wizard reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/01-spec-design-page-wizard-v2/ASSET-SOURCES.md",
+          "title": "Create Relationship wizard v2 — asset sources",
+          "question": "Where did each file in the wizard bundle come from, and which copies must the build not use?"
+        },
+        {
+          "path": "specs/v2-bundles/02-spec-design-page-onboarding-v2/README.md",
+          "title": "Onboarding basics v2 (handoff)",
+          "question": "How do I preview the public catalog, the public template page, Pricing → template pick and the Counterparty join?"
+        },
+        {
+          "path": "specs/v2-bundles/02-spec-design-page-onboarding-v2/AUDIENCE-AND-POSITIONING.md",
+          "title": "Onboarding basics v2 — audience and positioning",
+          "question": "Who are the public pages written for, which claims are still placeholders, and which open conflict does the owner decide?"
+        },
+        {
+          "path": "specs/v2-bundles/02-spec-design-page-onboarding-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Onboarding basics v2 — implementation brief",
+          "question": "Which QuizHub components, tokens and fixtures do the public pages and the join flow reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/02-spec-design-page-onboarding-v2/ASSET-SOURCES.md",
+          "title": "Onboarding basics v2 — asset sources",
+          "question": "Where did each file in the onboarding bundle come from, and which of them are placeholders?"
+        },
+        {
+          "path": "specs/v2-bundles/03-spec-design-page-relationship-detail-v2/README.md",
+          "title": "Relationship Detail v2 (handoff)",
+          "question": "How do I preview every Relationship Detail state, in both roles?"
+        },
+        {
+          "path": "specs/v2-bundles/03-spec-design-page-relationship-detail-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Relationship Detail v2 — implementation brief",
+          "question": "Which rows and components does Relationship Detail reuse, and what does each state and role change?"
+        },
+        {
+          "path": "specs/v2-bundles/03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md",
+          "title": "Relationship Detail v2 — asset sources",
+          "question": "Where did each file in the Relationship Detail bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/04-spec-design-page-align-v2/README.md",
+          "title": "Align (Stage 6) v2 (handoff)",
+          "question": "How do I preview Align, and what do the Soft and Full re-scores show?"
+        },
+        {
+          "path": "specs/v2-bundles/04-spec-design-page-align-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Align (Stage 6) v2 — implementation brief",
+          "question": "How is Align scored and re-scored in code, and which components does it reuse?"
+        },
+        {
+          "path": "specs/v2-bundles/04-spec-design-page-align-v2/ASSET-SOURCES.md",
+          "title": "Align (Stage 6) v2 — asset sources",
+          "question": "Where did each file in the Align bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/README.md",
+          "title": "Start and My Relationships v2 (handoff)",
+          "question": "How do I preview Start and My Relationships, including the empty and paused states?"
+        },
+        {
+          "path": "specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Start and My Relationships v2 — implementation brief",
+          "question": "Which shell, cards and card kebabs does the v2 dashboard reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md",
+          "title": "Start and My Relationships v2 — asset sources",
+          "question": "Where did each file in the Start and My Relationships bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/06-spec-design-page-templates-v2/README.md",
+          "title": "Templates in-app v2 (handoff)",
+          "question": "How do I preview the Library and My Templates tabs, the template page and the proposal?"
+        },
+        {
+          "path": "specs/v2-bundles/06-spec-design-page-templates-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Templates in-app v2 — implementation brief",
+          "question": "Which components and rows do the Templates tabs, the template detail and the proposal reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/06-spec-design-page-templates-v2/ASSET-SOURCES.md",
+          "title": "Templates in-app v2 — asset sources",
+          "question": "Where did each file in the Templates in-app bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/07-spec-design-page-chat-v2/README.md",
+          "title": "Chat v2 (handoff)",
+          "question": "How do I preview Chat in every relationship state?"
+        },
+        {
+          "path": "specs/v2-bundles/07-spec-design-page-chat-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Chat v2 — implementation brief",
+          "question": "Which chat components does v2 reuse, and what changes per relationship state?"
+        },
+        {
+          "path": "specs/v2-bundles/07-spec-design-page-chat-v2/ASSET-SOURCES.md",
+          "title": "Chat v2 — asset sources",
+          "question": "Where did each file in the Chat bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/08-spec-design-page-payment-v2/README.md",
+          "title": "Payment v2 (handoff)",
+          "question": "How do I preview standalone billing in every state?"
+        },
+        {
+          "path": "specs/v2-bundles/08-spec-design-page-payment-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Payment v2 — implementation brief",
+          "question": "Which billing components and routes does v2 reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/08-spec-design-page-payment-v2/ASSET-SOURCES.md",
+          "title": "Payment v2 — asset sources",
+          "question": "Where did each file in the Payment bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/09-spec-design-system-tokens-v2/README.md",
+          "title": "v2 design system (handoff)",
+          "question": "How do I preview the v2 tokens, the component sheet and the flow map?"
+        },
+        {
+          "path": "specs/v2-bundles/09-spec-design-system-tokens-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "v2 design system — implementation brief",
+          "question": "How do the v2 tokens, component sheet, shared modal/toast/kebab and flow map port into the app?"
+        },
+        {
+          "path": "specs/v2-bundles/09-spec-design-system-tokens-v2/ASSET-SOURCES.md",
+          "title": "v2 design system — asset sources",
+          "question": "Where did each file in the design-system bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/10-spec-design-page-assessment-v2/README.md",
+          "title": "Assessment (answer screen) v2 (handoff)",
+          "question": "How do I preview the answer screen, including the counter and resume states?"
+        },
+        {
+          "path": "specs/v2-bundles/10-spec-design-page-assessment-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Assessment v2 — implementation brief",
+          "question": "Which answer-screen components and scale does v2 reuse, and what must not change?"
+        },
+        {
+          "path": "specs/v2-bundles/10-spec-design-page-assessment-v2/ASSET-SOURCES.md",
+          "title": "Assessment v2 — asset sources",
+          "question": "Where did each file in the Assessment bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md",
+          "title": "Account menu and Settings v2 (handoff)",
+          "question": "How do I preview the account menu and the Account Settings sections?"
+        },
+        {
+          "path": "specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Account menu and Settings v2 — implementation brief",
+          "question": "Which settings sections does v2 carry, and which components do they reuse?"
+        },
+        {
+          "path": "specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md",
+          "title": "Account menu and Settings v2 — asset sources",
+          "question": "Where did each file in the Account Settings bundle come from?"
+        },
+        {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md",
+          "title": "Admin CRUD & Permissions matrix v2 (handoff)",
+          "question": "How do I preview the admin CRUD and permissions matrix, its filters and its broken state?"
+        },
+        {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md",
+          "title": "Admin CRUD & Permissions matrix v2 — implementation brief",
+          "question": "Which shell and components does the read-only Admin matrix reuse, and what must the React port honour?"
+        },
+        {
+          "path": "specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md",
+          "title": "Admin CRUD & Permissions matrix v2 — asset sources",
+          "question": "Where did each file in the Admin CRUD & Permissions matrix bundle come from?"
+        },
+        {
+          "path": "specs/v2-prototype/crud-matrix.md",
+          "title": "CRUD & Permissions matrix",
+          "question": "Which object × action × role rows does the v2 prototype cover, and where does upstream conflict?"
+        },
+        {
           "path": "specs/ui-divergence.md",
           "title": "Divergence table",
           "question": "Where does each surface deliberately differ from its ancestor?"
@@ -428,6 +633,11 @@
           "path": "specs/ux-stages.md",
           "title": "Stage display",
           "question": "How is each stage shown, and who acts next?"
+        },
+        {
+          "path": "specs/v2-coverage-matrix.md",
+          "title": "v2 coverage matrix — the 23 screens, measured",
+          "question": "Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?"
         }
       ]
     },
@@ -510,6 +720,11 @@
           "path": "qa/rail-handle/README.md",
           "title": "Rail collapse handle",
           "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
+        },
+        {
+          "path": "qa/release-2.0.0-rc1.1/billing-checkout.md",
+          "title": "A test-mode checkout on production, #1053",
+          "question": "Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?"
         },
         {
           "path": "qa/rel-detail-edit/README.md",
@@ -763,6 +978,11 @@
           "question": "Which release made a draft session distinguishable from a live one, and gave an invitation its own relationship?"
         },
         {
+          "path": "changelog/v1-22-0.md",
+          "title": "v1.22.0",
+          "question": "Which release turned the relationship into six sections a reader can address, and made a trial that ends pause instead of close?"
+        },
+        {
           "path": "changelog/v1-3-0.md",
           "title": "v1.3.0",
           "question": "The release where the flow closed."
@@ -801,6 +1021,26 @@
           "path": "changelog/v1-9-0.md",
           "title": "v1.9.0",
           "question": "The release where the payer could finally pay."
+        },
+        {
+          "path": "changelog/v2-0-0-rc1.md",
+          "title": "v2.0.0-rc1",
+          "question": "What does the v2 surface set look like as one candidate — and what does its capture prove?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-1.md",
+          "title": "v2.0.0-rc1.1",
+          "question": "What does the patch on the candidate fix — and what format change does it carry?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-2.md",
+          "title": "v2.0.0-rc1.2",
+          "question": "Which two loops did the candidate leave open, and what closes them?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-3.md",
+          "title": "v2.0.0-rc1.3",
+          "question": "Which states, notices and plans did the pool make true from each seat?"
         }
       ]
     }

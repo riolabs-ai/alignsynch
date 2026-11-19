@@ -123,6 +123,11 @@ describe("the menu descriptor", () => {
       "/admin/billing",
       "/admin/broadcast",
       "/admin/docs",
+      "/admin/permissions",
+      // #1138 — the transactional-mail override editor, the third reference row.
+      "/admin/email-templates",
+      // #1252 — the project spec: the fourth reference row, drawn for a stakeholder too.
+      "/admin/spec",
       "/admin/audit",
     ]);
   });
@@ -178,9 +183,10 @@ describe("the menu descriptor", () => {
 });
 
 describe("the ladder decides the rows", () => {
-  /** The four rungs, in order, with the rung each row's floor is met by. */
+  /** The five rungs, in order, with the rung each row's floor is met by. */
   const MENUS: Record<UserRole, string[]> = {
     member: hrefsFor("member"),
+    stakeholder: hrefsFor("stakeholder"),
     support: hrefsFor("support"),
     admin: hrefsFor("admin"),
     owner: hrefsFor("owner"),
@@ -198,14 +204,32 @@ describe("the ladder decides the rows", () => {
     "/admin/billing",
     "/admin/broadcast",
     "/admin/docs",
+    // #1126 — the CRUD & Permissions matrix, directly after Docs: the docs say how the product
+    // works, this says which role may do what.
+    "/admin/permissions",
+    // #1138 — the transactional-mail override editor: what the product writes to a person.
+    "/admin/email-templates",
+    // #1252 — the project spec, the fourth reference row and before the log.
+    "/admin/spec",
     "/admin/audit",
   ];
 
   /** #929 — the Support group, in the owner's order: two staff rows among the help pair. */
   const SUPPORT_GROUP = ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"];
 
-  /** The three Workspace rows every rung above it shares (#620, #877). */
-  const WORKSPACE = ["/dashboard/relationships", "/assessments", "/dashboard/templates"];
+  /**
+   * The four Workspace rows every rung above it shares (#620, #877, #1129, #1131).
+   *
+   * #1129 put `start` at the top (the signed-in landing, `/dashboard`) and retired
+   * `my-assessments`; #1131 added `Chat` → `/dashboard/chat` last of the group, which is the order
+   * the v2 rail draws (Start · My Relationships · Templates · Chat).
+   */
+  const WORKSPACE = [
+    "/dashboard",
+    "/dashboard/relationships",
+    "/dashboard/templates",
+    "/dashboard/chat",
+  ];
 
   /**
    * **The rule the amendment added, and the one that is easy to lose in a "just move these six
@@ -217,44 +241,57 @@ describe("the ladder decides the rows", () => {
   it("gives every role the document's own order — needs gates visibility, never the sequence", () => {
     const document = allItems();
     for (const role of USER_ROLES) {
+      // Both gates, in the order `menuFor` applies them: the rung (`needs`) and, since #1252, the
+      // capability a row may also name (`admin-spec` needs stakeholder *and* `spec-read`, which is
+      // how a support seat passes the floor and is still not drawn the row).
+      const capabilities = navViewer(role).capabilities;
       const visible = document
-        .filter((item) => roleAdmits(item.needs, role))
+        .filter(
+          (item) =>
+            roleAdmits(item.needs, role) &&
+            (item.capability === undefined || capabilities.has(item.capability)),
+        )
         .map((item) => item.href);
       expect(hrefsFor(role), `role "${role}" is a re-sort of the document`).toEqual(visible);
       // And the groups a role sees are the document's groups, in the document's order.
       expect(menuFor(role).map((group) => group.label)).toEqual(
         ["group-admin", "group-app", "group-support"].filter((label) =>
-          (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some((item) =>
-            roleAdmits(item.needs, role),
+          hrefsFor(role).some((href) =>
+            (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some(
+              (item) => item.href === href,
+            ),
           ),
         ),
       );
     }
   });
 
-  it("gives a member the five rows that are theirs, and no staff row", () => {
+  it("gives a member the six rows that are theirs, and no staff row", () => {
     expect(MENUS.member).toEqual([...WORKSPACE, "/dashboard/help", "/dashboard/support"]);
     expect(MENUS.member.filter((href) => href.startsWith("/admin"))).toEqual([]);
   });
 
   /**
-   * #620 — the Workspace group is **exactly three rows**, and the assertion is over the descriptor
+   * #620 — the Workspace group is **exactly four rows**, and the assertion is over the descriptor
    * rather than a screenshot: a menu is data, and the count is the thing the issues asked for. The
-   * ids are the owner's words, so a row cannot be added back without naming it here — #877 added
-   * `my-assessments` ("My Assessments"), immediately after the relationships it lists the sessions
-   * of, and nothing else moved.
+   * ids are the owner's words, so a row cannot be added back without naming it here — #1129 put
+   * `start` at the top (the signed-in landing, `/dashboard`) and retired `my-assessments` (the
+   * sessions it listed are one click from My Relationships and `/assessments` still answers), and
+   * #1131 added `chat` ("Chat") last, where the v2 rail draws it.
    */
-  it("draws exactly three Workspace rows — My Relationships, My Assessments and Templates", () => {
+  it("draws exactly four Workspace rows — Start, My Relationships, Templates and Chat", () => {
     const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
     expect(workspace?.items.map((item) => item.id)).toEqual([
+      "start",
       "my-relationships",
-      "my-assessments",
       "templates",
+      "chat",
     ]);
     expect(workspace?.items.map((item) => item.href)).toEqual([
+      "/dashboard",
       "/dashboard/relationships",
-      "/assessments",
       "/dashboard/templates",
+      "/dashboard/chat",
     ]);
   });
 
@@ -278,9 +315,28 @@ describe("the ladder decides the rows", () => {
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
-    // #901's docs row survived the move; #1095 removed the growth row, so eight rows in the
-    // operator group.
-    expect(ADMIN_GROUP).toHaveLength(8);
+    // #901's docs row survived the move, #1095 removed the growth row, #1126 added the CRUD &
+    // Permissions row directly after Docs, #1138 added the mail-override row after that and #1252
+    // the project spec before the log, so eleven rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(11);
+  });
+
+  /**
+   * #1252 — the stakeholder seat. It sits **between** member and support on the ladder, and the one
+   * row it draws proves both halves of the new rule: the rung (`needs: stakeholder`) is what a
+   * member lacks, and the capability (`spec-read`) is what support — a rung *above* it — lacks. A
+   * stakeholder therefore gets the spec and nothing else from the operator group, and no
+   * `admin-console` capability to inherit a console row from.
+   */
+  it("gives a stakeholder the spec and nothing else — no console, no inbox", () => {
+    expect(MENUS.stakeholder).toEqual(["/admin/spec", ...MENUS.member]);
+    expect(hrefsFor("stakeholder")).not.toContain("/admin/console");
+    expect(hrefsFor("stakeholder")).not.toContain("/admin/inbox");
+    expect(navViewer("stakeholder").capabilities.has("admin-console")).toBe(false);
+    // …and the row is not drawn for the seat that outranks it, which is the capability's whole job.
+    expect(hrefsFor("support")).not.toContain("/admin/spec");
+    expect(railHrefs("stakeholder")).toContain("/admin/spec");
+    expect(railHrefs("support")).not.toContain("/admin/spec");
   });
 
   /**
@@ -302,13 +358,18 @@ describe("the ladder decides the rows", () => {
     expect(MENUS.owner).toEqual(allItems().map((item) => item.href));
   });
 
-  it("counts one more row per rung, in the ladder's own order", () => {
+  it("counts the rows each rung draws — five rungs, three shapes", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    // #920 added one operator row and #1095 removed it again, so the two staff rungs carry 15.
-    expect(counts).toEqual([5, 6, 15, 15]);
-    // Not decoration: the first two rungs differ by exactly the row support exists for.
+    // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
+    // row, #1138 the mail-override row and #1252 the project spec, so a staff rung carries 19
+    // (ADMIN_GROUP 11 + WORKSPACE 4 + SUPPORT_GROUP 4) and the two rungs below it carry 6 and 7.
+    // `stakeholder` and `support` both count 7 by coincidence, not by sharing: the stakeholder's
+    // seventh row is the spec and support's is the inbox (asserted above).
+    expect(counts).toEqual([6, 7, 7, 19, 19]);
+    // Not decoration: the first two rungs differ by exactly the row the second exists for.
     expect(counts[1]).toBe(counts[0] + 1);
-    expect(counts[2]).toBeGreaterThan(counts[1]);
+    expect(counts[2]).toBe(counts[1]);
+    expect(counts[3]).toBeGreaterThan(counts[2]);
   });
 
   it("shows a signed-out visitor the member menu, and never a staff row", () => {
@@ -322,7 +383,7 @@ describe("the ladder decides the rows", () => {
     expect(menuFor("member").map((group) => group.label)).toEqual(["group-app", "group-support"]);
     // #929 — the operator group leads the document, so it is the first heading every staff rung
     // draws; a member's rail drops it entirely rather than drawing an empty Admin heading.
-    for (const role of ["support", "admin", "owner"] as const) {
+    for (const role of ["stakeholder", "support", "admin", "owner"] as const) {
       expect(menuFor(role).map((group) => group.label)).toEqual([
         "group-admin",
         "group-app",
@@ -348,7 +409,7 @@ describe("the rendered rail", () => {
     expect(railHrefs("admin")[0]).toBe("/admin/inbox");
     expect(railHrefs("owner")[0]).toBe("/admin/inbox");
     expect(railHrefs("support")[0]).toBe("/admin/inbox");
-    expect(railHrefs("member")[0]).toBe("/dashboard/relationships");
+    expect(railHrefs("member")[0]).toBe("/dashboard");
     // The two staff rows inside Support are in the admin's markup, in the owner's order.
     const admin = railHrefs("admin");
     expect(admin.slice(-4)).toEqual([
@@ -373,7 +434,14 @@ describe("the rendered rail", () => {
     // from the HTML, not `hidden` in a class a reader could still select.
     const nav = sectionOf(shellPageCopy, "nav-alignsynch");
     const html = railHtml("member");
-    for (const id of ["console", "admin-instances", "admin-audit", "admin-inbox", "admin-health"]) {
+    for (const id of [
+      "console",
+      "admin-instances",
+      "admin-audit",
+      "admin-inbox",
+      "admin-health",
+      "admin-spec",
+    ]) {
       expect(html).not.toContain(`>${itemLabel(nav, id)}<`);
     }
   });
@@ -396,9 +464,10 @@ describe("the rendered rail", () => {
         .filter((tag) => tag.includes("bg-nav-active"))
         .map((tag) => /href="([^"]*)"/.exec(tag)?.[1] ?? "");
 
-    // #620 removed the Overview row, so `/dashboard` lights nothing: the rail has no row it
-    // could mark, and a rail that marked a row it does not draw would be the same bug mirrored.
-    expect(activeOf("/dashboard")).toEqual([]);
+    // #1129 brought Start back as `/dashboard`, and its row is `exact`: the landing lights, and
+    // the child pages below it do not light it beside their own row.
+    expect(activeOf("/dashboard")).toEqual(["/dashboard"]);
+    expect(activeOf("/dashboard/relationships")).toEqual(["/dashboard/relationships"]);
     // A child page keeps its list row lit.
     expect(activeOf("/dashboard/relationships/abc")).toEqual(["/dashboard/relationships"]);
     expect(activeOf("/admin/console", "admin")).toEqual(["/admin/console"]);
@@ -412,7 +481,13 @@ describe("the rendered rail", () => {
  * rung, route, label, hidden-with-reason), and the blocks above prove the *rail* draws it.
  */
 describe("the document the rail is read from", () => {
-  const rows = navDocument.groups.flatMap((group) => group.items) as unknown as NavRowRecord[];
+  /**
+   * The JSON's inferred type is a union of row shapes (#1129 added `exact` to one row), and a union
+   * of arrays is not a `flatMap` input. Reading it through the record type once keeps the assertions
+   * below about the *document*, which is what this block is for.
+   */
+  const document = navDocument as unknown as { groups: { items: NavRowRecord[] }[] };
+  const rows = document.groups.flatMap((group) => group.items) as unknown as NavRowRecord[];
 
   it("satisfies the schema in content/nav.ts — strict, so an unknown key is a failure", () => {
     const parsed = zNavDocument.safeParse(navDocument);
@@ -436,7 +511,9 @@ describe("the document the rail is read from", () => {
   it("keeps every row — hidden ones included — pointed at a route, an icon and a real label", () => {
     const nav = sectionOf(shellPageCopy, "nav-alignsynch");
     const ids = new Set(nav.items?.map((item) => item.id) ?? []);
-    for (const row of navDocument.groups.flatMap((group) => group.items) as NavRowRecord[]) {
+    for (const row of document.groups.flatMap(
+      (group) => group.items,
+    ) as unknown as NavRowRecord[]) {
       expect(matchRoute(routeManifest, row.href), `${row.href} is not a route`).toBeDefined();
       expect(NAV_ICON_NAMES, `${row.icon} is not an icon name`).toContain(row.icon);
       expect(ids.has(row.label ?? row.id), `${row.href} names "${row.label ?? row.id}"`).toBe(true);

@@ -8,11 +8,16 @@
  *
  *   1. **Rendered.** The create step — the one stage that exists today — draws the five names, the
  *      "Stage 1 of 5" line and one current entry, and its markup carries no `mx-auto`.
- *   2. **Structural.** The three flow screens the issue names as the defect
- *      (`create-relationship.tsx:146`, `accept-session.tsx:151`, `counterparty-wizard.tsx:79`) each
- *      render `StageColumn` and none of them centres a column of its own. Two of the three have no
- *      component test of their own (they need a live database to mount), and a screenshot cannot
- *      see an absent class — the source is where the rule is legible for all three.
+ *   2. **Structural.** The flow screens the issue names as the defect
+ *      (`create-relationship.tsx:146`, `accept-session.tsx:151`) each render `StageColumn` and none
+ *      of them centres a column of its own. They have no component test of their own (they need a
+ *      live database to mount), and a screenshot cannot see an absent class — the source is where
+ *      the rule is legible for both.
+ *
+ *      **The Counterparty's join is not one of them any more (#1125).** The bundle draws it as a
+ *      page column of its own — `mx-auto max-w-3xl` for the invitation, `max-w-md` for the account —
+ *      under a three-dot stepper rather than the five-stage rail, so it is deliberately outside this
+ *      rule and is asserted by `tests/counterparty-join.test.tsx` instead.
  *
  * `StageColumn` itself is asserted for the same two properties: a max width, and no `mx-auto` —
  * the left edge is `main`'s padding and nothing else.
@@ -40,11 +45,10 @@ vi.mock("next/navigation", () => ({
 /** The five names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735, #825). */
 const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"];
 
-/** The three flow screens #687 names as centred, with the line each one centred on. */
+/** The flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [
   "components/assessment-flow/create-relationship.tsx",
   "components/assessment-flow/accept-session.tsx",
-  "components/assessment-flow/counterparty-wizard.tsx",
 ];
 
 function source(path: string): string {
@@ -97,11 +101,12 @@ describe("the stage rail", () => {
     // against the whole document would pass on a rail that drew nothing.
     const start = html.indexOf("<nav");
     const rail = html.slice(start, html.indexOf("</nav>", start));
-    expect(rail).toContain('aria-label="Relationship lifecycle"');
-    // One cell per stage (#716): the rail is the measured cell band, so the count is cells and
-    // not list items — and there is no numbered list to count with.
+    expect(rail).toContain('aria-label="Setup progress"');
+    // One cell per stage (#1123): the v2 rail is the measured cell band, five rows, and the sixth
+    // row is the dashed Align preview — a preview, so it carries no cell and no step number.
     expect(rail.split("data-step-cell=").length - 1).toBe(5);
-    expect(rail).not.toContain("<ol");
+    expect(rail.split("data-align-preview=").length - 1).toBe(1);
+    expect(rail).not.toContain('data-align-preview="true" data-step-cell');
     for (const name of STAGE_NAMES) expect(rail).toContain(name);
   });
 
@@ -109,9 +114,12 @@ describe("the stage rail", () => {
     const html = createStepHtml();
     expect(html.split('aria-current="step"')).toHaveLength(2);
     expect(html.split('data-step-state="current"')).toHaveLength(2);
-    expect(html).toContain('data-wizard-rail="1"');
+    expect(html).toContain('data-stage-gauge="1"');
     expect(html).toContain("Stage 1 of 5");
-    expect(html).toContain('data-step-state="upcoming"');
+    // The stage after the current one is drawn `up-next` and the rest `later` — the bundle's two
+    // forward words, and the reason a rail can say what is coming without promising a link.
+    expect(html).toContain('data-step-state="up-next"');
+    expect(html).toContain('data-step-state="later"');
   });
 
   it("draws the current stage from the caller's fact, not from a guess", () => {

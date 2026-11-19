@@ -49,7 +49,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
       items: [
         // #975 — the derivation answers `draft` for a relationship that was never sent. These
         // screens' reads do not carry `published_at` today, so they cannot render it yet; the word
-        // exists because `Record<InstanceStatus, string>` refuses an incomplete table, which is the
+        // exists because `Record<SessionStatus, string>` refuses an incomplete table, which is the
         // guarantee that a new status cannot reach a screen without words.
         { id: "draft", label: "Draft" },
         { id: "awaiting-counterparty", label: "Awaiting counterparty" },

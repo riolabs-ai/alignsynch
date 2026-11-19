@@ -55,6 +55,7 @@ import { PLAN_IDS } from "@/components/assessment-flow/plan-choices";
 import { InviteWalk, type PayFlowStep } from "@/components/assessment-flow/invite-walk";
 import { BILLING_INTERVALS, BILLING_PLAN_IDS } from "@/data/billing-plans";
 import { BILLING_PRICE_LOOKUP_KEYS, billingPriceLookupKeyFor } from "@/data/billing-prices";
+import { membershipPlan } from "@/data/membership-plans";
 import { assessmentCreatePageCopy, PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -105,7 +106,7 @@ async function mount(
     root?.render(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,
@@ -170,22 +171,55 @@ describe("the plan choice's ids are not billing tiers — the map is the only cr
     }
   });
 
-  it("gives each plan its own tier — two rows, two prices", () => {
-    const tiers = PLAN_IDS.map((plan) => PLAN_BILLING_TIER[plan]);
-    expect(new Set(tiers).size).toBe(tiers.length);
+  it("gives each plan its own (tier, interval) pair — one row, one price", () => {
+    // Two plans could share a tier (a monthly and a yearly one at `basic`). What may not repeat is
+    // the pair, because a pair is what a checkout renews against and what the panel prices.
+    const pairs = PLAN_IDS.map((plan) => {
+      const spec = membershipPlan(plan);
+      expect(spec, plan).toBeDefined();
+      return `${spec?.tier}/${spec?.interval}`;
+    });
+    expect(new Set(pairs).size).toBe(pairs.length);
   });
 
-  it("maps only to tiers that are actually sold: a Price lookup key at every interval", () => {
+  it("maps only to tiers that are actually sold: a Price lookup key at the row's own interval", () => {
     for (const plan of PLAN_IDS) {
       const tier = PLAN_BILLING_TIER[plan];
-      for (const interval of BILLING_INTERVALS) {
-        // The lookup, not just the list: `free` is a member of `BILLING_PLAN_IDS` and has no Price,
-        // so a mapping to it type-checks and is exactly the mapping this line rejects.
-        expect(billingPriceLookupKeyFor(tier, interval)).toBe(
-          BILLING_PRICE_LOOKUP_KEYS[tier]?.[interval],
+      const interval = membershipPlan(plan)?.interval;
+      expect(interval, plan).toBeDefined();
+      if (interval === undefined) continue;
+      // The lookup, not just the list: `free` is a member of `BILLING_PLAN_IDS` and has no Price,
+      // so a mapping to it type-checks and is exactly the mapping this line rejects.
+      expect(billingPriceLookupKeyFor(tier, interval)).toBe(
+        BILLING_PRICE_LOOKUP_KEYS[tier]?.[interval],
+      );
+    }
+  });
+
+  it("sells a Price at every interval the catalogue claims, and names the three it does not", () => {
+    // The one plan claims one of the four keys — `alignsynch_basic_month`. `alignsynch_basic_year`
+    // was the yearly plan's and both `principal` keys were Family's; all three are named here as
+    // carried-but-unmapped so they cannot quietly become a plan nobody approved.
+    const claimed = new Set(
+      PLAN_IDS.map((plan) => {
+        const spec = membershipPlan(plan);
+        return spec === undefined ? "" : `${spec.tier}/${spec.interval}`;
+      }),
+    );
+    for (const interval of BILLING_INTERVALS) {
+      for (const tier of ["basic", "principal"] as const) {
+        const key = billingPriceLookupKeyFor(tier, interval);
+        expect(key, `${tier}/${interval}`).toBeDefined();
+        if (key === undefined) continue;
+        // Every key the table carries is either claimed by a plan or one of the three unclaimed.
+        expect([...claimed, "basic/year", "principal/month", "principal/year"]).toContain(
+          `${tier}/${interval}`,
         );
       }
     }
+    expect(claimed.has("basic/year")).toBe(false);
+    expect(claimed.has("principal/month")).toBe(false);
+    expect(claimed.has("principal/year")).toBe(false);
   });
 
   it("would fail such a mapping: free is a member of the catalogue and not for sale", () => {
@@ -211,7 +245,8 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
       // the catalogue sells.
       expect(payload?.planId).not.toBe(plan);
       expect(BILLING_PLAN_IDS).toContain(payload?.planId);
-      expect(payload?.interval).toBe("month");
+      // The interval is the row's own, taken from the plan the row names rather than typed here.
+      expect(payload?.interval).toBe(membershipPlan(plan)?.interval);
 
       const mounted = root;
       root = null;
@@ -224,19 +259,20 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
     }
   });
 
-  it("names the row that was bought, by the tier's own name and price", async () => {
+  it("names the row that was bought, by the plan's own name and price", async () => {
     // An inline purchase ends the walk on the thank-you, which recaps the plan it bought.
     answer = { ok: true, completed: true };
     const where = await mount();
-    await press(where, 'input[name="plan"][value="unlimited"]');
+    await press(where, 'input[name="plan"][value="single"]');
 
-    expect(posted[0]?.planId).toBe("principal");
+    expect(posted[0]?.planId).toBe("basic");
+    expect(posted[0]?.interval).toBe("month");
     expect(where.querySelector('[data-pay-step="thanks"]')).not.toBeNull();
     // #1036's guard, moved: the plan panel is left the moment a row is chosen, so the recap that
-    // names the tier is the thank-you's own line — `Principal` and the price the row prints, never
-    // the walk's own id (`unlimited`) that keys the row.
+    // names the tier is the thank-you's own line — `Basic` and the price the row prints, never the
+    // walk's own id that keys the row.
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "unlimited")} · ${itemLabel(PLANS, "unlimited-price")}${itemLabel(PLANS, "per")}`,
+      `${itemLabel(PLANS, "single")} · ${itemLabel(PLANS, "single-price")}${itemLabel(PLANS, "single-interval")}`,
     );
   });
 
@@ -274,7 +310,7 @@ describe("the card step mounts its frame on reveal (#1031)", () => {
     expect(where.querySelector("[data-checkout-frame]")).toBeNull();
 
     // **One press**, and the frame's mount point is already drawn on the revealed step.
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
 
     expect(posted).toHaveLength(1);
     expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
@@ -303,7 +339,7 @@ describe("the card step mounts its frame on reveal (#1031)", () => {
   it("draws a refused start inside the step, in place of the frame", async () => {
     // The default stub refuses, which is a server that will not open a session.
     const where = await mount();
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
 
     // The sentence, not a dialog over a still-clickable control: the frame is gone and there is no
     // press left that would fail identically.
@@ -317,7 +353,7 @@ describe("the card step mounts its frame on reveal (#1031)", () => {
 
   it("returns to an unselected plan panel on Back, so choosing again is the act again", async () => {
     const where = await mount();
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
     await press(where, '[data-pay-action="plan"]');
 
     expect(where.querySelector('[data-pay-step="plan"]')).not.toBeNull();
@@ -326,7 +362,7 @@ describe("the card step mounts its frame on reveal (#1031)", () => {
     expect(where.querySelector('input[name="plan"]:checked')).toBeNull();
     expect(where.querySelector("[data-checkout-frame]")).toBeNull();
 
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
     expect(posted).toHaveLength(2);
     expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
   });

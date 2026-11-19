@@ -39,10 +39,18 @@
  * type-only and erased at build time.
  */
 import type { BrandId } from "@/data/brand";
-import { roleAdmits, type UserRole } from "../content/role-ladder";
+import { readsSpec, roleAdmits, type UserRole } from "../content/role-ladder";
 
-/** One destination family a viewer may or may not be shown. */
-export const NAV_CAPABILITIES = ["quiz-surfaces", "admin-console"] as const;
+/**
+ * One destination family a viewer may or may not be shown.
+ *
+ * `spec-read` (#1252) is the second capability and the first one that is **not** a rung of the
+ * staff ladder: it is granted to the explicit set `SPEC_READERS` in `content/role-ladder.ts`, so a
+ * `support` seat — which ranks above `stakeholder` — does not carry it. The comparison that would
+ * be wrong here is `roleAdmits("stakeholder", …)`, and this vocabulary is why there is nowhere to
+ * write it.
+ */
+export const NAV_CAPABILITIES = ["quiz-surfaces", "admin-console", "spec-read"] as const;
 
 export type NavCapability = (typeof NAV_CAPABILITIES)[number];
 
@@ -122,12 +130,19 @@ export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/help"];
  * row are resolved for the chrome. `quiz-surfaces` is still granted to nobody: the branding work
  * (#156) will decide whether an admin gets the quiz menu, and this function is where that
  * decision lands when it is made.
+ *
+ * **`spec-read` is the first capability that is not a rung** (#1252). It is granted to
+ * `SPEC_READERS` — `stakeholder`, `admin`, `owner` — and the test is membership, not comparison,
+ * because `stakeholder` sits *below* `support` on the ladder and the spec is closed to `support`.
+ * A stakeholder therefore carries `spec-read` and **not** `admin-console`: the rail's Admin group
+ * draws one row for them (`data/nav-menu.json`'s `admin-spec`), and every console page still
+ * answers them the unknown-URL 404.
  */
 export function navViewer(role: UserRole | null = null): NavViewer {
-  return {
-    capabilities: roleAdmits("admin", role) ? new Set<NavCapability>(["admin-console"]) : new Set(),
-    role,
-  };
+  const capabilities = new Set<NavCapability>();
+  if (roleAdmits("admin", role)) capabilities.add("admin-console");
+  if (readsSpec(role)) capabilities.add("spec-read");
+  return { capabilities, role };
 }
 
 /**

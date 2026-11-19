@@ -8,15 +8,15 @@
  *
  *   one Gap     Soft accepts 1 and rejects 2; Full accepts 0 and rejects 1. The numbers
  *               come from `gapOf`, so the test states the scores too — `gapOf(4, 5) === 1`.
- *   one instance every Gap the instance *has* must meet the Setting, and a kind the
- *               instance does not have (Basic Mode's four prediction kinds) is never unmet.
- *   the verdict derived, never stored: `instanceAlignment()` returns the numbers it saw,
+ *   one session every Gap the session *has* must meet the Setting, and a kind the
+ *               session does not have (Basic Mode's four prediction kinds) is never unmet.
+ *   the verdict derived, never stored: `sessionAlignment()` returns the numbers it saw,
  *               so a caller can say which Gap broke it, and there is no `aligned` column
  *               for that answer to drift from.
  *
  * Two real fixtures are the second subject: `ruth-sam` agrees on every cross-party Gap and
  * differs only by 1 on its own Feel/Wish pairs (Soft: aligned; Full: six unmet Gaps of 1),
- * and `avery-rowan` is the Basic instance whose Gaps of 2 and 3 no setting tolerates.
+ * and `avery-rowan` is the Basic session whose Gaps of 2 and 3 no setting tolerates.
  */
 import { describe, expect, it } from "vitest";
 import { SETTING_GAP_LIMITS } from "@/content/assessment";
@@ -25,28 +25,28 @@ import {
   GAP_KINDS,
   gapKindsOf,
   gapMeetsSetting,
-  instanceAlignment,
+  sessionAlignment,
   type AspectGaps,
 } from "@/content/gaps";
 import { gapOf } from "@/content/record";
-import { assessmentInstances } from "@/data/assessments";
-import type { AssessmentInstance } from "@/content/assessment";
+import { assessmentSessions } from "@/data/assessments";
+import type { AssessmentSession } from "@/content/assessment";
 
-/** One Aspect's Gaps, in the shape `instanceAlignment()` reads. */
-function aspectGapsOf(instance: AssessmentInstance): AspectGaps[] {
-  const [initiator, counterparty] = instance.parties;
-  return instance.items.map((item) => {
+/** One Aspect's Gaps, in the shape `sessionAlignment()` reads. */
+function aspectGapsOf(session: AssessmentSession): AspectGaps[] {
+  const [initiator, counterparty] = session.parties;
+  return session.items.map((item) => {
     const left = initiator.opinions.find((answer) => answer.itemId === item.id);
     const right = counterparty.opinions.find((answer) => answer.itemId === item.id);
     if (left === undefined || right === undefined) {
-      throw new Error(`instance "${instance.slug}" has an Aspect nobody answered: ${item.id}`);
+      throw new Error(`session "${session.slug}" has an Aspect nobody answered: ${item.id}`);
     }
     return { itemId: item.id, gaps: gapKindsOf(left.opinions, right.opinions) };
   });
 }
 
-const ruth = assessmentInstances.find((instance) => instance.slug === "ruth-sam");
-const avery = assessmentInstances.find((instance) => instance.slug === "avery-rowan");
+const ruth = assessmentSessions.find((session) => session.slug === "ruth-sam");
+const avery = assessmentSessions.find((session) => session.slug === "avery-rowan");
 
 if (ruth === undefined || avery === undefined) {
   throw new Error("the Ruth/Sam and Avery/Rowan fixtures are this file's subject");
@@ -83,17 +83,17 @@ describe("one Gap against one Setting", () => {
   });
 });
 
-describe("one instance against its Setting", () => {
+describe("one session against its Setting", () => {
   it("reports ruth-sam aligned under Soft: every Gap is 0 or 1, and 1 is tolerated", () => {
-    const verdict = instanceAlignment(aspectGapsOf(ruth), "soft");
+    const verdict = sessionAlignment(aspectGapsOf(ruth), "soft");
     expect(verdict.setting).toBe("soft");
     expect(verdict.limit).toBe(1);
     expect(verdict.aligned).toBe(true);
     expect(verdict.unmet).toEqual([]);
   });
 
-  it("reports the same instance unmet under Full: six Gaps of 1, named", () => {
-    const verdict = instanceAlignment(aspectGapsOf(ruth), "full");
+  it("reports the same session unmet under Full: six Gaps of 1, named", () => {
+    const verdict = sessionAlignment(aspectGapsOf(ruth), "full");
     expect(verdict.aligned).toBe(false);
     expect(verdict.limit).toBe(0);
     // The three Aspects whose own Feel and Wish differ by 1, on both parties.
@@ -107,8 +107,8 @@ describe("one instance against its Setting", () => {
     ]);
   });
 
-  it("does not count a kind the instance does not have — Basic has no prediction Gaps", () => {
-    const verdict = instanceAlignment(aspectGapsOf(avery), "soft");
+  it("does not count a kind the session does not have — Basic has no prediction Gaps", () => {
+    const verdict = sessionAlignment(aspectGapsOf(avery), "soft");
     expect(verdict.aligned).toBe(false);
     // The four Basic kinds only: an absent Think/Guess pair is never an unmet Gap.
     for (const unmet of verdict.unmet) {
@@ -136,7 +136,7 @@ describe("one instance against its Setting", () => {
   });
 
   it("is aligned when there is nothing to be unmet about", () => {
-    expect(instanceAlignment([], "full")).toEqual({
+    expect(sessionAlignment([], "full")).toEqual({
       setting: "full",
       limit: 0,
       aligned: true,
@@ -146,8 +146,8 @@ describe("one instance against its Setting", () => {
 
   it("reads a single 1-point Gap differently under the two settings", () => {
     const onePoint: AspectGaps[] = [{ itemId: "aspect-test", gaps: { feel: 1 } }];
-    expect(instanceAlignment(onePoint, "soft").aligned).toBe(true);
-    const full = instanceAlignment(onePoint, "full");
+    expect(sessionAlignment(onePoint, "soft").aligned).toBe(true);
+    const full = sessionAlignment(onePoint, "full");
     expect(full.aligned).toBe(false);
     expect(full.unmet).toEqual([{ itemId: "aspect-test", kind: "feel", gap: 1 }]);
   });

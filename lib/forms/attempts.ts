@@ -2,7 +2,7 @@
  * The window every guarded form counts over — one table, two buckets, two callers.
  *
  * `guard.ts` owns the *rules* ("has this bucket spent its budget"); this module owns the *count*,
- * because an in-process counter is per-instance on a deployment that runs more than one copy, and
+ * because an in-process counter is per-session on a deployment that runs more than one copy, and
  * this app runs on Vercel. A limit that resets on every cold start is a suggestion.
  *
  * Two callers share it, and they share it on purpose (#615's constraint — a second copy of a rule

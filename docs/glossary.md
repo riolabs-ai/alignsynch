@@ -26,11 +26,11 @@ Source: [content/record.ts](../content/record.ts).
 
 A template — a record that holds items and has no parties.
 
-There is no `parties` key to omit: `strict()` rejects one. That is the whole difference between a template and an instance, and it is structural rather than a rule someone has to remember.
+There is no `parties` key to omit: `strict()` rejects one. That is the whole difference between a template and a session, and it is structural rather than a rule someone has to remember.
 
 Source: [content/record.ts](../content/record.ts) — `zTemplate`.
 
-## Instance
+## Session
 
 a template copied and given parties.
 
@@ -48,7 +48,7 @@ Source: [content/assessment.ts](../content/assessment.ts) — `zAspect`.
 
 One party's opinions for one Aspect: two to four, each a score 1..5.
 
-Feel and Wish are required because Basic is the floor — every instance that was ever played has them. Think and Guess are optional and come together. Modelling the four as four named fields rather than a tag/value list is what makes "two to four" and "no duplicates" unrepresentable-otherwise instead of invariants to check.
+Feel and Wish are required because Basic is the floor — every session that was ever played has them. Think and Guess are optional and come together. Modelling the four as four named fields rather than a tag/value list is what makes "two to four" and "no duplicates" unrepresentable-otherwise instead of invariants to check.
 
 Source: [content/assessment.ts](../content/assessment.ts) — `zOpinionsObject`.
 

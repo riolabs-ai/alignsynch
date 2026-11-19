@@ -4,13 +4,13 @@
 
 import type { DeleteAccountOutcome } from "@/app/(mainlayout)/settings/delete-account-actions";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
@@ -69,12 +69,14 @@ export function DeleteAccountCard({
   return (
     <FormSurface>
       <CardHeader>
-        <CardTitle className="text-destructive">{band.heading}</CardTitle>
+        <h2 id="settings-deletion" className="text-base font-semibold text-primary">
+          {band.heading}
+        </h2>
         {band.body !== undefined && <CardDescription>{band.body}</CardDescription>}
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="delete-confirmation">
               {fillLabel(itemLabel(band, "confirm-label"), { phrase })}
             </Label>
@@ -88,19 +90,29 @@ export function DeleteAccountCard({
             />
           </div>
           <p className="text-xs text-muted-foreground">{itemLabel(band, "retained")}</p>
-          <Button type="submit" variant="destructive" disabled={pending}>
-            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {/*
+            **Neutral outline with an ×, never red** (locked rule 4, #1136). The bundle draws the
+            destructive control as an ordinary outlined button with a cross beside it; the palette
+            has one red and it belongs to the answer scale. The typed phrase above is the guard, not
+            the colour — a red button was never what made this safe.
+          */}
+          <Button type="submit" variant="outline" disabled={pending}>
+            {pending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <X aria-hidden="true" className="mr-2 size-4 shrink-0" />
+            )}
             {pending ? itemLabel(band, "pending") : itemLabel(band, "submit")}
           </Button>
         </form>
 
         {outcome !== null && (
-          <p
-            aria-live="polite"
-            className={
-              outcome.kind === "deleted" ? "text-sm text-emerald-600" : "text-sm text-red-600"
-            }
-          >
+          <p aria-live="polite" className="flex items-center gap-2 text-sm text-foreground">
+            {outcome.kind === "deleted" ? (
+              <Check aria-hidden="true" className="size-4 shrink-0" />
+            ) : (
+              <X aria-hidden="true" className="size-4 shrink-0" />
+            )}
             {itemLabel(band, `outcome-${outcome.kind}`)}
           </p>
         )}

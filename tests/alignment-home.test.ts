@@ -6,7 +6,7 @@
  *   2. the families and Relationship Types are *parsed* out of the templates' own summaries —
  *      no fifth template, no invented type, and the blank line resolves to no family at all;
  *   3. the page leads with the relationship it says it leads with: the hero's link, the featured
- *      instance and the parties named in the band's sentence are the same record;
+ *      session and the parties named in the band's sentence are the same record;
  *   4. the page is six bands — `practice`, `questions`, `templates`, `families`, `seats`,
  *      `boundary` — and every one of them carries the words the issue asked for;
  *   5. the scope band's numbers are counted from `data/relationship-types.ts`: a **changed
@@ -28,7 +28,7 @@ import { describe, expect, it } from "vitest";
 import { AlignmentHomeView } from "@/components/home/alignment-home";
 import type { PageCopy } from "@/content/pages";
 import { formatCurrency } from "@/content/core";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentSessions, assessments } from "@/data/assessments";
 import { billingPlan } from "@/data/billing-plans";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
@@ -47,7 +47,7 @@ import {
 } from "@/lib/alignment-home";
 import { createRelationshipPath, relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
-import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { CATALOGUE_PATH, startPathFor } from "@/lib/template-catalogue";
 import { visitorOf } from "@/lib/start-path";
 import { leafLiterals } from "@/scripts/copy-refs";
 
@@ -55,7 +55,7 @@ const model = alignmentHome(
   alignSynchBrand,
   alignSynchHomeCopy,
   assessments,
-  assessmentInstances,
+  assessmentSessions,
   ALIGN_SYNCH_FEATURED_SLUG,
 );
 
@@ -135,11 +135,11 @@ describe("relationship types are read from the templates, not invented", () => {
  */
 describe("the templates band: a capped shelf, one call to action", () => {
   it("says which relationship it leads with, and says it from the record", () => {
-    const featured = assessmentInstances.find(
-      (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
+    const featured = assessmentSessions.find(
+      (session) => session.slug === ALIGN_SYNCH_FEATURED_SLUG,
     );
     if (featured === undefined) {
-      throw new Error(`featured slug "${ALIGN_SYNCH_FEATURED_SLUG}" is not an instance`);
+      throw new Error(`featured slug "${ALIGN_SYNCH_FEATURED_SLUG}" is not a session`);
     }
 
     expect(model.hero.secondary?.href).toBe(`/assessment/${ALIGN_SYNCH_FEATURED_SLUG}`);
@@ -259,10 +259,10 @@ describe("the page is six bands, in the order the argument runs", () => {
 
   it("draws the hero's proof card from the featured relationship", () => {
     const card = model.workedExample;
-    const featured = assessmentInstances.find(
-      (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
+    const featured = assessmentSessions.find(
+      (session) => session.slug === ALIGN_SYNCH_FEATURED_SLUG,
     );
-    if (featured === undefined) throw new Error("the featured relationship is not an instance");
+    if (featured === undefined) throw new Error("the featured relationship is not a session");
 
     // Every Aspect of the record, in its order, in the template's own words.
     expect(card.rows.map((row) => row.label)).toEqual(featured.items.map((item) => item.prompt));
@@ -373,7 +373,7 @@ describe("the scope band counts the fixture", () => {
       alignSynchBrand,
       alignSynchHomeCopy,
       assessments,
-      assessmentInstances,
+      assessmentSessions,
       ALIGN_SYNCH_FEATURED_SLUG,
       // A type the shelf does not name: the shelf's ids are checked against this list, so
       // dropping one of the six is a different claim (the shelf would refuse, by design).
@@ -391,7 +391,7 @@ describe("the scope band counts the fixture", () => {
       alignSynchBrand,
       alignSynchHomeCopy,
       assessments,
-      assessmentInstances,
+      assessmentSessions,
       ALIGN_SYNCH_FEATURED_SLUG,
       // The realm no curated card names — see the comment above on why that matters here.
       purchasableRelationshipTypes.filter((type) => type.realm !== "Property"),
@@ -413,7 +413,7 @@ describe("the scope band counts the fixture", () => {
           heading: "Twenty-seven relationship types, across seven realms.",
         }),
         assessments,
-        assessmentInstances,
+        assessmentSessions,
         ALIGN_SYNCH_FEATURED_SLUG,
       ),
     ).toThrow(/must spell its heading with \{types\} and \{realms\}/);
@@ -507,23 +507,26 @@ describe("the render", () => {
       .trim();
     expect(text.toLowerCase()).not.toContain("per relationship");
     expect(text).not.toContain("999");
-    expect(text).not.toContain("$9.99");
-    expect(html).not.toContain(formatCurrency(999));
+    // The page prints one figure and it is the plan's month — asserted above by comparing every
+    // printed amount to `basic.monthlyCents`. This used to read `not $9.99` as a proxy for "not
+    // the taxonomy's per-relationship amount"; since #1127 that amount and the Single plan's month
+    // are the same number, so the surviving guard is `tests/plan-catalogue.test.ts`'s: nothing in
+    // `components/` or `lib/` reads `RELATIONSHIP_PRICE_CENTS`.
   });
 
   it("names nobody who is not on a relationship it links", () => {
     /**
      * The card asked for one named relationship — the featured one — and the page names three,
-     * because three of the four templates have an answered instance and each row links to it
+     * because three of the four templates have an answered session and each row links to it
      * (`Read Marco and Priya`, `Read Ruth and Sam`). Those links are older than this branch and
      * dropping them would hollow out the band that proves the Gap, so the assertion is the one
      * the intent supports: **a person's name may only appear where the page links that
      * relationship**, never as a quoted client standing on its own.
      */
     const slugsByName = new Map<string, string[]>();
-    for (const instance of assessmentInstances) {
-      for (const party of instance.parties) {
-        slugsByName.set(party.name, [...(slugsByName.get(party.name) ?? []), instance.slug]);
+    for (const session of assessmentSessions) {
+      for (const party of session.parties) {
+        slugsByName.set(party.name, [...(slugsByName.get(party.name) ?? []), session.slug]);
       }
     }
 
@@ -537,8 +540,8 @@ describe("the render", () => {
 
     // The featured relationship is named by the hero and by the band's own sentence.
     expect(html).toContain(`/assessment/${ALIGN_SYNCH_FEATURED_SLUG}`);
-    const featured = assessmentInstances.find(
-      (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
+    const featured = assessmentSessions.find(
+      (session) => session.slug === ALIGN_SYNCH_FEATURED_SLUG,
     );
     for (const party of featured?.parties ?? []) {
       expect(html).toContain(party.name);

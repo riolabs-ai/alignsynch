@@ -1,5 +1,5 @@
 /**
- * The instance screen's stage sentence (#274), as markup: one derived sentence, no bar.
+ * The session screen's stage sentence (#274), as markup: one derived sentence, no bar.
  *
  * The card's claim is narrow and negative as much as positive — the screen names the stage it
  * is at and **draws no stepper**, no dots, no percentage, and never the word "Aligned" before
@@ -22,13 +22,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import { STAGE_LABELS } from "@/content/stages";
 import type { Assessment } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 import { FLOW_STAGES, relationshipStage, stageCopyId } from "@/lib/flow/stage";
 
 const template: Assessment = (() => {
@@ -37,10 +37,10 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-stage-test";
+const SESSION_ID = "session-stage-test";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -52,7 +52,7 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 /** Every Aspect answered by one party: Feel 3, Wish 4 — the numbers do not matter here. */
 function answeredBy(role: "initiator" | "counterparty", feel = 3, wish = 4): OpinionRow[] {
   return items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.item_id,
     feel,
@@ -63,8 +63,8 @@ function answeredBy(role: "initiator" | "counterparty", feel = 3, wish = 4): Opi
 }
 
 const bothParties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /**
@@ -85,10 +85,10 @@ interface Case {
   readonly counts: { initiator: number; counterparty: number };
 }
 
-function rowsWith({ parties, opinions, counts }: Case): FlowInstanceRows {
+function rowsWith({ parties, opinions, counts }: Case): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "stage-test",
       record_type: "assessment",
       status: "draft",
@@ -98,8 +98,8 @@ function rowsWith({ parties, opinions, counts }: Case): FlowInstanceRows {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-test",
       mode: "basic",
@@ -134,14 +134,14 @@ function render({
   rows,
   invite = null,
 }: {
-  rows: FlowInstanceRows;
+  rows: FlowSessionRows;
   invite?: Parameters<typeof projectScreen>[0]["invite"];
 }): string {
   const screen = projectScreen({ rows, template, viewerRole: "initiator", invite });
   return renderToStaticMarkup(
-    createElement(AssessmentInstanceView, {
+    createElement(AssessmentSessionView, {
       screen,
-      copy: assessmentInstancePageCopy,
+      copy: assessmentSessionPageCopy,
     }),
   );
 }
@@ -215,8 +215,14 @@ describe("the rendered stage sentence", () => {
     const html = render({ rows: complete });
     expect(html).toContain('data-stage="sharing"');
     expect(html).toContain("Sharing — the report is open to both of you.");
-    // This fixture's numbers are not aligned, so the word appears nowhere at all.
-    expect(html).not.toContain("Aligned");
+    // The **ladder** never claims Aligned on this fixture, whose numbers are not: the word is the
+    // verdict's, and the stage element carries `sharing`. Read off the stage element rather than
+    // the whole document since #1122 — the v2 Align surface prints its own "N of M Aspects
+    // Aligned" count and its "Aligned N" filter, and neither is the stage saying it.
+    expect(html).not.toContain('data-stage="aligned"');
+    const stageSentence = html.match(/<p data-stage="sharing"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? "";
+    expect(stageSentence).toContain("Sharing");
+    expect(stageSentence).not.toContain("Aligned");
   });
 
   it("draws exactly one stage element, and no stepper of any shape", () => {

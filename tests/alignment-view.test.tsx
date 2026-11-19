@@ -1,35 +1,37 @@
 /**
- * Stage 6, **Align** — the Alignment, Aspect by Aspect (#692, named by #735).
+ * Stage 6, **Align** — the v2 surface (#1122).
  *
- * The issue's acceptance is a claim about a surface a person reaches, so the cases below render the
- * real `AssessmentInstanceView` over a real `projectScreen()` projection and read the markup:
+ * The issue's acceptance is a claim about a screen a person reaches, so these cases render the
+ * real `AssessmentSessionView` over a real `projectScreen()` projection and read the markup:
  *
- *   reach      the completed relationship draws the Alignment band, and the band links to the
- *              report the app already has (`reportPath()`), so the per-Gap tables are one click
- *              from the relationship rather than a second, orphaned route;
- *   sheets     both parties' own answers are drawn, per party and per Opinion kind — the value
- *              each seat gave, not a summary of them;
- *   difference every Gap the Aspect has prints **the two Opinions it subtracts** beside the number;
- *   verdict    the per-Aspect word and the relationship's count come from `gapMeetsSetting()` and
- *              `instanceAlignment()`'s single `unmet` list, so they cannot disagree;
- *   no-metric  nothing on the band is a total, an average or a composite — `docs/specs/ux-report.md`
- *              names the grep as the acceptance, so the test runs the same one;
- *   blind      before both seats accept there is no band at all: not an empty one, not a hidden one.
+ *   surface     the completed relationship draws "Where You Agree, and Where You Differ" with the
+ *               "Stage 6 · Align" eyebrow, one numbered card per Aspect, and a Feel and a Wish row
+ *               on each — the bundle's shape, not the 1.21 Gap table;
+ *   re-score    the same numbers read differently under the two tolerances: a 1-step Gap is
+ *               "Small Gap · OK" under Soft and "Small Gap · Not OK under Full" under Full, and
+ *               the summary counts follow. That is the one thing the toggle changes;
+ *   scale       the locked 1–5 cells are all painted (`bg-scale-1…5`), the chosen numbers are
+ *               bold and underlined, and the Gap is an outline over the cells between the answers;
+ *   no-metric   nothing here is a total, an average or a composite — `docs/specs/ux-report.md`
+ *               names the grep as the acceptance, so the test runs the same one;
+ *   waiting     before both parties have answered and accepted, the surface draws a **waiting
+ *               sentence** and no alignment at all: no counts, no zeroed summary, no bars.
  *
  * No database and no server: the rows are `lib/db/rows.ts` shapes, exactly as
- * `tests/instance-stage.test.ts` builds them.
+ * `tests/session-stage.test.ts` builds them.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
-import type { Assessment, PartyRole } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { AlignmentView } from "@/components/assessment-flow/alignment-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
+import type { AlignmentSetting, Assessment, PartyRole } from "@/content/assessment";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { reportPath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { relationshipPath } from "@/lib/flow/paths";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -37,11 +39,13 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-alignment-view";
+const INSTANCE_ID = "session-alignment-view";
+const RELATIONSHIP_ID = "relationship-alignment";
 const ACCEPTED_AT = new Date("2026-11-08T09:00:00.000Z");
 const ASPECTS = template.items.length;
-/** The Aspect the two seats disagree on: Feel 2 against Feel 5 is a Gap of 3. */
-const TIME = template.items[0]?.id ?? "";
+/** The two Aspects the seats disagree on, in template order. */
+const STEP_ONE = template.items[0]?.id ?? "";
+const STEP_THREE = template.items[1]?.id ?? "";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
   record_id: INSTANCE_ID,
@@ -59,24 +63,37 @@ const parties: PartyRow[] = [
 ];
 
 /**
- * One opinion row per Aspect. Only the `feel` score moves: the Initiator says 2 on the first
- * Aspect and 4 on the rest, the Counterparty says 5 then 4, so exactly one Gap of 3 exists and
- * every other Gap on every Aspect is 0.
+ * One opinion row per Aspect.
+ *
+ *   Aspect 1   Feel 2 against 3 — a Gap of **1**, the only row the tolerance re-reads
+ *   Aspect 2   Feel 2 against 5 — a Gap of **3**, a Gap under either tolerance
+ *   the rest   equal answers on both kinds — In Synch
+ *   Wish       equal everywhere except Aspect 2, so the Gap above is the widest on the sheet
  */
 function opinionsFor(role: PartyRole): OpinionRow[] {
-  return template.items.map((item, position) => ({
-    session_record_id: INSTANCE_ID,
-    role,
-    item_id: item.id,
-    feel: role === "initiator" ? (position === 0 ? 2 : 4) : position === 0 ? 5 : 4,
-    wish: 4,
-    think: null,
-    guess: null,
-  }));
+  const feel: Record<number, [number, number]> = {
+    0: [2, 3],
+    1: [2, 5],
+  };
+  return template.items.map((item, position) => {
+    const pair = feel[position] ?? [4, 4];
+    return {
+      session_record_id: INSTANCE_ID,
+      role,
+      item_id: item.id,
+      feel: role === "initiator" ? pair[0] : pair[1],
+      wish: 4,
+      think: null,
+      guess: null,
+    };
+  });
 }
 
-function screenWith(answered: { initiator: number; counterparty: number }) {
-  const rows: FlowInstanceRows = {
+function screenWith(
+  answered: { initiator: number; counterparty: number },
+  setting: AlignmentSetting = "soft",
+) {
+  const rows: FlowSessionRows = {
     record: {
       id: INSTANCE_ID,
       slug: "relationship-basics-alignment",
@@ -88,12 +105,12 @@ function screenWith(answered: { initiator: number; counterparty: number }) {
     },
     items,
     options: [],
-    instance: {
+    session: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
-      relationship_id: "relationship-alignment",
+      relationship_id: RELATIONSHIP_ID,
       mode: "basic",
-      setting: "soft",
+      setting,
     },
     parties,
     opinions: [
@@ -105,100 +122,163 @@ function screenWith(answered: { initiator: number; counterparty: number }) {
   return projectScreen({ rows, template, viewerRole: "initiator", invite: null });
 }
 
-const complete = screenWith({ initiator: ASPECTS, counterparty: ASPECTS });
-const html = renderToStaticMarkup(
-  createElement(AssessmentInstanceView, {
-    screen: complete,
-    copy: assessmentInstancePageCopy,
-  }),
-);
+const both = { initiator: ASPECTS, counterparty: ASPECTS };
+const soft = screenWith(both, "soft");
+const full = screenWith(both, "full");
 
-const count = (needle: string): number => html.split(needle).length - 1;
+const render = (screen: ReturnType<typeof screenWith>) =>
+  renderToStaticMarkup(
+    createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
+  );
 
-describe("stage 6 — the Alignment, Aspect by Aspect", () => {
-  it("is drawn on the completed relationship, one row per Aspect", () => {
-    expect(complete.status).toBe("complete");
-    expect(html).toContain('data-alignment="true"');
-    expect(count("data-alignment-aspect=")).toBe(ASPECTS);
-    // The heading is the fixture's, not a literal in the component.
-    expect(html).toContain(">Alignment<");
+const softHtml = render(soft);
+const fullHtml = render(full);
+
+const count = (html: string, needle: string): number => html.split(needle).length - 1;
+
+describe("stage 6 — Where You Agree, and Where You Differ", () => {
+  it("is drawn on the completed relationship, one numbered card per Aspect", () => {
+    expect(soft.status).toBe("complete");
+    expect(softHtml).toContain('data-alignment="true"');
+    expect(count(softHtml, "data-alignment-aspect=")).toBe(ASPECTS);
+    // The v2 headline and eyebrow are the bundle's copy, not literals in the component.
+    expect(softHtml).toContain(">Where You Agree, and Where You Differ<");
+    expect(softHtml).toContain(">Stage 6 · Align<");
+    // Every Aspect is numbered from 01 in template order.
+    for (let position = 1; position <= ASPECTS; position += 1) {
+      expect(softHtml).toContain(`>${String(position).padStart(2, "0")}<`);
+    }
   });
 
-  it("draws both parties' own answers, per party and per Opinion kind", () => {
-    expect(count('data-alignment-sheet="initiator"')).toBe(ASPECTS);
-    expect(count('data-alignment-sheet="counterparty"')).toBe(ASPECTS);
-    // The two seats' values are theirs: Avery's Feel 2 and Rowan's Feel 5 are both on the page,
-    // and the sheets carry the party they belong to rather than a position in a grid.
-    expect(html).toContain('data-alignment-sheet-party="Avery"');
-    expect(html).toContain('data-alignment-sheet-party="Rowan"');
-    expect(html).toContain('data-alignment-opinion="feel" data-alignment-value="2"');
-    expect(html).toContain('data-alignment-opinion="feel" data-alignment-value="5"');
-    // A Basic instance asks two Opinions, so the sheet carries two and never a prediction kind.
-    expect(html).not.toContain('data-alignment-opinion="think"');
+  it("draws a Feel and a Wish row per Aspect on the locked 1–5 scale", () => {
+    expect(count(softHtml, 'data-alignment-row="feel"')).toBe(ASPECTS);
+    expect(count(softHtml, 'data-alignment-row="wish"')).toBe(ASPECTS);
+    // One marker per party per row, so both answers are attributable on every line.
+    expect(count(softHtml, 'data-party-marker="initiator"')).toBe(ASPECTS * 2);
+    expect(count(softHtml, 'data-party-marker="counterparty"')).toBe(ASPECTS * 2);
+    // The locked cells are painted by name: a dynamic `bg-scale-${n}` would generate no CSS.
+    for (const step of [1, 2, 3, 4, 5]) {
+      expect(softHtml).toContain(`bg-scale-${step}`);
+    }
+    // Advanced Mode's prediction rows are not drawn here (#1128 owns that screen).
+    expect(softHtml).not.toContain('data-alignment-row="think"');
+    expect(softHtml).not.toContain('data-alignment-row="guess"');
   });
 
-  it("states the difference per Aspect, with the two Opinions behind it", () => {
-    const row = complete.report?.rows.find((entry) => entry.itemId === TIME);
-    expect(row?.left.opinions.feel).toBe(2);
-    expect(row?.right.opinions.feel).toBe(5);
-    expect(row?.gaps.feel).toBe(3);
-    expect(row?.gaps.wish).toBe(0);
+  it("draws the Gap as an outline over the cells between the answers", () => {
+    const aspect = soft.report?.rows.find((row) => row.itemId === STEP_THREE);
+    expect(aspect?.left.opinions.feel).toBe(2);
+    expect(aspect?.right.opinions.feel).toBe(5);
+    expect(aspect?.gaps.feel).toBe(3);
 
-    // The row names the Gap, prints the pair it subtracts, and then the number.
-    expect(html).toContain('data-alignment-gap-kind="feel"');
-    expect(html).toContain('data-alignment-side="feel"');
-    expect(html).toContain('data-alignment-gap="3"');
-    // A 0 prints the glossary's word beside the number rather than replacing it.
-    expect(html).toContain('data-alignment-gap="0"');
-    expect(html).toContain("In Synch");
-    // The four basic kinds, one row each, on every Aspect.
-    expect(html).toContain('data-alignment-gaps="4"');
+    // Feel 2 against 5 is a Gap of 3, so the outline spans cells 2..5: 20% in, 80% wide.
+    expect(softHtml).toContain('data-alignment-band-gap="3"');
+    expect(softHtml).toMatch(/data-alignment-band="gap"[\s\S]{0,600}left:20%;width:80%/);
+    // A Gap of 0 outlines the one cell both parties chose, at 20% width.
+    expect(softHtml).toMatch(/data-alignment-band="in-synch"[\s\S]{0,600}width:20%/);
   });
 
-  it("derives the verdict from the one unmet list, per Aspect and for the relationship", () => {
-    const measured = ASPECTS * 4;
-    // Two Gaps on the one Aspect are over Soft's tolerance of 1: Feel 2 against Feel 5 is a Gap
-    // of 3, and the Initiator Gap compares a Feel 2 with a Wish 4 — the glossary's own pairs, not
-    // what a reader would guess they are.
-    expect(complete.report?.verdict.aligned).toBe(false);
-    expect(complete.report?.verdict.unmet).toHaveLength(2);
-    expect(html).toContain('data-alignment-verdict="unmet"');
-    expect(html).toContain(`data-alignment-unmet-gaps="2"`);
-    expect(html).toContain(`data-alignment-measured-gaps="${measured}"`);
-    // One Aspect over the line, the rest inside it — the chip is a derived word, not a score.
-    expect(count('data-alignment-aspect-verdict="unmet"')).toBe(1);
-    expect(count('data-alignment-aspect-verdict="aligned"')).toBe(ASPECTS - 1);
-    expect(html).toContain('data-alignment-unmet="2"');
-    expect(html).toContain(">Aligned<");
+  it("re-scores a 1-step Small Gap in place when the tolerance is Full", () => {
+    // Soft: one Aspect over the line (the Gap of 3), so ASPECTS-1 align and the 1-step reads OK.
+    expect(soft.report?.setting).toBe("soft");
+    expect(softHtml).toContain('data-alignment-tolerance="soft"');
+    expect(softHtml).toContain(`data-alignment-summary-aligned="${ASPECTS - 1}"`);
+    expect(softHtml).toContain(`data-alignment-summary-total="${ASPECTS}"`);
+    expect(softHtml).toContain('data-alignment-status="small-gap-ok"');
+    expect(softHtml).toContain("Small Gap · OK");
+    expect(softHtml).not.toContain("Small Gap · Not OK");
+
+    // Full: the same 1-step Gap keeps its word and its ≈, and takes the Gap's qualifier and
+    // colour — one fewer Aspect aligns, and the band is repainted.
+    const oneStep = full.report?.rows.find((row) => row.itemId === STEP_ONE);
+    expect(oneStep?.left.opinions.feel).toBe(2);
+    expect(oneStep?.right.opinions.feel).toBe(3);
+    expect(oneStep?.gaps.feel).toBe(1);
+    expect(full.report?.setting).toBe("full");
+    expect(fullHtml).toContain('data-alignment-tolerance="full"');
+    expect(fullHtml).toContain(`data-alignment-summary-aligned="${ASPECTS - 2}"`);
+    expect(fullHtml).toContain('data-alignment-status="small-gap-tight"');
+    expect(fullHtml).toContain("Small Gap · Not OK under Full");
+    expect(fullHtml).toMatch(/data-alignment-band="small-gap-tight"/);
+    // The word survives the colour change: "Small Gap" is on the Full render too.
+    expect(fullHtml).toContain("Small Gap");
   });
 
-  it("links to the report the app already has", () => {
-    expect(html).toContain('data-alignment-report="true"');
-    expect(html).toContain(`href="${reportPath(INSTANCE_ID)}"`);
-    expect(reportPath(INSTANCE_ID)).toBe(`/assessment/instances/${INSTANCE_ID}/report`);
+  it("carries its copy from the fixture, and takes one action into the relationship", () => {
+    expect(softHtml).toContain(">Alignment Tolerance<");
+    expect(softHtml).toContain(">Start the Conversation<");
+    expect(softHtml).toContain(">Aspect by Aspect<");
+    expect(count(softHtml, "data-alignment-discuss=")).toBe(ASPECTS);
+    // The conversation lives on the relationship's own screen, so the action goes there.
+    expect(softHtml).toContain(relationshipPath(RELATIONSHIP_ID));
+    expect(relationshipPath(RELATIONSHIP_ID)).toBe(`/dashboard/relationships/${RELATIONSHIP_ID}`);
   });
 
   it("shows no total, average or composite metric", () => {
-    // The acceptance `docs/specs/ux-report.md` writes, run against the rendered page: the
-    // artifact's "Total Gap" foot is deliberately not built.
-    expect(html).not.toMatch(/total gap|average gap|overall score|compatibility/i);
-    // Nor the v1 report's own row attributes — this is the flow's surface, not a second copy.
-    expect(html).not.toContain("data-feel-gap");
+    // The acceptance `docs/specs/ux-report.md` writes, run against the rendered page.
+    expect(softHtml).not.toMatch(/total gap|average gap|overall score|compatibility/i);
+    expect(softHtml).not.toContain("data-feel-gap");
+  });
+});
+
+describe("the waiting state", () => {
+  const waiting = screenWith({ initiator: ASPECTS, counterparty: 0 });
+
+  it("never draws an alignment for a sheet that is not finished", () => {
+    expect(waiting.status).toBe("answering");
+    expect(waiting.report).toBeNull();
+    const markup = render(waiting);
+
+    // The page says what it is waiting for, in a sentence, and draws no alignment at all: no
+    // zeroed summary, no bar, no chip, no count.
+    expect(markup).toContain("Waiting for both answers");
+    expect(markup).toContain("Still to answer: Rowan");
+    expect(markup).not.toContain('data-alignment="true"');
+    expect(markup).not.toContain("data-alignment-summary");
+    expect(markup).not.toContain("data-alignment-aspect=");
+    expect(markup).not.toContain("data-alignment-band");
+    expect(markup).not.toContain("data-alignment-gap");
+    expect(markup).not.toMatch(/\d+ of \d+ Aspects Aligned/);
   });
 
-  it("draws nothing before both seats have accepted", () => {
-    const blind = screenWith({ initiator: ASPECTS, counterparty: ASPECTS });
-    expect(blind.report).not.toBeNull();
-    const answering = screenWith({ initiator: ASPECTS, counterparty: 0 });
-    expect(answering.status).toBe("answering");
-    expect(answering.report).toBeNull();
+  it("is what the projection says before both seats have accepted", () => {
+    // The blind rule is the projection's, not this component's: a party who answered first sees
+    // the waiting sentence, never the other party's answers by way of a count.
+    expect(waiting.report).toBeNull();
+    expect(waiting.viewerAnswered).toBe(ASPECTS);
+    expect(waiting.waiting).toEqual(["counterparty"]);
+  });
+});
+
+describe("the surface in isolation", () => {
+  it("draws a waiting sentence, and names the party it is waiting on", () => {
+    // Mounted directly — as the page will the moment stage 6 is live before both sheets are in —
+    // the band is a sentence rather than an empty one a reader could mistake for a zero.
     const markup = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
-        screen: answering,
-        copy: assessmentInstancePageCopy,
+      createElement(AlignmentView, {
+        screen: screenWith({ initiator: ASPECTS, counterparty: 0 }),
+        copy: assessmentSessionPageCopy,
       }),
     );
-    expect(markup).not.toContain("data-alignment=");
+    expect(markup).toContain('data-alignment="waiting"');
+    expect(markup).toContain('data-alignment-waiting="true"');
+    expect(markup).toContain(">Waiting on Rowan<");
+    // The surface is still the Align surface — it simply has nothing scored to draw yet.
+    expect(markup).toContain(">Where You Agree, and Where You Differ<");
+    expect(markup).not.toContain("data-alignment-summary");
+    expect(markup).not.toContain("data-alignment-aspect=");
     expect(markup).not.toContain("data-alignment-gap");
+  });
+
+  it("draws no zeroed alignment when it is handed no report", () => {
+    const markup = renderToStaticMarkup(
+      createElement(AlignmentView, {
+        screen: screenWith({ initiator: 0, counterparty: 0 }),
+        copy: assessmentSessionPageCopy,
+      }),
+    );
+    expect(markup).toContain('data-alignment-waiting="true"');
+    expect(markup).not.toContain("data-alignment-band");
+    expect(markup).not.toContain("data-alignment-status=");
   });
 });

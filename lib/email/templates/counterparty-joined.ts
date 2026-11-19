@@ -3,15 +3,15 @@
  *
  * **Who it is for, and why it exists.** The Initiator published an invitation and then has no
  * reason to open the app again until the other seat exists. The claim is the first event that
- * changes something for them: before it the instance is `awaiting_counterparty` and there is
+ * changes something for them: before it the session is `awaiting_counterparty` and there is
  * nothing to answer; after it both seats exist and the assessment can start. `docs/specs/
  * flow-emails.md` rejected this message as noise (#548 supersedes that row) — the card's ruling is
  * that a person told their partner has joined is told the one fact that unblocks their own work.
  *
  * **The recipient is the record's Initiator seat**, resolved by `lib/flow/join-notice.ts` from
  * `readUnlockFacts()` — never a list, never an address the same request typed. The message names
- * the joiner and the template, and links to the instance. The link carries **no invitation
- * token**: the recipient already holds the credential that opens the instance (their party
+ * the joiner and the template, and links to the session. The link carries **no invitation
+ * token**: the recipient already holds the credential that opens the session (their party
  * cookie), and a token in a mailbox would be a second bearer credential.
  *
  * **Nothing is invented.** No score, no Gap value, no count of answers, no promise about what the
@@ -35,8 +35,31 @@ export interface JoinedFacts {
   /** The party being told — the record's Initiator. */
   readonly inviter: string;
   readonly template: string;
-  /** The instance's own screen; no token, because the recipient already holds their seat. */
+  /** The session's own screen; no token, because the recipient already holds their seat. */
   readonly link: string;
+  /**
+   * #1227 — did **this acceptance** open the card-free 7-day week for this relationship?
+   *
+   * It is a fact and not a constant because the two cases read differently: on the trial the notice
+   * says the week starts today (it does — `grantAcceptanceTrial()` runs inside the claim that sends
+   * this), and on a paid plan it says nothing about a trial at all. A paying Initiator told "Your
+   * trial has started" is the defect #1227 names.
+   *
+   * The answer is the claim's own grant result, not a later read: `nothing-written` (the account
+   * already holds an entitling subscription, or already spent its one week) means no week opened
+   * here, so the line would be a claim about an event that did not happen.
+   */
+  readonly onFreeTrial: boolean;
+  /**
+   * #1125 — what the Counterparty suggested about the Aspects, when they suggested anything.
+   *
+   * **A message the joiner chose to send, printed as one.** The join's third step offers an optional
+   * "Suggest a Change to the Aspects"; this template is where it lands, because the acceptance notice
+   * is the one message the Initiator receives at that moment and the step's own sentence promises it
+   * ("Sent to {initiator} with your acceptance"). It is quoted, never applied: nothing writes an
+   * Aspect from here, and the note under it says so.
+   */
+  readonly suggestion?: { readonly aspect: string; readonly text: string } | undefined;
 }
 
 /** `{{name}} joined — your assessment can start` — the spec's subject, filled. */
@@ -44,26 +67,46 @@ export function joinedSubject(facts: JoinedFacts): string {
   return `${facts.joiner} joined — your assessment can start`;
 }
 
-export function joinedDocument(facts: JoinedFacts): EmailDocument {
+export function joinedDocument(facts: JoinedFacts, body?: string): EmailDocument {
   return {
     subject: joinedSubject(facts),
     preheader: `${facts.joiner} claimed the invitation to ${facts.template}.`,
     blocks: [
-      ...bodyBlocks(JOINED_BODY, {
-        joiner: facts.joiner,
-        inviter: facts.inviter,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        JOINED_BODY,
+        {
+          joiner: facts.joiner,
+          inviter: facts.inviter,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.inviter}, ${facts.joiner} claimed the invitation to ${facts.template}, so both seats exist and both of you can answer.`,
       },
-      { kind: "paragraph", text: `Open the instance: ${facts.link}` },
+      // #1227 — the trial line is a fact, not a constant: this acceptance opens the card-free week,
+      // so the notice that announces it is the one that may say so — and a paid plan says nothing.
+      ...(facts.onFreeTrial
+        ? [{ kind: "paragraph" as const, text: "Your 7 days free start today." }]
+        : []),
+      { kind: "paragraph", text: `Open the Relationship: ${facts.link}` },
       {
         kind: "paragraph",
         text: "Your answers stay hidden from each other until you have both answered and accepted the session.",
       },
+      // #1125 — the acceptance's optional suggestion, when there is one. Last, because it is the one
+      // paragraph that is the joiner's words rather than the product's, and because nothing above it
+      // depends on it.
+      ...(facts.suggestion === undefined
+        ? []
+        : [
+            {
+              kind: "paragraph" as const,
+              text: `${facts.joiner} also suggested a change to the Aspects: “${facts.suggestion.text}”. The Aspects stay as they are unless you change them.`,
+            },
+          ]),
     ],
   };
 }

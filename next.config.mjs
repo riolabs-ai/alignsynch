@@ -138,6 +138,55 @@ const nextConfig = {
       "./docs/qa/demo-flow/**/*.png",
     ],
   },
+  /**
+   * What the tracer must stop carrying (#t_a4b85c6d) — the other half of the block above.
+   *
+   * `lib/docs/tree.ts` roots the docs reader at `join(process.cwd(), "docs")`, a path whose last
+   * segment is only known at request time. `@vercel/nft` cannot resolve a read like that, so it
+   * emits **the whole directory it can see** into the trace of every function whose graph reaches
+   * that module — measured on this tree: 66 of the 150 traced routes carried all 125.97 MB of
+   * `docs/` into their function, i.e. 126 MB of a 151.4 MB trace. Nothing in `outputFileTracingIncludes`
+   * above does that; the includes are route-keyed and narrow. The sweep is the tracer's answer to a
+   * dynamic path, and `outputFileTracingExcludes` is the lever that narrows it.
+   *
+   * **These are not size guesses; they are the material no runtime read can reach.** The triage was:
+   * seed from every document `docs/docs.json` lists (193 files), follow the markdown/image links
+   * transitively, add the two trees a route serves directly (`docs/review/**` for `/admin/review`
+   * and `/review-artifacts/[id]`, `docs/qa/demo-flow/**` for `/how-it-works` and
+   * `/qa-demo-flow/[...shot]`), then exclude only directories and extensions whose every file is
+   * outside that closure — 575 files / 31.0 MB kept, 79.82 MB excluded, and the globs were checked
+   * against the keep set with the same `picomatch(globs, { dot: true, contains: true })` the build
+   * uses, so no line here can shadow a document a page opens.
+   *
+   * **No negation, deliberately.** Next merges every matching key's globs and then deletes matches
+   * (`build/collect-build-traces.js`), so an exclude always wins over an include and a `!pattern`
+   * inside the value array is ignored. Anything a route genuinely needs therefore has to stay out of
+   * this list entirely — which is why `docs/review/**`, `docs/qa/demo-flow/**` and every document
+   * reachable from the manifest are absent from it rather than re-included.
+   *
+   * The residual after this pass is the documents themselves plus the images they embed (~46 MB);
+   * the remaining win is a code change (a statically visible docs path, or a manifest-driven read),
+   * not another glob.
+   */
+  outputFileTracingExcludes: {
+    "/*": [
+      /** The vendored prototype payload inside the twelve spec bundles: full HTML mockups with
+       * their own js/css/images. The reader renders the `.md` beside them, never the prototype. */
+      "./docs/specs/v2-bundles/*/reference/**",
+      "./docs/specs/v2-bundles/*/*.html",
+      "./docs/specs/v2-bundles/*/{js,css,images}/**",
+      "./docs/specs/{spec-ux-repo-patterns}/**",
+      "./docs/specs/spec-as2-style-templates-redesign/images/**",
+      "./docs/specs/spec-as2-style-home-redesign/images/**",
+      /** Mockup screenshots filed beside the reference docs, referenced by nothing that renders. */
+      "./docs/reference/mockups/**",
+      /** QA capture archives: full-screen sets nobody embeds. Any directory whose *whole* subtree is
+       * unreachable, then the `*.png` of the ones that also carry a reachable `README.md`. */
+      "./docs/qa/{p4-screenshots,935-aspects-once,975,975-d12,og-card}/**",
+      "./docs/qa/{as2-home,home-comments,swiper-12,rail-handle,v1x-ui-cohort,971-tiles,979-flow-parity,stage5,rel-detail-edit,979-flow-dialog,975-detail-identity}/*.png",
+      "./docs/qa/975-detail-identity/{after,before}/**",
+    ],
+  },
   // typescript: {
   //   ignoreBuildErrors: true,
   // },
@@ -185,6 +234,21 @@ const nextConfig = {
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+      /**
+       * #1252 — the project spec. Every one of its three routes is NDA material behind a role
+       * gate, so the response says so in two headers the page cannot be asked to remember:
+       * `private, no-store` keeps a shared cache from holding a served page, and
+       * `X-Robots-Tag` keeps a crawler out of the one surface a `robots.txt` cannot gate.
+       * `/reset/:path*`'s own rule is the precedent: a header that belongs to a *route family*
+       * belongs beside the router, not in three page modules that a fourth would forget.
+       */
+      {
+        source: "/admin/spec/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Robots-Tag", value: "noindex" },
         ],
       },
     ];
@@ -330,7 +394,7 @@ const nextConfig = {
       },
       {
         source: "/assessment/templates/:slug/status",
-        destination: "/templates/relationship/:slug/status",
+        destination: "/dashboard/templates/:slug/status",
         permanent: true,
       },
       {
@@ -341,30 +405,33 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // #1109 — the create flow moved to the dashboard with the library, so an old address lands
+        // on the stage it named **in one hop**: `/templates/relationship/<slug>/create…` is itself a
+        // 308 below, and chaining into it would answer with two redirects for one bookmark.
         source: "/assessment/templates/:slug/create",
-        destination: "/templates/relationship/:slug/create",
+        destination: "/dashboard/templates/:slug/create",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/mode",
-        destination: "/templates/relationship/:slug/create/mode",
+        destination: "/dashboard/templates/:slug/create/mode",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/aspects",
-        destination: "/templates/relationship/:slug/create/aspects",
+        destination: "/dashboard/templates/:slug/create/aspects",
         permanent: true,
       },
       {
         source: "/assessment/templates/:slug/create/commit",
-        destination: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
         permanent: true,
       },
       {
         // #825 — the gate that used to follow the create is retired; the account is stage 4, so a
         // bookmarked gate address lands on the stage that now asks for the account.
         source: "/assessment/templates/:slug/create/account",
-        destination: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
         permanent: true,
       },
       // #794 — the public catalogue stops owning the template noun. One row per page: the
@@ -386,9 +453,14 @@ const nextConfig = {
        *
        * **The order is load-bearing.** Next matches these in order and `:slug` matches one
        * segment, so `/templates/relationship/new` has to be spelled before the `:slug` row or the
-       * form's address would be swallowed by a rule that means "one template". The
-       * `/…/:slug/create…` paths are **not** redirected: the create flow is still mounted there
-       * (`[slug]/create/**`, phase 2 of #1109), and a single-segment pattern cannot match them.
+       * form's address would be swallowed by a rule that means "one template".
+       *
+       * **The five stage paths are redirected too, stage for stage (phase 2 of #1109).** Phase 1
+       * left them mounted; this change moved the flow to `/dashboard/templates/<slug>/create…` and
+       * deleted the old tree, so each one answers a 308 to the **same stage** — a bookmark or an
+       * invitation link that named `…/create/aspects` lands on Aspects, never on the library. The
+       * five rows are spelled out rather than folded into one because `:slug` matches a single
+       * segment: no single-segment pattern can cover them.
        */
       {
         source: "/templates/relationship",
@@ -405,6 +477,32 @@ const nextConfig = {
         destination: "/relationship-templates",
         permanent: true,
       },
+      // #1109 phase 2 — the create flow's five addresses, each keeping its stage.
+      {
+        source: "/templates/relationship/:slug/create",
+        destination: "/dashboard/templates/:slug/create",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/mode",
+        destination: "/dashboard/templates/:slug/create/mode",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/aspects",
+        destination: "/dashboard/templates/:slug/create/aspects",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/commit",
+        destination: "/dashboard/templates/:slug/create/commit",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug/create/invite",
+        destination: "/dashboard/templates/:slug/create/invite",
+        permanent: true,
+      },
       //
       // **The type row excludes `relationship`, and that exclusion is load-bearing.** `/templates`
       // is no longer a page but a namespace, and the library now lives one segment inside it
@@ -417,7 +515,7 @@ const nextConfig = {
       // edit to this row cannot reintroduce the shadow silently.
       {
         source: "/templates/:typeId((?!relationship(?:/|$))[^/]+)",
-        destination: "/relationship-types/:typeId",
+        destination: "/relationship-templates/:typeId",
         permanent: true,
       },
       /**
@@ -445,7 +543,38 @@ const nextConfig = {
        */
       {
         source: "/assessment/demo/:type",
-        destination: "/relationship-types/:type/demo",
+        destination: "/relationship-templates/:type/demo",
+        permanent: true,
+      },
+      /**
+       * #1127 — **one public catalogue, one address.** `/relationship-types` served the catalogue
+       * *and* was the namespace a type's page and its worked example lived in, so the same model was
+       * reachable at two doors: `/relationship-templates` (the canonical one since #905) and
+       * `/relationship-types` (the retained #889 composition, mounted until this card). Jaden's
+       * call is that `/relationship-templates` is the address, so all three retired paths 308 to
+       * their counterparts and the `app/(marketing)/relationship-types/` tree is deleted rather
+       * than shadowed — a `permanent: true` source runs before the filesystem route, so a page left
+       * there would be built and unreachable.
+       *
+       * **The slug rows carry their own segment, and the bare-slug row is last.** `/relationship-
+       * types/<id>/demo` has a more specific source than `/relationship-types/<id>`, and Next
+       * matches in table order; putting the bare row last keeps the demo row from being consumed by
+       * it. Nothing else ever lived under this prefix, so there is no wildcard and no lookahead —
+       * `/relationship-types/<id>/junk` stays the plain 404 it always was.
+       */
+      {
+        source: "/relationship-types",
+        destination: "/relationship-templates",
+        permanent: true,
+      },
+      {
+        source: "/relationship-types/:slug/demo",
+        destination: "/relationship-templates/:slug/demo",
+        permanent: true,
+      },
+      {
+        source: "/relationship-types/:slug",
+        destination: "/relationship-templates/:slug",
         permanent: true,
       },
     ];

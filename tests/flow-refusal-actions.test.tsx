@@ -276,7 +276,7 @@ describe("stage 5 is not a dead end", () => {
         template: TEMPLATE,
         draft: DRAFT,
         backHref: "/back",
-        instanceRecordId: "assessment-instance-brother",
+        sessionRecordId: "assessment-instance-brother",
         problem: extra.problem ?? null,
         ...(extra.problemLink === undefined ? {} : { problemLink: extra.problemLink }),
         ...(extra.notice === undefined ? {} : { notice: extra.notice }),
@@ -333,7 +333,7 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,
@@ -352,8 +352,11 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     expect(html).toContain("data-pay-plan-included");
     expect(html).toContain("Principal");
     expect(html).not.toContain('name="plan"');
-    // The trial sentence stays: it is the promise the card step rests on.
-    expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "plans"), "trial"));
+    // The week sentence stays, in the **create path's** words: this walk is mounted without a
+    // checkout handler, so its panel is the card-free week (#1115) and the promise it rests on is
+    // that the trial opens when the person you invited accepts — not the purchase panel's "when the
+    // card is saved", which no step of this flow can reach.
+    expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "plans"), "trial-free"));
   });
 
   it("keeps the radio group for an account whose plan does not include what it asked for", () => {

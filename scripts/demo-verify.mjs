@@ -107,10 +107,13 @@ const REQUEST_TIMEOUT_MS = 20_000;
  * than imported because `db-seed.mjs` runs its seed at import; `db:verify` is the separate, deeper
  * check of these same rows and stays separate.
  *
- * **#1081's console half is imported, not re-spelled.** Those thirteen tables are authored by
+ * **#1081's console half is imported, not re-spelled.** Those twelve tables are authored by
  * `scripts/db-seed-admin-surfaces.mjs`, which also owns the numbers
  * (`ADMIN_SURFACE_ROWS`); `tests/db-seed-admin-surfaces.test.ts` holds the expectation file equal to
  * them. A third copy here is exactly the drift this file's own docstring complains about.
+ * `relationship_payment` is counted in the same file but authored elsewhere — the demo half writes
+ * one fee row per complete relationship an account pays for (`scripts/db-seed-payments.mjs`), and
+ * `tests/db-seed-payments.test.ts` holds that count equal to the dataset.
  */
 const COUNT_SQL = {
   record: "SELECT count(*)::int AS n FROM record WHERE record_type = 'assessment'",
@@ -126,6 +129,10 @@ const COUNT_SQL = {
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
   demo_account: "SELECT count(*)::int AS n FROM demo_account",
+  // t_b9679354 — the fee a completed relationship carries is the demo half's now
+  // (`scripts/db-seed-payments.mjs`), not the console's, so it is counted here beside the other
+  // rows that half writes rather than in `ADMIN_SURFACE_COUNT_SQL`.
+  relationship_payment: "SELECT count(*)::int AS n FROM relationship_payment",
   ...ADMIN_SURFACE_COUNT_SQL,
 };
 
@@ -493,7 +500,7 @@ async function main() {
   step(
     "✓",
     "seed",
-    `${bundle.payload.templates.length} template(s) + ${bundle.payload.instances.length} instance(s) from ${BUNDLE_FILE} (${seconds(seed.ms)})`,
+    `${bundle.payload.templates.length} template(s) + ${bundle.payload.sessions.length} session(s) from ${BUNDLE_FILE} (${seconds(seed.ms)})`,
   );
 
   // --- the data half: the rows the seed just wrote, counted, never remembered -------------------

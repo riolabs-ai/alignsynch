@@ -9,9 +9,9 @@ import { notFound } from "next/navigation";
 /**
  * `/assessment/[slug]` — the read of one answered assessment, from the database (#145, #204).
  *
- * The slug names an **instance** (an `session` row and its `record`), not the
+ * The slug names an **session** (an `session` row and its `record`), not the
  * template: the template has no parties, so it has no answers to draw. The title and summary
- * above the rows are read off the template the instance names, which is why a copy whose
+ * above the rows are read off the template the session names, which is why a copy whose
  * `templateId` stopped resolving is a 404 here as well as a `db:verify` failure — there is no
  * second source for the words.
  *
@@ -26,7 +26,7 @@ import { notFound } from "next/navigation";
  * **Three failure modes, three honest answers (#204).** The read is one statement
  * (`lib/db/assessments.ts`), and what it can say is:
  *
- *   - *no such instance*, or a template that stopped resolving → `notFound()` — a 404, unchanged;
+ *   - *no such session*, or a template that stopped resolving → `notFound()` — a 404, unchanged;
  *   - *the database did not answer* → `AssessmentUnreadable`: a page that says so, in the
  *     database layer's own words, instead of Next's `<h1>500</h1>` and a digest nobody can act
  *     on. Nothing is rendered from a cache and no assessment is drawn from half a read;
@@ -74,9 +74,9 @@ export default async function AssessmentPage({ params }: { params: Promise<{ slu
     return <AssessmentUnreadable slug={slug} reason={error.reason} />;
   }
 
-  // The fixture route's semantics, unchanged: no instance for this slug, or an instance whose
+  // The fixture route's semantics, unchanged: no session for this slug, or a session whose
   // template no longer resolves, is a 404 — never an empty report.
   if (screen === undefined) notFound();
 
-  return <AssessmentReportView report={assessmentReport(screen.instance, screen.template)} />;
+  return <AssessmentReportView report={assessmentReport(screen.session, screen.template)} />;
 }

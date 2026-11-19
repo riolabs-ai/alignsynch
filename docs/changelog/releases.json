@@ -1,6 +1,31 @@
 {
   "releases": [
     {
+      "version": "2.0.0-rc1.3",
+      "theme": "the UI/UX pool — the relationship reads correctly from whichever seat is looking, every notification is worded for its reader, and the catalogue is one plan.",
+      "headline": "`feat(billing)` — one plan — Basic at $9.99/month for one relationship (#1241)"
+    },
+    {
+      "version": "2.0.0-rc1.2",
+      "theme": "the two loops the candidate left open, closed in code — stage 5 reads the key stage 4 writes, and a seeded complete relationship carries its fee.",
+      "headline": "`fix(flow)` — #1216 stage 5 reads the address the create writes (#1217)"
+    },
+    {
+      "version": "2.0.0-rc1.1",
+      "theme": "the candidate's first patch — stage 4's empty 500 closed and named, production's ledger applied and proved, a generated .env.example, and a bundle-format bump named rather than absorbed.",
+      "headline": "`fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code (#1210)"
+    },
+    {
+      "version": "2.0.0-rc1",
+      "theme": "the release candidate for the v2 surface set — nine surfaces landed as one integration branch, under a declared 2.0 number, with a capture of the routes it ships.",
+      "headline": "feat(v2) — the nine surfaces of 1.22 as one integration branch (#1170)"
+    },
+    {
+      "version": "1.22.0",
+      "theme": "the release where the relationship became six sections you can read — a Counterparty who joins instead of being described, numbered Aspects with a tolerance in words, and a trial that pauses instead of closing",
+      "headline": "feat(v2) — #1124 — Relationship Detail's six-tab layer (#1148)"
+    },
+    {
       "version": "1.21.0",
       "theme": "a draft session is not a live session — the row a create writes now carries the state that says whether anybody joined, an invitation names its relationship, and the demo finally seeds both halves of the console",
       "headline": "feat(demo) — #1081 — seed the admin half so the console rail is not empty states (#1104)"

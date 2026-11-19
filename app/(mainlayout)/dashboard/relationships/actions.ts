@@ -48,18 +48,33 @@ import {
   MEMBER_RELATIONSHIPS_PATH,
 } from "@/lib/member/relationships";
 import { editRelationship, previewRelationshipEdit } from "@/lib/member/relationship-edit";
+import {
+  abandonRelationship,
+  cancelInvitation,
+  leaveRelationship,
+  requestRemoval,
+} from "@/lib/member/relationship-close";
+import { invitationMessage, sendInvitation } from "@/lib/flow/email";
+import { resendInvite } from "@/lib/flow/store";
 import { MemberRefused } from "@/lib/member/publish-basis";
 import type { EditDraft } from "@/lib/relationship/edit-view";
 import { completeRelationship } from "@/lib/member/payment";
+import { claimTrialExtension } from "@/lib/member/trial-extension";
 import type {
+  AbandonOutcome,
   AspectsOutcome,
+  CancelInviteOutcome,
   CompleteOutcome,
   EditOutcome,
   EditPreviewOutcome,
+  ExtensionOutcome,
   ForkOutcome,
+  LeaveOutcome,
   MembershipOutcome,
   PublishOutcome,
+  RemovalRequestOutcome,
   RepublishOutcome,
+  ResendInviteOutcome,
 } from "@/lib/member/outcomes";
 
 /** A payload field as a trimmed string; anything else is empty, so a refusal names the hole. */
@@ -207,6 +222,46 @@ export async function republishInviteAction(payload: {
       actionId: result.actionId,
       inviteLink: result.after.inviteLink,
       inviteExpiresAt: result.after.inviteExpiresAt,
+    };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/**
+ * #1121 — the Initiator claims the one free week.
+ *
+ * The actor comes from the session, never from the payload; the length is not a field (it is the
+ * product's own seven days), so a crafted post cannot buy a longer pause. The write re-asks the
+ * seat, the pause and the once-only rule inside `act()`'s transaction
+ * (`lib/member/trial-extension.ts`), and the screen's `canClaimExtension` flag is only what decided
+ * to draw the button.
+ */
+export async function claimExtensionAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<ExtensionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await claimTrialExtension({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      endsAt: result.after.endsAt,
+      resumed: result.after.resumed !== null,
     };
   } catch (error) {
     if (error instanceof ActRefused) return { ok: false, code: error.reason };
@@ -511,6 +566,198 @@ function membershipFailure(error: unknown): MembershipOutcome {
   }
   if (error instanceof BillingRefusal) {
     return { ok: false, code: error.code, message: error.message };
+  }
+  throw error;
+}
+
+/* ------------------------------------------------------------------ *
+ * #1135 — invitation hygiene, and leaving instead of deleting
+ * ------------------------------------------------------------------ */
+
+/**
+ * **Cancel Invite** — kill the link and put the relationship back in draft.
+ *
+ * The actor comes from the session, the reason is optional, and the write is
+ * `cancelInvitation()`'s: revoke the `session_invite` row and `published → draft` in one `act()`
+ * transaction. A refusal is the member's own code (`not-yours`, `no-invite`, `already-joined`,
+ * `invite-dead`, `not-published`, `already-closed`) and the panel prints the sentence for it.
+ */
+export async function cancelInviteAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<CancelInviteOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await cancelInvitation({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      revokedAt: result.after.revokedAt,
+    };
+  } catch (error) {
+    return closeFailure<CancelInviteOutcome>(error);
+  }
+}
+
+/**
+ * **Resend Invite** — a new token for a live invitation, then the email.
+ *
+ * The reissue is `resendInvite()` (#275), which is the same writer the console's resend and the
+ * older invite route call, so the cooldown and the lifetime cap have one home
+ * (`lib/flow/resend.ts`). Its refusals (`cooldown`, `cap-reached`, `already-claimed`) come back as
+ * codes. The send happens **after** the commit and never fails it: `sendInvitation` reports
+ * `sent|unset|failed`, and the screen draws the new link either way — a deployment with no mail key
+ * still minted a working invitation.
+ */
+export async function resendInviteAction(payload: {
+  sessionRecordId?: string;
+}): Promise<ResendInviteOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const sessionRecordId = text(payload.sessionRecordId);
+  if (sessionRecordId === "") return { ok: false, code: "no-invite" };
+
+  const result = await resendInvite({
+    sessionRecordId,
+    viewerUserId: user.userId,
+  });
+  if (!result.ok) return { ok: false, code: result.code, message: result.reason };
+
+  const message = await invitationMessage({
+    to: result.email,
+    initiatorName: result.initiatorName,
+    counterpartyName: result.counterpartyName,
+    templateTitle: result.templateTitle,
+    token: result.inviteToken,
+  });
+  const mail = await sendInvitation(message).catch(() => ({ outcome: "failed" as const }));
+
+  return {
+    ok: true,
+    inviteLink: message.link,
+    inviteExpiresAt: result.expiresAt.toISOString(),
+    email: result.email,
+    mail: mail.outcome,
+    resentCount: result.resentCount,
+  };
+}
+
+/** **Abandon Draft** — `draft|pending → void`, with the reason on the row (#1135). */
+export async function abandonRelationshipAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<AbandonOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await abandonRelationship({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      completedAt: result.after.completedAt,
+    };
+  } catch (error) {
+    return closeFailure<AbandonOutcome>(error);
+  }
+}
+
+/**
+ * **Leave Relationship** — either seat, and Stage 6 closes for both (#1135).
+ *
+ * The seat is read inside the transaction, so this action cannot be talked into leaving somebody
+ * else's row: a poster who is not a party gets `not-yours`, and a row that is not running gets
+ * `not-running`.
+ */
+export async function leaveRelationshipAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<LeaveOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await leaveRelationship({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      completedAt: result.after.completedAt,
+      leftAs: result.after.leftAs,
+    };
+  } catch (error) {
+    return closeFailure<LeaveOutcome>(error);
+  }
+}
+
+/**
+ * **Request My Removal** — the Counterparty's ask, recorded for support (#1135).
+ *
+ * One audit row and nothing else: the removal itself is support's work on the console, and the
+ * optional reason is read only by that console. Idempotent per relationship
+ * (`removal-already-requested`), so the queue holds one item.
+ */
+export async function requestRemovalAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<RemovalRequestOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await requestRemoval({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return { ok: true, actionId: result.actionId, requestedAt: result.after.requestedAt };
+  } catch (error) {
+    return closeFailure<RemovalRequestOutcome>(error);
+  }
+}
+
+/**
+ * The four ending verbs' handled failures, one shape.
+ *
+ * `MemberRefused` carries the code the panel has a sentence for; `ActRefused` is the floor or the
+ * catalogue (nothing ran). Anything else is a real server failure and stays a throw, because
+ * swallowing it would report "the change did not go through" for a database that is down.
+ */
+function closeFailure<T>(error: unknown): T {
+  if (error instanceof MemberRefused) {
+    return { ok: false, code: error.reason, message: error.message } as T;
+  }
+  if (error instanceof ActRefused) {
+    return { ok: false, code: error.reason } as T;
   }
   throw error;
 }

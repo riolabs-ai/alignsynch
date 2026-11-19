@@ -31,6 +31,8 @@
  * a module of constants with no runtime of its own.
  */
 import type { BrandId } from "@/data/brand";
+import type { UserRole } from "@/content/role-ladder";
+import { ADMIN_SPEC_PATH } from "@/lib/admin/spec-paths";
 import { OVERVIEW_PATH } from "@/lib/flow/paths";
 
 /** QuizHub's signed-in landing page, and the default when no brand is named. */
@@ -57,6 +59,32 @@ export const AFTER_SIGN_IN_BY_BRAND: Readonly<Record<BrandId, string>> = {
 /** `/login?next=<path>` — the redirect an unauthenticated visit gets, remembering where it went. */
 export function loginPathFor(next: string): string {
   return `/login?next=${encodeURIComponent(safeNextPath(next))}`;
+}
+
+/**
+ * Where a **signed-in** person actually lands (#1252) — the role's answer when nothing was asked
+ * for, and otherwise the `next` that already survived both gates.
+ *
+ * The rule, in the order that matters:
+ *
+ *   1. **A safe `next` wins.** `settled` is the value after `safeNextPath` and
+ *      `signInDestination`, so if it differs from this build's own landing page somebody asked to
+ *      go somewhere and this build can render it. A stakeholder typing `/admin/spec/07-billing`
+ *      before signing in gets that page; role never overrides an explicit destination.
+ *   2. **Otherwise the role decides.** Only a **stakeholder** lands on the spec. `admin` and
+ *      `owner` keep the brand's landing page — the console Overview is where they work, and the
+ *      spec is one row in their rail — so the test is `role === "stakeholder"` rather than
+ *      `readsSpec`: the capability answers "may read it", and this answers "read it next".
+ *
+ * Pure string and role handling, no flag and no session: the two callers that know a role are the
+ * `/login` server action (`app/(auth)/login/landing-action.ts`) and the Google finish route
+ * (`app/api/auth/google/finish/route.ts`), and both ask this one function rather than deciding
+ * again. `null`/`member`/`support` fall through to `destination` — the answer every role had
+ * before this card.
+ */
+export function signInLanding(role: UserRole | null, settled: string, destination: string): string {
+  if (settled !== destination) return settled;
+  return role === "stakeholder" ? ADMIN_SPEC_PATH : destination;
 }
 
 /**

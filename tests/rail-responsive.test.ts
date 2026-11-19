@@ -89,14 +89,14 @@ describe("the rail's width is a function of the breakpoint, in the owner's order
   const closed = railClassName(false);
   const open = railClassName(true);
 
-  it("is the expanded 250px column from lg — a laptop is not an icon rail", () => {
-    expect(closed).toContain("lg:w-[250px]");
+  it("is the expanded 250px column from xl — the v2 shell's width (#1129)", () => {
+    expect(closed).toContain("xl:w-[250px]");
   });
 
-  it("is a 64px icon column from md to lg, and only there", () => {
+  it("is a 64px icon column from md to xl, and only there", () => {
     expect(closed).toContain("md:w-16");
-    // The icon width is the one that must not leak upward: `lg:` has to win from 1024.
-    expect(closed.indexOf("lg:w-[250px]")).toBeGreaterThan(closed.indexOf("md:w-16"));
+    // The icon width is the one that must not leak upward: `xl:` has to win from 1280.
+    expect(closed.indexOf("xl:w-[250px]")).toBeGreaterThan(closed.indexOf("md:w-16"));
   });
 
   it("is a sticky column at md and up, not an overlay", () => {
@@ -120,17 +120,17 @@ describe("the rail's width is a function of the breakpoint, in the owner's order
     expect(open).not.toContain("-translate-x-full");
   });
 
-  it("keeps no xl-width rule — 1280 is not the width labels start at", () => {
-    expect(closed).not.toMatch(/\bxl:/);
-    expect(open).not.toMatch(/\bxl:/);
+  it("keeps no lg-width rule — 1024 is the icon rail's territory since #1129", () => {
+    expect(closed).not.toMatch(/\blg:/);
+    expect(open).not.toMatch(/\blg:/);
   });
 });
 
 describe("a row's label follows the container, not the window", () => {
-  it("is hidden below lg in the rail, where the column is 64px", () => {
+  it("is hidden below xl in the rail, where the column is 64px", () => {
     const html = row();
-    expect(html).toContain("hidden lg:inline");
-    expect(html).not.toContain("hidden xl:inline");
+    expect(html).toContain("hidden xl:inline");
+    expect(html).not.toContain("hidden lg:inline");
     expect(html).toContain(">My Relationships<");
   });
 
@@ -569,8 +569,8 @@ describe("the width control is a button on the rail's border, not a form (#875)"
         onClose: () => undefined,
       }),
     );
-    expect(html).toContain("lg:justify-center");
-    expect(html).not.toContain("lg:px-4");
+    expect(html).toContain("xl:justify-center");
+    expect(html).not.toContain("xl:px-4");
     // And the row it lives in is a positioning context for the handle, never a clip.
     expect(html).toContain("relative flex h-16");
   });

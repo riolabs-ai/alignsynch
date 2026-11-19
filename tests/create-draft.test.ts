@@ -33,7 +33,7 @@ import {
 } from "@/lib/flow/create-draft";
 import { createRefusal, fieldSentence } from "@/lib/flow/create-copy";
 import {
-  CREATE_INSTANCE_PATH,
+  CREATE_SESSION_PATH,
   PRICING_PATH,
   SAVE_MODE_PATH,
   SAVE_WHO_PATH,
@@ -178,7 +178,7 @@ describe("stage 1 — Who", () => {
     expect(html).toContain('data-wizard-rail="1"');
     expect(html).toContain("Stage 1 of 5");
     // Stage 2's form is not on this screen.
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
   });
 });
 
@@ -220,7 +220,7 @@ describe("stage 2 — Mode", () => {
     expect(html).toContain("Stage 2 of 5");
     // #689 — Mode no longer creates: it saves its two choices into the draft and stage 3 follows.
     expect(html).toContain(`action="${SAVE_MODE_PATH}"`);
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_SESSION_PATH}"`);
     expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
     // The saved choices come back selected after a reload.
     expect(html).toMatch(/name="mode"[^>]*checked=""[^>]*value="advanced"/);
@@ -329,6 +329,6 @@ describe("a refusal names the field by its label", () => {
 describe("the two stages are two addresses", () => {
   it("stage 2's path is stage 1's path plus one segment", () => {
     expect(createModePath(TEMPLATE_ID)).toBe(`${createRelationshipPath(TEMPLATE_ID)}/mode`);
-    expect(SAVE_WHO_PATH).toBe(`${CREATE_INSTANCE_PATH}/who`);
+    expect(SAVE_WHO_PATH).toBe(`${CREATE_SESSION_PATH}/who`);
   });
 });

@@ -71,16 +71,27 @@ function payActions(html: string): string[] {
   return [...html.matchAll(/data-pay-action="([^"]+)"/g)].map((match) => match[1] ?? "");
 }
 
-/** Render the walk at one panel. `paid` is the returning state — the membership is already live. */
+/**
+ * Render the walk at one panel. `paid` is the returning state — the membership is already live.
+ *
+ * **The checkout handlers are passed, because this file is about the purchase walk.** Since #1115
+ * an absent handler is what marks the *create* path, whose panel is the card-free week
+ * (`cardFree` in `invite-walk.tsx`); the four panels below are only reachable from the explicit
+ * upgrade action, which is the one caller that supplies these two.
+ */
 function walk(step?: PayFlowStep, paid = false): string {
   return decode(
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: RELATIONSHIP,
         paid,
         onPaid: () => undefined,
+        checkout: {
+          onStart: async () => ({ ok: false, code: "not-exercised" }),
+          onConfirm: async () => ({ ok: false, code: "not-exercised" }),
+        },
         ...(step === undefined ? {} : { initialStep: step }),
       }),
     ),
@@ -215,10 +226,14 @@ describe("stage 5 — the walk is paid for by a subscription, not by `writable`"
 
   it("the invite stage gates the walk on `subscriptionLive`, never on `paymentArmed`", () => {
     const page = readFileSync(
-      join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+      join(process.cwd(), "components/flow/template-create/invite.tsx"),
       "utf8",
     );
-    expect(page).toContain("initialPaid={screen.subscriptionLive === true}");
+    // #1115 narrows the returning state to a **paid** row: `subscriptionLive` is true for the
+    // trialing row the create itself granted, and opening the walk on its thank-you for that would
+    // hide the week's end and the free-week action — the two things stage 5 now exists to show.
+    // `paymentArmed` is still wrong for the #1014 reason, and still absent.
+    expect(page).toContain('screen.subscriptionLive === true && trial.state === "none"');
     expect(page).not.toContain("initialPaid={screen.paymentArmed");
   });
 });

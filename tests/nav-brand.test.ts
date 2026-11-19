@@ -20,9 +20,14 @@
  * `href`s out of it. The stubbed capability is not asserted as a *fixed* value anywhere: the
  * admin branch is proven by constructing the viewer a role model will one day hand back.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+
+/** Repo root — this file reads two modules' source for claims about where a fragment lives. */
+const ROOT = join(__dirname, "..");
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
@@ -36,7 +41,7 @@ import { isValidRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { querySearchIndex } from "@/content/search";
 import type { BrandId } from "@/data/brand";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentSessions, assessments } from "@/data/assessments";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
@@ -120,26 +125,36 @@ const QUIZ_MENU = [
 const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/explore"];
 
 /**
- * The alignment rail's five member destinations, in order (#620, #877).
+ * The alignment rail's member destinations, in order — the v2 shell's five-row rail (#1129,
+ * #1131: Start, My Relationships, Templates, Chat, and Payment when #1132 lands).
  *
- * **#620 took the Workspace group from four rows to two.** `My Relationships` is
- * `/dashboard/relationships` (the relationship *and* its assessment) and `Templates` is
- * `/dashboard/templates` (the catalogue and the member's own rows, as two tabs). The rows this
- * replaced are gone: `/dashboard` (the Overview still answers, it is simply not a rail row),
- * `My Templates` (now the second tab) and `Library` (now a 308 to that tab — the page is deleted,
- * because a redirect may not shadow one).
+ * **The artifact is the authority, and it draws exactly five:** Start · My Relationships ·
+ * Templates · Chat · Payment (`docs/specs/v2-bundles/05-…/start.html`). So:
  *
- * **#877 added the third Workspace row**, `My Assessments` → `/assessments`: the member's
- * assessment sessions, immediately after the relationships whose sessions they are. It is the
- * listing that used to be `/assessment/instances` and had no rail row at all.
+ *   /dashboard              **Start** — the signed-in landing #620 removed when the Overview
+ *                           stopped being a destination. It comes back as a different page (a
+ *                           computed Next Step and two shelves, not four counts) and it opens.
+ *   /dashboard/relationships  My Relationships (#620)
+ *   /dashboard/templates      Templates (#620)
+ *   Chat and Payment          #1131 and #1132 — not this card, and not asserted here.
  *
- * It is one constant rather than five literals per case because three cases assert the same rows;
+ * **#877's `My Assessments` row is not on the artifact's rail.** `/assessments` still answers
+ * (nothing was deleted and no redirect was added), and a session is one click from the
+ * relationship that owns it, but the v2 rail names five rows and this one is not among them.
+ *
+ * Then the Support group's two member rows, which are not part of the v2 five.
+ *
+ * **#1131 added `Chat`** → `/dashboard/chat`, last of the member's destinations, which is where the
+ * v2 rail draws it (Start · My Relationships · Templates · Chat).
+ *
+ * It is one constant rather than six literals per case because three cases assert the same rows;
  * a second copy is how a menu edit lands in one expectation and not the others.
  */
 const ALIGNMENT_MENU = [
+  "/dashboard",
   "/dashboard/relationships",
-  "/assessments",
   "/dashboard/templates",
+  "/dashboard/chat",
   "/dashboard/help",
   "/dashboard/support",
 ];
@@ -167,6 +182,12 @@ const ADMIN_GROUP = [
   "/admin/broadcast",
   // #901 — the docs home, after Broadcast and before the log.
   "/admin/docs",
+  // #1126 — the CRUD & Permissions matrix, directly after Docs: the second reference row.
+  "/admin/permissions",
+  // #1138 — the transactional-mail override editor, the third reference row.
+  "/admin/email-templates",
+  // #1252 — the project spec, the fourth reference row and still before the log.
+  "/admin/spec",
   "/admin/audit",
 ];
 
@@ -178,9 +199,11 @@ const ADMIN_GROUP = [
  */
 const ADMIN_RAIL = [
   ...ADMIN_GROUP,
+  // #1129 — the member's three rows, Start first; the admin sees the same sequence.
+  "/dashboard",
   "/dashboard/relationships",
-  "/assessments",
   "/dashboard/templates",
+  "/dashboard/chat",
   "/admin/review",
   "/dashboard/help",
   "/admin/health",
@@ -219,16 +242,6 @@ describe("the alignment brand's menu is alignment destinations", () => {
    * marked departure, and a rail with none has nothing to mark).
    */
   it("points every in-page anchor still in the chrome at a band the front page emits", () => {
-    const model = alignmentHome(
-      alignSynchBrand,
-      alignSynchHomeCopy,
-      assessments,
-      assessmentInstances,
-      ALIGN_SYNCH_FEATURED_SLUG,
-    );
-    const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
-    const ids = [...home.matchAll(/id="([^"]*)"/g)].map((match) => match[1]);
-
     // The rail links no anchor at all any more, which is the change this card made.
     expect(hrefs.filter((href) => href.startsWith("/#"))).toEqual([]);
     // …and no row is a route the marketing group serves, either: Support, How it works and
@@ -238,11 +251,18 @@ describe("the alignment brand's menu is alignment destinations", () => {
     }
 
     const anchors = footerHrefs("alignsynch").filter((href) => href.startsWith("/#"));
-    // Guard the guard: at least one anchor, or the loop below proves nothing.
-    expect(anchors.length).toBeGreaterThan(0);
-    for (const anchor of anchors) {
-      expect(ids).toContain(anchor.slice(2));
+    // #1127 — the chrome scrolls no band on the front page any more. `How It Works` was the last
+    // one, and the one public chrome now points it at the band the catalogue itself emits
+    // (`/relationship-templates#how`), so the rule moves with it: what is left here is the claim
+    // that the chrome names no `/#` band, and that every `#` it does name is the catalogue's — a
+    // fragment on the page that owns it.
+    expect(anchors).toEqual([]);
+    for (const href of footerHrefs("alignsynch").filter((row) => row.includes("#"))) {
+      expect(href.startsWith("/relationship-templates#")).toBe(true);
     }
+    expect(
+      readFileSync(join(ROOT, "components/marketing/relationship-catalogue.tsx"), "utf8"),
+    ).toContain('id="how"');
   });
 });
 
@@ -281,19 +301,29 @@ describe("the console's own rows are a member's, the operator's rows are not", (
   const memberHrefs = navHrefs("alignsynch");
   const adminHrefs = navHrefs("alignsynch", navViewer("admin"));
 
-  it("draws the three workspace rows for a member — the three #620 and #877 left", () => {
+  it("draws the four workspace rows for a member — Start, My Relationships, Templates, Chat (#1129, #1131)", () => {
+    expect(memberHrefs).toContain("/dashboard");
     expect(memberHrefs).toContain("/dashboard/relationships");
-    expect(memberHrefs).toContain("/assessments");
     expect(memberHrefs).toContain("/dashboard/templates");
-    // The three retired rows: the Overview is not a rail row any more, the library is a redirect,
-    // and "My Templates" is the tab behind `/dashboard/templates`. `/assessment/instances` is not
-    // a rail row either — it is a 308 to `/assessments` (#877).
-    expect(memberHrefs).not.toContain("/dashboard");
+    // #1129 — `/dashboard` is a row again, as Start. The retired rows stay retired: the library is
+    // a redirect, "My Templates" is the tab behind `/dashboard/templates`, and `/assessment/
+    // sessions` is a 308 to `/assessments` (which the v2 rail does not carry a row for).
     expect(memberHrefs).not.toContain("/dashboard/library");
     expect(memberHrefs).not.toContain("/assessment/instances");
-    expect(memberHrefs.filter((href) => href.startsWith("/dashboard/")).slice(0, 2)).toEqual([
+    // #1131 — one thread per relationship, last of the member's destinations: the v2 rail draws
+    // Start · My Relationships · Templates · Chat. `/chat` is the quiz product's conversations,
+    // gated to that brand (#300): the member's rail carries the dashboard's own address, never
+    // that one.
+    expect(memberHrefs).toContain("/dashboard/chat");
+    expect(memberHrefs).not.toContain("/chat");
+    // The workspace group's own rows, in the owner's order. `slice` rather than a `/dashboard/`
+    // prefix, because Start's address *is* `/dashboard` and does not carry the trailing slash —
+    // a prefix filter silently drops the row this card exists to draw.
+    expect(memberHrefs.slice(0, 4)).toEqual([
+      "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
+      "/dashboard/chat",
     ]);
   });
 
@@ -336,7 +366,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // reach, never how the shared ones are sequenced.
     const memberRows = adminHrefs.filter((href) => memberHrefs.includes(href));
     expect(memberRows).toEqual(memberHrefs);
-    expect(memberHrefs[0]).toBe("/dashboard/relationships");
+    expect(memberHrefs[0]).toBe("/dashboard");
     expect(adminHrefs[0]).toBe("/admin/inbox");
   });
 
@@ -373,22 +403,25 @@ describe("the console's own rows are a member's, the operator's rows are not", (
  * brand-conditional by construction (`AppNav` renders one menu or the other), which is why the last
  * case asserts absence rather than a hidden row.
  */
-describe("the workspace group reads My Relationships, My Assessments, Templates", () => {
+describe("the workspace group reads Start, My Relationships, Templates, Chat", () => {
   const memberHrefs = navHrefs("alignsynch");
 
-  it("opens on My Relationships — the first row of the three that are a member's work", () => {
-    expect(memberHrefs[0]).toBe("/dashboard/relationships");
-    expect(memberHrefs.filter((href) => href === "/dashboard/relationships")).toEqual([
-      "/dashboard/relationships",
-    ]);
+  it("opens on Start — the first row of the four that are a member's work (#1129)", () => {
+    expect(memberHrefs[0]).toBe("/dashboard");
+    expect(memberHrefs.filter((href) => href === "/dashboard")).toEqual(["/dashboard"]);
   });
 
-  it("puts My Assessments under My Relationships, and Templates under that", () => {
+  it("puts My Relationships under Start, Templates under that, and Chat last", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
-    // #877 — the sessions sit immediately after the relationships they belong to; Templates
-    // follows, because it is the shelf you start one from rather than a record you read.
-    expect(at("/assessments")).toBe(at("/dashboard/relationships") + 1);
-    expect(at("/dashboard/templates")).toBe(at("/assessments") + 1);
+    // #1129 — Start is the landing, so it opens; My Relationships is the work it points at, and
+    // Templates follows, because it is the shelf you start a relationship from rather than a
+    // record you read. #1131 — Chat closes the group, which is where the v2 rail draws it.
+    expect(at("/dashboard/relationships")).toBe(at("/dashboard") + 1);
+    expect(at("/dashboard/templates")).toBe(at("/dashboard/relationships") + 1);
+    expect(at("/dashboard/chat")).toBe(at("/dashboard/templates") + 1);
+    // The artifact's rail names five rows and `My Assessments` is not one of them; the page still
+    // answers, it simply has no row (#1129).
+    expect(memberHrefs).not.toContain("/assessments");
     // The shelf the row opens is the catalogue tab of that one destination — not a second row.
     // #794 — and not the signed-in template *library* under either address: the rail has one
     // template destination, and it is the dashboard's.
@@ -398,7 +431,7 @@ describe("the workspace group reads My Relationships, My Assessments, Templates"
 
   it("puts the support pair after the workspace rows, Help first", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
-    expect(at("/dashboard/help")).toBe(at("/dashboard/templates") + 1);
+    expect(at("/dashboard/help")).toBe(at("/dashboard/chat") + 1);
     expect(at("/dashboard/support")).toBe(at("/dashboard/help") + 1);
   });
 
@@ -434,7 +467,9 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
       // stands directly above Help — the column used to be these five minus Home and Pricing.
       "/",
       "/relationship-templates",
-      "/#questions",
+      // #1127 — the public chrome's How It Works row reads the catalogue's own band. It used to
+      // scroll the front page (`/#questions`), which the one marketing shell no longer draws.
+      "/relationship-templates#how",
       "/pricing",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
@@ -451,7 +486,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     expect(hrefs.slice(0, 5)).toEqual([
       "/",
       "/relationship-templates",
-      "/#questions",
+      "/relationship-templates#how",
       "/pricing",
       "/help",
     ]);
@@ -482,11 +517,11 @@ describe("the palette searches the brand's records, not the other product's", ()
     expect(index.creators).toEqual([]);
   });
 
-  it("indexes the instances the build holds, at their real routes", () => {
+  it("indexes the sessions the build holds, at their real routes", () => {
     const index = searchIndexFor("alignsynch", PLATFORM_VIEWER);
     const paths = index.pages.map((row) => row.path);
-    for (const instance of assessmentInstances) {
-      expect(paths).toContain(`/assessment/${instance.slug}`);
+    for (const session of assessmentSessions) {
+      expect(paths).toContain(`/assessment/${session.slug}`);
     }
     for (const path of paths) {
       expect(isValidRoute(routeManifest, path)).toBe(true);

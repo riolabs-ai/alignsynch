@@ -13,6 +13,15 @@
  * fabricated tree). Callers then keep everything they walked: a check that cannot read the index must
  * never silently stop checking.
  *
+ * ## Two questions, and they are not the same one
+ *
+ * `indexedPaths()` asks what the tree *contains* — the committed set — which is the right question
+ * for a rule about a page or a document, where a tracked file that a pattern also matches is still
+ * shipped. `ignoredPaths()` asks what the ignore rules *exclude*, which is the right question for a
+ * walk that judges source: a file a pattern keeps out of the tree is not this repository's source
+ * whether or not anybody has committed it, while an untracked file nobody ignored *is* — and that is
+ * exactly the file a ratchet has to see before `git add` (#1213).
+ *
  * NO CLOCK, NO NETWORK, NO DEPENDENCY.
  */
 import { execFileSync } from "node:child_process";
@@ -33,26 +42,63 @@ export function gitEnv() {
   return env;
 }
 
+/** One `git -C root …` call; `input` is written to its stdin when it is given. */
+function git(root, args, input) {
+  return execFileSync("git", ["-C", root, ...args], {
+    encoding: "utf8",
+    stdio: [input === undefined ? "ignore" : "pipe", "pipe", "ignore"],
+    env: gitEnv(),
+    maxBuffer: 64 * 1024 * 1024,
+    ...(input === undefined ? {} : { input }),
+  });
+}
+
+/**
+ * Is `root` the toplevel of its own work tree? Only a toplevel's answers describe *this* tree: run
+ * from a subdirectory of a larger repository and `ls-files` answers for the parent, which is where
+ * the copied-tree cases live.
+ */
+function ownsRoot(root) {
+  const toplevel = git(root, ["rev-parse", "--show-toplevel"]).trim();
+  return toplevel !== "" && realpathSync(toplevel) === realpathSync(root);
+}
+
 /**
  * Every path the index carries under `under` (repo-relative POSIX, as `git` prints them), or `null`
  * when `root` is not a work tree of its own.
  */
 export function indexedPaths(root, under) {
-  const git = (args) =>
-    execFileSync("git", ["-C", root, ...args], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      env: gitEnv(),
-      maxBuffer: 64 * 1024 * 1024,
-    });
   try {
-    // Only a toplevel's index describes *this* tree: run from a subdirectory of a larger repository
-    // and `ls-files` answers for the parent, which is where the copied-tree cases live.
-    const toplevel = git(["rev-parse", "--show-toplevel"]).trim();
-    if (toplevel === "" || realpathSync(toplevel) !== realpathSync(root)) return null;
-    const listed = git(["ls-files", "-z", "--", under]);
+    if (!ownsRoot(root)) return null;
+    const listed = git(root, ["ls-files", "-z", "--", under]);
     return new Set(listed.split("\0").filter((path) => path !== ""));
   } catch {
     return null;
+  }
+}
+
+/**
+ * The subset of `paths` (repo-relative POSIX, as walked) that the ignore rules exclude, or `null`
+ * when git cannot answer for `root`.
+ *
+ * The ignore rules themselves, never a path list: `lib/quizhub/` is excluded at `.gitignore:42` and
+ * carries no tracked file, so a worktree and CI do not have it and the primary working copy does. A
+ * walk that judged the disk made the same commit green in one tree and red in the other — the check's
+ * verdict depended on where it ran (#1213) — which is why this is a query and not a hardcoded
+ * directory name.
+ *
+ * `git check-ignore` consults the index, so a *tracked* path is answered "not ignored" even where a
+ * pattern matches it: a committed file can never be skipped by widening a pattern. Exit 1 means none
+ * of the paths match — an answer, not a failure — while any other error is `null`, so the caller
+ * keeps judging everything it walked.
+ */
+export function ignoredPaths(root, paths) {
+  if (paths.length === 0) return new Set();
+  try {
+    if (!ownsRoot(root)) return null;
+    const answer = git(root, ["check-ignore", "-z", "--stdin"], `${paths.join("\0")}\0`);
+    return new Set(answer.split("\0").filter((path) => path !== ""));
+  } catch (error) {
+    return error.status === 1 ? new Set() : null;
   }
 }

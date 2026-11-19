@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Env manifest · prev [Deploying](deploying.md) · next [The gate](gate.md)
+[Docs hub](../README.md) › **Operations** › Env manifest · prev [Env stores](env-stores.md) · next [The gate](gate.md)
 
 <!-- docs-nav:end -->
 
@@ -64,10 +64,13 @@ single row reproduces the "webhooks stopped working days later" bug class.
 
 ```bash
 pnpm env:check                 # the gate step: names and source text only, no vault, no network
+pnpm env:example               # regenerate `.env.example` from the table
 pnpm env:render --dry-run      # print the plan — every variable and its source, never a value
 pnpm env:render                # write .env.local, .env.demo and .env from the table
 pnpm env:sync --target production --check
 pnpm env:sync --target preview --branch demo --check
+pnpm env:sync --target development --write --env-dir <a tree with .env.local>
+pnpm env:matrix --check        # local only: the live stores against docs/operations/env-stores.md
 ```
 
 `env:check` prints a census every run and fails by name:
@@ -94,38 +97,61 @@ rendered file for that target, so the deployed value and the local file come fro
 source a value from `vercel env pull`: those variables are `sensitive` and pull back unreadable,
 which surfaces later as a misleading `401 Invalid API Key`.
 
+## The template, and the census behind it
+
+`.env.example` is **generated** — `pnpm env:example` writes it from the table, and `env:check` fails
+when the two disagree in either direction: a row with no line, a line with no row, or a template
+whose names are out of table order. Each block carries the requirement in all three environments,
+the source of truth for each (a vault key, a literal, a carried file, the app's own default) and the
+row's own one-line reason. It carries no value and no address.
+
+`docs/operations/env-stores.md` is the census the template was reviewed against: one matrix of every
+name × every store (the three local files, the vault, and each Vercel scope), `+` present,
+`o` present-but-empty, `·` absent. `pnpm env:matrix --write` regenerates it and `--check` compares
+the live stores with the committed page — **local only**, because it needs the vault token and the
+Vercel session, and a gate that needs a credential fails on someone else's laptop. It is also where
+the two Preview scopes are explained: an all-branches entry every preview inherits, and a branch
+entry that overrides it, with a fingerprint per pair (`hidden` when Vercel will not decrypt) so a
+duplicate can only be removed when the removal is provably behaviour-neutral.
+
 ## Out of scope, by name
 
-Test and QA knobs (`CDP_*`, `DEMO_FLOW_*`, `CHECK_FAST_BASE`, `CHROME_BIN`, `QA_ATLAS_*`), the
-release tooling (`RELEASE_*`, `HERMES_KANBAN_*`), CI and platform variables (`GITHUB_*`,
-`VERCEL_*`, `NODE_ENV`, `PATH`), and two vault rows that are not app runtime
-(`RIO_GITHUB_KEY`, `GOOGLE_CLIENT_SECRET`) are listed in `OUT_OF_SCOPE` — **one exact name and one
-reason each, never a wildcard**. An exempt row is what a future variable is compared against, so it
-cannot be widened in place.
+Test and QA knobs (`CDP_*`, `DEMO_FLOW_*`, `DEMO_BRANCH_LIMIT`, `DEMO_KEEP_BRANCHES`,
+`DEMO_PRESERVED_MAX_AGE_DAYS`, `CHECK_FAST_BASE`, `CHROME_BIN`, `QA_ATLAS_*`), the release tooling
+(`RELEASE_*`, `HERMES_KANBAN_*`), CI and platform variables (`GITHUB_*`, `VERCEL_*`, `NODE_ENV`,
+`PATH`), and two vault rows that are not app runtime (`RIO_GITHUB_KEY`, `GOOGLE_CLIENT_SECRET`) are
+listed in `OUT_OF_SCOPE` — **one exact name and one reason each, never a wildcard**. An exempt row
+is what a future variable is compared against, so it cannot be widened in place.
 
 ## Local-only: what the files carry that no row declares
 
 ```bash
 node scripts/env-manifest.ts --files --dir <a tree with .env files>
+pnpm env:matrix --dir <a tree with .env files>
 ```
 
-This is not a gate step — CI has no env files — and it prints names and byte counts only. It is how
-a key that no row owns (`NEON_AUTH_JWKS_URL`, `STRIPE_TEST_WEBHOOK_URL`) becomes visible instead of
-surviving three migrations.
+Neither is a gate step — CI has no env files — and both print names and counts only. This is how a
+key that no row owns (`NEON_AUTH_JWKS_URL`, `STRIPE_TEST_WEBHOOK_URL`, `CRON_SECRET`) becomes
+visible instead of surviving three migrations; the matrix says which store holds it, and the answer
+for each is either a row, an exemption, or a value to retire from the store.
 
 ## Known limits
 
 - A name reached only through a list helper (`firstSet(["A", "B"])` in `lib/objstore.ts`) is caught
   by the **rotted** direction and not by the **undeclared** one, which resolves `process.env.NAME`,
-  `process.env["NAME"]` and `process.env[CONSTANT]`. Adding one without a row shows up at render
-  time as `MISSING`, not at gate time.
+  `process.env["NAME"]`, `process.env[CONSTANT]` and — since
+  [#1198](https://github.com/riolabs-ai/alignsynch/issues/1198) — a property on an env record a
+  module takes as a parameter defaulting to `process.env` (`mailEndpoint(env: MailEnv = process.env)`
+  in `lib/flow/email.ts`; that rule is how `RESEND_ENDPOINT` and `RESEND_KEY_MODE` reached the
+  table). Adding one without a row still shows up at render time as `MISSING`, not at gate time.
 - The renderer reads the vault with the profile's machine account; another credential sees a
   different project and reports rows as missing rather than as a permissions error.
-- `.env.example` is still hand-maintained. A generated names-only template is a follow-up: this
-  card does not commit a `.env*` file, and `.env.example` is one.
+- The Vercel half of the census is a **snapshot** in a commit, not a live gate. A name added to a
+  store by hand drifts until someone runs `pnpm env:matrix --check`; what the gate does prove, every
+  run and on every lane, is that the table and the template agree.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Env manifest · prev [Deploying](deploying.md) · next [The gate](gate.md)
+[Docs hub](../README.md) › **Operations** › Env manifest · prev [Env stores](env-stores.md) · next [The gate](gate.md)
 
 <!-- docs-nav:end -->

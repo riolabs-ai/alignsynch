@@ -129,6 +129,12 @@ beforeEach(() => {
     if (sql.includes("FROM record WHERE id = $1")) return [recordRow];
     if (sql.includes("FROM item WHERE record_id = $1")) return itemRows;
     if (sql.includes("FROM response_option WHERE record_id = $1")) return optionRows;
+    // #1121 — the one free week's claim, read through the relationships the account initiated. No
+    // grant in this fixture: every relationship here is on its first (and only) trial.
+    if (sql.includes("FROM plan_grant g")) return [{ extended_at: null }];
+    // #1135 — the Counterparty's own removal request, read from the audit log. Nobody has asked in
+    // this fixture, so the log has no row for it.
+    if (sql.includes("FROM admin_action")) return [];
     throw new Error(`unexpected statement: ${sql}`);
   });
 });
@@ -147,7 +153,7 @@ describe("listMyRelationships lists every relationship the viewer is a party to"
 
     const [statement] = statements;
     expect(statement).toBeDefined();
-    // The seat binding, reached through the session — the rule `lib/db/my-instances.ts` follows.
+    // The seat binding, reached through the session — the rule `lib/db/my-sessions.ts` follows.
     expect(statement?.sql).toContain("FROM session vs");
     expect(statement?.sql).toContain("p.user_id = $1");
     expect(statement?.sql).toContain("OR EXISTS");

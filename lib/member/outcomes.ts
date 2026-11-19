@@ -121,6 +121,23 @@ export type RepublishOutcome =
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
 /**
+ * #1121 — claiming the one free week.
+ *
+ * `endsAt` is the extra week's last instant, so the arrival banner (*"Your extra week ends
+ * <date>"*) prints the row the write just committed rather than a value the client computed. A
+ * refusal carries its code and nothing else: the screen has a sentence for each of the three
+ * (`not-paused`, `no-trial`, `extension-used`) and a fourth for `not-yours`.
+ */
+export type ExtensionOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly endsAt: string;
+      readonly resumed: boolean;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
  * #623 — what an edit *would* cost, asked before it is written.
  *
  * `blocked` is not a refusal of the request: it is the answer "this edit cannot be made at all",
@@ -170,6 +187,69 @@ export type ForkOutcome =
       readonly aspectCount: number;
       readonly reused: boolean;
     }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/* ------------------------------------------------------------------ *
+ * #1135 — the invitation's hygiene and the two ways a relationship ends
+ * ------------------------------------------------------------------ */
+
+/**
+ * Cancelling a live invitation: the link is dead and the relationship is a draft again.
+ *
+ * `revokedAt` is the instant the link stopped working — the row's own fact, so the confirmation
+ * sentence can name the moment rather than saying "now".
+ */
+export type CancelInviteOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: "draft";
+      readonly revokedAt: string;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
+ * Re-sending a live invitation (#275's writer): the new link, shown once, and what the mail did.
+ *
+ * `mail` is `sent` / `unset` / `failed` — three outcomes and not two, because a deployment with no
+ * mail key still minted a working link and the screen has to say which of the two happened rather
+ * than claiming an email nobody sent.
+ */
+export type ResendInviteOutcome =
+  | {
+      readonly ok: true;
+      readonly inviteLink: string;
+      readonly inviteExpiresAt: string;
+      readonly email: string;
+      readonly mail: "sent" | "unset" | "failed";
+      readonly resentCount: number;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/** Abandoning a draft: `void` with its reason, and the instant it ended. */
+export type AbandonOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: "void";
+      readonly completedAt: string;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/** Leaving (either seat): Stage 6 closed, answers readable, and which seat ended it. */
+export type LeaveOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: "complete";
+      readonly completedAt: string;
+      readonly leftAs: "initiator" | "counterparty";
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/** The Counterparty's removal request: recorded for support, and when. */
+export type RemovalRequestOutcome =
+  | { readonly ok: true; readonly actionId: string; readonly requestedAt: string }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
 /** The sentence a refusal draws: the server's own words, or the fixture's line for the code. */

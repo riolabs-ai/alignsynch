@@ -94,7 +94,7 @@ export interface AdminInviteDraft {
 /**
  * Mint one invitation: 32 bytes of entropy, its hash, and the instant it stops working.
  *
- * The TTL is `lib/flow/tokens.ts::INVITE_TTL_MS` (7 days) — the same window an instance
+ * The TTL is `lib/flow/tokens.ts::INVITE_TTL_MS` (7 days) — the same window a session
  * invitation gets, because "an invitation in an inbox" is one fact about a person's attention and
  * not two. `now` is an argument: a redirect-free test can mint at any instant, and nothing here
  * reads a clock (`content/core.ts` records why a render path must not).

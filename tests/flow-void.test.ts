@@ -1,11 +1,11 @@
 /**
  * Voiding is terminal (#503) — the status derivation and both write paths, without a database.
  *
- * The card's acceptance is one sentence: "`instanceStatusOf()` reports it and a submit/accept
+ * The card's acceptance is one sentence: "`sessionStatusOf()` reports it and a submit/accept
  * attempt cannot reopen it". That is two claims about two different layers, so this file pins
  * both:
  *
- *   the derivation   `instanceStatusOf()` answers `voided` **before** it reads a count, so a
+ *   the derivation   `sessionStatusOf()` answers `voided` **before** it reads a count, so a
  *                    session whose answers all arrived and whose seats both accepted still reads
  *                    `voided` — the operator's decision outranks the arithmetic rather than
  *                    competing with it. `maySubmit()` is an allow-list of the two open statuses,
@@ -19,8 +19,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { relationshipStage } from "@/lib/flow/stage";
-import { instanceStatusOf, maySubmit } from "@/lib/flow/state";
-import type { InstanceStatus } from "@/lib/flow/state";
+import { sessionStatusOf, maySubmit } from "@/lib/flow/state";
+import type { SessionStatus } from "@/lib/flow/state";
 
 /**
  * The fake pool, hoisted so `vi.mock`'s factory can reach it.
@@ -63,7 +63,7 @@ async function store() {
   return import("@/lib/flow/store");
 }
 
-const INSTANCE = "inst-void";
+const SESSION = "inst-void";
 const VOID_INSTANT = new Date("2026-11-02T09:30:00.000Z");
 
 /** A session whose every count is finished — the case where a void has to outrank arithmetic. */
@@ -79,7 +79,7 @@ const finished = {
 beforeEach(() => {
   fake.statements.length = 0;
   fake.row = {
-    record_id: INSTANCE,
+    record_id: SESSION,
     mode: "basic",
     relationship_id: "rel-1",
     template_record_id: "record-1",
@@ -92,18 +92,18 @@ beforeEach(() => {
 
 describe("the derivation", () => {
   it("answers `voided` for a session whose answers and acceptances are all in", () => {
-    expect(instanceStatusOf(finished)).toBe("complete");
-    expect(instanceStatusOf({ ...finished, voided: true })).toBe("voided");
+    expect(sessionStatusOf(finished)).toBe("complete");
+    expect(sessionStatusOf({ ...finished, voided: true })).toBe("voided");
   });
 
   it("outranks every other status, including the ones with counting left to do", () => {
     const unfinished = { ...finished, initiatorAnswered: 0, counterpartyAnswered: 0 };
-    expect(instanceStatusOf(unfinished)).toBe("answering");
-    expect(instanceStatusOf({ ...unfinished, voided: true })).toBe("voided");
+    expect(sessionStatusOf(unfinished)).toBe("answering");
+    expect(sessionStatusOf({ ...unfinished, voided: true })).toBe("voided");
 
     const unclaimed = { ...finished, hasCounterparty: false };
-    expect(instanceStatusOf(unclaimed)).toBe("awaiting_counterparty");
-    expect(instanceStatusOf({ ...unclaimed, voided: true })).toBe("voided");
+    expect(sessionStatusOf(unclaimed)).toBe("awaiting_counterparty");
+    expect(sessionStatusOf({ ...unclaimed, voided: true })).toBe("voided");
   });
 
   it("takes the void off the stage ladder — there is no rung for a relationship that ended", () => {
@@ -115,7 +115,7 @@ describe("the derivation", () => {
     // The two open statuses are the only yeses, and only for a seat that has not accepted.
     expect(maySubmit("answering", false)).toBe(true);
     expect(maySubmit("awaiting_counterparty", false)).toBe(true);
-    for (const status of ["complete", "voided"] satisfies InstanceStatus[]) {
+    for (const status of ["complete", "voided"] satisfies SessionStatus[]) {
       expect(maySubmit(status, false)).toBe(false);
     }
     expect(maySubmit("answering", true)).toBe(false);
@@ -126,7 +126,7 @@ describe("the write paths", () => {
   it("refuses a submission into a voided session, and writes nothing", async () => {
     const { submitAnswers } = await store();
     const result = await submitAnswers({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       token: "party-token",
       answers: new Map(),
     });
@@ -142,7 +142,7 @@ describe("the write paths", () => {
 
   it("refuses an acceptance of a voided session, before it resolves a seat", async () => {
     const { acceptSession } = await store();
-    const result = await acceptSession({ instanceRecordId: INSTANCE, token: "party-token" });
+    const result = await acceptSession({ sessionRecordId: SESSION, token: "party-token" });
 
     expect(result).toMatchObject({ ok: false, code: "voided" });
     expect(fake.statements.some((statement) => /^UPDATE/i.test(statement))).toBe(false);
@@ -154,7 +154,7 @@ describe("the write paths", () => {
     const { submitAnswers } = await store();
     fake.row = null;
     const result = await submitAnswers({
-      instanceRecordId: "nope",
+      sessionRecordId: "nope",
       token: "party-token",
       answers: new Map(),
     });

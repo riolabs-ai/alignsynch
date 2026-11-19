@@ -58,7 +58,7 @@ export const ADMIN_ACTIONS = [
   "invite.revoke",
   /** Move somebody up or down the ladder — the action #501's test refuses `support`. */
   "role.change",
-  /** Delete an instance and its rows. Destructive, so `admin`, never `support`. */
+  /** Delete a session and its rows. Destructive, so `admin`, never `support`. */
   "instance.delete",
   /** Hand the one owner seat on. `owner` only: an `admin` cannot make themselves an `owner`. */
   "owner.transfer",
@@ -137,6 +137,19 @@ export const ADMIN_ACTIONS = [
    * reader, so the row and its Aspects go. `archive` is the action for everything else.
    */
   "template.delete",
+  /**
+   * #1138 — the four writes `/admin/email-templates` makes to a transactional mail's override.
+   *
+   * `admin` for all four, because a mail the product sends to a person is the product's words: the
+   * register's default is content, and an override is content that goes out under the product's
+   * name. `support` reads the inbox and answers one message; it does not get to rewrite the
+   * invitation everybody receives. They are four names rather than one `email-template.write`
+   * because the audit log is read as a sentence — "published" and "sent a test" are different
+   * acts and a reader should not have to infer which one a row was.
+   */
+  "email-template.save",
+  "email-template.publish",
+  "email-template.reset",
   /**
    * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
    * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
@@ -233,6 +246,34 @@ export const ADMIN_ACTIONS = [
   "relationship.void",
   "relationship.extend",
   /**
+   * #1121 — the Initiator's one free week, self-serve.
+   *
+   * Not `relationship.extend`: that is the operator override, `admin`-floored, and it takes an
+   * arbitrary day count. This action is the member's own claim of the *one* extension the product
+   * offers, at the one length it offers, floored at `member` because it writes only the
+   * relationship's own initiating account's row — and floored here rather than opened up, because
+   * the once-only rule is enforced inside the transaction (`lib/member/trial-extension.ts`), not by
+   * the absence of a button.
+   */
+  "relationship.claim-extension",
+  /**
+   * #1135 — the invitation's three courtesies and the two ways a relationship ends.
+   *
+   *   cancel-invite     the Initiator kills a link nobody claimed; the status returns to `draft`
+   *   abandon           the Initiator ends a draft that never went out (`→ void`, with its reason)
+   *   leave             either party ends a live Stage 6 (`→ complete`); answers stay readable
+   *   removal-request   the Counterparty asks support to remove their name and answers
+   *
+   * All four are `member`: each writes a row the actor is already a seat on, and each mutation
+   * re-asks the seat inside its transaction (`lib/member/relationship-close.ts`), so the floor is
+   * "this is a member's own product" and never the permission. `leave` is the only one whose actor
+   * may be the Counterparty, and it is the only transition that seat is allowed (#1135).
+   */
+  "relationship.cancel-invite",
+  "relationship.abandon",
+  "relationship.leave",
+  "relationship.removal-request",
+  /**
    * #667 — the review store's three names, and the reason `/admin/review` is a `support` surface.
    *
    * A review artifact is a prototype, a diagram or a report somebody has to look at: the TODO
@@ -297,6 +338,14 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "template.archive": "admin",
   "template.restore": "admin",
   "template.delete": "admin",
+  // #1138 — the mail-override triad. `admin` for the publish pair's reason: the words the product
+  // sends are what it promises, and an operator below `admin` answers mail rather than authoring
+  // it. The fourth thing the screen offers — "Send Test" — is not an action here on purpose: it
+  // writes nothing, so `act()` has nothing to record, and the mail it sends is the actor's own
+  // address carrying sample data and a test footer.
+  "email-template.save": "admin",
+  "email-template.publish": "admin",
+  "email-template.reset": "admin",
   /**
    * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
    *
@@ -349,6 +398,15 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
   "relationship.void": "admin",
   "relationship.extend": "admin",
+  // #1121 — the Initiator's own free week. `member`, for the reason the six rows above are: it
+  // writes nothing but the account's own trial row and a grant for its own relationship.
+  "relationship.claim-extension": "member",
+  // #1135 — the same reason as the six rows above: each writes a row the actor is already a seat
+  // on. `leave` includes the Counterparty's own seat, which is the only transition they may take.
+  "relationship.cancel-invite": "member",
+  "relationship.abandon": "member",
+  "relationship.leave": "member",
+  "relationship.removal-request": "member",
   /**
    * #667 — the review store's three, and #665's screen mounts them (**this card** raised the floor
    * from `support` to `admin`).
@@ -400,9 +458,21 @@ export function requirementFor(action: AdminAction): UserRole {
  * `null` is nobody signed in, or an account with no profile row (a missing row is
  * `DEFAULT_USER_ROLE`, which `lib/admin/act.ts` applies before it asks) — refused on every action,
  * because every floor is at least `support`.
+ *
+ * **The stakeholder seat takes no action from this table at all (#1252).** That is one sentence of
+ * policy and the rank comparison cannot express it: `stakeholder` sits above `member`, and this
+ * table carries eight member-floored rows (a template draft, the `relationship.*` writes) whose
+ * floor is the *actor's own product*. A reviewer's product is the spec, and the bundle's own
+ * Definition of Done is "every `ACTION_REQUIREMENTS` action refuses a stakeholder" — so the seat is
+ * refused here, once, instead of eight floors being raised above `member` (which would take a
+ * member's own writes away) or the row being trusted to the ownership check (which a stakeholder is
+ * not supposed to reach). Nothing else moves: no member, support, admin or owner gate changes, and
+ * `atLeast()` still compares ranks, because "is this seat high enough to *see* a surface" and "may
+ * this seat *write*" are different questions.
  */
 export function can(role: UserRole | null, action: AdminAction): boolean {
   if (role === null) return false;
+  if (role === "stakeholder") return false;
   return roleRank(role) >= roleRank(requirementFor(action));
 }
 
@@ -431,7 +501,7 @@ export function atLeast(role: UserRole | null, needed: UserRole): boolean {
  * `information_schema` — a table this app does not audit is not a target.
  *
  * **The names are the tables as 0013 left them.** `0013_relationship_sessions.sql` renamed
- * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
+ * `assessment_session` to `session` and `session_invite` to `session_invite`, and #503's repairs
  * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
  * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
  * live table names or it is nothing a reader can join back to. `relationship_member` is here for
@@ -483,6 +553,13 @@ export const AUDIT_TARGET_TABLES = [
   "review_todo",
   "review_issue",
   "review_issue_comment",
+  /**
+   * #1138 — the row an email-override write creates. The target is the **version**, not the
+   * template id, for the reason `plan_grant` is a target: the audit row then points at the words
+   * that were saved or published, and the version row carries the actor and the instant beside it.
+   * A template id is not a row, so pointing there would give the log's join nothing to land on.
+   */
+  "email_template_version",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

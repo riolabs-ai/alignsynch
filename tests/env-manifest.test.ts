@@ -14,10 +14,13 @@ import {
   OUT_OF_SCOPE,
   checkManifest,
   declaredNames,
+  exampleNames,
+  exampleProblems,
   extractBootReads,
   extractReads,
   forbiddenIn,
   readTree,
+  renderExample,
   requiredRows,
   rowsFor,
   type EnvRow,
@@ -303,5 +306,100 @@ describe("a render never crosses environments", () => {
     expect(plan.body).not.toBeNull();
     expect(plan.missing).toEqual([]);
     expect(plan.resolutions[0].status).toBe("missing");
+  });
+});
+
+describe("the checked-in template is the table's own projection", () => {
+  /** One row whose value differs by environment, which is the shape the template must explain. */
+  const splitRow: EnvRow = {
+    name: "DATABASE_URL",
+    boot: true,
+    environments: { local: "required", preview: "required", production: "required" },
+    sources: {
+      local: { vault: "ALIGNSYNCH_DEMO_DATABASE_URL" },
+      preview: { vault: "ALIGNSYNCH_DEMO_DATABASE_URL" },
+      production: { vault: "ALIGNSYNCH_PROD_DATABASE_URL" },
+    },
+    why: "fixture row",
+  };
+  const rows: EnvRow[] = [
+    splitRow,
+    row("BRAND", ["required", "required", "required"], { literal: "alignsynch" }),
+    row("DEMO_PIN", ["required", "required", "forbidden"], { carried: true }),
+  ];
+
+  it("renders one `NAME=` per row, in table order, carrying no value", () => {
+    const text = renderExample(rows);
+    expect(exampleNames(text)).toEqual(["DATABASE_URL", "BRAND", "DEMO_PIN"]);
+    // Every line that is a declaration ends at the `=`: the template is names and decisions only.
+    const declarations = text.split("\n").filter((line) => /^[A-Z_][A-Z0-9_]*=/.test(line));
+    expect(declarations).toEqual(["DATABASE_URL=", "BRAND=", "DEMO_PIN="]);
+    // A split source is named per environment, which is the question a deployment failure asks.
+    expect(text).toContain("production vault ALIGNSYNCH_PROD_DATABASE_URL");
+    expect(text).toContain("production forbidden");
+  });
+
+  it("passes when it was rendered from the table it is checked against", () => {
+    expect(exampleProblems(renderExample(rows), rows)).toEqual([]);
+  });
+
+  it("fails a row the template does not declare — the deliberately removed row", () => {
+    const removed = rows.filter((entry) => entry.name !== "DEMO_PIN");
+    const findings = exampleProblems(renderExample(rows), removed);
+    expect(findings.map((finding) => [finding.rule, finding.name])).toEqual([
+      ["example", "DEMO_PIN"],
+    ]);
+    // The same removal is caught by the table check too: the code still reads it.
+    const report = checkManifest({
+      files: [{ path: "lib/demo.ts", source: "export const pin = process.env.DEMO_PIN;" }],
+      rows: removed,
+      outOfScope: [],
+    });
+    expect(report.problems.map((problem) => problem.rule)).toContain("undeclared");
+  });
+
+  it("fails a line no row declares, and a template out of table order", () => {
+    const withPhantom = `${renderExample(rows)}\nGHOST_FLAG=\n`;
+    expect(exampleProblems(withPhantom, rows).map((finding) => finding.name)).toEqual([
+      "GHOST_FLAG",
+    ]);
+
+    const reordered = [
+      "# a template whose names are not in table order",
+      "BRAND=",
+      "DATABASE_URL=",
+      "DEMO_PIN=",
+      "",
+    ].join("\n");
+    expect(exampleProblems(reordered, rows).map((finding) => finding.message)).toContain(
+      "the names are out of table order — the template is a reading of the table",
+    );
+  });
+
+  it("declares every name the table declares in the real tree's template", () => {
+    const report = checkManifest({ files: readTree(process.cwd()) });
+    expect(report.problems).toEqual([]);
+    expect(declaredNames()).toContain("RESEND_ENDPOINT");
+  });
+});
+
+describe("a read through an env record that defaults to process.env", () => {
+  it("counts a property read on that record, and not on somebody else's", () => {
+    const reads = extractReads([
+      {
+        path: "lib/flow/email.ts",
+        source: [
+          "export function mailEndpoint(env: MailEnv = process.env): string {",
+          "  return env.RESEND_ENDPOINT ?? DEFAULT_ENDPOINT;",
+          "}",
+        ].join("\n"),
+      },
+      {
+        // No `= process.env` default, so this record is somebody else's and is not a read of ours.
+        path: "lib/other.ts",
+        source: "export const name = env.RESEND_KEY_MODE;",
+      },
+    ]);
+    expect([...reads.keys()]).toEqual(["RESEND_ENDPOINT"]);
   });
 });

@@ -5,7 +5,7 @@
  *
  *   * it goes to the **other** party — `otherRoleOf()` is total over the two roles, so neither
  *     submission direction can mail the person who just submitted;
- *   * the body carries the instance's name and one link, and **no** answer, score, Gap value or
+ *   * the body carries the session's name and one link, and **no** answer, score, Gap value or
  *     invitation token — the assertion is that it contains no digit at all, which is what a score
  *     and a Gap value are, and no `/invite/` path, which is where a token could hide. Since #548
  *     the words are template #5 (`lib/email/templates/report-ready.ts`) rendered through the band,
@@ -40,14 +40,14 @@ import { unlockNoticeMessage, otherRoleOf, sendUnlockNotice } from "@/lib/flow/u
  * Fixtures
  * ------------------------------------------------------------------ */
 
-const INSTANCE = "11111111-2222-4333-8444-555555555555";
+const SESSION = "11111111-2222-4333-8444-555555555555";
 const TOKEN_SHAPED = "t".repeat(43);
 const BASE = "http://localhost:3000";
 
-/** The two seats of one complete instance, as `readUnlockFacts()` returns them. */
+/** The two seats of one complete session, as `readUnlockFacts()` returns them. */
 function facts(over: { initiatorEmail?: string | null; counterpartyEmail?: string | null } = {}) {
   return {
-    instanceRecordId: INSTANCE,
+    sessionRecordId: SESSION,
     title: "Relationship Basics",
     initiator: {
       role: "initiator" as const,
@@ -112,7 +112,7 @@ describe("the notice goes to the other party", () => {
     const { calls, fetchImpl } = capture();
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,
@@ -127,7 +127,7 @@ describe("the notice goes to the other party", () => {
     const { calls, fetchImpl } = capture();
 
     await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "counterparty",
       base: BASE,
       fetchImpl,
@@ -147,12 +147,12 @@ describe("the notice goes to the other party", () => {
  * The words
  * ------------------------------------------------------------------ */
 
-describe("the message names the instance and carries nothing else", () => {
-  it("names the reader, the party who answered, and the instance", async () => {
+describe("the message names the session and carries nothing else", () => {
+  it("names the reader, the party who answered, and the session", async () => {
     const { calls, fetchImpl } = capture();
 
     await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "counterparty",
       base: BASE,
       fetchImpl,
@@ -163,38 +163,38 @@ describe("the message names the instance and carries nothing else", () => {
     expect(calls[0].text).toContain("Rowan accepted their side of Relationship Basics");
   });
 
-  it("links to the instance and nowhere else", async () => {
+  it("links to the session and nowhere else", async () => {
     const { calls, fetchImpl } = capture();
 
     await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,
     });
 
     const links = calls[0].text.match(/https?:\/\/\S+/g) ?? [];
-    // The band's footer draws the site line on every message; the instance's own screen is the
+    // The band's footer draws the site line on every message; the session's own screen is the
     // message's only link. The site line is compared whole: on the AlignSynch brand it shares an
     // origin with a link on that domain, so a prefix filter would eat both.
     expect(links.filter((href) => href !== `https://${brand.domain}`)).toEqual([
-      `${BASE}/assessment/instances/${INSTANCE}`,
+      `${BASE}/assessment/instances/${SESSION}`,
     ]);
   });
 
   it("carries no score, no Gap value, no digit and no invitation token", async () => {
-    const message = unlockNoticeMessage({
+    const message = await unlockNoticeMessage({
       to: "rowan@example.test",
       recipientName: "Rowan",
       otherName: "Avery",
       templateTitle: "Relationship Basics",
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       base: BASE,
     });
 
     // A score is an integer in 1..5 and a Gap value is an integer; "no score, no Gap value" is
     // therefore strongest as "no digit at all in the words", which also catches a leaked
-    // "3 of 5 answered". The one place a digit may appear is the link, which is the instance's
+    // "3 of 5 answered". The one place a digit may appear is the link, which is the session's
     // own id — so the link is cut out and the rest of the body is asserted digit-free.
     expect(message.subject).not.toMatch(/\d/);
     expect(message.text).toContain(message.link);
@@ -202,7 +202,7 @@ describe("the message names the instance and carries nothing else", () => {
     // The invitation token is a 43-character base64url path segment; there is no such path here.
     expect(message.text).not.toContain("/invite/");
     expect(message.text).not.toContain(TOKEN_SHAPED);
-    expect(message.link).toBe(`${BASE}/assessment/instances/${INSTANCE}`);
+    expect(message.link).toBe(`${BASE}/assessment/instances/${SESSION}`);
   });
 });
 
@@ -217,7 +217,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const { calls, fetchImpl } = capture();
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,
@@ -245,7 +245,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     }) as unknown as typeof fetch;
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl: throwing,
@@ -265,7 +265,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const { fetchImpl } = capture(() => new Response("nope", { status: 429 }));
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,
@@ -282,7 +282,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const { calls, fetchImpl } = capture();
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "counterparty",
       base: BASE,
       fetchImpl,
@@ -296,13 +296,13 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     expect(line).not.toContain("@");
   });
 
-  it("sends nothing when the instance cannot be read back", async () => {
+  it("sends nothing when the session cannot be read back", async () => {
     stub.facts = undefined;
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const { calls, fetchImpl } = capture();
 
     const outcome = await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,
@@ -318,7 +318,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const { calls, fetchImpl } = capture(() => new Response("nope", { status: 500 }));
 
     await sendUnlockNotice({
-      instanceRecordId: INSTANCE,
+      sessionRecordId: SESSION,
       submittedBy: "initiator",
       base: BASE,
       fetchImpl,

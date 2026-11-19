@@ -15,6 +15,48 @@ A fifth artefact is written by a different command and answers the same question
 tree tell the truth about itself: `data/health/platform-health.json`, which `/admin/health` prints as
 status. Step 5 records it.
 
+## The preflight: ten facts, one command
+
+`pnpm release:preflight <version>` prints ten lines, one per fact a cut depends on, and exits 1 if
+any of them is false. `bash scripts/release.sh --tag-only <version>` runs it **first** — before the
+checkout guard, before the gate — and no flag skips it. Each line that fails prints the command that
+clears it; the script itself fixes nothing.
+
+```bash
+pnpm release:preflight 2.0.0-rc1.1
+```
+
+| #   | check                      | fails when                                                              | what failed a real cut                    |
+| --- | -------------------------- | ----------------------------------------------------------------------- | ----------------------------------------- |
+| 1   | no concurrent cut          | another `release.sh` / `release-cut` is running against this repository | two cuts at once, one `.next`, one slot   |
+| 2   | checkout current           | after `git fetch origin --prune`, `HEAD !== origin/main`                | a checkout 8 commits behind               |
+| 3   | tree clean                 | `git status --porcelain` prints anything                                | a path a tool wrote, riding into the cut  |
+| 4   | version matches            | `package.json` names a different version                                | a bump that was never merged              |
+| 5   | tag is free                | `v<version>` exists locally **or** on the remote                        | the next attempt must be the next version |
+| 6   | entry exists and is honest | no `docs/changelog/v<X-Y-Z>.md`, or `release.sh --check` is red         | a tag with no page beside it              |
+| 7   | no stale build cache       | `.next/dev` or `.next/types` is on disk                                 | `next dev` types poisoning `typecheck`    |
+| 8   | record step can run        | no `DATABASE_URL` in the environment and `--no-record` was not passed   | the record step skipped silently, twice   |
+| 9   | CI green at this sha       | `gh run list --commit HEAD` shows no success, or any failure            | a local check that disagreed with CI      |
+| 10  | no merges in flight        | a pull request is open and `--allow-open-prs` was not passed            | a merge moving `main` mid-cut             |
+
+Two flags narrow it, one check each, and both print a warning line naming what they waved through:
+
+- `--no-record` covers check 8. The cut publishes the tag and **owes** the record; the exact
+  `pnpm health:record …` command is still printed at the end of the run.
+- `--allow-open-prs` covers check 10. The open queue is known and the operator accepts that a merge
+  may land while the cut runs.
+
+An **unverifiable** check is always a ✗: a missing or unauthenticated `gh` fails checks 9 and 10
+rather than warning, because an unverified cut is the failure this command exists to prevent. So the
+flags wave through a check that _ran and failed_, never one that could not run — `--allow-open-prs`
+does not make an unreadable queue green.
+
+The checks are **cut-time facts and live nowhere else**. `tag is free` and `no concurrent cut` are
+false in the middle of a working day, so this is deliberately not a step in `scripts/verify.sh` and
+not a step in CI: the gate runs on every push, and this runs where it is read, which is the cut.
+`tests/release-preflight.test.ts` holds one case per check, both sides, plus ten cases where exactly
+one check fails alone.
+
 ## The run order
 
 Eight steps, in this order. Each names the command it runs; the sections below are the reasons, and
@@ -84,8 +126,8 @@ every refusal, and it prints the milestone name the number implies, so the miles
 the number rather than edited by hand and then reconciled. A typed version is refused outright; the
 one exit is `--override <version> --reason "<why>"`, which prints a banner and writes it into the
 entry, so a declared override is a public artefact. It refuses to run at all inside a dispatched
-worker (`HERMES_KANBAN_TASK` set) and `--execute` needs an interactive TTY — a cut is one actor, and
-a card is not it.
+worker (`HERMES_KANBAN_TASK` set) and `--execute` needs an interactive TTY **or** a committed
+approval artifact — a cut is one actor, and a card is not it.
 
 ### 3. CHANGELOG entry, at that version
 
@@ -210,10 +252,52 @@ just tagged (step 5), so the cut is not done while `/admin/health` still names t
 A machine without the demo branch's credentials uses `--no-record`, which prints the command instead
 of running it.
 
+**A version is written `1.7.0` or `v1.7.0`, and both mean the same cut (#1248).** The tag is always
+`v<version>`, so the prefix is the tag's rather than the version's, and one normaliser
+(`scripts/release-version.mjs::stripV`) takes exactly one `v` off for every verb — `release.sh`, the
+preflight, `release-cut`, `release-record` and `release-version`'s own CLI. A run given the tagged
+spelling prints which form it received. Before this, `pnpm release:preflight v1.7.0` passed ten checks
+while `bash scripts/release.sh --tag-only v1.7.0` refused the same string, and
+`release-record.mjs check v1.7.0` reported a doubled `vv1.7.0`; a version that is not semver at all
+(`1.7.0.0`, `01.7.0`, `1.7`, `vv1.7.0`) is refused in either spelling, exactly as before.
+
 `pnpm release:cut --execute` is the same cut with the number already decided and the actor already
 proven: it re-checks the seven values, refuses outside an interactive TTY, asks for the version to be
 typed back, and then runs exactly `bash scripts/release.sh --tag-only <v>` — the composition is the
 point, so `--tag-only` keeps its #1041 record step and its refusal of a stale record.
+
+**A cut with no TTY runs on an approval, not a flag.** When `--execute` finds no terminal it reads
+`docs/releases/<candidate>.approval.json` — a file a human writes and commits to `main`:
+
+```json
+{
+  "version": "1.22.0",
+  "commit": "<40-hex sha that is on origin/main>",
+  "approved_by": "<github login>",
+  "approved_at": "<ISO-8601>",
+  "url": "https://github.com/riolabs-ai/alignsynch/issues/<n>#issuecomment-<id>",
+  "reason": "optional one line"
+}
+```
+
+It tags only when that approval covers **this** cut: the `version` is the candidate, `commit` is
+`git rev-parse HEAD` **and** HEAD is `origin/main`, `git status --short` is empty, `approved_by` is a
+person (not `riolabs-ai`, `alignsynch` or a `[bot]` account) and `url` is an issue, pull request or
+comment on this repository. Each failure is refused by name with both sides of the disagreement, and
+a dirty tree is a refusal rather than a warning because the gate checks the tree. The keys are
+strict — an unknown key is an error, not a comment — and `version` is written without the leading
+`v` (either spelling is accepted on read). On success it prints `pre-approved by <login> at <url>
+for commit <sha>` and runs the same `--tag-only`.
+
+**The artifact is the owner's act.** No mode, flag or side effect of `--prepare`, `--check` or
+`--execute` writes it: a self-issued approval is not an approval, and its value is that it is a
+reviewed diff naming a person. There is no `--approved-by` / `--approval` flag — an unknown argument
+is a usage error. After the tag exists the cut appends the approval to
+`data/health/release-approvals.json` (`node scripts/release-record.mjs approval …`, read it back with
+`pnpm release:approvals`), so which approval covered which tag survives the transcript. That file is
+committed with the health record. The published note itself is the `CHANGELOG.md` entry byte for
+byte, so it cannot carry a post-hoc approval without changing the tag path — the ledger and the
+banner are the audit trail.
 
 Then the release mail — with the key hydrated at call time, because a spawned shell has no
 `RESEND_API_KEY`:
@@ -530,12 +614,18 @@ than inherited from whichever file happens to sit in the checkout:
 ```bash
 read -rsp 'production DATABASE_URL (unpooled): ' PROD_DB_URL && echo
 DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:migrate   # idempotent; prints applied and skipped
+DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:schema    # read-only: N files · N applied · N pending
 DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:verify    # the party rules, read back
 unset PROD_DB_URL
 ```
 
 A release with nothing to migrate still runs it, and a run that applies nothing is the expected
-answer — cheaper than discovering the column is missing at request time.
+answer — cheaper than discovering the column is missing at request time. **`db:schema` is the
+read-only half, and `db:verify` now ends with the same comparison (V34):** it prints
+`N files · N applied · N pending` and exits 1 naming every unapplied file, so a ledger behind the
+deployed code is a named failure here rather than an empty-body 500 on the first create — which is
+how #1205 was found: production's ledger stopped at `0039`, the create's `session.state` INSERT
+raised `42703`, and nobody could read why.
 
 ### 2a. When `db:verify` names a V11, clear the mark — never the row it sits on
 

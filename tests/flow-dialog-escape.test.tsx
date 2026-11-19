@@ -27,7 +27,10 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RelationshipFlowShell } from "@/components/assessment-flow/relationship-flow-shell";
+import {
+  RelationshipFlowShell,
+  type FlowRail,
+} from "@/components/assessment-flow/relationship-flow-shell";
 import { StageShell } from "@/components/assessment-flow/stage-shell";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { clearFlowOrigin, rememberFlowOrigin, takeFlowOrigin } from "@/lib/flow/dialog-origin";
@@ -38,9 +41,8 @@ declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
 
-const STAGE_PATH = "/templates/relationship/relationship-basics/create/mode";
-const NEXT_STAGE =
-  "http://localhost:3000/templates/relationship/relationship-basics/create/aspects";
+const STAGE_PATH = "/dashboard/templates/relationship-basics/create/mode";
+const NEXT_STAGE = "http://localhost:3000/dashboard/templates/relationship-basics/create/aspects";
 
 const push = vi.fn();
 
@@ -87,13 +89,34 @@ const STAGE_FORM = (
   </form>
 );
 
+/**
+ * The v2 rail's facts, minimal (#1123). This file is about the frame — where the panel is, where
+ * focus goes, what a dismissal does — so the rail only has to exist and print the count.
+ */
+const RAIL: FlowRail = {
+  label: "Setup progress",
+  count: "Stage 2 of 5",
+  name: "Settings",
+  alignNote: "Stage 6 Align starts when Elena joins",
+  alignPreviewLabel: "Align",
+  alignPreviewNote: "Starts when Elena joins",
+  summaryHeading: "Your Relationship",
+  summary: [{ label: "Template", value: "Relationship Basics" }],
+  steps: [1, 2, 3, 4, 5].map((step) => ({
+    step,
+    label: ["Details", "Settings", "Aspects", "Account", "Invite"][step - 1] ?? "",
+    state: step < 2 ? "done" : step === 2 ? "current" : step === 3 ? "up-next" : "later",
+    statusLabel: step < 2 ? "Done" : step === 2 ? "In Progress" : step === 3 ? "Up Next" : "Later",
+  })),
+};
+
 const mountDialog = (children: React.ReactNode = STAGE_FORM) =>
   act(() => {
     root.render(
       <RelationshipFlowShell
         mount="dialog"
         stage={2}
-        copy={assessmentCreatePageCopy}
+        rail={RAIL}
         title={assessmentCreatePageCopy.heading}
         closeLabel="Close"
         closeHref={TEMPLATE_LIBRARY_PATH}
@@ -217,6 +240,6 @@ describe("advancing inside the dialog", () => {
     expect(init.method).toBe("POST");
     expect(String(init.body)).toContain("mode=fixed");
     // The answer's address is pushed: a soft navigation keeps the page underneath the dialog.
-    expect(push).toHaveBeenCalledWith("/templates/relationship/relationship-basics/create/aspects");
+    expect(push).toHaveBeenCalledWith("/dashboard/templates/relationship-basics/create/aspects");
   });
 });

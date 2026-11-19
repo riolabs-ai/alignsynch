@@ -36,7 +36,7 @@ import {
   GAP_KIND_LABELS,
   gapKindsIn,
   gapKindsOf,
-  instanceAlignment,
+  sessionAlignment,
   type AspectGaps,
   type GapKind,
 } from "../../content/gaps";
@@ -321,15 +321,15 @@ describe("Steps are additive", () => {
     // Both Settings before and after, compared like for like. Comparing Soft-before against
     // Full-after would still pass if a Step had shifted a Gap, because the two Settings tolerate
     // different distances — so the same Setting is used on both sides.
-    const softBefore = instanceAlignment(gapsBefore, "soft");
-    const fullBefore = instanceAlignment(gapsBefore, "full");
+    const softBefore = sessionAlignment(gapsBefore, "soft");
+    const fullBefore = sessionAlignment(gapsBefore, "full");
 
     const steps = derive();
     assert.ok(steps.length > 0, "the derivation actually ran");
 
     const gapsAfter = gapsOf();
-    const softAfter = instanceAlignment(gapsAfter, "soft");
-    const fullAfter = instanceAlignment(gapsAfter, "full");
+    const softAfter = sessionAlignment(gapsAfter, "soft");
+    const fullAfter = sessionAlignment(gapsAfter, "full");
 
     // The derivation read the answers and wrote nothing: the maps are untouched, so the Gaps are
     // recomputed from exactly the same inputs.
@@ -444,9 +444,9 @@ describe("storing progress", () => {
     // An authored Step came from no Gap, so no Gap falling to 0 closes it.
     const withAuthored = closeSteps([...first, authored], input);
     assert.equal(withAuthored.find((step) => step.id === authored.id)?.status, "open");
-    // A Step on an Aspect the instance no longer holds is absent, not 0: it stays as it was.
+    // A Step on an Aspect the session no longer holds is absent, not 0: it stays as it was.
     assert.equal(closeSteps(first, { ...input, items: [SHARED] }), first);
-    // The same branch, from the other end: an instance holding no Aspects at all closes nothing.
+    // The same branch, from the other end: a session holding no Aspects at all closes nothing.
     assert.equal(
       closeSteps(first, { ...input, counterpartyAnswers: agreedAnswers, items: [] }),
       first,

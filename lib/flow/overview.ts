@@ -6,28 +6,28 @@
  * to put a number nobody measured. This module is the rule that stops that: **a count is a
  * predicate over the rows the linked list renders**, and both surfaces ask the same function.
  *
- *   the card   `overviewCountsOf(await listMyInstances(userId))` — one read, counted in memory
+ *   the card   `overviewCountsOf(await listMySessions(userId))` — one read, counted in memory
  *   the list   `?filter=<the same id>` — the same read, filtered by `matchesOverviewFilter`
  *
- * There is no SQL in this module and no second query: `listMyInstances` is the only read behind
+ * There is no SQL in this module and no second query: `listMySessions` is the only read behind
  * both, so "the count equals the list" is arithmetic over one array rather than two statements
  * that could drift. `tests/overview-counts.test.ts` drives every state through both halves.
  *
- * ## Why the three filters are the three `MyInstanceState` values (minus one)
+ * ## Why the three filters are the three `MySessionState` values (minus one)
  *
- * `MyInstanceState` (`lib/flow/state.ts`) is already the blind rule made into data: `yours-to-answer`
+ * `MySessionState` (`lib/flow/state.ts`) is already the blind rule made into data: `yours-to-answer`
  * is derived from **the viewer's own answered count**, `awaiting-other` says only that the other
  * party is not done, and `complete` is the terminal state. So the filters can be written against a
  * derived value instead of a count of `opinion` rows, and nothing here can be asked for the other
  * party's answered total — it is not in the type.
  *
  * `reports-open` is `complete` **and** `unlock === "unseen"`, i.e. the viewer's own
- * `unlock_seen_at` (#252). It narrows `complete` and never widens it: an instance whose answers the
+ * `unlock_seen_at` (#252). It narrows `complete` and never widens it: a session whose answers the
  * viewer has already opened is not "open", and announcing that one is closed leaks nothing either.
  *
  * ## What is deliberately not here
  *
- * - **No total.** Four cards are four questions, not slices of one pie; an instance can be
+ * - **No total.** Four cards are four questions, not slices of one pie; a session can be
  *   `complete` and already read, and then it is in none of the three lists. A "relationships" total
  *   would be a number with no list behind it, which is the one kind of number this screen must not
  *   print.
@@ -39,20 +39,20 @@
  * Pure: rows in, numbers out. No `pg`, no `process.env`, no clock.
  */
 import { MY_ASSESSMENTS_PATH } from "@/lib/flow/paths";
-import type { MyInstanceState, UnlockMark } from "@/lib/flow/state";
+import type { MySessionState, UnlockMark } from "@/lib/flow/state";
 
 /**
  * The two derived fields this module is allowed to read.
  *
- * `MyInstance` (`lib/db/my-instances.ts`) satisfies it structurally, so the page can pass its rows
+ * `MySession` (`lib/db/my-sessions.ts`) satisfies it structurally, so the page can pass its rows
  * through unchanged — but this module and every component above it are kept off `lib/db`
  * deliberately: a predicate over `state` and `unlock` cannot start joining `opinion` rows by
  * accident, and the next expression (which has no parties at all) can pass its own rows through
  * the same counts without inheriting this one's shape.
  */
 export interface OverviewRow {
-  readonly instanceRecordId: string;
-  readonly state: MyInstanceState;
+  readonly sessionRecordId: string;
+  readonly state: MySessionState;
   /** The viewer's own mark (#252) — `unseen` only ever on a `complete` row. */
   readonly unlock: UnlockMark;
 }
@@ -83,7 +83,7 @@ export function matchesOverviewFilter(row: OverviewRow, filter: OverviewFilter):
       return row.state === "awaiting-other";
     case "yours-to-answer":
       // The viewer holds a seat and has not answered every Aspect. Derived from the viewer's own
-      // count in `myInstanceStateOf()`, never from the other party's.
+      // count in `mySessionStateOf()`, never from the other party's.
       return row.state === "yours-to-answer";
     case "reports-open":
       // Complete, and this viewer has not opened it since — the same derivation the row's marker
@@ -112,8 +112,8 @@ export function overviewCountsOf(
 /**
  * The rows one filter keeps — the list page's half of the same rule.
  *
- * Generic so the caller keeps its own row type: `/assessments` filters `MyInstance[]` and
- * gets `MyInstance[]` back, because the component that draws a row needs the names and the title,
+ * Generic so the caller keeps its own row type: `/assessments` filters `MySession[]` and
+ * gets `MySession[]` back, because the component that draws a row needs the names and the title,
  * not just the two fields this predicate reads.
  */
 export function overviewFiltered<T extends OverviewRow>(

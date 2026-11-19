@@ -39,13 +39,12 @@ import { formatCurrency } from "@/content/core";
 import { billingPlan } from "@/data/billing-plans";
 import { EXCLUDED_TYPE_IDS, REALMS, relationshipTypes } from "@/data/relationship-types";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { signInDestination } from "@/lib/auth/next-path";
 import { ROUTE_PATTERNS } from "@/content/routes";
 import {
   OVERVIEW_PATH,
-  RELATIONSHIP_TYPES_PATH,
   TEMPLATE_CATALOGUE_PATH,
   createRelationshipPath,
+  relationshipTypePath,
 } from "@/lib/flow/paths";
 import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
 import { visitorOf } from "@/lib/start-path";
@@ -216,13 +215,14 @@ describe("membership is stated once, from the plan fixture", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
     expect(printed).toEqual([basicMonth]);
 
-    // The unit the old label charged in, and the figure the pricing page does not sell, are gone
-    // from what a reader sees — asserted on the render, not only on the model.
+    // The unit the old label charged in is gone from what a reader sees — asserted on the render,
+    // not only on the model. (The old `not $9.99` line was a proxy for "not the taxonomy's
+    // per-relationship amount", which is the same 999 cents as the Single plan's month since
+    // #1127; the guard that survives is `tests/plan-catalogue.test.ts`'s — nothing in `components/`
+    // or `lib/` reads `RELATIONSHIP_PRICE_CENTS`.)
     const text = textOf(html);
     expect(text.toLowerCase()).not.toContain("per relationship");
     expect(text).not.toContain("999");
-    expect(text).not.toContain("$9.99");
-    expect(html).not.toContain(formatCurrency(999));
     // The projection still carries the chip (the detail page and the front page print it); this
     // surface prints it exactly once, in the membership band, and never on a card.
     for (const card of cards) expect(card.priceNote).toBe(`${basic.name} · ${basicMonth}/mo`);
@@ -234,7 +234,7 @@ describe("the catalogue is complete without JavaScript", () => {
   it("renders every card in the static markup", () => {
     for (const card of cards) {
       expect(html).toContain(`data-template-card="${card.id}"`);
-      expect(card.detail).toBe(`${RELATIONSHIP_TYPES_PATH}/${card.id}`);
+      expect(card.detail).toBe(`${TEMPLATE_CATALOGUE_PATH}/${card.id}`);
       expect(html).toContain(`href="${card.detail}"`);
     }
     expect(html.match(/data-template-card="/g)?.length).toBe(model.catalogue.total);
@@ -289,11 +289,11 @@ describe("every action on the page is public", () => {
    */
   it("sends every card to a create step this build actually ships", () => {
     // The stage-1 route is in the manifest (E7 checks it in both directions), and every card's
-    // address is one instance of that pattern.
-    expect(ROUTE_PATTERNS).toContain("/templates/relationship/[slug]/create");
+    // address is one session of that pattern. The segments are the dashboard's since #1109.
+    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[id]/create");
     for (const card of cards) {
-      expect(card.start).toMatch(/^\/templates\/relationship\/[a-z-]+\/create$/);
-      expect(card.start).toBe(`/templates/relationship/${card.id}/create`);
+      expect(card.start).toMatch(/^\/dashboard\/templates\/[a-z-]+\/create$/);
+      expect(card.start).toBe(`/dashboard/templates/${card.id}/create`);
     }
   });
 
@@ -301,7 +301,7 @@ describe("every action on the page is public", () => {
     const withExample = cards.filter((card) => card.example !== undefined);
     expect(withExample.map((card) => card.id).sort()).toEqual(["co-founders", "staff-manager"]);
     for (const card of withExample) {
-      expect(card.example).toBe(`/relationship-types/${card.id}/demo`);
+      expect(card.example).toBe(`/relationship-templates/${card.id}/demo`);
       expect(html).toContain(`href="${card.example}"`);
     }
   });
@@ -312,23 +312,24 @@ describe("every action on the page is public", () => {
    * screen, which renders without a session), `/pricing`, each type's own page, two demo sheets,
    * the front page's `#questions` band, and its own anchors.
    *
-   * **A `/templates/relationship/<slug>/create` href is public; the `/templates/` *library* is
-   * not.** Since #1042 the create intent goes straight to the wizard, so `/^\/templates/` cannot be
-   * a blanket forbidden prefix any more — it is narrowed to the library and its own screens, and
-   * the allowed create shape is asserted positively.
+   * **A create door is public; the dashboard and the `/templates/` *library* are not.** Since #1042
+   * the create intent goes straight to the wizard, whose stage 1 renders without a session (#690 —
+   * the account is stage 4, not a gate). #1109 then moved that address under the dashboard, so the
+   * blanket `/dashboard` rule is narrowed to everything **except** the one flow shape, which is
+   * asserted positively instead.
    */
-  it("links no dashboard route, no library screen and no other create form", () => {
+  it("links no gated dashboard route, no library screen and no other create form", () => {
     expect(hrefs.length).toBeGreaterThan(0);
     const forbidden = [
-      /^\/dashboard/,
+      // The flow's stage 1 is the only `/dashboard` address a visitor may meet; everything else
+      // behind that prefix is a signed-in screen (`requireRole`, a session read, or the editor).
+      /^\/dashboard(?!\/templates\/[a-z-]+\/create$)/,
       /^\/assessment\//,
       /^\/settings/,
       /^\/admin/,
-      // #794 — the template *library* and a template's own page are signed-in screens.
-      /^\/templates\/relationship$/, // the library
-      /^\/templates\/relationship\/[a-z-]+$/, // one template's page
-      /^\/templates\/relationship\/new$/, // authoring a template
-      /^\/templates\/(?!relationship\/[a-z-]+\/create$)/, // anything else under /templates/
+      // #794 — the template *library* and a template's own page are signed-in screens. The
+      // namespace is retired now (#1109), so a link here would be a 308 off the page's own model.
+      /^\/templates\//,
     ];
     for (const href of hrefs) {
       for (const pattern of forbidden) {
@@ -338,17 +339,17 @@ describe("every action on the page is public", () => {
     for (const href of hrefs) {
       const path = href.split("?")[0];
       expect(
-        /^\/templates\/relationship\/[a-z-]+\/create$/.test(path) ||
+        /^\/dashboard\/templates\/[a-z-]+\/create$/.test(path) ||
           path === "/pricing" ||
           path === "/#questions" ||
           path === "#catalogue" ||
           path === "#how-it-works" ||
           /^#realm-[a-z]+$/.test(path) ||
-          /^\/relationship-types\/[a-z-]+(\/demo)?$/.test(path),
+          /^\/relationship-templates\/[a-z-]+(\/demo)?$/.test(path),
         href,
       ).toBe(true);
       // The create door carries no query at all — the template is in the path (#1042).
-      if (/^\/templates\//.test(path)) expect(href).toBe(path);
+      if (/^\/dashboard\/templates\//.test(path)) expect(href).toBe(path);
     }
     // Every card's action is actually on the page.
     for (const card of cards) expect(hrefs).toContain(card.start);
@@ -470,13 +471,12 @@ describe("the components write no words and no palette", () => {
   });
 
   it("keeps the catalogue route in one place", () => {
-    // #794, #905 — one author for both addresses: `lib/flow/paths.ts` owns the catalogue endpoint
-    // and the type namespace, and `lib/template-catalogue.ts` re-exports the first as the one
-    // `CATALOGUE_PATH` every "view all" and "back" reads. The catalogue is no longer the type
-    // namespace, which is why this asserts the pair and not one string.
+    // #794, #905, #1127 — `lib/flow/paths.ts` owns the one catalogue endpoint and
+    // `lib/template-catalogue.ts` re-exports it as the `CATALOGUE_PATH` every "view all" and
+    // "back" reads. Since #1127 a type's own page lives under the same path, so "the catalogue"
+    // and "a row of the catalogue" are one constant rather than a pair that has to agree.
     expect(CATALOGUE_PATH).toBe(TEMPLATE_CATALOGUE_PATH);
     expect(CATALOGUE_PATH).toBe("/relationship-templates");
-    expect(RELATIONSHIP_TYPES_PATH).toBe("/relationship-types");
-    expect(CATALOGUE_PATH).not.toBe(RELATIONSHIP_TYPES_PATH);
+    expect(relationshipTypePath("staff-manager")).toBe("/relationship-templates/staff-manager");
   });
 });

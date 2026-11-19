@@ -44,6 +44,46 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1.3](v2-0-0-rc1-3.md)
+
+- **Released** 2026-11-19
+- **Tag** [`v2.0.0-rc1.3`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.3)
+- **Pull requests named** 13
+- **Theme:** the UI/UX pool — the relationship reads correctly from whichever seat is looking, every notification is worded for its reader, and the catalogue is one plan.
+- **Headline:** `feat(billing)` — one plan — Basic at $9.99/month for one relationship (#1241)
+
+### [v2.0.0-rc1.2](v2-0-0-rc1-2.md)
+
+- **Released** 2026-11-18
+- **Tag** [`v2.0.0-rc1.2`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.2)
+- **Pull requests named** 6
+- **Theme:** the two loops the candidate left open, closed in code — stage 5 reads the key stage 4 writes, and a seeded complete relationship carries its fee.
+- **Headline:** `fix(flow)` — #1216 stage 5 reads the address the create writes (#1217)
+
+### [v2.0.0-rc1.1](v2-0-0-rc1-1.md)
+
+- **Released** 2026-11-18
+- **Tag** [`v2.0.0-rc1.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.1)
+- **Pull requests named** 21
+- **Theme:** the candidate's first patch — stage 4's empty 500 closed and named, production's ledger applied and proved, a generated .env.example, and a bundle-format bump named rather than absorbed.
+- **Headline:** `fix(flow)` — #1205 a create that could not be written answers a named 500, and db:schema names a ledger behind the code (#1210)
+
+### [v2.0.0-rc1](v2-0-0-rc1.md)
+
+- **Released** 2026-11-17
+- **Tag** [`v2.0.0-rc1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1)
+- **Pull requests named** 4
+- **Theme:** the release candidate for the v2 surface set — nine surfaces landed as one integration branch, under a declared 2.0 number, with a capture of the routes it ships.
+- **Headline:** feat(v2) — the nine surfaces of 1.22 as one integration branch (#1170)
+
+### [v1.22.0](v1-22-0.md)
+
+- **Released** 2026-11-17
+- **Tag** [`v1.22.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0)
+- **Pull requests named** 18
+- **Theme:** the release where the relationship became six sections you can read — a Counterparty who joins instead of being described, numbered Aspects with a tolerance in words, and a trial that pauses instead of closing
+- **Headline:** feat(v2) — #1124 — Relationship Detail's six-tab layer (#1148)
+
 ### [v1.21.0](v1-21-0.md)
 
 - **Released** 2026-11-16

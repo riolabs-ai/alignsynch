@@ -22,17 +22,17 @@
  * route handler that must return a status is not a Server Component. The words are the fixture's —
  * the `problems` section of `data/pages/assessment-instance.ts` — plus the store's own reason line.
  */
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
-import { instancePath } from "@/lib/flow/paths";
+import { sessionPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { writeStep, type StepRefusal, type StepWriteInput } from "@/lib/flow/store";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-/** The same auth guard the instance, answer and accept routes carry. */
+/** The same auth guard the session, answer and accept routes carry. */
 async function viewerUserId(): Promise<string | null> {
   if (!authConfigured()) return null;
   const user = await currentUser();
@@ -66,7 +66,7 @@ export async function POST(
 
   const jar = await cookies();
   const result = await writeStep({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     stepId,
     token: jar.get(partyCookieName(instanceId))?.value,
     viewerUserId: await viewerUserId(),
@@ -79,7 +79,7 @@ export async function POST(
 
   // A 303, so the refresh cannot re-post the tick; the fragment keeps the reader at the panel.
   return NextResponse.redirect(
-    new URL(`${instancePath(instanceId)}#steps-heading`, request.url),
+    new URL(`${sessionPath(instanceId)}#steps-heading`, request.url),
     303,
   );
 }
@@ -107,15 +107,15 @@ function patchOf(form: FormData): StepWriteInput["patch"] | string {
 
 /**
  * The refusal page: the fixture's sentence for the code, the store's reason beneath it, and the way
- * back to the instance the reader was on. Self-contained rather than shared with the `/answers`
+ * back to the session the reader was on. Self-contained rather than shared with the `/answers`
  * handler: the two write different things and the shared part is nine lines of markup, but a helper
  * reached from both would be a change to a shipped endpoint in a card about Steps.
  */
 function refusal(instanceId: string, code: StepRefusal, reason: string, status: number): Response {
-  const section = sectionOf(assessmentInstancePageCopy, "problems");
+  const section = sectionOf(assessmentSessionPageCopy, "problems");
   const label = itemLabel(section, code);
   const back = itemLabel(section, "back");
-  const href = escapeHtml(instancePath(instanceId));
+  const href = escapeHtml(sessionPath(instanceId));
 
   const html = [
     "<!doctype html>",

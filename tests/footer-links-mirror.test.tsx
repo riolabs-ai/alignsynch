@@ -7,7 +7,7 @@
  * five literal `<Link>` rows from `nav-alignsynch`, and `AlignSynchLinkColumn`
  * (`components/layout/footer.tsx`) draws its rows from `footer-links-alignsynch`. A row added to
  * one and not the other is the drift this file exists to catch, and the owner's *"before help add
- * Pricing"* is one instance of it — Pricing was in the header and absent from the footer.
+ * Pricing"* is one session of it — Pricing was in the header and absent from the footer.
  *
  * So this case renders both surfaces with the harness `tests/marketing-header.test.ts` uses
  * (`renderToStaticMarkup`, `next/link` mocked to an `<a>`), reads the anchors out of the header's
@@ -33,8 +33,15 @@ vi.mock("next/link", () => ({
     createElement("a", { href, ...rest }, children),
 }));
 
+/**
+ * The header's menu is a client component (an active row needs the current route), so the route
+ * has to be stated for a server render. `/` is the choice: it makes the Home row the active one,
+ * which is the state a visitor to the front page sees, and the anchors are unaffected.
+ */
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+
 import { Footer } from "@/components/layout/footer";
-import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { PublicHeader } from "@/components/layout/public-header";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import type { BrandId } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
@@ -100,7 +107,7 @@ function footerHeadings(html: string): string[] {
 
 function headerHtml(): string {
   return renderToStaticMarkup(
-    createElement(MarketingHeader, {
+    createElement(PublicHeader, {
       account: null,
       brand: alignSynchBrand,
       brandId: "alignsynch",
@@ -137,7 +144,9 @@ describe("the AlignSynch footer column is the public header menu", () => {
     expect(menu.map((anchor) => anchor.href)).toEqual([
       "/",
       "/relationship-templates",
-      "/#questions",
+      // #1127 — the header's How It Works row names the catalogue's own `#how` band (the four
+      // steps), and the footer mirrors it. It used to point at the front page's `#questions`.
+      "/relationship-templates#how",
       "/pricing",
       "/help",
     ]);

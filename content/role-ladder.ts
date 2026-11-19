@@ -1,5 +1,6 @@
 /**
- * The role ladder, on its own — the four rungs and the one comparison, with **no zod**.
+ * The role ladder, on its own — the five rungs, the one comparison and the one reader set, with
+ * **no zod**.
  *
  * `content/identity.ts` owns the profile model, and it carries a zod schema for every field,
  * including `zUserRole`. The chrome cannot afford that module: `lib/nav.ts` and
@@ -17,8 +18,14 @@
  * **Order is the ladder.** `USER_ROLES` is lowest rung first and `roleRank` is its index — the one
  * place the ladder is read as a number. `roleAdmits` is the surface gate (`requireRole("admin")`).
  * `lib/admin/roles.ts::can()` is the narrower action gate; both compare the same ranks.
+ *
+ * **The ladder is a rank; a reader set is not.** `SPEC_READERS` below is the one thing that must
+ * *not* be read off the ladder: `stakeholder` sits under `support`, so a rung comparison would
+ * admit `support` to the project spec, and `support` is exactly the seat the spec is closed to
+ * (#1252). It is an explicit set, in this file because it is role vocabulary and because both the
+ * chrome (`lib/nav.ts`) and the gate (`lib/auth/require-role.ts`) must ask the same question of it.
  */
-export const USER_ROLES = ["member", "support", "admin", "owner"] as const;
+export const USER_ROLES = ["member", "stakeholder", "support", "admin", "owner"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
@@ -41,4 +48,28 @@ export function roleRank(role: UserRole): number {
  */
 export function roleAdmits(needed: UserRole, viewer: UserRole | null): boolean {
   return viewer !== null && roleRank(viewer) >= roleRank(needed);
+}
+
+/**
+ * The roles that may read the project spec (#1252) — an **explicit set**, never a rung.
+ *
+ * This is the one place the codebase says a role is admitted *out of order*, and it exists because
+ * the spec's own rule is a set and not a ladder: `stakeholder` reads the spec, `admin` and `owner`
+ * read it, and `support` — one rung **above** `stakeholder` — does not. A `roleAdmits("stakeholder",
+ * viewer)` gate would admit every seat from `stakeholder` up, which is precisely the answer the
+ * bundle's AS-02/AS-03 forbid, so the membership test below is the whole policy.
+ *
+ * `satisfies readonly UserRole[]` is deliberate: a value that is not a rung of the ladder fails
+ * `tsc` here rather than becoming a set nobody can hold. A role *missing* from the set is a
+ * decision no type can catch, which is why `tests/role-ladder.test.ts` drives all five.
+ */
+export const SPEC_READERS = [
+  "stakeholder",
+  "admin",
+  "owner",
+] as const satisfies readonly UserRole[];
+
+/** May this role read the project spec? `null` is nobody signed in, and reads nothing. */
+export function readsSpec(role: UserRole | null): boolean {
+  return role !== null && (SPEC_READERS as readonly UserRole[]).includes(role);
 }

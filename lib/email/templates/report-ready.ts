@@ -15,7 +15,7 @@
  * event, which this product's email rule (`docs/specs/flow-emails.md`) exists to prevent.
  *
  * **What the message may carry.** The two party names, the template title and a link to the
- * instance's report. No answer, no score, no Gap value, no count — a mailbox is not a party, and
+ * session's report. No answer, no score, no Gap value, no count — a mailbox is not a party, and
  * `readUnlockFacts()` reads no `opinion` row, so there is nothing in scope that could leak one.
  * Nothing is invented: the facts are who has answered, which assessment, and that the answers are
  * frozen now (the acceptance is what freezes them). The opening line is this template's section in
@@ -36,24 +36,28 @@ export interface ReportReadyFacts {
   /** The party whose acceptance completed the session. */
   readonly other: string;
   readonly template: string;
-  /** The instance's report screen; no token, because the recipient holds their seat. */
+  /** The session's report screen; no token, because the recipient holds their seat. */
   readonly link: string;
 }
 
 /** `Your Gap report is ready` — the spec's subject. */
 export const REPORT_READY_SUBJECT = "Your Gap report is ready";
 
-export function reportReadyDocument(facts: ReportReadyFacts): EmailDocument {
+export function reportReadyDocument(facts: ReportReadyFacts, body?: string): EmailDocument {
   return {
     subject: REPORT_READY_SUBJECT,
     preheader: `Both of you have answered and accepted ${facts.template}, so the report is open.`,
     blocks: [
-      ...bodyBlocks(REPORT_READY_BODY, {
-        recipient: facts.recipient,
-        other: facts.other,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        REPORT_READY_BODY,
+        {
+          recipient: facts.recipient,
+          other: facts.other,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, ${facts.other} accepted their side of ${facts.template}, and so have you. The Gap report is open to you both.`,

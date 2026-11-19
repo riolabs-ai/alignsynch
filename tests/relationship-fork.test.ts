@@ -554,7 +554,6 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     template: V1,
     aspectsEditable: false,
     publishable: false,
-    hasMembership: false,
     completion: null,
     offersRepublish: false,
     canForkTemplate: true,
@@ -580,6 +579,8 @@ function forkHtml(view: MemberRelationshipView): string {
       onRepublish: noop,
       onComplete: noop,
       onFork: noop,
+      /* #1121 — the free week is not what this suite presses; the stub lets the screen render. */
+      onClaimExtension: noop,
       templatesHref: "/templates/relationship?view=mine",
     }),
   );

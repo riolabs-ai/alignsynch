@@ -164,7 +164,9 @@
  *   V31 a **seeded relationship is coherent with its dataset** (#975, #1079): for every instance
  *       `data/assessments.ts` authors, the `relationship` row beside it carries exactly the lifecycle
  *       the dataset declares — the status, the three instants, the two reason columns, and the
- *       invitation whose presence and claim state the status implies. V21 asserts the *session*
+ *       invitation whose presence and claim state the status implies (**present for every word,
+ *       a draft included** — #1196: the product writes it in the relationship's own transaction, so
+ *       its absence is what stage 5's Send answers `no-invitation` over). V21 asserts the *session*
  *       against the same declaration; this asserts the *relationship*, because the two rows describe
  *       one pair and a branch where they disagree renders two screens saying opposite things.
  *       The finding it was written for (#975): all four relationships read `draft` — 0030's default
@@ -194,6 +196,15 @@
  *       mirrors it, the account purge nulls it — `grep -rn counterparty_user_id lib scripts`). A
  *       count of active sessions whose relationship mirror is NULL is printed beside the census, as
  *       a report and never a failure, for exactly that reason.
+ *   V34 the ledger is level with the code (#1205): every `db/migrations/*.sql` file has a
+ *       `schema_migrations` row. This is the **last** check in this script because it names the
+ *       cause of everything above when a deployment is behind: on 2026-11-18 production's ledger
+ *       stopped at `0039`, so `session.state` (`0041`) did not exist and `POST /assessment/new`
+ *       answered an empty-body 500 — the INSERT's `42703` was nobody's named failure, and every
+ *       check that reads a column added by an unapplied file fails with a missing-column read
+ *       instead of the migration's name. The comparison is `scripts/db-schema.mjs`'s
+ *       (`pnpm db:schema`), not a second copy, so the release runbook's read-only check and this
+ *       one cannot disagree about which files are pending.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  * V32 is the one check that reports without failing, and it says so in its own output line.
@@ -203,6 +214,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { allowlistedAdminProblems } from "./db-admin-allowlist.mjs";
+import { ledgerProblems, ledgerSummary, migrationFiles } from "./db-schema.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -597,7 +609,7 @@ export function publishedWithoutVersionProblems(records) {
 
 /**
  * V21 over the fixture's own ids — the whole check, and the only part of this script that does not
- * iterate `listAssessmentInstances()`.
+ * iterate `listAssessmentSessions()`.
  *
  * **Only the instances `data/assessments.ts` authors are checked**, and the ids are read from the
  * fixture on every run: production also holds instances people created in the app
@@ -619,7 +631,7 @@ export async function seededInstanceStatusProblems(client, authoredInstances) {
   if (authored.length === 0) return { problems, complete: 0, authored: 0, matched: 0 };
 
   const { seededLifecycleOf } = await import("@/content/assessment.ts");
-  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { sessionStatusOf: instanceStatusOf } = await import("@/lib/flow/state.ts");
   const { rows } = await client.query(SEEDED_STATUS_SQL, [authored.map((instance) => instance.id)]);
   const rowById = new Map(rows.map((row) => [row.record_id, row]));
   const lifecycleById = new Map(
@@ -720,11 +732,15 @@ const SEEDED_RELATIONSHIP_SQL = `
  *   status                     the stored word must be the authored word
  *   published_at / completed_at / expired_at   present exactly when the lifecycle says so
  *   lapse_reason / void_reason the words the row carries, or NULL
- *   session_invite             absent for a draft, present otherwise, claimed exactly when a seat
+ *   session_invite             **present for every status** (#1196), and claimed exactly when a seat
  *                              exists — `claimInvite()` is the only path that creates a counterparty,
  *                              so a seat without a claimed invitation is a row written by something
- *                              that skipped the product (D16), and an invitation the status says was
- *                              never sent is the same finding from the other side
+ *                              that skipped the product (D16). A draft carries the row from its
+ *                              create (`created`), a `pending` one the row a send mailed (`sent`), and
+ *                              a relationship with no row at all is the state no product writer
+ *                              produces: stage 5's Send reads that row to mint the outgoing token, so
+ *                              its absence is exactly the `no-invitation` three seeded drafts used to
+ *                              answer on the demo branch
  *   the counterparty seat      present exactly when the lifecycle says both seats exist
  *
  * A relationship that does not exist at all is reported too — a session with no relationship is the
@@ -797,18 +813,23 @@ export function seededRelationshipProblems(rows) {
       );
     }
 
-    const wantsInvite = expected.invite !== "none";
-    if (row.invite_present !== wantsInvite) {
+    // #1196 — **every** seeded relationship carries its invitation row, a draft included. The
+    // product writes it inside the relationship's own transaction
+    // (`lib/flow/store.ts:797`, `lib/member/relationships.ts:1607`), so a seeded draft without one is
+    // the state the demo used to be in: a real relationship, shown to a customer, on which stage 5's
+    // Send can only answer `no-invitation`. #1079 read a draft as "nothing sent, so no link" and this
+    // rule used to *require* the row's absence; it now reports the absence. The report is not
+    // silenced and the direction did not get weaker — the state that cannot exist is the one that
+    // fails.
+    if (!row.invite_present) {
       problems.push({
         code: "V31",
-        message: wantsInvite
-          ? `seeded relationship "${slug}" is "${expected.status}" and has no session_invite row — the status says the invitation went out, and claimInvite() is the only path that puts a counterparty in a seat: run \`pnpm db:seed\``
-          : `seeded relationship "${slug}" is a draft and carries a session_invite row — nothing has been sent, so /invite/<token> would offer a link the relationships screen says does not exist`,
+        message: `seeded relationship "${slug}" is "${expected.status}" and has no session_invite row — every path that creates a relationship writes the invitation in the same transaction, a draft included (lib/flow/store.ts:797), so a row without one is a state the product never creates and stage 5's Send can only answer no-invitation: run \`pnpm db:seed\``,
       });
-    } else if (row.invite_present && row.invite_claimed !== (expected.invite === "claimed")) {
+    } else if (row.invite_claimed !== (expected.invite === "claimed")) {
       problems.push({
         code: "V31",
-        message: `seeded relationship "${slug}" is "${expected.status}" but its invitation is ${row.invite_claimed ? "claimed" : "unclaimed"} — a claimed seat and a sent link are the same fact, and they were written from different ones`,
+        message: `seeded relationship "${slug}" is "${expected.status}" but its invitation is ${row.invite_claimed ? "claimed" : "unclaimed"} — a claimed seat and a claimed link are the same fact, and they were written from different ones`,
       });
     }
 
@@ -858,19 +879,19 @@ export async function seededRelationshipCoherenceProblems(client, authoredInstan
 async function main() {
   loadEnv();
   const {
-    listAssessmentInstances,
-    readAssessmentInstanceRowsBySlug,
+    listAssessmentSessions,
+    readAssessmentSessionRowsBySlug,
     readAssessmentTemplateRowsById,
   } = await import("@/lib/db/assessments.ts");
   const {
-    assessmentInstanceFromRows,
+    assessmentSessionFromRows,
     assessmentTemplateFromPayload,
     assessmentTemplateFromRows,
     authoredAspectProblems,
     copyDriftProblems,
     itemIdsOf,
   } = await import("@/lib/db/rows.ts");
-  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { sessionStatusOf: instanceStatusOf } = await import("@/lib/flow/state.ts");
 
   // The SQL checks run on the unpooled URL, like the writes; the data-layer reads use the
   // runtime pool, which is the path the page takes.
@@ -884,6 +905,18 @@ async function main() {
       `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`,
     );
     const present = tables.map((row) => row.tablename);
+
+    // V34's input, read once here rather than at the verdict: the ledger is a single cheap query,
+    // and the comparison itself runs as the last check (below) so its line sits under the findings
+    // it explains. A branch with **no** ledger table at all (42P01) is a database nothing has been
+    // migrated onto, which is "every file is pending" — not an empty check.
+    let appliedMigrations = [];
+    try {
+      const { rows: ledger } = await client.query("SELECT name FROM schema_migrations");
+      appliedMigrations = ledger.map((row) => row.name);
+    } catch (error) {
+      if (error?.code !== "42P01") throw error;
+    }
     const missing = CONTENT_TABLES.filter((table) => !present.includes(table));
     for (const table of missing)
       fail("V1", `public.${table} does not exist — run \`pnpm db:migrate\``);
@@ -1221,7 +1254,7 @@ async function main() {
 
     if (missing.length > 0 || !hasSettingColumn) return;
 
-    const instances = await listAssessmentInstances();
+    const instances = await listAssessmentSessions();
     let templatesChecked = 0;
     /**
      * How many copies authored their own list (#699) — counted so the verdict line proves V4's
@@ -1233,7 +1266,7 @@ async function main() {
     // V12 — the Setting's vocabulary and the fixture parity (#259). The fixture map is
     // `data/assessments.ts` itself, not a list copied into this script: a setting written by
     // `db:seed` and a setting authored in the fixture are the same value or they are drift.
-    const { assessmentInstances: authoredInstances } = await import("@/data/assessments.ts");
+    const { assessmentSessions: authoredInstances } = await import("@/data/assessments.ts");
     const authoredSettingOf = new Map(
       authoredInstances.map((instance) => [instance.id, instance.setting]),
     );
@@ -1259,7 +1292,7 @@ async function main() {
     const settingsChecked = [];
 
     for (const listed of instances) {
-      const rows = await readAssessmentInstanceRowsBySlug(listed.slug);
+      const rows = await readAssessmentSessionRowsBySlug(listed.slug);
       if (rows === undefined) {
         fail("V3", `instance "${listed.slug}" is listed but has no readable record row`);
         continue;
@@ -1322,7 +1355,7 @@ async function main() {
         // branch was taken rather than assumed.
         authoredCopies += 1;
         for (const problem of authoredAspectProblems({
-          instanceId: listed.recordId,
+          sessionId: listed.recordId,
           items: rows.items,
         })) {
           fail("V4", problem);
@@ -1334,7 +1367,7 @@ async function main() {
             `template version "${bound.template_version_id}"`,
           );
           for (const problem of copyDriftProblems({
-            instanceId: listed.recordId,
+            sessionId: listed.recordId,
             templateId: bound.template_version_id,
             copyIds: itemIdsOf(rows.items),
             templateIds: offered.items.map((item) => item.id),
@@ -1511,13 +1544,13 @@ async function main() {
       // `data/assessments.ts` proves which setting a seeded instance actually plays under.
       const authored = authoredSettingOf.get(listed.recordId);
       if (authored !== undefined) {
-        if (rows.instance.setting !== authored) {
+        if (rows.session.setting !== authored) {
           fail(
             "V12",
-            `instance "${listed.slug}" carries Setting "${rows.instance.setting}", but data/assessments.ts authors "${authored}" (run \`pnpm db:seed\`)`,
+            `session "${listed.slug}" carries Setting "${rows.session.setting}", but data/assessments.ts authors "${authored}" (run \`pnpm db:seed\`)`,
           );
         }
-        settingsChecked.push({ slug: listed.slug, setting: rows.instance.setting });
+        settingsChecked.push({ slug: listed.slug, setting: rows.session.setting });
       }
 
       // A fixture instance is answered as far as its dataset authors, and a **complete** flow
@@ -1551,7 +1584,7 @@ async function main() {
         }
 
         try {
-          assessmentInstanceFromRows(rows);
+          assessmentSessionFromRows(rows);
         } catch (error) {
           fail("V7", error.message);
         }
@@ -1559,7 +1592,7 @@ async function main() {
     }
 
     // V21 — the fixture's own instances read `complete` (#427/R2 follow-up). The one check here
-    // that does not iterate `listAssessmentInstances()`: production also holds instances people
+    // that does not iterate `listAssessmentSessions()`: production also holds instances people
     // created in the app, and an `answering` one of those is a person mid-flow, not drift. The ids
     // come from `data/assessments.ts` (imported above for V12), so the check follows the fixture
     // rather than a copy of it. A seeded instance that is not `complete` is either a seed older
@@ -1665,7 +1698,7 @@ async function main() {
     //       assessment yet". Skipped — with a line in the summary — when `demo_account` is
     //       empty, because that is the flag being off, not drift.
     //
-    // The two members' party map is `DEMO_INSTANCE_ID` + the button's own role name; the admin
+    // The two members' party map is `DEMO_SESSION_ID` + the button's own role name; the admin
     // answers no instance (`db:seed` gives it `party: null`, and `destinationFor()` sends it to the
     // operator registry, which no party row can make true or false). Kept as two lines here rather
     // than a shared constant the seed does not import, which would be a third copy of the mapping
@@ -1704,7 +1737,7 @@ async function main() {
       }
     }
 
-    const { DEMO_ACCOUNT_EMAILS, DEMO_INSTANCE_ID } = await import("@/lib/auth/demo-accounts.ts");
+    const { DEMO_ACCOUNT_EMAILS, DEMO_SESSION_ID } = await import("@/lib/auth/demo-accounts.ts");
     const { rows: demoTable } = await client.query(
       "SELECT to_regclass('public.demo_account') IS NOT NULL AS present",
     );
@@ -1723,19 +1756,19 @@ async function main() {
         if (accountId === undefined) continue;
         const { rows: seat } = await client.query(
           "SELECT user_id, name FROM party WHERE session_record_id = $1 AND role = $2",
-          [DEMO_INSTANCE_ID, role],
+          [DEMO_SESSION_ID, role],
         );
         const bound = seat[0];
         seededBindings += 1;
         if (bound === undefined) {
           fail(
             "V10",
-            `instance "${DEMO_INSTANCE_ID}": ${email} owns no ${role} party row — the seed's binding has nothing to be on (run \`pnpm db:seed\`)`,
+            `instance "${DEMO_SESSION_ID}": ${email} owns no ${role} party row — the seed's binding has nothing to be on (run \`pnpm db:seed\`)`,
           );
         } else if (bound.user_id !== accountId) {
           fail(
             "V10",
-            `instance "${DEMO_INSTANCE_ID}": the ${role} ("${bound.name}") is bound to ${bound.user_id === null ? "no account" : `account "${bound.user_id}"`}, not to ${email}'s ("${accountId}") — the seeded binding moved (run \`pnpm db:seed\`)`,
+            `instance "${DEMO_SESSION_ID}": the ${role} ("${bound.name}") is bound to ${bound.user_id === null ? "no account" : `account "${bound.user_id}"`}, not to ${email}'s ("${accountId}") — the seeded binding moved (run \`pnpm db:seed\`)`,
           );
         }
       }
@@ -2291,6 +2324,31 @@ async function main() {
       }
     }
 
+    /* V34 — the ledger is level with the code (#1205), and it is the **last** check on purpose.
+     *
+     * Every check above reads columns and tables the migrations create. When a deployment is behind,
+     * the first symptom used to be an unreadable one: `session.state` did not exist on production
+     * (the ledger stopped at 0039), so the create's INSERT raised `42703` and
+     * `POST /assessment/new` answered an empty-body 500 with nothing naming a migration. A check
+     * that says "0041 was never applied" turns that into one line an operator can act on.
+     *
+     * The comparison is `scripts/db-schema.mjs`'s, not a copy: `pnpm db:schema` is the read-only
+     * check the release runbook runs before anything reads the branch, and this is the same
+     * function over the same table, so the two cannot disagree about which files are pending.
+     */
+    const migrationReport = ledgerProblems(migrationFiles(), appliedMigrations);
+    const ledgerLine = ledgerSummary(migrationReport);
+    if (migrationReport.pending.length === 0) {
+      console.log(`  · schema: ${ledgerLine} — the ledger is level with db/migrations`);
+    } else {
+      for (const file of migrationReport.pending) {
+        fail(
+          "V34",
+          `db/migrations/${file} has never been applied to this database — the code reads columns this branch does not have, so a create answers 500 at request time: run \`pnpm db:migrate\` (or \`pnpm db:schema\` to list them without writing)`,
+        );
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -2325,7 +2383,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

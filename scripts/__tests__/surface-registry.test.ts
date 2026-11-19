@@ -85,7 +85,7 @@ describe("the real surface registry", () => {
       // #R2 (#427, PR #429): the form posts to `POST /assessment/new` and the transaction writes
       // the record, the relationship, the session and the initiating seat. It was `preview` while
       // the submit was disabled.
-      "/templates/relationship/[slug]/create",
+      "/dashboard/templates/[id]/create",
     ]);
   });
 
@@ -98,7 +98,7 @@ describe("the real surface registry", () => {
     // back here must mean a surface that shipped ahead of its write path, not one that is merely
     // hard to reach — a nav gap is not a reason to downgrade a working write.
     assert.deepEqual(preview, []);
-    assert.equal(surfaceFor("/templates/relationship/[slug]/create")?.status, "live");
+    assert.equal(surfaceFor("/dashboard/templates/[id]/create")?.status, "live");
     assert.equal(surfaceFor("/assessment/instances/[instanceId]/answer")?.status, "live");
   });
 

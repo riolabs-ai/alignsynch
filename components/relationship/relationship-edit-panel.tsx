@@ -63,7 +63,7 @@ import { type ReactNode, useState, useTransition } from "react";
 /** The payload both calls take — one shape, so the preview and the save cannot disagree. */
 export interface RelationshipEditPayload {
   relationshipId?: string;
-  instanceRecordId?: string;
+  sessionRecordId?: string;
   record?: unknown;
   versionId?: string | null;
   counterpartyName?: string;
@@ -77,7 +77,7 @@ export function RelationshipEditPanel({
   copy,
   state,
   note,
-  instanceRecordId,
+  sessionRecordId,
   variant = "page",
   onPreview,
   onEdit,
@@ -95,7 +95,7 @@ export function RelationshipEditPanel({
    * the member's names the relationship; the panel passes whichever its page was given rather than
    * translating ids it does not own.
    */
-  instanceRecordId?: string;
+  sessionRecordId?: string;
   /**
    * #795 — **which column this panel is drawn in.** `page` (the default, and what the console's
    * staff mount keeps) is the shipped form: a `text-2xl` `CardTitle` and two-column field rows.
@@ -153,9 +153,9 @@ export function RelationshipEditPanel({
    */
   function payload(confirm: boolean): RelationshipEditPayload {
     return {
-      ...(instanceRecordId === undefined
+      ...(sessionRecordId === undefined
         ? { relationshipId: state.relationshipId }
-        : { instanceRecordId }),
+        : { sessionRecordId }),
       record: buildEditedRecord({
         id: state.record.id,
         slug: state.record.slug,

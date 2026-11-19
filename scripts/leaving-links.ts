@@ -183,6 +183,25 @@ function relIsSafe(relText: string): boolean {
 }
 
 /**
+ * Every exported tag whose own declaration mounts `LeavingLink`.
+ *
+ * The complement of `departureSurfaces`: that walk finds the surfaces **both** trees mount, this one
+ * finds the rows that own the label pair inside their own body — a dashboard-only row (the rail's
+ * `NavRow`) is not a surface, but it is not a bare literal either, and the element rule must be able
+ * to tell those apart.
+ */
+function tagsRenderingLeaving(files: readonly SourceFile[]): Set<string> {
+  const tags = new Set<string>();
+  for (const file of files) {
+    if (!file.source.includes(`<${LEAVING_COMPONENT}`)) continue;
+    for (const declaration of declarationsOf(file.source)) {
+      if (declaration.exported) tags.add(declaration.name);
+    }
+  }
+  return tags;
+}
+
+/**
  * Every literal dashboard link to a public page that does not open a new tab.
  *
  * A literal, because the check is static by the same decision `scripts/ui-refs.ts` states:
@@ -194,9 +213,23 @@ export function unmarkedLeavingLinks(input: {
   readonly routes: readonly string[];
   /** The shared surfaces that take `leaving`; their tags are accepted as a marked departure. */
   readonly surfaces?: readonly DepartureSurface[];
+  /**
+   * The whole walk, so a row that renders `LeavingLink` **inside itself** is recognised.
+   *
+   * A row can legitimately own the pair rather than the call site: `NavRow`
+   * (`components/layout/nav-menus.tsx`) renders `LeavingLink` for a public destination and takes
+   * `leaving` to say so. That was invisible while the marketing header mounted the rail's module —
+   * the module counted as shared and was skipped — and #1127 gave the public chrome its own nav, so
+   * the rail became dashboard-only and its two public rows surfaced here. The fix is the rule
+   * reading the row's own body: a tag whose body mounts `LeavingLink` and whose call site says
+   * `leaving` has marked the departure, exactly as a surface does.
+   */
+  readonly sources?: readonly SourceFile[];
 }): LeavingFinding[] {
   const findings: LeavingFinding[] = [];
   const leavingTags = new Set((input.surfaces ?? []).map((surface) => surface.symbol));
+  /** Tags whose own declaration mounts the sanctioned component — they own the pair. */
+  const owningTags = tagsRenderingLeaving(input.sources ?? []);
   for (const file of input.files) {
     const elementsOfFile = elements(file.source);
     for (const link of hrefLiterals([file])) {
@@ -217,6 +250,11 @@ export function unmarkedLeavingLinks(input: {
       // the call site: `leaving` is that row's contract, and it is only accepted from a surface
       // this walk found — not from a tag that merely says the word.
       if (leavingTags.has(element.tag) && /(?:^|\s)leaving(?:=|\s|\/|>)/.test(element.text)) {
+        continue;
+      }
+      // A row that renders `LeavingLink` in its own body, and says `leaving` where the public
+      // destination is written. See `owningTags`.
+      if (owningTags.has(element.tag) && /(?:^|\s)leaving(?:=|\s|\/|>)/.test(element.text)) {
         continue;
       }
       findings.push({

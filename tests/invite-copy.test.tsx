@@ -26,14 +26,14 @@ import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import type { Assessment } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 import { invitationLink } from "@/lib/flow/email";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 declare global {
@@ -52,13 +52,13 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-invite-copy-test";
+const SESSION_ID = "session-invite-copy-test";
 /** The token width the store issues (43 characters) — long enough for a truncation to show. */
 const TOKEN = "k".repeat(43);
 const LINK = invitationLink(TOKEN, "http://localhost:3000");
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -68,13 +68,13 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
-const rows: FlowInstanceRows = {
+const rows: FlowSessionRows = {
   record: {
-    id: INSTANCE_ID,
+    id: SESSION_ID,
     slug: "invite-copy-test",
     record_type: "assessment",
     status: "draft",
@@ -84,8 +84,8 @@ const rows: FlowInstanceRows = {
   },
   items,
   options: [],
-  instance: {
-    record_id: INSTANCE_ID,
+  session: {
+    record_id: SESSION_ID,
     template_record_id: template.id,
     relationship_id: "relationship-test",
     mode: "basic",
@@ -112,7 +112,7 @@ const screen = projectScreen({
   },
 });
 
-const inviteCopy = sectionOf(assessmentInstancePageCopy, "invite");
+const inviteCopy = sectionOf(assessmentSessionPageCopy, "invite");
 const COPY_LABEL = itemLabel(inviteCopy, "copy");
 const DONE_SENTENCE = "Link copied — paste it into a message to Rowan.";
 const MANUAL_SENTENCE =
@@ -179,11 +179,11 @@ const code = () => container.querySelector<HTMLElement>("code");
  * ------------------------------------------------------------------ */
 
 describe("the invite link's copy control — what is drawn", () => {
-  it("renders the selectable link and the copy control in the instance screen", () => {
+  it("renders the selectable link and the copy control in the session screen", () => {
     // The screen is a server component: its static markup is what the page ships, and the
     // client control renders inside it.
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     // The link, unchanged from #220: the same `<code>` a reader can select with a mouse.

@@ -93,7 +93,10 @@
  * and a charged obligation, and the review shelf's issues and to-dos — all from ids drawn from the
  * rows this same seed writes, on the fixture clock (`DEMO_NOW_ISO`), and gated on `DEMO_AUTH` so a
  * production seed never writes a synthetic audit row. `data/verify/demo-expectations.json` carries
- * the thirteen counts and `tests/db-seed-admin-surfaces.test.ts` holds them equal to the plan.
+ * the twelve counts and `tests/db-seed-admin-surfaces.test.ts` holds them equal to the plan. The
+ * charged obligation's **row** is not one of them: it belongs to the demo half
+ * (`scripts/db-seed-payments.mjs`, t_b9679354), which writes it for every complete relationship an
+ * account pays for rather than for the one the console happened to draw.
  *
  * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
  * ensures each pair is a durable `admin` account: created through the same sign-up path when
@@ -138,6 +141,12 @@ import {
   waitBudgetMs,
 } from "./db-seed-lock.mjs";
 import { planInitiatingAccounts, subscriptionIdFor } from "./db-seed-subscriptions.mjs";
+import {
+  FEE_INTERVAL,
+  payableFeeRows,
+  seedDemoPayments,
+  unpayableCompleteRows,
+} from "./db-seed-payments.mjs";
 import {
   assertExactCount,
   checkReport,
@@ -313,11 +322,11 @@ function demoInviteToken(instanceId) {
  *
  * **The row stays coherent with its own session**, which is what #975 established and V31 holds:
  * the lifecycle's `seats`, `answers`, `accepted` and `invite` decide which `party`, `opinion` and
- * `session_invite` rows exist (see `seedInstance`), so a `draft` genuinely has no invitation and a
- * `pending` one genuinely has nobody in the second seat. The SQL CHECKs are satisfied by
- * construction: `published_at` is `created_at`-or-later, `completed_at` only exists on a published
- * row and never before it, `expired_at` is at-or-after creation, and a lapse reason arrives with
- * its instant (`0032_relationship_lapse.sql`).
+ * `session_invite` rows exist (see `seedInstance`), so a `draft` carries the invitation its create
+ * wrote (#1196, below) and a `pending` one has nobody in the second seat. The SQL CHECKs are
+ * satisfied by construction: `published_at` is `created_at`-or-later, `completed_at` only exists on
+ * a published row and never before it, `expired_at` is at-or-after creation, and a lapse reason
+ * arrives with its instant (`0032_relationship_lapse.sql`).
  *
  * **Idempotent by update, not by insert.** Every lifecycle column is in the `DO UPDATE` list, so a
  * re-seed converges a row an older seed left `complete` — or one a person changed in the app —
@@ -359,15 +368,25 @@ async function seedRelationship(client, instance, lifecycle) {
 }
 
 /**
- * The invitation that put the counterparty in their seat (#975, #1079).
+ * The invitation that put the counterparty in their seat (#975, #1079, #1196).
  *
  * `claimInvite()` (`lib/flow/store.ts`) is the only code path that creates a Counterparty party,
  * and it does so by spending an invitation: it inserts the party and sets `claimed_at` in one
- * transaction. So a seeded instance whose lifecycle says the counterparty holds a seat must have
- * the invitation that put them there — and an instance whose lifecycle is `draft` must have **no**
- * invitation at all, because nothing has been sent yet. `pending` is the third state: the row
- * exists, `claimed_at` is NULL, and the link is still spendable — which is exactly what the demo's
- * `/invite/<token>` needs in order to show a live invitation.
+ * transaction. So every seeded instance has one, and the three lifecycle words say what state it is
+ * in — `created` (a draft: the row the create wrote, `claimed_at` NULL, nothing mailed), `sent` (the
+ * same row after a send, `claimed_at` still NULL) and `claimed` (`claimed_at` at the acceptance
+ * instant).
+ *
+ * **The `created` word is #1196, and it is the product winning an argument with #1079.** #1079 read
+ * a draft as "nothing has been sent yet", and the seed deleted the row for it. The product does not
+ * do that: `createSessionFromTemplate` (`lib/flow/store.ts:401`, the insert at `:797`) and the
+ * dashboard's publish round (`lib/member/relationships.ts:1607`) both insert this row **inside the
+ * relationship's own transaction**, so a draft in production always has the token stage 5's Send
+ * reissues — Send reads the row (`resendInvite`, `lib/flow/store.ts:1465`), and a draft without one
+ * can only answer `no-invitation`. Three seeded drafts were in exactly that state on the demo
+ * branch, which is the artifact a prospective customer is shown. The seed no longer produces a state
+ * the product never creates, and V31 now reports a seeded relationship that is missing its
+ * invitation instead of one that has it.
  *
  * Written from the same facts as the party row, so the two cannot disagree: `created_at` is the
  * relationship's instant, `expires_at` is that instant plus `INVITE_TTL_MS` (7 days, the same
@@ -375,13 +394,6 @@ async function seedRelationship(client, instance, lifecycle) {
  */
 async function seedInvitation(client, instance, lifecycle) {
   const { hashToken, INVITE_TTL_MS } = await import("../lib/flow/tokens.ts");
-  if (lifecycle.invite === "none") {
-    // A draft never had a link. Deleting by session is the idempotent convergence: a relationship
-    // that used to be `pending` and is now `draft` must lose the row, or the branch keeps an
-    // invitation for something nobody sent.
-    await client.query("DELETE FROM session_invite WHERE session_record_id = $1", [instance.id]);
-    return null;
-  }
   const token = demoInviteToken(instance.id);
   const expiresAt = new Date(new Date(instance.date).getTime() + INVITE_TTL_MS).toISOString();
   const counterparty = instance.parties.find((party) => party.role === "counterparty");
@@ -610,7 +622,9 @@ async function readDemoDataset() {
   const { parseBundle, canonicalDemoBundle, serializeBundle, formatBundleIssue } = await import(
     "../content/bundle.ts"
   );
-  const { assessments, assessmentInstances } = await import("../data/assessments.ts");
+  const { assessments, assessmentSessions: assessmentInstances } = await import(
+    "../data/assessments.ts"
+  );
 
   const text = readFileSync(DEMO_DATASET_FILE, "utf8");
   const parsed = parseBundle(text);
@@ -919,6 +933,38 @@ async function bindDemoParties(client, accounts) {
         AND r.counterparty_user_id IS DISTINCT FROM p.user_id`,
   );
   return bound;
+}
+
+/**
+ * **The fee a completed demo relationship carries** (#V31 card, t_b9679354).
+ *
+ * A `complete` relationship is one both people finished and accepted: the report is real, and so is
+ * the money. The seed wrote the first half and none of the second, so the demo showed eight
+ * completed relationships and one `relationship_payment` row — the console's own charge card — and
+ * a `complete` row in production carried no obligation at all.
+ *
+ * Writes are `scripts/db-seed-payments.mjs`'s, through the product's own
+ * `lib/db/relationship-payment.ts` writers, with the amount read from `data/billing-plans.ts` (the
+ * fixture `billing_plan` is seeded from, so the charge and the checkout cannot quote two prices).
+ * Only a relationship whose **payer seat is a demo account** can carry one:
+ * `relationship_payment.payer_user_id` is `NOT NULL`. The complete relationships whose initiator is
+ * an authored fixture name are returned instead of charged — the seed prints them rather than
+ * leaving a silent gap, and `tests/db-seed-payments.test.ts` proves every complete row is one or the
+ * other.
+ */
+async function seedRelationshipFees(client, instances) {
+  const { seededLifecycleOf } = await import("../content/assessment.ts");
+  const { billingPlan, planPriceCents } = await import("../data/billing-plans.ts");
+  const lifecycleOf = (instance) => seededLifecycleOf(instance);
+  const priceOf = (planId) => {
+    const plan = billingPlan(planId);
+    return plan === undefined ? undefined : planPriceCents(plan, FEE_INTERVAL);
+  };
+
+  const rows = payableFeeRows(instances, lifecycleOf, priceOf);
+  const unpayable = unpayableCompleteRows(instances, lifecycleOf);
+  const { written } = await seedDemoPayments(client, rows);
+  return { written, unpayable };
 }
 
 /**
@@ -1337,13 +1383,13 @@ async function syncReviewArtifacts(client) {
  */
 function bundleRelationshipIdsFromFile() {
   const bundle = JSON.parse(readFileSync(DEMO_DATASET_FILE, "utf8"));
-  const instances = bundle?.payload?.instances;
-  if (!Array.isArray(instances)) {
+  const sessions = bundle?.payload?.sessions;
+  if (!Array.isArray(sessions)) {
     throw new Error(
-      `${displayPath(DEMO_DATASET_FILE)} carries no payload.instances — cannot tell which relationships are the bundle's`,
+      `${displayPath(DEMO_DATASET_FILE)} carries no payload.sessions — cannot tell which relationships are the bundle's`,
     );
   }
-  return instances.map((instance) => `relationship-${instance.id}`);
+  return sessions.map((session) => `relationship-${session.id}`);
 }
 
 /**
@@ -1398,9 +1444,9 @@ const COUNT_SQL = {
   response_option: "SELECT count(*)::int AS n FROM response_option",
   session: "SELECT count(*)::int AS n FROM session",
   relationship: "SELECT count(*)::int AS n FROM relationship",
-  // #975/#1079 — one invitation per relationship that went out: the row that put each counterparty
-  // in their seat. Counted because "the invitation exists" is a fact the seed promises and V31
-  // checks — and **not** one per instance, because a draft has no link.
+  // #975/#1079/#1196 — one invitation per relationship, a draft included: the row the product
+  // writes in the relationship's own transaction, which is the token stage 5's Send reissues.
+  // Counted because "the invitation exists" is a fact the seed promises and V31 checks.
   session_invite: "SELECT count(*)::int AS n FROM session_invite",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
@@ -1414,6 +1460,31 @@ async function counts(client) {
     result[table] = rows[0].n;
   }
   return result;
+}
+
+/**
+ * **#1196 — the two numbers a seeded draft is judged by, read back from the rows.**
+ *
+ * `drafts` is how many of this seed's relationships carry `status = 'draft'`, and `invited` is how
+ * many of *those* carry the `session_invite` row. On a branch seeded under #1079 they were `0 of 3`
+ * — the seed deleted the row for a draft, so pressing Send on one answered `no-invitation` while the
+ * product's own create had written it. They are now the same number, and the pair is printed rather
+ * than asserted because V31 is the rule: this is the census an operator reads to see it holds.
+ *
+ * Scoped to the bundle's own relationship ids, so a relationship a person created in the app — mid
+ * flow, and theirs — can neither flatter nor fail the demo's number.
+ */
+async function draftInvitationCensus(client, relationshipIds) {
+  const { rows } = await client.query(
+    `SELECT count(DISTINCT r.id)::int AS drafts,
+            count(DISTINCT r.id) FILTER (WHERE iv.session_record_id IS NOT NULL)::int AS invited
+       FROM relationship r
+       LEFT JOIN session s ON s.relationship_id = r.id
+       LEFT JOIN session_invite iv ON iv.session_record_id = s.record_id
+      WHERE r.status = 'draft' AND r.id = ANY($1::text[])`,
+    [relationshipIds],
+  );
+  return { drafts: rows[0]?.drafts ?? 0, invited: rows[0]?.invited ?? 0 };
 }
 
 /* ------------------------------------------------------------------ *\
@@ -1574,8 +1645,11 @@ async function main() {
       // #1079 — the same subscription the full seed writes, so the narrow repair leaves an
       // `active` relationship reading entitled rather than lapsed. The derivation is read from the
       // fixtures, which `data:check` E32 holds the bundle equal to.
-      const { assessmentInstances } = await import("../data/assessments.ts");
+      const { assessmentSessions: assessmentInstances } = await import("../data/assessments.ts");
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      /* The fee rows a completed relationship carries, restored by the same narrow door: they hang
+       * off the payer account, so they are as lost to a re-created identity as the subscription is. */
+      const fees = await seedRelationshipFees(client, assessmentInstances);
       /* #1081 — the console half is re-written here too, and the reason is the ids: every account
        * this path creates is a *new* auth user, so a repair that stopped at the subscriptions would
        * leave the audit log's `actor_user_id` (and the grant's `granted_by`) pointing at the
@@ -1587,8 +1661,12 @@ async function main() {
         operator === undefined
           ? null
           : await seedAdminSurfaces(client, { actorUserId: operator.userId, nowIso: DEMO_NOW_ISO });
+      const feeReport =
+        fees.unpayable.length === 0
+          ? ""
+          : ` — ${fees.unpayable.length} complete relationship(s) name no account on the payer seat (${fees.unpayable.map((row) => row.slug).join(", ")}): no payer, so no fee row exists for them`;
       console.log(
-        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)` +
+        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s), ${fees.written.length} fee row(s)${feeReport}` +
           (adminHalf === null ? " — no operator, the console half was not written" : ""),
       );
     } finally {
@@ -1606,8 +1684,8 @@ async function main() {
   // With DEMO_AUTH=1 the demo dataset file is the source of the rows (asserted canonical);
   // without it, the fixtures are, exactly as before #183.
   const demoDataset = demo ? await readDemoDataset() : null;
-  const { assessments, assessmentInstances } = demoDataset
-    ? { assessments: demoDataset.templates, assessmentInstances: demoDataset.instances }
+  const { assessments, assessmentSessions: assessmentInstances } = demoDataset
+    ? { assessments: demoDataset.templates, assessmentSessions: demoDataset.sessions }
     : await import("../data/assessments.ts");
 
   // One name for "where the rows came from", used by the sweep, the assertion and the closing
@@ -1651,11 +1729,12 @@ async function main() {
     ),
     session: assessmentInstances.length,
     relationship: assessmentInstances.length,
-    // #975 — one invitation per session, **except a draft** (#1079): a relationship that was never
-    // sent has no link, so the count is the lifecycles that went out, not the instance count.
-    session_invite: assessmentInstances.filter(
-      (instance) => lifecycles.get(instance.id).invite !== "none",
-    ).length,
+    // #975 — one invitation per session, and since #1196 that is **every** relationship, a draft
+    // included: the product writes the row in the relationship's own transaction
+    // (`lib/flow/store.ts:797`), so a draft in the product always carries the token Send reissues.
+    // The count was the lifecycles that went out, which is how three seeded drafts came to answer
+    // `no-invitation` on the demo branch.
+    session_invite: assessmentInstances.length,
     // #1079 — the seats and the answers are the lifecycle's, not the fixture's: a `pending`
     // relationship has one party row, a `published` one with one side in has one seat's answers.
     party: assessmentInstances.reduce(
@@ -1819,6 +1898,9 @@ async function main() {
       // #1079 — the subscription an `active` relationship is read against, written after the
       // accounts exist and after `billing_plan` (phase 1) so the tier resolves.
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      // The fee a completed relationship carries — after the seat bindings (the payer is an
+      // account) and after `billing_plan` (phase 1), so the amount is the tier's own price.
+      const fees = await seedRelationshipFees(client, assessmentInstances);
       /* #1081 — the console's own half: the audit log, the support inbox, the one broadcast, the
        * comp and the charge `/admin/billing` draws, and the review shelf's issues and to-dos. Every
        * id it writes is drawn from the rows above — the operator's own account, the relationships
@@ -1857,6 +1939,19 @@ async function main() {
           `  · subscription: ${subscription.email} on the ${subscription.plan} tier (active) — an \`active\` relationship reads entitled rather than lapsed`,
         );
       }
+      // #V31 (t_b9679354) — the fee a completed relationship carries, and the census of the ones no
+      // fee can exist for. A `complete` row with no account on the payer seat has a report and no
+      // money: there is nobody to charge, and no payer is invented for it.
+      for (const fee of fees.written) {
+        console.log(
+          `  · fee: ${fee.slug} — charged ${fee.amountCents} cents on ${fee.chargedAt} (relationship_payment, method captured, one charge)`,
+        );
+      }
+      if (fees.unpayable.length > 0) {
+        console.log(
+          `  ○ fee: ${fees.unpayable.length} complete relationship(s) carry no fee row because no account holds the payer seat (${fees.unpayable.map((row) => row.slug).join(", ")}) — their report is real, their money is not: nobody there is a member`,
+        );
+      }
       // #1081 — what the console half wrote, in the tables its screens read. This is the line an
       // operator checks against `data/verify/demo-expectations.json`; the numbers are the plan's
       // (`ADMIN_SURFACE_ROWS`), not a second copy typed here.
@@ -1892,6 +1987,9 @@ async function main() {
     }
 
     const actual = await counts(client);
+    // #1196 — read back in the same transaction, printed after the commit: the census is what the
+    // seed *wrote*, and V31 is the rule it is held to.
+    const draftCensus = await draftInvitationCensus(client, bundleRelationshipIds);
     // #865 — the assertion is unchanged, and it is shared with `tests/db-seed-sweep.test.ts` so a
     // later change cannot quietly relax it: the sweep is what makes it affordable, not an excuse
     // to stop asking.
@@ -1955,6 +2053,11 @@ async function main() {
     console.log(`    ${"demo admin".padEnd(20)} ${report.totals.admins}`);
     console.log(`    ${"platform admin".padEnd(20)} ${report.totals.platform_admins}`);
     console.log(`    ${"party(user bound)".padEnd(20)} ${report.totals.bound_parties}`);
+    // #1196 — the pair, side by side: every seeded draft carries the invitation its create wrote,
+    // which is what makes stage 5's Send able to reissue it.
+    console.log(
+      `    ${"draft (invited)".padEnd(20)} ${draftCensus.invited} of ${draftCensus.drafts} — every seeded draft carries the session_invite row its create wrote; Send reissues it`,
+    );
 
     if (demo) {
       console.log("\n  demo accounts (passwords are not printed, by design):");

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
-import { instancePath, relationshipScreenPath } from "@/lib/flow/paths";
+import { sessionPath, relationshipScreenPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -19,7 +19,7 @@ import { sendDraftInvitation } from "@/lib/flow/store";
  * draft into a sent invitation. Three things happen, in this order, and each is somebody else's
  * existing contract:
  *
- *   1. `sendDraftInvitation()` reissues the token (the one-token-per-instance invariant lives in
+ *   1. `sendDraftInvitation()` reissues the token (the one-token-per-session invariant lives in
  *      `resendInvite`) and moves the relationship `draft → published` through
  *      `lib/relationship/status.ts`'s transition table, stamping `published_at`;
  *   2. the email goes out **after** that commit, exactly as the create path sends it, so a broken
@@ -58,7 +58,7 @@ export async function POST(
   const viewer = await currentUserIfConfigured();
 
   const sent = await sendDraftInvitation({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     // A `FormData` read would be a way for the post to name its own identity; nothing here reads
     // the body at all, which is the point.
     viewerTokens: partyTokensFrom(jar),
@@ -72,7 +72,7 @@ export async function POST(
         303,
       );
     }
-    const target = new URL(instancePath(instanceId), request.url);
+    const target = new URL(sessionPath(instanceId), request.url);
     target.searchParams.set("resend", sent.code);
     return NextResponse.redirect(target, 303);
   }
@@ -80,7 +80,7 @@ export async function POST(
   jar.set(inviteCookieName(instanceId), sent.inviteToken, flowCookieOptions(FLOW_COOKIE_MAX_AGE));
 
   const outcome = await sendInvitation(
-    invitationMessage({
+    await invitationMessage({
       to: sent.email.trim(),
       initiatorName: sent.initiatorName.trim(),
       counterpartyName: sent.counterpartyName.trim(),

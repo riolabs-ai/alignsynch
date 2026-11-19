@@ -89,7 +89,7 @@ describe("startPathFor — the catalogue's action, for every viewer", () => {
   it("takes no viewer, so a session cannot reintroduce a second door", () => {
     // #1042: the viewer argument is gone — `startHrefFor` is the only place identity is read.
     // This case fails if somebody puts a session-shaped branch back here.
-    expect(startPathFor("parent-teacher")).toBe("/templates/relationship/parent-teacher/create");
+    expect(startPathFor("parent-teacher")).toBe("/dashboard/templates/parent-teacher/create");
   });
 });
 
@@ -112,7 +112,7 @@ describe("startHrefFor — hrefs that arrive as data", () => {
   });
 
   it("does not rewrite a destination that was never a sign-up page", () => {
-    for (const href of ["checkout", "/pricing", "/#questions", "/relationship-types"]) {
+    for (const href of ["checkout", "/pricing", "/#questions", "/relationship-templates"]) {
       expect(startHrefFor(href, MEMBER)).toBe(href);
       expect(startHrefFor(href, VISITOR)).toBe(href);
     }

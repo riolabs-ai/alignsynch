@@ -93,19 +93,19 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The six tabs the owner approved. Five are stored statuses (`draft`, `published`,
-       * `active`, `complete`, `expired`) — `running` reads stored `active` — and `all` is the
-       * default. `Drafts` is the tab's word, `Draft` is the badge's: one is a filter, the other
-       * is a state, and `data/pages` keeps both.
+       * The filter row, in the v2 vocabulary (#1129, bundle 05). `All` is the default and the other
+       * four are the card's own words — Live · Waiting on Invite · Draft · Paused — so the filter and
+       * the chip a row shows are the same four states (`lib/member/start.ts::cardStateOf`). The
+       * stored lifecycle values (`pending`, `complete`, `void`) are not filters: `pending` and
+       * `complete` print as Draft and Stage 6 Live, and `void` is drawn nowhere on this screen.
        */
       id: "tabs",
       items: [
         { id: "all", label: "All" },
-        { id: "draft", label: "Drafts" },
-        { id: "published", label: "Published" },
-        { id: "active", label: "Running" },
-        { id: "complete", label: "Complete" },
-        { id: "expired", label: "Expired" },
+        { id: "live", label: "Stage 6 Live" },
+        { id: "waiting", label: "Waiting on Invite" },
+        { id: "draft", label: "Draft" },
+        { id: "paused", label: "Paused" },
       ],
     },
     {
@@ -160,7 +160,7 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "card",
       items: [
-        { id: "with", label: "with" },
+        { id: "with", label: "with {name}" },
         { id: "not-claimed", label: "Not claimed yet" },
         { id: "the-other", label: "the other party" },
         /**
@@ -251,26 +251,135 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
-      id: "empty",
-      heading: "No relationships yet",
-      body: "Nobody has started one with you, and you have not started one. Start from a template you own — its Aspects are yours to tune until you publish it — or open the invitation somebody sends you, and it appears here.",
+      /**
+       * The v2 card's words (#1129, bundle 05). This section is read by
+       * `components/dashboard/relationship-card-model.ts`'s caller, so the chip a row carries, the
+       * sentence it says while there is nothing to draw and the three legend words all live here.
+       *
+       * **The four chips are the states, not the stored values.** `draft` and `pending` print
+       * `Draft`, `published` prints `Waiting on Invite`, `active` and `complete` print
+       * `Stage 6 Live`, and `expired` prints `Paused` — one word per state, mapped once in
+       * `lib/member/start.ts`. Colour never carries a state on its own, so the chip is always a
+       * word.
+       */
+      id: "card-v2",
+      items: [
+        { id: "live", label: "Stage 6 Live" },
+        { id: "waiting", label: "Waiting on Invite" },
+        { id: "draft", label: "Draft" },
+        { id: "paused", label: "Paused" },
+        { id: "with", label: "with {name}" },
+        { id: "aligned", label: "{aligned} of {total} Aspects Aligned" },
+        { id: "read-only", label: "Aligned · Read-Only" },
+        { id: "no-results", label: "Results appear once you both answer." },
+        { id: "next", label: "Next Step: {prompt}" },
+        { id: "open", label: "Open" },
+        { id: "continue", label: "Continue Setup" },
+        { id: "add-card-action", label: "Add a Card" },
+        { id: "legend-synch", label: "{count} In Synch" },
+        { id: "legend-small", label: "{count} Small Gap" },
+        { id: "legend-gap", label: "{count} Gap" },
+        { id: "waiting-next", label: "Invite sent. Waiting on {name} to join." },
+        { id: "draft-next", label: "Not sent yet." },
+        { id: "paused-next", label: "Stage 6 is paused. Nothing is lost." },
+      ],
     },
     /**
-     * #841 part 2 — the second empty state, and the one the artifact draws: a list that has rows
-     * but none matching what the reader asked for. Two sentences, because the two ways to get here
-     * are different: a search that matched nothing, and a tab with nothing in it.
+     * The relationship card's kebab (#1134, bundle 05). One `More actions` trigger; the rows behind
+     * it follow the card's state, and their words are the bundle's — `Leave Relationship`, not the
+     * `Remove Counterparty` the issue's summary remembers (#1135's decision, and the artifact's).
+     *
+     * `Copy Invite Link` is drawn on the waiting card in the artifact and is **not** in this table:
+     * a token is never stored, so no read can hand a list card the link (`inviteLinkAvailable` is
+     * always false, #220) and the item would copy nothing. The copy control lives on the
+     * relationship's own screen, where a link has just been minted.
      */
     {
-      id: "empty-filter",
-      heading: "No relationships found",
+      id: "card-menu",
       items: [
-        {
-          id: "search",
-          label:
-            "Nothing matches “{query}”. Try a different search, or clear it to see all {count}.",
-        },
-        { id: "status", label: "You have no {status} relationships yet. Try another tab." },
+        { id: "more", label: "More actions for {title}" },
+        { id: "open", label: "Open" },
+        { id: "continue", label: "Continue Setup" },
+        { id: "add-card", label: "Add a Card" },
+        { id: "resend", label: "Resend Invite" },
+        { id: "cancel-invite", label: "Cancel Invite" },
+        { id: "abandon", label: "Abandon Draft" },
+        { id: "leave", label: "Leave Relationship" },
       ],
+    },
+    /** The three neutral confirmations the menu's destructive rows open — the bundle's own words. */
+    {
+      id: "confirm-cancel-invite",
+      heading: "Cancel This Invite?",
+      body: "The link stops working, so they can’t join with it. Your draft stays and you can invite again.",
+      items: [
+        { id: "confirm", label: "Cancel Invite" },
+        { id: "cancel", label: "Keep Invite" },
+      ],
+    },
+    {
+      id: "confirm-abandon",
+      heading: "Abandon This Draft?",
+      body: "Nobody was invited, so nobody else is affected. This can’t be undone.",
+      items: [
+        { id: "confirm", label: "Abandon Draft" },
+        { id: "cancel", label: "Keep Draft" },
+      ],
+    },
+    {
+      id: "confirm-leave",
+      heading: "Leave This Relationship?",
+      body: "Stage 6 closes for you and {name}. Answers and the discussion stay readable. Nothing is deleted.",
+      items: [
+        { id: "confirm", label: "Leave Relationship" },
+        { id: "cancel", label: "Stay" },
+      ],
+    },
+    /** What each write says when it lands. */
+    {
+      id: "menu-notices",
+      items: [
+        { id: "resend", label: "Invite sent again to {email}" },
+        { id: "cancel-invite", label: "Invite cancelled. It’s a draft again." },
+        { id: "abandon", label: "Draft abandoned." },
+        { id: "leave", label: "You left. Stage 6 is closed." },
+      ],
+    },
+    /** The refusals the four writes answer with, and the fallback for one this table has not met. */
+    {
+      id: "menu-refusals",
+      items: [
+        { id: "cooldown", label: "An invite went out recently. Try again in a moment." },
+        { id: "cap-reached", label: "This invitation has been resent as often as it can be." },
+        { id: "already-claimed", label: "They have already joined, so there is no link to send." },
+        { id: "no-invite", label: "There is no invitation to resend yet." },
+        { id: "invite-dead", label: "That invitation has expired or been revoked." },
+        { id: "not-published", label: "There is no invitation to cancel." },
+        { id: "not-running", label: "This relationship is not running any more." },
+        { id: "not-yours", label: "This relationship is not yours to change." },
+        { id: "signed-out", label: "Your session ended. Sign in and try again." },
+        { id: "failed", label: "That did not go through." },
+      ],
+    },
+    /**
+     * **The two empty states are the bundle's, not a paraphrase of them** (#1129, bundle 05).
+     *
+     * `empty` is a member with no rows at all: one sentence, and the way out is the Library —
+     * the only place a first relationship can begin. `empty-filter` is the opposite case, rows
+     * that exist but none the reader asked for: one sentence and `Show All`, which clears both
+     * halves of the question (the chip and the search) rather than guessing which one hurt.
+     */
+    {
+      id: "empty",
+      heading: "No Relationships Yet",
+      body: "Pick a template, invite one person, and see where you agree.",
+      items: [{ id: "browse", label: "Browse Templates" }],
+    },
+    {
+      id: "empty-filter",
+      heading: "Nothing Matches",
+      body: "Try another filter or search.",
+      items: [{ id: "reset", label: "Show All" }],
     },
     {
       id: "unreadable",

@@ -143,10 +143,11 @@ function quizHubFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
  * Every sentence below names something in this tree, in the words of the code that does it:
  *
  *   /assessment           the published templates, each with the create form (#146)
- *   the create form       name, the other person's name and their email (#146)
- *   one submission        `createInstanceFromTemplate()` writes the instance, the Initiator's seat
- *                         and the invitation together (`lib/flow/store.ts`)
- *   the invitation link   a single-use token (`lib/flow/tokens.ts`), drawn on the instance screen
+ *   Stage 1, Details      the other person's name and their email (#146, #1228)
+ *   Stage 4, Account      signing up writes the relationship as a `draft` (#825)
+ *   Stage 5, Invite       `sendDraftInvitation()` sends the invitation and publishes it
+ *                         (`lib/flow/store.ts`)
+ *   the invitation link   a single-use token (`lib/flow/tokens.ts`), drawn on the session screen
  *                         whenever it exists, emailed or not (#220, #257)
  *   seven days            `INVITE_TTL_MS`, the column `expires_at` is written from
  *   neither reads first   `lib/flow` freezes the answers once both parties submit; the report is
@@ -178,7 +179,7 @@ function alignSynchFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
       {
         question: "How do I get started?",
         answer:
-          "Create an account at /register, then open /assessment and choose a template. The form asks for your name, the other person's name and their email address, and one submission creates the instance and an invitation for them. The invitation is a single-use link that stays claimable for seven days, and the instance screen shows it to you to pass on, emailed or not. You answer every question before either of you can read the other's answers.",
+          "Choose a template and add the other person's name and email. Create your account at Stage 4, then send the invitation at Stage 5. The invitation link stays open for seven days, and neither of you sees the other's answers until you've both answered.",
       },
       {
         question: "How do I contact support?",

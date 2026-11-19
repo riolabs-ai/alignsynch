@@ -3,9 +3,9 @@
  *
  * The page is `/admin/instances/[id]`, and it is the only place the five repairs are offered —
  * `lib/admin/relationship-ops.ts` is the write half, and this is the read the Buttons are drawn
- * from. It exists as its own module (rather than growing `lib/db/admin-instances.ts`) because the
+ * from. It exists as its own module (rather than growing `lib/db/admin-sessions.ts`) because the
  * two questions are different: the registry asks "what is the state of every relationship", and
- * this asks "what exactly would each button do to this one". The registry's `AdminInstanceRow`
+ * this asks "what exactly would each button do to this one". The registry's `AdminSessionRow`
  * carries no email, no seat instant and no count, on purpose; this one does, and the difference is
  * visible in one file's type rather than in a widened field somebody added to the list.
  *
@@ -23,7 +23,7 @@
  */
 import { zAssessmentMode, zAlignmentSetting } from "@/content/assessment";
 import type { PartyRole } from "@/content/assessment";
-import { instanceStatusOf, type InstanceProgress, type InstanceStatus } from "@/lib/flow/state";
+import { sessionStatusOf, type SessionProgress, type SessionStatus } from "@/lib/flow/state";
 import { inviteStateOf, type InviteDisplayState } from "@/lib/flow/invite-state";
 import { queryRows } from "@/lib/db/client";
 
@@ -56,7 +56,7 @@ export interface AdminInvite {
 
 /** Everything the detail screen draws, in one value. */
 export interface AdminRelationshipDetail {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /**
    * The relationship the session belongs to (#623). The console's URL names the *session* record —
    * one round of an assessment — while every edit is a relationship-level write, so the page needs
@@ -69,7 +69,7 @@ export interface AdminRelationshipDetail {
   readonly templateTitle: string;
   readonly mode: string;
   readonly setting: string;
-  readonly status: InstanceStatus;
+  readonly status: SessionStatus;
   readonly voided: boolean;
   readonly voidedAt: string | null;
   readonly aspects: number;
@@ -77,7 +77,7 @@ export interface AdminRelationshipDetail {
   readonly invite: AdminInvite | null;
 }
 
-interface InstanceJson {
+interface SessionJson {
   readonly record_id: string;
   readonly relationship_id: string;
   readonly slug: string;
@@ -154,13 +154,13 @@ function iso(value: string | Date | null): string | null {
  * clock, and the screen should say which instant it decided at.
  */
 export async function readAdminRelationship(
-  instanceRecordId: string,
+  sessionRecordId: string,
   now: Date,
 ): Promise<AdminRelationshipDetail | undefined> {
-  const [row] = await queryRows<InstanceJson>(ADMIN_RELATIONSHIP_SQL, [instanceRecordId]);
+  const [row] = await queryRows<SessionJson>(ADMIN_RELATIONSHIP_SQL, [sessionRecordId]);
   if (row === undefined) return undefined;
 
-  const [inviteRow] = await queryRows<InviteReadRow>(ADMIN_INVITE_SQL, [instanceRecordId]);
+  const [inviteRow] = await queryRows<InviteReadRow>(ADMIN_INVITE_SQL, [sessionRecordId]);
 
   const seats: AdminSeat[] = row.seats.map((seat) => ({
     role: seat.role === "counterparty" ? "counterparty" : "initiator",
@@ -172,7 +172,7 @@ export async function readAdminRelationship(
     unlockSeenAt: iso(seat.unlock_seen_at),
   }));
 
-  const progress: InstanceProgress = {
+  const progress: SessionProgress = {
     aspectCount: row.aspect_count,
     hasCounterparty: seats.some((seat) => seat.role === "counterparty"),
     initiatorAnswered: seats.find((seat) => seat.role === "initiator")?.answered ?? 0,
@@ -203,14 +203,14 @@ export async function readAdminRelationship(
         };
 
   return {
-    instanceRecordId: row.record_id,
+    sessionRecordId: row.record_id,
     relationshipId: row.relationship_id,
     slug: row.slug,
     name: row.name ?? row.template_title ?? row.slug,
     templateTitle: row.template_title ?? row.slug,
     mode: zAssessmentMode.parse(row.mode),
     setting: zAlignmentSetting.parse(row.alignment_setting),
-    status: instanceStatusOf(progress),
+    status: sessionStatusOf(progress),
     voided: row.voided_at !== null,
     voidedAt: iso(row.voided_at),
     aspects: row.aspect_count,

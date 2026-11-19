@@ -18,12 +18,12 @@ failure in the wrong place.
 
 ## What exists now
 
-| File                         | Role                                                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scripts/verify.sh`          | the gate: `deps → glossary → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it      |
-| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, regenerates `docs/glossary.md` and fails on a diff (#138), then runs `bash scripts/verify.sh`. No other check steps |
-| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                                        |
-| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                                       |
+| File                         | Role                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/verify.sh`          | the gate: `tree-hygiene (report) → deps → glossary → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it |
+| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, regenerates `docs/glossary.md` and fails on a diff (#138), then runs `bash scripts/verify.sh`. No other check steps                    |
+| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                                                           |
+| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                                                          |
 
 `data:check` and `test` are conditional on `package.json` having that script. Both exist on
 `main` today, so the gate runs both (`data:check` 11.6–13.6 s, `test` 15.7–18.3 s locally on
@@ -92,14 +92,32 @@ Reading: the same one-job workflow spends 59 s on a code PR (build 25.7 s of it)
 a docs-only PR, where the build is skipped outright. The first row is the old behaviour for
 comparison — every run paid it, because the base ref was never there.
 
-The fallback is still the floor, not a shortcut. A `push` to `main` proves it: `HEAD` _is_
-`origin/main` there, so the diff is empty and the post-merge run logs
+The fallback is still the floor, not a shortcut, and it is decided by _what the
+classifier can see_, not by the size of the diff. Unknown stays expensive: a
+missing ref, an uncomputable diff, a detached HEAD, an unmerged index, or a tree
+standing on the base branch itself all log `lane=code … full gate
+(conservative)` and pay everything. The `push` to `main` is the last of those —
+`HEAD` _is_ `origin/main` there, so its diff is empty and it pays the full gate
+(~70 s), because the squash commit is the one tree no PR run gated.
 
 ```text
- lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main — full gate)
+ lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main@d06ae7e, and HEAD is main itself — full gate (conservative: the landed tree is the one commit no PR run gated))
 ```
 
-and pays the full gate (~70 s). A missing ref or an uncomputable diff lands in the same place.
+A **known-empty** diff is the opposite case and is not unknown: a clean tree on a
+branch that has not diverged pays for no step, because no step can see a change.
+That is the docs lane, and it says so rather than passing silently (#1000):
+
+```text
+ lane=docs (docs/**, *.md — no changed files vs origin/main@d06ae7e (local ref) — nothing to verify (known-empty diff))
+```
+
+Measured on 2026-11-17, this machine, same worktree each time: **333.1 s** at
+`lane=code` (the empty-diff fallback, n=1) against **15–41 s** at `lane=docs`
+(n=5: 15.0 / 23.3 / 28.8 / 33.9 / 40.6 — the spread is gate-slot contention on a
+shared box): ~300 s per fresh worktree, paid once per card before this. A
+`docs/`-only diff lands in the same range (n=4: 14.9 / 29.2 / 36.0 / 41.2),
+because the steps that run in every lane dominate both.
 
 ## Baseline: one measured block, and how to re-derive it
 

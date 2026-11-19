@@ -31,7 +31,13 @@ import { adminGapsPageCopy } from "./admin-gaps";
 import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
-import { adminInstancesPageCopy } from "./admin-instances";
+import { adminSessionsPageCopy } from "./admin-instances";
+// #1126 — the CRUD & Permissions matrix: the v2 spec reference, read from one markdown source.
+import { adminPermissionsPageCopy } from "./admin-permissions";
+// #1138 — the transactional-mail override: one register of templates, one editor per template.
+import { adminEmailTemplatesPageCopy } from "./admin-email-templates";
+// #1252 — the project spec: the stakeholder's read-only spine, one fixture for its three routes.
+import { adminSpecPageCopy } from "./admin-spec";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -40,16 +46,22 @@ import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
-import { assessmentInstancePageCopy } from "./assessment-instance";
+import { assessmentSessionPageCopy } from "./assessment-instance";
 import { assessmentsPageCopy } from "./assessments";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { assessmentAcceptPageCopy } from "./assessment-accept";
 import { assessmentAnswerPageCopy } from "./assessment-answer";
 import { assessmentSentPageCopy } from "./assessment-sent";
 import { assessmentCreatePageCopy } from "./assessment-create";
+// #1226 — the create-failed screen: the four words a person reads when the write throws.
+import { assessmentCreateFailedPageCopy } from "./assessment-create-failed";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
+/**
+ * #1131 — Chat v2: one thread per relationship, in the member's dashboard.
+ */
+import { chatPageCopy } from "./chat";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
@@ -58,8 +70,11 @@ import { dashboardPageCopy } from "./dashboard";
 import { dashboardSupportPageCopy } from "./dashboard-support";
 // #533 phase 2 — the initiator's own templates and relationships.
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
+// #1132 — the member's billing surface: one trial panel per relationship, and the Counterparty view.
+import { paymentPageCopy } from "./payment";
 import { dashboardRelationshipsPageCopy } from "./dashboard-relationships";
 import { dashboardTemplateEditorPageCopy } from "./dashboard-template-editor";
+import { dashboardTemplateProposalPageCopy } from "./dashboard-template-proposal";
 import { dashboardTemplatesPageCopy } from "./dashboard-templates";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
@@ -73,13 +88,13 @@ import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
-import { overviewPageCopy } from "./overview";
 import { resetCompletePageCopy, resetFormPageCopy, resetRequestPageCopy } from "./password-reset";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
 import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
+import { startPageCopy } from "./start";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
 // The public catalogue — the page the header's `Templates` row names, and one template's page.
@@ -112,7 +127,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // #920 — the growth model and the sampled operational set beside it.
   "/admin/growth": adminGrowthPageCopy,
   "/admin/health": adminHealthPageCopy,
-  "/admin/instances": adminInstancesPageCopy,
+  "/admin/instances": adminSessionsPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
   // #665 — the review shelf, grouped by release; the manifest is the catalogue.
   "/admin/review": adminReviewPageCopy,
@@ -121,13 +136,24 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/instances/[id]/report": adminReportPageCopy,
   // #506 — the support inbox: the contact form's queue, one thread, the reply.
   "/admin/inbox": adminInboxPageCopy,
+  // #1126 — the CRUD & Permissions matrix, read from `docs/specs/v2-prototype/crud-matrix.md`.
+  "/admin/permissions": adminPermissionsPageCopy,
+  // #1138 — the transactional-mail override: the register, then one template's editor.
+  "/admin/email-templates": adminEmailTemplatesPageCopy,
+  "/admin/email-templates/[id]": adminEmailTemplatesPageCopy,
+  // #1252 — the project spec's R0 spine: one fixture, three depths (the Overview, the Validation
+  // matrix, one group's page). The reader that draws them is the next card, so the words here say
+  // what the spine is and promise the reader rather than inventing its layout.
+  "/admin/spec": adminSpecPageCopy,
+  "/admin/spec/validation": adminSpecPageCopy,
+  "/admin/spec/[group]": adminSpecPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/
   // relationships`. It replaced `/assessment/instances`, which is a 308 here now; the three
   // session routes below it did not move.
   "/assessments": assessmentsPageCopy,
-  "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
+  "/assessment/instances/[instanceId]": assessmentSessionPageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
@@ -136,13 +162,26 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // screen, and the two bands it shares (the six stage names, one invitation's vocabulary) are
   // referenced from their own homes rather than copied here.
   "/assessment/instances/[instanceId]/sent": assessmentSentPageCopy,
+  // #1226 — the create-failed screen. Its own fixture rather than a band of the create flow's: the
+  // four words are the whole surface, they exist on no other screen, and a failure screen that
+  // shared a fixture with the form it follows would be edited by whoever edits the form.
+  "/assessment/new/failed": assessmentCreateFailedPageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
-  "/dashboard": overviewPageCopy,
+  // #1129 — the v2 landing (Start). The console's four counts moved off this route: the approved
+  // bundle draws a greeting, one next step and two shelves, and the counts' own lists are one click
+  // away at `/assessments?filter=…` (which is where those cards pointed anyway).
+  "/dashboard": startPageCopy,
+  /**
+   * #1131 — one thread per relationship. The AlignSynch build's chat, beside the member's other
+   * record lists: `/chat` stays the **quiz** product's conversations (#300 gates it to that brand),
+   * so this is a sibling of the three routes below rather than a replacement for a quiz surface.
+   */
+  "/dashboard/chat": chatPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:
@@ -151,6 +190,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/relationships/[id]": dashboardRelationshipDetailPageCopy,
   "/dashboard/templates": dashboardTemplatesPageCopy,
   "/dashboard/templates/[id]": dashboardTemplateEditorPageCopy,
+  "/dashboard/templates/[id]/propose": dashboardTemplateProposalPageCopy,
+  "/dashboard/payment": paymentPageCopy,
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
@@ -181,33 +222,32 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
-  // #794 — the six-stage create flow, under the template's own noun. #1109 retired the member's
-  // library listing, its authoring form and its read-only detail page (they 308 to
-  // `/dashboard/templates`), so their three entries are gone from this table with them: a path here
-  // is a promise that the route renders a fixture, and E23 checks the two directions.
-  "/templates/relationship/[slug]/create": assessmentCreatePageCopy,
+  // #794 — the create flow, at the dashboard address it shares with the member's library since
+  // #1109 (the stages moved to `/dashboard/templates/<slug>/create…`); the member's library
+  // listing, its authoring form and its read-only detail page retired in the same change (they 308
+  // to `/dashboard/templates`), so their three entries are gone from this table with them: a path
+  // here is a promise that the route renders a fixture, and E23 checks the two directions.
+  "/dashboard/templates/[id]/create": assessmentCreatePageCopy,
   // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
   // drift into two vocabularies.
-  "/templates/relationship/[slug]/create/mode": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/mode": assessmentCreatePageCopy,
   // #689 — stage 3, the third register of the same fixture.
-  "/templates/relationship/[slug]/create/aspects": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/aspects": assessmentCreatePageCopy,
   // #690 — stage 4 and stage 5 of one flow: the same fixture again, because a second copy of these
   // words is how a flow grows two dialects. #825 — the account gate that used to sit behind the
   // create is retired; stage 4 is the account and stage 5 is the invite.
-  "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
-  "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/commit": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/invite": assessmentCreatePageCopy,
   /**
-   * The public catalogue, at two addresses and one fixture (#905).
+   * The public catalogue, one address and one fixture (#905, consolidated in #1127).
    *
    * `/relationship-templates` is the catalogue the header, the footer and every "start with a
-   * template" action point at — the V2 composition (`lib/templates-catalogue.ts`).
-   * `/relationship-types` is the retained #889 variation (`lib/templates-page.ts`) and the
-   * namespace a type's own page lives in. Both read this fixture, which is why its rows are keyed
-   * by surface rather than edited in place: one copy table, two pages, neither renaming the other.
+   * template" action point at, and `/relationship-templates/[slug]` is one row of it. The second
+   * surface `/relationship-types` (the retained #889 variation) is retired with its 308, so this
+   * table has one catalogue row rather than two that must be kept saying the same thing.
    */
   "/relationship-templates": templatesPageCopy,
-  "/relationship-types": templatesPageCopy,
-  "/relationship-types/[slug]": templatesDetailPageCopy,
+  "/relationship-templates/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

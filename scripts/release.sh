@@ -15,9 +15,32 @@
 #   bash scripts/release.sh --tag-only <v> --no-record
 #                                                  the same cut on a machine with no demo credentials:
 #                                                  the recovery command is printed, never run
+#   bash scripts/release.sh --tag-only <v> --allow-open-prs
+#                                                  wave preflight check 10 through: pull requests are
+#                                                  open and the operator has decided the cut proceeds
 #
 # --limits <file> supplies the Known limits block for a generated entry. Without it a generation
 # refuses to write: the block is public release-note content, so a human writes it.
+#
+# **The version may be written either way (#1248):** `2.0.0-rc1.3` or `v2.0.0-rc1.3`. The tag is
+# always `v<version>` — never doubled — and a run that was given the tagged spelling prints the bare
+# version it used, so the transcript answers which form it got. All five release verbs share one
+# normaliser (`scripts/release-version.mjs::stripV` / `normalizeVersion`); this script owns none.
+#
+# **`--tag-only` runs `scripts/release-preflight.mjs` first, and no flag skips it.** Ten facts a cut
+# must be true are checked in one command, one line each, with a ✗ per failure and the remedy printed
+# under it (card t_3c37542f): no concurrent cut; the checkout level with `origin/main`; a clean tree;
+# `package.json` on the version being cut; the tag free locally *and* on the remote; the release's
+# own `docs/changelog/` page present and `--check` green; no `.next/dev` left behind by a dev server;
+# a database URL for the record step; a green CI run at this sha; and no pull request open. Every one
+# of those had already failed a real cut invisibly — two cuts at once, a stale checkout, dev types
+# poisoning `typecheck`, a local check that disagreed with CI, and a record step that skipped twice
+# because the shell had no `DATABASE_URL`. Two flags exist, each covering exactly one check and each
+# printing a warning line naming what it waved through: `--no-record` the record step,
+# `--allow-open-prs` the queue. A missing or unauthenticated `gh` **fails** checks 9 and 10 rather
+# than warning, because an unverified cut is the failure the preflight exists to prevent. The
+# preflight adds refusals and removes none: the checkout, dirty-tree, gate and tag refusals below are
+# unchanged and still run, after it.
 #
 # Why the record step exists (#961): a tag is immutable, so the record *on* a tag is a snapshot of
 # whatever the last `pnpm health:record` measured — v1.17.0 was cut with `--tag-only` and the file on
@@ -101,7 +124,8 @@ if [ -n "$SLUG" ]; then SLUG_URL="https://github.com/$SLUG"; fi
 
 # --- versions -----------------------------------------------------------------
 # One classifier for the whole script (`scripts/release-version.mjs`), because a version is not
-# three integers: `valid` is "is this a semver at all" (`1.1.0.0`, `1.1` and `v1.1.0` are not),
+# three integers: `valid` is "is this a semver at all" (`1.1.0.0`, `1.1` and `vv1.1.0` are not — the
+# CLI strips a single leading `v`, so the tagged spelling is accepted while a doubled one is not),
 # `prerelease` is "does it carry a `-suffix`", and `bump <from> <to>` is semver precedence — so
 # `1.1.0-rc1 -> 1.1.0` is a bump (a release outranks its own pre-release) and `1.1.0 -> 1.1.0-rc1`
 # is not. The same module prints VERSION_TOKEN, the ERE the greps below interpolate, so the parser
@@ -111,6 +135,28 @@ version_cli() { node "$ROOT/$VERSION_TOOL" "$@"; }
 is_version() { version_cli valid "$1"; }
 is_prerelease() { version_cli prerelease "$1"; }
 is_bump() { version_cli bump "$1" "$2"; }
+
+# **One spelling, whichever the operator wrote (#1248).** The tag is `v<version>`, so a cut may be
+# asked for as `2.0.0-rc1.3` or `v2.0.0-rc1.3` and is the same cut — but everything below this line
+# works on the bare form, because `tag_and_publish` builds the ref as `v$version` and a caller that
+# passed the tagged spelling made `vv2.0.0-rc1.3`. The strip is `release-version.mjs::normalize`,
+# the same normaliser the preflight, the cut and the record check use; this script owns no pattern
+# of its own. Before this existed, `--tag-only v2.0.0-rc1.3` died with
+# `'v2.0.0-rc1.3' is not a semantic version` while the verb next door accepted it.
+#
+# The transcript says which spelling was given, so a log answers "was that v-form or bare?" without
+# a guess, and it says the tag is not doubled.
+normalize_version_arg() {
+  [ -n "$VERSION" ] || return 0
+  local given bare
+  given="$VERSION"
+  bare="$(version_cli normalize "$given")" ||
+    usage_die "'$given' is not a semantic version (x.y.z, optionally -prerelease or +build)"
+  VERSION="$bare"
+  if [ "$given" != "$bare" ]; then
+    say "release: version $bare (given '$given'; the tag is v$bare, never v$given)"
+  fi
+}
 
 VERSION_TOKEN="$(version_cli token)" || die "cannot read the version pattern from $VERSION_TOOL"
 
@@ -437,6 +483,20 @@ guard_current_branch() { git symbolic-ref --quiet --short HEAD 2>/dev/null || pr
 # paths would refuse with half a message and a code nobody can read. `sed` reads its whole input.
 show_paths() { sed -e 's/^/  /' -e '6,$d'; }
 
+# **Who wrote each path.** The refusal below used to be the only thing that noticed an uncommitted
+# file, and it said "the tree is dirty" — no culprit, no remedy (#1178). On this repo the usual
+# culprit is not the operator: `next dev` rewrites `AGENTS.md` and `gitnexus analyze` writes
+# `CLAUDE.md`, so the honest instruction is "run `git checkout -- AGENTS.md` or commit it", not
+# "stash it". `scripts/tree-hygiene.mjs` holds the table and prints it; this function only indents
+# it and can never fail — a cut from a dirty tree must still arrive at the refusal, with a diagnosis
+# attached or without one.
+tree_hygiene_report() {
+  command -v node >/dev/null 2>&1 || return 0
+  [ -f scripts/tree-hygiene.mjs ] || return 0
+  node scripts/tree-hygiene.mjs 2>&1 | sed -e 's/^/  /' || true
+  return 0
+}
+
 guard_arm() { # capture the starting state, and make every way out of this run restore it
   [ "$GUARD_ARMED" -eq 1 ] && return 0
   GUARD_START_BRANCH="$(guard_current_branch)"
@@ -475,6 +535,9 @@ guard_restore() { # <exit code> — the state the caller gets back, and the line
     printf 'release: %s is left with uncommitted changes — this script never discards work:\n' \
       "$branch" >&2
     printf '%s\n' "$dirty" | show_paths >&2
+    # The diagnosis, before the instruction: a path a *tool* wrote is cleared by the command the
+    # table prints, and "git stash" (the old advice) is exactly wrong for it.
+    tree_hygiene_report >&2
     printf '  commit or `git stash` them before the next cut\n' >&2
   elif [ "$GUARD_START_SHA" != "$(git rev-parse HEAD 2>/dev/null || true)" ]; then
     start="$(git rev-parse --short "$GUARD_START_SHA" 2>/dev/null || printf '%s' "$GUARD_START_SHA")"
@@ -502,8 +565,38 @@ require_cut_checkout() { # the three states a cut cannot start from, each refuse
   if [ -n "$dirty" ]; then
     printf 'release: the tree is dirty — a release is cut from a clean tree, never from work in progress:\n' >&2
     printf '%s\n' "$dirty" | show_paths >&2
+    # **The diagnosis, and it is the whole point of the table (#1178).** The paths below are
+    # frequently not the operator's: `next dev` rewrites `AGENTS.md`, `gitnexus analyze` writes
+    # `CLAUDE.md`, and this release's own record step leaves `data/health/platform-health.json`
+    # uncommitted on purpose. Naming the writer is the difference between "clean the tree" and
+    # "run the one command that clears it". The refusal itself is unchanged and unchanged on
+    # purpose: a cut is still made from a clean tree.
+    tree_hygiene_report >&2
     die "commit or 'git stash' those paths, then cut again"
   fi
+}
+
+# --- the preflight (card t_3c37542f) ---------------------------------------------
+# Ten cut-time facts, checked by a node script with its own cases
+# (`tests/release-preflight.test.ts`), one line each, a ✗ and a remedy per failure. This is the
+# first thing `--tag-only` does: every one of these facts has already failed a real cut invisibly,
+# and a fact checked after the tag exists is a fact nobody can act on.
+#
+# It fixes nothing on the operator's behalf — a failing check prints the command to run, and running
+# it is a human's act. It also weakens nothing: `require_cut_checkout`, the contains-origin/main
+# check, the tag-exists check and the gate refusal below are unchanged and still run, after this.
+# Two flags narrow it, one check each, and both say so in the output:
+#   --no-record        check 8 (the record step can run) — the record is then owed, and printed
+#   --allow-open-prs   check 10 (no merges in flight) — the open queue is known and accepted
+PREFLIGHT_TOOL="scripts/release-preflight.mjs"
+
+release_preflight() { # <version>
+  local version="$1" flags=()
+  if [ "$NO_RECORD" -eq 1 ]; then flags+=(--no-record); fi
+  if [ "$ALLOW_OPEN_PRS" -eq 1 ]; then flags+=(--allow-open-prs); fi
+  step "preflight ($PREFLIGHT_TOOL — the ten cut-time facts)"
+  node "$ROOT/$PREFLIGHT_TOOL" "$version" ${flags[@]+"${flags[@]}"} ||
+    die "the preflight refused this cut — the ✗ lines above name the fact and its remedy, and nothing was changed either way. Fix them, then cut again"
 }
 
 preflight() { # <version> — everything a cut must be true before a single byte is written
@@ -590,6 +683,9 @@ tag_and_publish() { # <version> — annotated tag at HEAD, push it, publish the 
 # it prints the exact command and says the record is owed.
 
 NO_RECORD=0
+# The second flag that narrows the preflight, declared beside the first: `--allow-open-prs` waves
+# through check 10 only, and it exists because a merge can legitimately be parked while a cut runs.
+ALLOW_OPEN_PRS=0
 TAGGED_SHA=""
 
 previous_utc_day() { # the completed UTC day `docs/gate-baseline.py --window` is read for
@@ -632,6 +728,8 @@ record_step() { # <version> <tag-sha>
 
 cmd_tag_only() { # <version> — the version and entry are already merged on main
   local version="$1"
+  # First, before the checkout guard and the gate: the ten facts, each with its own line and remedy.
+  release_preflight "$version"
   guard_arm
   preflight "$version"
   [ "$(pkg_version)" = "$version" ] ||
@@ -764,6 +862,7 @@ while [ $# -gt 0 ]; do
     --dry-run) MODE="dry-run" ;;
     --tag-only) MODE="tag-only" ;;
     --no-record) NO_RECORD=1 ;;
+    --allow-open-prs) ALLOW_OPEN_PRS=1 ;;
     --limits)
       [ "$#" -ge 2 ] || usage_die "--limits needs a file"
       LIMITS="$2"
@@ -782,6 +881,16 @@ done
 if [ "$NO_RECORD" -eq 1 ] && [ "$MODE" != "tag-only" ]; then
   usage_die "--no-record belongs to --tag-only — it is that mode whose cut runs the record step"
 fi
+
+if [ "$ALLOW_OPEN_PRS" -eq 1 ] && [ "$MODE" != "tag-only" ]; then
+  usage_die "--allow-open-prs belongs to --tag-only — it is that mode whose preflight reads the queue"
+fi
+
+# Normalise before dispatch, and only for the modes that take a version: `--check` and
+# `--check-limits` reject one by name below, and a normalised version would obscure that refusal.
+case "$MODE" in
+  dry-run | tag-only | "") normalize_version_arg ;;
+esac
 
 case "$MODE" in
   check) [ -n "$VERSION" ] && usage_die "--check takes no version"; cmd_check ;;

@@ -60,7 +60,8 @@ import { shellAccountOf, type ShellAccount } from "@/lib/auth/shell-account";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import { PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
 import { accountMenu } from "@/lib/shell/account-menu";
-import { sectionOf } from "@/lib/page-copy";
+import { accountCopyFor } from "@/lib/shell-copy";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** The shell's `account` section — the fixture these rows read their words from. */
 const accountCopy = sectionOf(shellPageCopy, "account");
@@ -171,13 +172,17 @@ describe("the account menu, rendered", () => {
     expect(hrefs).not.toContain("/register");
   });
 
-  it("keeps the log-out control for a member whose viewer carries no quiz product", () => {
+  it("keeps the sign-out control for a member whose viewer carries no quiz product", () => {
     const html = renderHeader({
       account: MEMBER_ACCOUNT,
       brandId: "alignsynch",
       viewer: viewerWith(),
     });
-    expect(html).toContain("Log out");
+    // #1136 — the alignment build speaks the v2 bundles' words: **Sign Out**, not the quiz
+    // build's "Log out". Both sections exist (`account-alignsynch`), and `accountCopyFor` picks
+    // one, so this is the same control with this brand's sentence.
+    expect(html).toContain(itemLabel(accountCopyFor(shellPageCopy, "alignsynch"), "logout"));
+    expect(html).not.toContain(itemLabel(sectionOf(shellPageCopy, "account"), "logout"));
     expect(hrefsOf(html)).not.toContain("/my-quizzes");
   });
 

@@ -13,6 +13,7 @@ import { loginCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
 import { startGoogleSignIn } from "./google-actions";
+import { landingAfterSignIn } from "./landing-action";
 import { isGoogleOnlySignIn } from "./provider-hint-actions";
 
 export const metadata: Metadata = {
@@ -134,17 +135,30 @@ export default async function AuthPage({
   const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
   const demo: DemoViewProps =
     surface.kind === "roles"
-      ? { kind: "roles", action: signInAsDemoRole }
+      ? // #1187 — the buttons carry the page the browser asked to return to, and `""` when it
+        // asked for nothing: the action validates the value and falls back to the role's own
+        // destination (`/admin/instances` for the admin), which is the documented landing this
+        // panel has always had. `settled` is deliberately not what travels here — it is already
+        // this brand's `AFTER_SIGN_IN`, which would make the role's destination unreachable.
+        { kind: "roles", action: signInAsDemoRole, next: target ?? "" }
       : surface.kind === "entry"
         ? { kind: "entry" }
         : { kind: "off" };
 
+  /**
+   * `landing` is where the browser goes **after** the password was accepted (#1252). The role is
+   * not knowable on a signed-out request, so the view asks one server action once the session
+   * exists (`./landing-action.ts`); the raw `?next=` is bound here, on the server, so the form never
+   * carries a value it could rewrite. It answers `settled` for every role but a stakeholder, and a
+   * missing action degrades to exactly what this page rendered before the card.
+   */
   return (
     <LoginView
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
       marks={marks}
       markSrc={markSrc}
       next={settled}
+      landing={landingAfterSignIn.bind(null, target ?? null)}
       prompt={invitePrompt}
       googleFailure={googleFailure}
       demo={demo}

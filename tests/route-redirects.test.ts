@@ -181,13 +181,16 @@ describe("the legacy redirects", () => {
 
   /**
    * And the row that rule protects is still doing its job: the catalogue's old addresses move, the
-   * create flow's new ones do not, and the three retired library addresses move to the dashboard.
+   * three retired library addresses move to the dashboard, and **the flow's own addresses are the
+   * tree's** — a redirect that caught `/dashboard/templates/<slug>/create…` would shadow the pages
+   * this change just made real.
    *
-   * #1109 changed the middle of this: `/templates/relationship` and `…/new` used to be the
-   * destination *and* a live page. They are redirects now, and the flow beneath them is still the
-   * tree's — a lookahead or a pattern that excluded too much would be as wrong as none.
+   * #1109 changed the middle of this twice. Phase 1 retired `/templates/relationship` and `…/new`,
+   * which used to be the destination *and* a live page. Phase 2 moved the flow itself to the
+   * dashboard and deleted the old stage tree, so the five old stage addresses now answer a 308 to
+   * the **same stage** — a lookahead or a pattern that excluded too much would be as wrong as none.
    */
-  it("moves the old catalogue addresses, the retired library, and leaves the create flow alone", () => {
+  it("moves the old catalogue addresses and the old stage paths, and leaves the flow's own alone", () => {
     const catalogue = redirects.filter((entry) => entry.source.startsWith("/templates"));
     /** The **first** match — which is the row Next uses, and the only one a request sees. */
     const hits = (path: string) =>
@@ -196,16 +199,32 @@ describe("the legacy redirects", () => {
         .slice(0, 1)
         .map((e) => destinationOf(e, (matcherFor(e.source)(path) || { params: {} }).params));
 
-    expect(hits("/templates/spouses")).toEqual(["/relationship-types/spouses"]);
+    expect(hits("/templates/spouses")).toEqual(["/relationship-templates/spouses"]);
     expect(hits("/templates/relationship")).toEqual(["/dashboard/templates"]);
     expect(hits("/templates/relationship/new")).toEqual(["/dashboard/templates?tab=mine"]);
     expect(hits("/templates/relationship/spouses")).toEqual(["/relationship-templates"]);
+    // The five stage addresses keep their stage: a deep link lands on Aspects, not on the library.
+    expect(hits("/templates/relationship/spouses/create")).toEqual([
+      "/dashboard/templates/spouses/create",
+    ]);
+    expect(hits("/templates/relationship/spouses/create/mode")).toEqual([
+      "/dashboard/templates/spouses/create/mode",
+    ]);
+    expect(hits("/templates/relationship/spouses/create/aspects")).toEqual([
+      "/dashboard/templates/spouses/create/aspects",
+    ]);
+    expect(hits("/templates/relationship/spouses/create/commit")).toEqual([
+      "/dashboard/templates/spouses/create/commit",
+    ]);
+    expect(hits("/templates/relationship/spouses/create/invite")).toEqual([
+      "/dashboard/templates/spouses/create/invite",
+    ]);
     // The flow's own addresses are the tree's: no redirect may catch any of them.
-    expect(hits("/templates/relationship/spouses/create")).toEqual([]);
-    expect(hits("/templates/relationship/spouses/create/mode")).toEqual([]);
-    expect(hits("/templates/relationship/spouses/create/aspects")).toEqual([]);
-    expect(hits("/templates/relationship/spouses/create/commit")).toEqual([]);
-    expect(hits("/templates/relationship/spouses/create/invite")).toEqual([]);
+    expect(hits("/dashboard/templates/spouses/create")).toEqual([]);
+    expect(hits("/dashboard/templates/spouses/create/mode")).toEqual([]);
+    expect(hits("/dashboard/templates/spouses/create/aspects")).toEqual([]);
+    expect(hits("/dashboard/templates/spouses/create/commit")).toEqual([]);
+    expect(hits("/dashboard/templates/spouses/create/invite")).toEqual([]);
   });
 
   /**
@@ -227,22 +246,13 @@ describe("the legacy redirects", () => {
     ["/assessment/templates/new", "/dashboard/templates?tab=mine"],
     ["/assessment/templates/save", "/dashboard/templates?tab=mine"],
     ["/assessment/templates/spouses", "/relationship-templates"],
-    ["/assessment/templates/spouses/status", "/templates/relationship/spouses/status"],
+    ["/assessment/templates/spouses/status", "/dashboard/templates/spouses/status"],
     ["/assessment/templates/spouses/duplicate", "/dashboard/templates?tab=mine"],
-    ["/assessment/templates/spouses/create", "/templates/relationship/spouses/create"],
-    ["/assessment/templates/spouses/create/mode", "/templates/relationship/spouses/create/mode"],
-    [
-      "/assessment/templates/spouses/create/aspects",
-      "/templates/relationship/spouses/create/aspects",
-    ],
-    [
-      "/assessment/templates/spouses/create/commit",
-      "/templates/relationship/spouses/create/commit",
-    ],
-    [
-      "/assessment/templates/spouses/create/account",
-      "/templates/relationship/spouses/create/commit",
-    ],
+    ["/assessment/templates/spouses/create", "/dashboard/templates/spouses/create"],
+    ["/assessment/templates/spouses/create/mode", "/dashboard/templates/spouses/create/mode"],
+    ["/assessment/templates/spouses/create/aspects", "/dashboard/templates/spouses/create/aspects"],
+    ["/assessment/templates/spouses/create/commit", "/dashboard/templates/spouses/create/commit"],
+    ["/assessment/templates/spouses/create/account", "/dashboard/templates/spouses/create/commit"],
     // #1109 — the member's library, its authoring form and one template retired. Each address
     // answers 308 to the surface that replaced it: the dashboard's templates tab for the first two,
     // the public catalogue for a single template, whose owner's editor needs an id the old path
@@ -250,8 +260,18 @@ describe("the legacy redirects", () => {
     ["/templates/relationship", "/dashboard/templates"],
     ["/templates/relationship/new", "/dashboard/templates?tab=mine"],
     ["/templates/relationship/spouses", "/relationship-templates"],
+    // #1109 phase 2 — the flow's five addresses, each keeping its stage. Spelled out because
+    // `:slug` matches one segment: a bookmark that named Aspects lands on Aspects.
+    ["/templates/relationship/spouses/create", "/dashboard/templates/spouses/create"],
+    ["/templates/relationship/spouses/create/mode", "/dashboard/templates/spouses/create/mode"],
+    [
+      "/templates/relationship/spouses/create/aspects",
+      "/dashboard/templates/spouses/create/aspects",
+    ],
+    ["/templates/relationship/spouses/create/commit", "/dashboard/templates/spouses/create/commit"],
+    ["/templates/relationship/spouses/create/invite", "/dashboard/templates/spouses/create/invite"],
     ["/templates", "/relationship-templates"],
-    ["/templates/spouses", "/relationship-types/spouses"],
+    ["/templates/spouses", "/relationship-templates/spouses"],
   ];
 
   it("answers every old address in the #794 table with a permanent 308", () => {
@@ -313,23 +333,25 @@ describe("the legacy redirects", () => {
    */
   const NEW_PAGES = [
     // #1109 — the three single-template addresses are **not** here any more: they retired, and the
-    // table above asserts the 308 each one answers. What stays under this noun is the create flow.
-    "/templates/relationship/[slug]/create",
-    "/templates/relationship/[slug]/create/mode",
-    "/templates/relationship/[slug]/create/aspects",
-    "/templates/relationship/[slug]/create/commit",
-    "/templates/relationship/[slug]/create/invite",
-    "/relationship-types",
-    "/relationship-types/[slug]",
-    // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
-    // claim a source here that would shadow it.
+    // table above asserts the 308 each one answers. What stays under this noun is the create flow,
+    // in the `[id]` segment it shares with the editor beside it.
+    "/dashboard/templates/[id]/create",
+    "/dashboard/templates/[id]/create/mode",
+    "/dashboard/templates/[id]/create/aspects",
+    "/dashboard/templates/[id]/create/commit",
+    "/dashboard/templates/[id]/create/invite",
     "/relationship-templates",
+    "/relationship-templates/[slug]",
+    // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
+    // claim a source here that would shadow it. #1127 moved a type's own page and its worked
+    // example under the same path, and retired `/relationship-types` with three 308 rows.
+    "/relationship-templates/[slug]/demo",
   ] as const;
 
   const NEW_HANDLERS = [
     // #1109 — `…/save` and `…/[slug]/duplicate` were deleted with their pages; the one POST the
-    // template noun still answers is stage 1's status write, and a redirect may not claim it.
-    "/templates/relationship/[slug]/status",
+    // flow still answers is stage 1's status write, and a redirect may not claim it.
+    "/dashboard/templates/[id]/status",
   ] as const;
 
   it("leaves the new #794 addresses to the tree, not to a redirect", () => {
@@ -366,7 +388,7 @@ describe("the legacy redirects", () => {
    * The row is **one segment wide on purpose**. `/assessment/demo/<type>/junk` has never answered
    * anything, and a `:path*` row would 308 it into a 404 — the judgment that removed
    * `/testimonials/jessica.png`. The same width is what keeps `/assessment/instances/**` out of it:
-   * a row written one segment up (`/assessment/:kind/:type`) would catch the instance pages, and
+   * a row written one segment up (`/assessment/:kind/:type`) would catch the session pages, and
    * they do not move in this pass.
    */
   const DEMO_OLD_ROOT = "/assessment/demo";
@@ -391,7 +413,7 @@ describe("the legacy redirects", () => {
 
     for (const type of relationshipTypes) {
       const oldPath = `${DEMO_OLD_ROOT}/${type.id}`;
-      const expected = `/relationship-types/${type.id}/demo`;
+      const expected = `/relationship-templates/${type.id}/demo`;
       const entry = demoRedirectFor(oldPath);
 
       if (!entry) {
@@ -415,8 +437,42 @@ describe("the legacy redirects", () => {
    * `app/`, so asserting the pattern here is asserting the page exists.
    */
   it("points the old demo address at a live page", () => {
-    expect(ROUTE_PATTERNS).toContain("/relationship-types/[slug]/demo");
-    expect(matchRoute(routeManifest, "/relationship-types/staff-manager/demo")).toBeTruthy();
+    expect(ROUTE_PATTERNS).toContain("/relationship-templates/[slug]/demo");
+    expect(matchRoute(routeManifest, "/relationship-templates/staff-manager/demo")).toBeTruthy();
+  });
+
+  /**
+   * #1127 — **the retired catalogue address, all three shapes.**
+   *
+   * `/relationship-types` used to be a page *and* the namespace a type's page and its worked example
+   * lived in, so the public catalogue answered at two doors. Jaden's call is that
+   * `/relationship-templates` is the address. The rows are asserted here rather than only in the
+   * table above because this is the shape the issue's acceptance names: a curl of each old address
+   * must answer 308 with the matching new location, and the bare row must not swallow the two
+   * children.
+   */
+  it("retires /relationship-types with three permanent rows, children first", () => {
+    const retired: [string, string][] = [
+      ["/relationship-types", "/relationship-templates"],
+      ["/relationship-types/staff-manager", "/relationship-templates/staff-manager"],
+      ["/relationship-types/staff-manager/demo", "/relationship-templates/staff-manager/demo"],
+    ];
+
+    for (const [oldPath, expected] of retired) {
+      const entry = demoRedirectFor(oldPath);
+      expect(entry, `${oldPath} → no row matches`).toBeDefined();
+      if (entry === undefined) continue;
+      expect(statusOf(entry), `${oldPath} must answer 308`).toBe(308);
+      expect(redirectedTo(entry, oldPath)).toBe(expected);
+    }
+
+    // The bare row is last, so the two-segment demo address is answered by its own row and not
+    // substituted into the bare one (`/relationship-templates/<id>/demo` would become a 404 if the
+    // bare row matched first and produced `/relationship-templates/staff-manager/demo` a segment
+    // late).
+    const bare = redirects.findIndex((entry) => entry.source === "/relationship-types/:slug");
+    const demo = redirects.findIndex((entry) => entry.source === "/relationship-types/:slug/demo");
+    expect(bare).toBeGreaterThan(demo);
   });
 
   it("does not catch a path below the old demo address — the row is one segment", () => {
@@ -464,15 +520,15 @@ describe("the legacy redirects", () => {
    * the manifest rather than listed, so a page added under it is covered without editing this case.
    */
   it("leaves every /assessment/instances/<id> address to the tree", () => {
-    const instances = ROUTE_PATTERNS.filter((pattern) =>
+    const sessions = ROUTE_PATTERNS.filter((pattern) =>
       pattern.startsWith("/assessment/instances/"),
     );
     // The family is four dynamic addresses; a filter that silently matched nothing would make the
     // loop below vacuous.
-    expect(instances.length).toBeGreaterThan(1);
+    expect(sessions.length).toBeGreaterThan(1);
 
     const caught: string[] = [];
-    for (const pattern of instances) {
+    for (const pattern of sessions) {
       const live = samplePathOf(pattern);
       for (const entry of redirects) {
         if (matcherFor(entry.source)(live) !== false) {
