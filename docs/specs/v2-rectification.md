@@ -44,10 +44,10 @@ Two axes, both derived from the docs at run time — never a hardcoded list.
 
 | verdict        | rows   |
 | -------------- | ------ |
-| `deltas`       | 34     |
+| `deltas`       | 33     |
 | `matches`      | 5      |
 | `not-built`    | 3      |
-| `unverifiable` | 9      |
+| `unverifiable` | 10     |
 | **total rows** | **51** |
 
 **Where the verdicts move away from the status, and why.** 33 / 11 / 4 / 3 is the status split and
@@ -58,10 +58,10 @@ reconciles row for row:
 
 | verdict        | rows | where they come from                                                                                                                                                                                                             |
 | -------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deltas`       | 34   | 29 of the 33 `deltas open` + 3 `Designed` copy sheets + 1 `Built` whose status admits its own gap (`chat-and-discussion`, “chat does not persist yet”) + 1 `Planned` whose screen in fact renders (`if-a-draft-cant-be-created`) |
+| `deltas`       | 33   | 28 of the 33 `deltas open` + 3 `Designed` copy sheets + 1 `Built` whose status admits its own gap (`chat-and-discussion`, “chat does not persist yet”) + 1 `Planned` whose screen in fact renders (`if-a-draft-cant-be-created`) |
 | `matches`      | 5    | 5 of the 11 `Built` — `delete-your-account`, `profile-and-password`, `payment`, `invitation`, `release-notes-and-banners`                                                                                                        |
 | `not-built`    | 3    | 2 `Planned` with no surface (`trial-started`, `plans-and-trial`) + `reference/changelog.md`, a dated list with nothing to build                                                                                                  |
-| `unverifiable` | 9    | 4 of the 33 `deltas open` + 5 of the 11 `Built`                                                                                                                                                                                  |
+| `unverifiable` | 10   | 5 of the 33 `deltas open` + 5 of the 11 `Built`                                                                                                                                                                                  |
 
 Six rows therefore do **not** land on the verdict their status word implies, and each is a finding
 rather than a filing decision:
@@ -127,7 +127,7 @@ measures one state per screen — the state the seed is in — not every state t
 | `guides/initiator/set-up-details-settings-and-aspects.md` | Set Up Details, Settings and Aspects | Built (#1144, drawer via #1170 / #1133) · design deltas open                                | `/dashboard/templates/{template}/create` <br>↳ `/dashboard/templates/brother-sister/create`                                                                                      | `01-spec-design-page-wizard-v2/reference`                                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1123, #1133        |
 | `guides/initiator/when-a-relationship-pauses.md`          | When a Relationship Pauses           | Built (#1143, #1235, #1236) · design deltas open                                            | `/dashboard/relationships/{trial}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial`                                                           | `03-spec-design-page-relationship-detail-v2/reference`                                | —                                                             | `deltas`       | 3 named      | —                   |
 | `guides/initiator/your-7-days-free.md`                    | Your 7 Days Free                     | Built (#1116, #1117, #1156 via #1170) · design deltas open                                  | `/dashboard/relationships/{trial}?tab=payment` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial?tab=payment`                                   | `03-spec-design-page-relationship-detail-v2/reference/rd-live-payment-*`              | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1115, #1132        |
-| `guides/shared/answer-the-assessment.md`                  | Answer the Assessment                | Built (#1173, #1235) · design deltas open                                                   | `/assessment/instances/{instance}/answer` <br>↳ `/assessment/instances/assessment-instance-avery-rowan/answer`                                                                   | `10-spec-design-page-assessment-v2/reference`                                         | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1128, #1223        |
+| `guides/shared/answer-the-assessment.md`                  | Answer the Assessment                | Built (#1173, #1235) · design deltas open                                                   | `/assessment/instances/{instance}/answer` <br>↳ `/assessment/instances/assessment-instance-avery-rowan/answer`                                                                   | `10-spec-design-page-assessment-v2/reference`                                         | **captured** — `wt/rect-10-assessment`, 4 shots               | `unverifiable` | reason below | #1128, #1223        |
 | `guides/shared/chat-and-discussion.md`                    | Chat and Discussion                  | Built (#1154 via #1170) · chat does not persist yet                                         | `/dashboard/relationships/{relationship}?tab=discussion` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat?tab=discussion`                       | `07-spec-design-page-chat-v2/reference`                                               | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | #1131, #1188        |
 | `guides/shared/leave-a-relationship.md`                   | Leave a Relationship                 | Built (#1149 via #1170) · no shot                                                           | `/dashboard/relationships/{closed}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan`                                                                | —                                                                                     | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `unverifiable` | reason below | —                   |
 | `guides/shared/propose-a-change.md`                       | Propose a Change                     | Built (#1155 via #1170) · design deltas open                                                | `/dashboard/relationships/{relationship}?tab=aspects` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat?tab=aspects`                             | `03-spec-design-page-relationship-detail-v2/reference/modal-propose-*,`               | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `unverifiable` | reason below | #1133               |
@@ -287,9 +287,35 @@ Your 7 Days Free · Built (#1116, #1117, #1156 via #1170) · design deltas open 
 
 Answer the Assessment · Built (#1173, #1235) · design deltas open · route `/assessment/instances/{instance}/answer`
 
-- The doc promises the progress line **"Round 1 · Aspect 2 of 5"** and the save chip **"Saves as You Go"**; the live answer sheet is the **sealed** state (**"You have accepted this session, so your answers are sealed"**, **"This sheet is the record"**) and carries neither — live `tests/design-captures/shared-answer-the-assessment/live.txt`.
-- The reference draws **"ROUND 1 · ASPECT 1 OF 5"**, **"Saved just now"**, the two 1–5 rows (**Feel / How it is now**, **Wish / How you want it**) and **"Next Aspect"**; none of those is on the live page, because the seeded instance is already answered.
-- Scope: the answering state is unreachable on the demo seed from the Initiator's seat, so this row's delta is the _sealed_ screen's copy, and the answering screen itself is **unverifiable** until a fresh invite can be walked end to end.
+**Verdict `unverifiable`, not `matches`.** The state the reference draws is an _unanswered_ sheet, and
+that state cannot be reached on the demo seed — so the comparison a `matches` would rest on has no
+subject. What was captured, and what it says:
+
+- ~~The doc promises the progress line **"Round 1 · Aspect 2 of 5"** and the save chip **"Saves as You Go"**; the live answer sheet is the **sealed** state and carries neither.~~ **Fixed.** The sealed
+  sheet now draws the bundle's band — `ROUND 1 · 5 OF 5 ASPECTS ANSWERED` over five `done` segments
+  and a `Sealed` chip — captured at 390 and 1280 for the **Initiator** and the **Counterparty**
+  (`data/pages/assessment-answer.ts` `position-sealed` / `sealed-state`, and `AnswerSheet`'s
+  `sealed` block, which draws the same `SheetBand` the live sheet draws).
+- ~~The save state is a word with no icon (the open delta on #1173).~~ **Fixed.** The chip is the
+  reference's badge (bundle rc1.3 `01-answer-screen-paused-1223/js/proto.js`): one `rounded-full`
+  bordered pill carrying a mark _and_ a word, in the reference's four states — `Saves as You Go`
+  (floppy), `Saving…` (spinner), `Saved` (check), `Not Saved · Pick Again` (undo) — Title Case per
+  copy rule 1. The `sealed` chip is a fifth, and this screen's own: a sheet that takes no answer says
+  `Sealed` rather than promising a save it cannot perform.
+- **Still open, and not a build defect.** The reference draws `ROUND 1 · ASPECT 1 OF 5`,
+  `Saved just now`, the two 1–5 rows (**Feel / How it is now**, **Wish / How you want it**) and
+  **Next Aspect**; the live page is the sealed state, so none of them is on it. Both seats of the
+  demo instance are already accepted — measured from the Initiator _and_ the Counterparty (`Waiting
+  for Rowan` on one, `Waiting for Avery` on the other, both `Sealed`) — so the answering screen stays
+  **`unverified for the answering state`** until a fresh invite can be walked end to end. The build
+  already draws all of it in the writable branch (`SheetBand` + `AspectAnswerCard`); nothing about
+  that branch is claimed here, because nothing about it was photographed.
+- **Reached and correct in every other variant.** The `admin` seat answers **404** on this route (a
+  browser holding no party row is told nothing, by design — `readFlowScreen`'s `undefined` is
+  `notFound()`), and a signed-out visitor answers **404** for the same reason; neither is an absence
+  in the capture. Session state: the sheet's only reachable state on this seed is `sealed · waiting`
+  (both credits accepted, session not yet `complete`); the `lapsed` and review states were not
+  reached on the demo rows and are not claimed.
 
 ### `guides/shared/chat-and-discussion.md`
 

@@ -1,16 +1,16 @@
 {
   "measuredAt": "2026-11-19",
   "base": "https://demo.alignsynch.com",
-  "head": "03e498492cb79e62bc06b415238f70fefb9cda10",
+  "head": "b8868c6b1b9e1bfb77533c13a4f21181189c42eb",
   "widths": [390, 1280],
   "docs": 67,
   "tracked": 51,
   "counts": {
     "untracked": 16,
-    "built": 11,
-    "deltas-open": 33,
-    "planned": 3,
-    "designed": 4
+    "built": 15,
+    "deltas-open": 30,
+    "designed": 4,
+    "planned": 2
   },
   "sessions": {
     "initiator": "signed in",
@@ -35,7 +35,7 @@
         "reference-1280": "tests/design-captures/account-account-menu/reference-1280.png",
         "side-by-side": "tests/design-captures/account-account-menu/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:51:25.702Z",
+      "capturedAt": "2026-11-19T22:31:16.319Z",
       "session": "signed in",
       "landed": "/dashboard",
       "signedOut": false,
@@ -55,7 +55,7 @@
         "live-390": "tests/design-captures/account-delete-your-account/live-390.png",
         "live-1280": "tests/design-captures/account-delete-your-account/live-1280.png"
       },
-      "capturedAt": "2026-11-19T19:51:37.217Z",
+      "capturedAt": "2026-11-19T22:31:28.312Z",
       "session": "signed in",
       "landed": "/settings",
       "signedOut": false
@@ -77,7 +77,7 @@
         "reference-1280": "tests/design-captures/account-profile-and-password/reference-1280.png",
         "side-by-side": "tests/design-captures/account-profile-and-password/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:51:41.341Z",
+      "capturedAt": "2026-11-19T22:31:32.618Z",
       "session": "signed in",
       "landed": "/settings",
       "signedOut": false,
@@ -103,7 +103,7 @@
         "reference-1280": "tests/design-captures/admin-crud-and-permissions/reference-1280.png",
         "side-by-side": "tests/design-captures/admin-crud-and-permissions/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:51:55.548Z",
+      "capturedAt": "2026-11-19T22:31:47.822Z",
       "session": "signed in",
       "landed": "/admin/permissions",
       "signedOut": false,
@@ -123,7 +123,7 @@
         "live-390": "tests/design-captures/admin-email-templates/live-390.png",
         "live-1280": "tests/design-captures/admin-email-templates/live-1280.png"
       },
-      "capturedAt": "2026-11-19T19:52:14.099Z",
+      "capturedAt": "2026-11-19T22:32:11.171Z",
       "session": "signed in",
       "landed": "/admin/email-templates",
       "signedOut": false
@@ -145,7 +145,7 @@
         "reference-1280": "tests/design-captures/admin-who-sees-the-admin-rail/reference-1280.png",
         "side-by-side": "tests/design-captures/admin-who-sees-the-admin-rail/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:52:20.989Z",
+      "capturedAt": "2026-11-19T22:32:20.247Z",
       "session": "signed in",
       "landed": "/admin/permissions",
       "signedOut": false,
@@ -177,7 +177,7 @@
         "live-390": "tests/design-captures/counterparty-ask-to-be-removed/live-390.png",
         "live-1280": "tests/design-captures/counterparty-ask-to-be-removed/live-1280.png"
       },
-      "capturedAt": "2026-11-19T19:52:40.002Z",
+      "capturedAt": "2026-11-19T22:32:48.222Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false
@@ -199,7 +199,7 @@
         "reference-1280": "tests/design-captures/counterparty-save-these-aspects-as-a-template/reference-1280.png",
         "side-by-side": "tests/design-captures/counterparty-save-these-aspects-as-a-template/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:52:44.330Z",
+      "capturedAt": "2026-11-19T22:32:52.995Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-rowan-avery-review?tab=aspects",
       "signedOut": false,
@@ -225,7 +225,7 @@
         "reference-1280": "tests/design-captures/counterparty-when-a-relationship-pauses/reference-1280.png",
         "side-by-side": "tests/design-captures/counterparty-when-a-relationship-pauses/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:52:56.275Z",
+      "capturedAt": "2026-11-19T22:33:07.469Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -251,7 +251,7 @@
         "reference-1280": "tests/design-captures/initiator-add-a-card-or-take-your-extra-week/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-add-a-card-or-take-your-extra-week/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:08.241Z",
+      "capturedAt": "2026-11-19T22:33:23.319Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial?tab=payment",
       "signedOut": false,
@@ -277,7 +277,7 @@
         "reference-1280": "tests/design-captures/initiator-copy-resend-or-cancel-an-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-copy-resend-or-cancel-an-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:19.926Z",
+      "capturedAt": "2026-11-19T22:33:36.876Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-summer",
       "signedOut": false,
@@ -303,7 +303,7 @@
         "reference-1280": "tests/design-captures/initiator-create-your-account/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-create-your-account/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:31.370Z",
+      "capturedAt": "2026-11-19T22:33:49.047Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -329,7 +329,7 @@
         "reference-1280": "tests/design-captures/initiator-edit-a-draft-or-sent-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-edit-a-draft-or-sent-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:44.680Z",
+      "capturedAt": "2026-11-19T22:34:02.980Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false,
@@ -355,7 +355,7 @@
         "reference-1280": "tests/design-captures/initiator-if-a-draft-cant-be-created/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-if-a-draft-cant-be-created/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:55.920Z",
+      "capturedAt": "2026-11-19T22:34:15.176Z",
       "session": "signed in",
       "landed": "/assessment/new/failed",
       "signedOut": false,
@@ -381,7 +381,7 @@
         "reference-1280": "tests/design-captures/initiator-my-relationships-and-start/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-my-relationships-and-start/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:07.031Z",
+      "capturedAt": "2026-11-19T22:34:26.526Z",
       "session": "signed in",
       "landed": "/dashboard",
       "signedOut": false,
@@ -407,7 +407,7 @@
         "reference-1280": "tests/design-captures/initiator-my-templates/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-my-templates/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:18.407Z",
+      "capturedAt": "2026-11-19T22:34:40.115Z",
       "session": "signed in",
       "landed": "/dashboard/templates?tab=mine",
       "signedOut": false,
@@ -433,7 +433,7 @@
         "reference-1280": "tests/design-captures/initiator-payment/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-payment/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:29.734Z",
+      "capturedAt": "2026-11-19T22:34:52.366Z",
       "session": "signed in",
       "landed": "/dashboard/payment",
       "signedOut": false,
@@ -459,7 +459,7 @@
         "reference-1280": "tests/design-captures/initiator-pick-a-template/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-pick-a-template/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:41.919Z",
+      "capturedAt": "2026-11-19T22:35:05.337Z",
       "session": "signed in",
       "landed": "/relationship-templates",
       "signedOut": false,
@@ -485,7 +485,7 @@
         "reference-1280": "tests/design-captures/initiator-send-the-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-send-the-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:54.452Z",
+      "capturedAt": "2026-11-19T22:35:19.359Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -511,7 +511,7 @@
         "reference-1280": "tests/design-captures/initiator-set-up-details-settings-and-aspects/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-set-up-details-settings-and-aspects/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:07.627Z",
+      "capturedAt": "2026-11-19T22:35:32.686Z",
       "session": "signed in",
       "landed": "/dashboard/templates/brother-sister/create",
       "signedOut": false,
@@ -537,7 +537,7 @@
         "reference-1280": "tests/design-captures/initiator-when-a-relationship-pauses/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-when-a-relationship-pauses/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:21.226Z",
+      "capturedAt": "2026-11-19T22:35:45.971Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -563,7 +563,7 @@
         "reference-1280": "tests/design-captures/initiator-your-7-days-free/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-your-7-days-free/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:32.950Z",
+      "capturedAt": "2026-11-19T22:35:57.952Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial?tab=payment",
       "signedOut": false,
@@ -589,7 +589,7 @@
         "reference-1280": "tests/design-captures/shared-answer-the-assessment/reference-1280.png",
         "side-by-side": "tests/design-captures/shared-answer-the-assessment/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:44.611Z",
+      "capturedAt": "2026-11-19T22:36:09.972Z",
       "session": "signed in",
       "landed": "/assessment/instances/assessment-instance-avery-rowan/answer",
       "signedOut": false,
@@ -615,7 +615,7 @@
         "reference-1280": "tests/design-captures/shared-chat-and-discussion/reference-1280.png",
         "side-by-side": "tests/design-captures/shared-chat-and-discussion/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:56.027Z",
+      "capturedAt": "2026-11-19T22:36:21.484Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat?tab=discussion",
       "signedOut": false,
@@ -635,7 +635,7 @@
         "live-390": "tests/design-captures/shared-leave-a-relationship/live-390.png",
         "live-1280": "tests/design-captures/shared-leave-a-relationship/live-1280.png"
       },
-      "capturedAt": "2026-11-19T19:56:07.578Z",
+      "capturedAt": "2026-11-19T22:36:33.165Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
       "signedOut": false
@@ -657,7 +657,7 @@
         "reference-1280": "tests/design-captures/shared-propose-a-change/reference-1280.png",
         "side-by-side": "tests/design-captures/shared-propose-a-change/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:11.902Z",
+      "capturedAt": "2026-11-19T22:36:37.487Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat?tab=aspects",
       "signedOut": false,
@@ -683,7 +683,7 @@
         "reference-1280": "tests/design-captures/shared-results-and-align/reference-1280.png",
         "side-by-side": "tests/design-captures/shared-results-and-align/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:23.764Z",
+      "capturedAt": "2026-11-19T22:36:49.458Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false,
@@ -819,7 +819,7 @@
         "reference-1280": "tests/design-captures/stages-stage-1-details/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-1-details/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:35.739Z",
+      "capturedAt": "2026-11-19T22:37:02.164Z",
       "session": "signed in",
       "landed": "/dashboard/templates/brother-sister/create",
       "signedOut": false,
@@ -845,7 +845,7 @@
         "reference-1280": "tests/design-captures/stages-stage-2-settings/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-2-settings/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:53.238Z",
+      "capturedAt": "2026-11-19T22:37:20.153Z",
       "session": "signed in",
       "prepared": "wizard driven to stage 2",
       "landed": "/dashboard/templates/brother-sister/create/mode",
@@ -866,7 +866,7 @@
         "live-390": "tests/design-captures/stages-stage-3-aspects/live-390.png",
         "live-1280": "tests/design-captures/stages-stage-3-aspects/live-1280.png"
       },
-      "capturedAt": "2026-11-19T19:57:06.425Z",
+      "capturedAt": "2026-11-19T22:37:33.598Z",
       "session": "signed in",
       "landed": "/dashboard/templates/brother-sister/create/aspects",
       "signedOut": false
@@ -888,7 +888,7 @@
         "reference-1280": "tests/design-captures/stages-stage-4-account/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-4-account/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:10.828Z",
+      "capturedAt": "2026-11-19T22:37:37.987Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -914,7 +914,7 @@
         "reference-1280": "tests/design-captures/stages-stage-5-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-5-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:24.031Z",
+      "capturedAt": "2026-11-19T22:37:51.208Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
@@ -940,7 +940,7 @@
         "reference-1280": "tests/design-captures/stages-stage-6-align/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-6-align/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:37.501Z",
+      "capturedAt": "2026-11-19T22:38:04.633Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false,
@@ -966,7 +966,7 @@
         "reference-1280": "tests/design-captures/states-answer-scale/reference-1280.png",
         "side-by-side": "tests/design-captures/states-answer-scale/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:49.436Z",
+      "capturedAt": "2026-11-19T22:38:16.455Z",
       "session": "signed in",
       "landed": "/assessment/instances/assessment-instance-avery-rowan/answer",
       "signedOut": false,
@@ -992,7 +992,7 @@
         "reference-1280": "tests/design-captures/states-relationship-states-by-role/reference-1280.png",
         "side-by-side": "tests/design-captures/states-relationship-states-by-role/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:00.724Z",
+      "capturedAt": "2026-11-19T22:38:27.734Z",
       "session": "signed in",
       "landed": "/dashboard/relationships",
       "signedOut": false,
@@ -1018,7 +1018,7 @@
         "reference-1280": "tests/design-captures/states-status-chips/reference-1280.png",
         "side-by-side": "tests/design-captures/states-status-chips/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:12.497Z",
+      "capturedAt": "2026-11-19T22:38:39.617Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false,
@@ -1044,7 +1044,7 @@
         "reference-1280": "tests/design-captures/start-core-concepts/reference-1280.png",
         "side-by-side": "tests/design-captures/start-core-concepts/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:25.205Z",
+      "capturedAt": "2026-11-19T22:38:52.214Z",
       "session": "signed in",
       "landed": "/how-it-works",
       "signedOut": false,
@@ -1070,7 +1070,7 @@
         "reference-1280": "tests/design-captures/start-plans-and-trial/reference-1280.png",
         "side-by-side": "tests/design-captures/start-plans-and-trial/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:38.827Z",
+      "capturedAt": "2026-11-19T22:39:06.168Z",
       "session": "signed in",
       "landed": "/pricing",
       "signedOut": false,
@@ -1096,7 +1096,7 @@
         "reference-1280": "tests/design-captures/start-quickstart/reference-1280.png",
         "side-by-side": "tests/design-captures/start-quickstart/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:50.923Z",
+      "capturedAt": "2026-11-19T22:39:18.081Z",
       "session": "signed in",
       "landed": "/dashboard",
       "signedOut": false,
@@ -1122,7 +1122,7 @@
         "reference-1280": "tests/design-captures/start-what-is-alignsynch/reference-1280.png",
         "side-by-side": "tests/design-captures/start-what-is-alignsynch/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:59:03.263Z",
+      "capturedAt": "2026-11-19T22:39:31.213Z",
       "session": "signed in",
       "landed": "/",
       "signedOut": false,

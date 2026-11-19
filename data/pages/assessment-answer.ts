@@ -75,9 +75,22 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
       id: "progress",
       items: [
         { id: "position", label: "Round 1 · Aspect {aspect} of {total}" },
-        { id: "saving", label: "Saves as you go" },
+        /** The sealed sheet's own position: the sheet is the record, so every Aspect is answered. */
+        { id: "position-sealed", label: "Round 1 · {aspect} of {total} Aspects answered" },
+        /**
+         * The chip's four words are the reference's (`js/proto.js` in bundle rc1.3
+         * `01-answer-screen-paused-1223`), Title Case because copy rule 1 says so and the bundle
+         * draws them that way. `saving` is the resting chip; `saving-now` is the request in flight.
+         */
+        { id: "saving", label: "Saves as You Go" },
+        { id: "saving-now", label: "Saving…" },
         { id: "saved", label: "Saved" },
-        { id: "save-failed", label: "Not saved — pick again" },
+        { id: "save-failed", label: "Not Saved · Pick Again" },
+        /**
+         * The sealed sheet takes no answer, so its chip cannot promise a save. The word is the one
+         * the frozen band and the doc's Finish line already use (`sealed for Round 1`).
+         */
+        { id: "sealed-state", label: "Sealed" },
         { id: "segmented", label: "Aspect {aspect} of {total}" },
       ],
     },

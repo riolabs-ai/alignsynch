@@ -18,7 +18,9 @@
  *              `visibleRoles()`, so there is no field here that could carry anyone else's.
  *   resume     the returning reader's banner, with `Start Over`. Shown only when there is something
  *              to resume, which is a fact about their own rows.
- *   progress   `Round 1 · Aspect n of 5`, the segmented bar, and the save state.
+ *   progress   `Round 1 · Aspect n of 5`, the segmented bar, and the save state — drawn on the live
+ *              sheet, the review and the sealed sheet alike, because the reference draws the band
+ *              in every state and a sealed reader had neither the round nor their place in it.
  *   the card   `AspectAnswerCard` (one Aspect) or `AnswerReview` (the last position).
  *
  * **Four shapes, one route** (`lib/flow/answer-gate.ts`): the live sheet for the seat that may
@@ -42,7 +44,7 @@ import { answeredCount, type SheetPosition } from "@/lib/flow/answer-position";
 import type { AnswerGate } from "@/lib/flow/answer-gate";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 /** One seat as the page resolved it: the party row's own name, or the coach's empty one. */
 export interface SheetViewer {
@@ -51,6 +53,19 @@ export interface SheetViewer {
 }
 
 type SaveState = "idle" | "saving" | "saved" | "failed";
+
+/**
+ * The chip's fifth state: the sheet is sealed and takes no answer.
+ *
+ * A state _code_, not copy — every word a reader sees is the fixture's (`progress.sealed-state`),
+ * and `data:check` E23's leaf rule counts a string written into a JSX attribute in this file, where
+ * this route's budget is zero. Naming it once, here, keeps the code out of the markup and keeps the
+ * four chip states in one union.
+ */
+const SEALED_CHIP_STATE = "sealed";
+
+/** What the chip draws: the request's four states, plus the sealed sheet's. */
+type ChipState = SaveState | typeof SEALED_CHIP_STATE;
 
 export function AnswerSheet({
   copy,
@@ -191,27 +206,17 @@ export function AnswerSheet({
     );
   }
 
-  const segments = Array.from({ length: position.total }, (_, index) => {
-    const state =
-      index + 1 < position.index ? "done" : index + 1 === position.index ? "current" : "todo";
-    return (
-      <span
-        key={`segment-${index + 1}`}
-        data-qbar={index + 1}
-        data-state={state}
-        className={`h-1.5 flex-1 rounded-full ${
-          state === "done" ? "bg-action" : state === "current" ? "bg-deep" : "bg-line"
-        }`}
-      />
-    );
-  });
+  const segments = segmentStates(position.index, position.total);
+  const segmentsDone = segmentStates(position.total + 1, position.total);
 
   const savedLabel =
     saved === "saved"
       ? itemLabel(progress, "saved")
       : saved === "failed"
         ? itemLabel(progress, "save-failed")
-        : itemLabel(progress, "saving");
+        : saved === "saving"
+          ? itemLabel(progress, "saving-now")
+          : itemLabel(progress, "saving");
 
   /**
    * Whether this viewer has a form at all. `lapsed` answers this from `maySubmit()` rather than
@@ -279,6 +284,21 @@ export function AnswerSheet({
   /** The sealed copy of the sheet: what the viewer said, and what happens next. */
   const sealed = (
     <div className="space-y-4">
+      {/*
+        The band the sealed sheet used to drop. The doc promises a position line and a save state,
+        and the reference draws both bands (`assessment.html`, `data-q-progress` + `data-qbar`);
+        a reader arriving at a sheet that takes no more answers was reading neither, so they had
+        no round and no place in it. The position is the sheet's own — every Aspect answered — and
+        the chip says `Sealed` rather than promising a save this page cannot perform.
+      */}
+      <SheetBand
+        label={fillLabel(itemLabel(progress, "position-sealed"), {
+          aspect: answered,
+          total: position.total,
+        })}
+        chip={<SaveChip state={SEALED_CHIP_STATE} label={itemLabel(progress, "sealed-state")} />}
+        segments={segmentsDone}
+      />
       <section
         data-frozen-status={resultsReady === true ? "ready" : "waiting"}
         className="rounded-lg border bg-card p-4"
@@ -354,27 +374,19 @@ export function AnswerSheet({
 
       {writable ? (
         <>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <p className="font-semibold uppercase tracking-wider text-deep" aria-live="polite">
-                {position.review
-                  ? fillLabel(itemLabel(progress, "position"), {
-                      aspect: position.total,
-                      total: position.total,
-                    })
-                  : fillLabel(itemLabel(progress, "position"), {
-                      aspect: position.index,
-                      total: position.total,
-                    })}
-              </p>
-              <p className="text-muted-foreground" data-saved-state={saved}>
-                {position.review ? itemLabel(progress, "saved") : savedLabel}
-              </p>
-            </div>
-            <div className="flex gap-1" aria-hidden="true">
-              {segments}
-            </div>
-          </div>
+          <SheetBand
+            label={fillLabel(itemLabel(progress, "position"), {
+              aspect: position.review ? position.total : position.index,
+              total: position.total,
+            })}
+            chip={
+              <SaveChip
+                state={position.review ? "saved" : saved}
+                label={position.review ? itemLabel(progress, "saved") : savedLabel}
+              />
+            }
+            segments={segments}
+          />
 
           {position.review ? (
             <AnswerReview
@@ -415,6 +427,143 @@ export function AnswerSheet({
 /** The page-level `back` item — every band ends with the same link. */
 function pageLabel(copy: PageCopy): string {
   return pageItemOf(copy, "back").label;
+}
+
+/** One segment of the bundle's bar: behind the reader, at the reader, or still ahead. */
+type SegmentState = "done" | "current" | "todo";
+
+/** A segment's position (1-based) and state — the key is the position, never the array index. */
+interface Segment {
+  readonly at: number;
+  readonly state: SegmentState;
+}
+
+/** The bar's states for a sheet standing at `index` (1-based) of `total`. */
+function segmentStates(index: number, total: number): readonly Segment[] {
+  return Array.from({ length: total }, (_, at) => ({
+    at: at + 1,
+    state: at + 1 < index ? "done" : at + 1 === index ? "current" : "todo",
+  }));
+}
+
+/**
+ * The bundle's progress band: the position sentence, the save state, one segment per Aspect.
+ *
+ * Three of the sheet's four shapes draw this band — the live sheet, the review (all done) and the
+ * sealed sheet — because the reference draws the same band on every one of them
+ * (`assessment.html`, `data-q-progress` + `data-qbar`). It was inline in the writable branch
+ * alone, which is why a sealed sheet told a reader nothing about where they were (#v2 rectification,
+ * `guides/shared/answer-the-assessment.md`).
+ *
+ * The band is not a rail (#716 → #825): no stage names, no `Stage n of 5`, no `<nav>` — the words
+ * are the fixture's, the count is the session's own.
+ */
+function SheetBand({
+  label,
+  chip,
+  segments,
+}: {
+  readonly label: string;
+  readonly chip: ReactNode;
+  readonly segments: readonly Segment[];
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <p className="font-semibold uppercase tracking-wider text-deep" aria-live="polite">
+          {label}
+        </p>
+        {chip}
+      </div>
+      <div className="flex gap-1" aria-hidden="true">
+        {segments.map(({ at, state }) => (
+          <span
+            key={`segment-${at}`}
+            data-qbar={at}
+            data-state={state}
+            className={`h-1.5 flex-1 rounded-full ${
+              state === "done" ? "bg-action" : state === "current" ? "bg-deep" : "bg-line"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The save chip, drawn as the reference draws it: a badge, a mark and a word.
+ *
+ * The bundle's proto (`js/proto.js`, rc1.3 `01-answer-screen-paused-1223`) paints four states, and
+ * each is an `<svg>` beside the label inside one `rounded-full border` pill — the open delta on
+ * #1173 was that the live screen drew the word alone, so "no icon" was the whole finding. `sealed`
+ * is the fifth, and this screen's own: a sheet that takes no answer says so in the same pill rather
+ * than promising a save (`Saves as You Go`) it cannot perform.
+ *
+ * Tokens only: `synch` / `synch-tint` / `synch-mark` are the design system's "this is settled"
+ * family (`components/chat/thread.tsx` draws the same pair), and `line` / `background` are the
+ * neutral chip the reference uses for the three unsettled states.
+ */
+function SaveChip({ state, label }: { readonly state: ChipState; readonly label: string }) {
+  const tone =
+    state === "saved"
+      ? "border-synch-mark bg-synch-tint text-synch"
+      : state === "failed"
+        ? "border-line bg-background text-foreground"
+        : "border-line bg-background text-muted-foreground";
+
+  return (
+    <span
+      data-saved-state={state}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tone}`}
+    >
+      <svg
+        className={`size-3.5 shrink-0${state === "saving" ? " animate-spin" : ""}`}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <Glyph state={state} />
+      </svg>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+/**
+ * The mark inside the chip — the reference's four, plus the lock the sealed sheet already draws
+ * beside its privacy note. Paths, not words: a chip's mark is decorative and `aria-hidden`.
+ */
+function Glyph({ state }: { readonly state: ChipState }) {
+  if (state === "saved") return <path d="M20 6 9 17l-5-5" />;
+  if (state === "saving") return <path d="M21 12a9 9 0 1 1-6.22-8.56" />;
+  if (state === "failed") {
+    return (
+      <>
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.36 2.36L3 9" />
+        <path d="M3 3v6h6" />
+      </>
+    );
+  }
+  if (state === "sealed") {
+    return (
+      <>
+        <rect width="18" height="11" x="3" y="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </>
+    );
+  }
+  return (
+    <>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <path d="M17 21v-8H7v8" />
+      <path d="M7 3v5h8" />
+    </>
+  );
 }
 
 /**
