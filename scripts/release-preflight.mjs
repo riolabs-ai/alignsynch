@@ -75,7 +75,7 @@ import { existsSync, readFileSync, readdirSync, readlinkSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { isVersion } from "./release-version.mjs";
+import { normalizeVersion } from "./release-version.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -730,7 +730,13 @@ function usageDie(message) {
 }
 
 function parseArgs(argv) {
-  const opts = { version: null, noRecord: false, allowOpenPrs: false, help: false };
+  const opts = {
+    version: null,
+    versionGiven: null,
+    noRecord: false,
+    allowOpenPrs: false,
+    help: false,
+  };
   for (const arg of argv) {
     switch (arg) {
       case "--no-record":
@@ -745,8 +751,11 @@ function parseArgs(argv) {
         break;
       default:
         if (arg.startsWith("-")) usageDie(`unknown option '${arg}'`);
-        if (opts.version !== null) usageDie("one version per invocation");
-        opts.version = arg.replace(/^v/, "");
+        if (opts.versionGiven !== null) usageDie("one version per invocation");
+        // Kept as given and normalised in one place below (#1248): the spelling is part of the
+        // transcript, so it is not thrown away at the parse.
+        opts.versionGiven = arg;
+        opts.version = normalizeVersion(arg);
     }
   }
   return opts;
@@ -758,11 +767,18 @@ function main(argv) {
     say(USAGE);
     return 0;
   }
-  if (!opts.version) usageDie("a version is required");
-  if (!isVersion(opts.version)) {
-    usageDie(
-      `'${opts.version}' is not a semantic version (x.y.z, optionally -prerelease or +build)`,
-    );
+  if (!opts.version) {
+    if (opts.versionGiven !== null) {
+      usageDie(
+        `'${opts.versionGiven}' is not a semantic version (x.y.z, optionally -prerelease or +build)`,
+      );
+    }
+    usageDie("a version is required");
+  }
+  // Either spelling is the same cut (#1248); the tag is `v<version>`, so the bare form is what every
+  // check below compares against, and the line says which one arrived.
+  if (opts.version !== opts.versionGiven) {
+    say(`release:preflight — version ${opts.version} (given '${opts.versionGiven}')`);
   }
 
   const evidence = gather(opts);

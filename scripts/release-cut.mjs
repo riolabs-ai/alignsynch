@@ -126,7 +126,13 @@ import {
   tagOnlyPlan,
 } from "./release-approval.mjs";
 import { approvalLedgerPath, recordApproval } from "./release-record.mjs";
-import { compareVersions, isBump, isVersion } from "./release-version.mjs";
+import {
+  compareVersions,
+  isBump,
+  isVersion,
+  normalizeVersion,
+  stripV,
+} from "./release-version.mjs";
 import { readChangedPaths, renderTable } from "./tree-hygiene.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -570,7 +576,7 @@ export function repoSlug() {
 
 function newestTag() {
   const tag = git("describe", "--tags", "--abbrev=0", "--match", "v*");
-  return tag && isVersion(tag.replace(/^v/, "")) ? tag : null;
+  return tag && isVersion(stripV(tag)) ? tag : null;
 }
 
 /**
@@ -583,7 +589,7 @@ function releasedVersions() {
   if (!listing) return [];
   return listing
     .split("\n")
-    .map((tag) => tag.replace(/^v/, ""))
+    .map((tag) => stripV(tag))
     .filter((version) => isVersion(version))
     .sort(compareVersions);
 }
@@ -756,7 +762,7 @@ function boundaryEvidence(base) {
       nextVersion: payload.next_version,
       kind: payload.bump,
       commits: payload.commits_since_tag,
-      base: payload.latest_tag ? String(payload.latest_tag).replace(/^v/, "") : base,
+      base: payload.latest_tag ? stripV(String(payload.latest_tag)) : base,
     };
   } catch {
     return { available: false };
@@ -766,7 +772,7 @@ function boundaryEvidence(base) {
 function gather({ milestones, override, theme }) {
   const slug = repoSlug();
   const baseTag = newestTag();
-  const base = baseTag ? baseTag.replace(/^v/, "") : null;
+  const base = baseTag ? stripV(baseTag) : null;
   const census = censusOf(baseTag ? commitsSince(baseTag) : []);
   const computed = base ? bumpVersion(base, census.kind) : null;
   const candidate = override ?? computed;
@@ -1266,7 +1272,7 @@ function parseArgs(argv) {
           die(
             `'${arg}' is a version argument, and the number is computed from the commits, never typed — ` +
               `that is the defect #1064 fixes. If a cut genuinely must carry a different number, declare it: ` +
-              `pnpm release:cut --override ${arg.replace(/^v/, "")} --reason "<why>"`,
+              `pnpm release:cut --override ${stripV(arg)} --reason "<why>"`,
             2,
           );
         }
@@ -1278,8 +1284,14 @@ function parseArgs(argv) {
   }
 
   if (opts.override !== null) {
-    if (!isVersion(opts.override))
-      die(`--override '${opts.override}' is not a semantic version`, 2);
+    // `--override 2.1.0` and `--override v2.1.0` declare the same number (#1248); the tag stays
+    // `v<version>`, and the line below says which spelling was given so the plan echoes it back.
+    const given = opts.override;
+    opts.override = normalizeVersion(given);
+    if (opts.override === null) die(`--override '${given}' is not a semantic version`, 2);
+    if (opts.override !== given) {
+      say(`release:cut — --override '${given}' is ${opts.override}; the tag is v${opts.override}`);
+    }
     if (!opts.reason || opts.reason.trim().length === 0) {
       die(
         '--override requires --reason "<why>" — an undeclared override is exactly the silent number this replaces',
