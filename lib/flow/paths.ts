@@ -222,18 +222,20 @@ export const PUBLIC_HELP_PATH = "/help";
 export const TEMPLATES_PATH = "/templates";
 
 /**
- * `/templates/relationship` — a **retired namespace** (#1109), and no page answers under it.
+ * `/templates/relationship` — the **namespace** the member's template page lives under (#794,
+ * #1259).
  *
  * It was the create flow's namespace from #794 until #1109: `/templates/relationship/<slug>/create`
- * and its four stages, plus the one POST endpoint that flow posted to. Both moved — the stages are
+ * and its four stages, plus the one POST endpoint the flow posted to. Both moved — the stages are
  * `/dashboard/templates/<slug>/create…` and the endpoint is `/dashboard/templates/<slug>/status`,
  * because a member's templates live in the dashboard and a flow addressed from a retired noun is a
- * flow with two homes.
+ * flow with two homes. The bare namespace and the create stage addresses still answer a **308**
+ * from `next.config.mjs`, and `/templates/relationship/new` lands on My Templates.
  *
- * What is left is `relationshipTemplatePath()` below, which still builds this prefix for the
- * "open the template" links a card and a relationship row draw; those addresses answer a **308** to
- * the public catalogue from `next.config.mjs`, and the stage paths answer their own 308 to the
- * dashboard (see `createRelationshipPath()`). Nothing new should be built on this constant.
+ * **One page answers under it again, and only one** (#1259): `<base>/<slug>` is the member's own
+ * template page, inside the shell — the screen a Library card's `View Details` opens. The `:slug`
+ * 308 that used to send that address to the public catalogue is gone, because a page behind a
+ * permanent redirect is a page nothing can reach.
  */
 export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 
@@ -382,11 +384,17 @@ export function relationshipTypeDemoPath(typeId: string): string {
 }
 
 /**
- * One template, read-only: its Aspects, its sessions and whether it is archived.
+ * One template, as a member reads it: its Aspects, what it is for, and how to start a relationship
+ * from it — `/templates/relationship/<slug>`, inside the app shell (#1259).
  *
  * **Takes `record.slug`.** `record.id` is the storage handle and leaves the URL (#794): every
  * caller holds a `LibraryTemplate`, which carries both, and the id-shaped predecessor of this
  * function is **deleted rather than aliased** so nothing can pass an id by mistake.
+ *
+ * The destination is `app/(mainlayout)/templates/relationship/[slug]/page.tsx`. Until #1259 this
+ * address answered a **308 to the public catalogue**, so a member who opened a template from their
+ * own shelf left the app; the page is what makes the constant a destination rather than a
+ * redirect's source.
  *
  * > `[slug]` is a **URL** fact; `record.id` is a **storage** fact. This function writes the
  * > address; `createDraftCookieName(record.id)` names the jar; `POST /assessment/new` carries

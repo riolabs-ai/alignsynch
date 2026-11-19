@@ -147,6 +147,12 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/templates/[id]", mode: "column" },
   /* #1130 — the proposal form is a two-up (form + its two asides), like the template page above it. */
   { path: "/dashboard/templates/[id]/propose", mode: "column" },
+  /**
+   * #1259 — the member's own template page, the screen a Library card's `View Details` opens.
+   * `column`: it is a dashboard page like the two above it, and it is where `StageColumn` was
+   * already the pattern (the editor beside it, the shelf above it).
+   */
+  { path: "/templates/relationship/[slug]", mode: "column" },
   { path: "/dashboard/user", mode: "column" },
   { path: "/settings", mode: "column" },
   /**

@@ -97,6 +97,10 @@ import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
 // The public catalogue — the page the header's `Templates` row names, and one template's page.
 import { templatesDetailPageCopy } from "./templates-detail";
+/**
+ * #1259 — the in-app template page. The member's own screen for one template, inside the shell.
+ */
+import { templatePageCopy } from "./template-page";
 import { templatesPageCopy } from "./templates";
 import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
@@ -240,6 +244,13 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
    */
   "/relationship-templates": templatesPageCopy,
   "/relationship-templates/[slug]": templatesDetailPageCopy,
+  /**
+   * #1259 — the **member's** template page, which is a different surface from the two rows above:
+   * inside the shell, written for a person who is already signed in, and carrying the shelf's
+   * chips and the Save to My Templates action. Its address is `relationshipTemplatePath()`'s,
+   * which the Library card's `View Details` has always produced.
+   */
+  "/templates/relationship/[slug]": templatePageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,
