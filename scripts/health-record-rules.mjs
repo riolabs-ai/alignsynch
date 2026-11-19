@@ -130,6 +130,91 @@ export function demoDatabaseLabel({ databaseUrl, neonBranch } = {}) {
   return `${DEMO_LABEL_PREFIX}NEON_BRANCH=${branch}, ${database}) · host ${host}`;
 }
 
+/* ------------------------------------------------------------------ *
+ * Which lane the gate ran, and which lane it was asked for
+ *
+ * The recorder shells the gate as `env -i … bash scripts/verify.sh` and used to pass no `GATE_LANE`
+ * at all, so an operator who exported `GATE_LANE=full` got whatever the classifier chose — a
+ * `docs`-lane record, 13 s and no build, from a request for the full one. The record could state a
+ * gate result nobody selected, and nothing noticed because `lane` was read off the gate's own
+ * output. Two facts are held together here instead: the request named in `gate.command` and the
+ * lane the gate printed. `full` is the code lane (`scripts/gate-lanes.sh::resolve_lane`), `auto`
+ * lets the classifier decide, and anything else is what `verify.sh` exits 2 on.
+ * ------------------------------------------------------------------ */
+
+/** The lanes `verify.sh` reports on its `lane=` line — the four depths of the gate. */
+export const GATE_LANES = ["docs", "content", "config", "code"];
+
+/** The values `GATE_LANE` accepts: `auto` classifies, `full` forces the code lane. */
+export const GATE_LANE_REQUESTS = ["auto", "full"];
+
+/** `GATE_LANE=full` *is* the code lane — resolve_lane's sentence, not a second definition of it. */
+export const FORCED_GATE_LANE = "code";
+
+/** Why a requested `GATE_LANE` cannot be forwarded, or `null` when it can. */
+export function gateLaneRequestRefusal(request) {
+  if (GATE_LANE_REQUESTS.includes(request)) return null;
+  return [
+    `GATE_LANE=${JSON.stringify(request)} is not a lane: verify.sh accepts auto (default) or full and`,
+    "exits 2 on anything else. Nothing was measured, so nothing was written.",
+  ].join("\n");
+}
+
+/**
+ * The `GATE_LANE` a gate `command` string asks for, or `null` when it names none.
+ *
+ * The command string is the transcript of the invocation (the `env -i` assignments and the script),
+ * so it is where a reader — and this check — finds which lane was selected. `null` is the defect
+ * this module exists to catch: a record whose command does not say leaves only the lane the gate
+ * happened to pick, which is a result nobody can be held to.
+ */
+export function requestedGateLane(command) {
+  if (typeof command !== "string") return null;
+  return /\bGATE_LANE=([a-z]+)\b/.exec(command)?.[1] ?? null;
+}
+
+/**
+ * What is wrong with the lane pair a record states, as sentences — `[]` when nothing is.
+ *
+ * `measured` says whether *this* run ran the gate. A block carried from an earlier record states a
+ * lane somebody measured once; this run did not ask for it, so it is held only to the agreement rule
+ * (a request it does name must match the lane) and never to naming one. A block this run measured is
+ * held to both — that is the defect the rule exists for.
+ *
+ * @param {{ command?: unknown, lane?: unknown }} [gate]
+ * @param {{ measured?: boolean }} [context]
+ * @returns {string[]}
+ */
+export function gateLaneProblems(gate = {}, { measured = true } = {}) {
+  const command = gate?.command;
+  const lane = gate?.lane;
+  const requested = requestedGateLane(command);
+
+  if (requested === null) {
+    if (!measured) return [];
+    return [
+      `gate.command is ${JSON.stringify(command)} and does not name GATE_LANE=auto|full — the record states a lane nobody selected`,
+    ];
+  }
+  const refusal = gateLaneRequestRefusal(requested);
+  if (refusal !== null) return [refusal.replace(/\n/g, " ")];
+
+  if (!GATE_LANES.includes(lane)) {
+    return [
+      `gate.lane is ${JSON.stringify(lane)} — verify.sh prints one of ${GATE_LANES.join(", ")}`,
+    ];
+  }
+
+  const expected = requested === "full" ? FORCED_GATE_LANE : null;
+  if (expected !== null && lane !== expected) {
+    return [
+      `gate.lane is ${JSON.stringify(lane)} but gate.command asked for GATE_LANE=full, which runs the ${expected} lane — the record states a lane the gate did not run`,
+    ];
+  }
+
+  return [];
+}
+
 /** Minutes between two instants, or `null` when either is not an instant. */
 function minutesBetween(then, now) {
   const from = Date.parse(then);
@@ -150,13 +235,22 @@ function minutesBetween(then, now) {
  *                   neither version, and the release step is where that is discovered.
  *   database        the demo branch. This is the assertion whose absence let a probe's `exitCode: 1`
  *                   into the record in the first place (#680).
+ *   gate.lane       the lane the gate *ran*, held against the lane `gate.command` asked for. The
+ *                   recorder shells the gate under `env -i`, so a `GATE_LANE=full` request it did
+ *                   not forward was silently replaced by the classifier's pick — the record then
+ *                   stated a depth nobody selected, and read as though somebody had.
  *
  * @param {unknown} record
- * @param {{ packageVersion?: string, now?: Date | string, maxAgeMinutes?: number }} [context]
+ * @param {{ packageVersion?: string, now?: Date | string, maxAgeMinutes?: number, gateMeasured?: boolean }} [context]
  * @returns {string[]}
  */
 export function postconditionProblems(record, context = {}) {
-  const { packageVersion, now = new Date(), maxAgeMinutes = RECORD_MAX_AGE_MINUTES } = context;
+  const {
+    packageVersion,
+    now = new Date(),
+    maxAgeMinutes = RECORD_MAX_AGE_MINUTES,
+    gateMeasured = true,
+  } = context;
   const problems = [];
   const value = typeof record === "object" && record !== null ? record : {};
   const recordedAt = value.recordedAt;
@@ -193,6 +287,8 @@ export function postconditionProblems(record, context = {}) {
       `dbVerify.database names ${JSON.stringify(database)}, which does not carry the demo endpoint ${DEMO_ENDPOINT}`,
     );
   }
+
+  problems.push(...gateLaneProblems(value.gate, { measured: gateMeasured }));
 
   return problems;
 }
