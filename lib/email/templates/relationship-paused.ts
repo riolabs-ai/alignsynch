@@ -38,8 +38,13 @@ export const RELATIONSHIP_PAUSED_BODY = {
   placeholders: ["recipient", "template", "paused_on", "link"],
 } as const satisfies EmailBodySpec;
 
-/** The subject names the state and no cause: the seat reading it did not cause it. */
-export const RELATIONSHIP_PAUSED_SUBJECT = "Align is paused for now";
+/**
+ * The subject names the state and no cause: the seat reading it did not cause it.
+ *
+ * It says **Stage 6**, never "Align is paused" — copy rule 5, and the same words the in-app lapse
+ * line uses, so the mail and the screen name one event the same way.
+ */
+export const RELATIONSHIP_PAUSED_SUBJECT = "Stage 6 is paused for now";
 
 export interface RelationshipPausedFacts {
   /** The seat reading — the invited person, addressed by their own name. */

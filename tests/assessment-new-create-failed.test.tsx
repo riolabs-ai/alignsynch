@@ -284,8 +284,18 @@ describe("the drawn screen", () => {
   it("keeps the fixture's four strings as the whole surface", () => {
     const actions = sectionOf(assessmentCreateFailedPageCopy, "actions");
     expect(assessmentCreateFailedPageCopy.heading).toBe("Couldn't Create This Draft");
-    expect(assessmentCreateFailedPageCopy.subtitle).toBe("Try Again Shortly.");
+    expect(assessmentCreateFailedPageCopy.subtitle).toBe(
+      "Try Again Shortly. Nothing was sent and nothing was charged.",
+    );
     expect(itemLabel(actions, "retry")).toBe("Try Again");
     expect(itemLabel(actions, "dashboard")).toBe("Back to Dashboard");
+  });
+
+  it("says what did not happen — nothing sent, nothing charged (copy rule 9)", () => {
+    // The guide promises three things, and the third is the one that says the failure cost them
+    // nothing: `guides/initiator/if-a-draft-cant-be-created.md`, and copy rule 9 in one line.
+    expect(assessmentCreateFailedPageCopy.subtitle).toContain("Nothing was sent");
+    expect(assessmentCreateFailedPageCopy.subtitle).toContain("nothing was charged");
+    expect(markup).toContain("Nothing was sent and nothing was charged.");
   });
 });

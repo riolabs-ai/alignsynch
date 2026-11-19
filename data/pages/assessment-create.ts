@@ -287,7 +287,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * The artifact (`prototype-relationship-lifecycle-v9.html`) draws the pay flow in the left
        * column and the send in the right one; #911 made the send **wait for the walk**, so the two
        * columns are one decision and one control: the foot's advance is
-       * `send email to counterparty now`, disabled until the card is saved.
+       * `Send Email to Counterparty Now`, disabled until the card is saved.
        *
        * Three steps, not five. `account` is stage 4 now (#825), so a sign-in panel here would be a
        * second sign-in the spec forbids, and the confirmation the old walk drew is the card step's
@@ -403,7 +403,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
         },
-        { id: "submit", label: "send email to counterparty now" },
+        { id: "submit", label: "Send Email to Counterparty Now" },
         {
           id: "locked",
           label:

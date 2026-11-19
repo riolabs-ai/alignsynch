@@ -18,7 +18,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { daysLeftOf, EXTENSION_DAYS, pauseOf, PAUSE_STATES } from "@/lib/relationship/pause";
+import { daysLeftOf, EXTRA_WEEK_DAYS, pauseOf, PAUSE_STATES } from "@/lib/relationship/pause";
 import type { Membership } from "@/lib/relationship/membership";
 
 const NOW = new Date("2026-11-19T12:00:00.000Z");
@@ -143,8 +143,8 @@ describe("pauseOf · the pause the trial causes", () => {
     expect(pause.extensionAvailable).toBe(false);
   });
 
-  it("is one extension, at seven days — the issue's number, not a caller's", () => {
-    expect(EXTENSION_DAYS).toBe(7);
+  it("is one Extra Week, at seven days — the issue's number, not a caller's", () => {
+    expect(EXTRA_WEEK_DAYS).toBe(7);
   });
 
   it("names exactly three states, and each is reachable", () => {
