@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Orchestration rules · prev [Migrations](migrations.md) · next [Release-train card template](release-train.md)
+[Docs hub](../README.md) › **Operations** › Orchestration rules · prev [Migration inventory](migration-inventory.md) · next [Release-train card template](release-train.md)
 
 <!-- docs-nav:end -->
 
@@ -133,6 +133,6 @@ Card `t_4988e8f6` burned a run discovering this — the same diff took one inter
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Orchestration rules · prev [Migrations](migrations.md) · next [Release-train card template](release-train.md)
+[Docs hub](../README.md) › **Operations** › Orchestration rules · prev [Migration inventory](migration-inventory.md) · next [Release-train card template](release-train.md)
 
 <!-- docs-nav:end -->

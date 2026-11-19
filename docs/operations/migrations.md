@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Migrations · prev [Iteration rhythm](iteration.md) · next [Orchestration rules](orchestration.md)
+[Docs hub](../README.md) › **Operations** › Migrations · prev [Iteration rhythm](iteration.md) · next [Migration inventory](migration-inventory.md)
 
 <!-- docs-nav:end -->
 
@@ -85,6 +85,6 @@ be defeated — a duplicate is a red preflight instead.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Migrations · prev [Iteration rhythm](iteration.md) · next [Orchestration rules](orchestration.md)
+[Docs hub](../README.md) › **Operations** › Migrations · prev [Iteration rhythm](iteration.md) · next [Migration inventory](migration-inventory.md)
 
 <!-- docs-nav:end -->
