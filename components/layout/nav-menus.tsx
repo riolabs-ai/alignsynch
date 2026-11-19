@@ -551,8 +551,12 @@ function AlignSynchMenu({
   return (
     <>
       {menuFor(viewer.role, viewer.capabilities).map((group) => (
-        <Fragment key={group.label}>
-          <NavGroup label={itemLabel(nav, group.label)} labelled={labelled}>
+        <Fragment key={group.id}>
+          <NavGroup
+            id={group.id}
+            label={group.label === undefined ? undefined : itemLabel(nav, group.label)}
+            labelled={labelled}
+          >
             {group.items.map((item) => {
               const Icon = NAV_ICONS[item.icon];
               return (
@@ -591,23 +595,37 @@ function AlignSynchMenu({
  */
 function NavGroup({
   children,
+  id,
   label,
   labelled,
 }: {
   children: ReactNode;
-  label: string;
+  id: string;
+  label?: string;
   labelled: boolean;
 }) {
   return (
-    <div className="grid gap-1" data-nav-group={label}>
-      <p
-        className={cn(
-          "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-          labelled ? "block" : "hidden xl:block",
-        )}
-      >
-        {label}
-      </p>
+    <div className="grid gap-1" data-nav-group={label ?? id}>
+      {/*
+       * No heading when the group has none: `group-project-spec` is the one group that names
+       * nothing, because it sits above the first heading and holds a single row that already says
+       * what it is. A heading is drawn only when the document gave the group a label id.
+       *
+       * `data-nav-group` carries the resolved words for every group that has them — that attribute
+       * is a QA handle written into the parity manifest's renders, so the labelled groups keep the
+       * markup they already shipped — and falls back to the group's id for the one group that draws
+       * no heading.
+       */}
+      {label === undefined ? null : (
+        <p
+          className={cn(
+            "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+            labelled ? "block" : "hidden xl:block",
+          )}
+        >
+          {label}
+        </p>
+      )}
       {children}
     </div>
   );

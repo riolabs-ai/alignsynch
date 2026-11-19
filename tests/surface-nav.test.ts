@@ -108,6 +108,10 @@ describe("the shell's menus", () => {
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
+      // 2026-11-19 — the project spec leads the rail, above the Admin heading, in a group with no
+      // heading of its own: the owner asked for the row *above the group title*, which is a place
+      // no row inside that group can occupy.
+      "/admin/spec",
       // #929 — the owner's standard menu for every role: the staff group leads, in the owner's
       // order (the inbox first), then the reader's own rows, then Support. The review shelf and
       // the health page are admin-gated rows drawn inside Support, where the owner put them.
@@ -124,8 +128,6 @@ describe("the shell's menus", () => {
       "/admin/permissions",
       // #1138 — the transactional-mail override editor: the words the product sends.
       "/admin/email-templates",
-      // #1252 — the project spec, the fourth reference row.
-      "/admin/spec",
       "/admin/audit",
       "/dashboard",
       "/dashboard/relationships",

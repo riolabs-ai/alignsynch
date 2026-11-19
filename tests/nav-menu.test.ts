@@ -10,9 +10,9 @@
  * the rendered rail second:
  *
  *   1. every row names a real fixture label and a real route: a row is not a string nobody checks;
- *   2. the Admin group leads with the inbox and ends with `/admin/audit`, and every `/admin`
- *      destination is in a staff group — the operator group, or one of the two staff rows #929
- *      moved into Support;
+ *   2. the Admin group leads with the inbox and ends with `/admin/audit`, every `/admin`
+ *      destination is in a staff group — the operator group, the project-spec group above it, or
+ *      one of the two staff rows #929 moved into Support;
  *   3. the four rungs produce four different menus, each one the whole document **in the
  *      document's order** with the rows that seat cannot reach removed — `needs` gates
  *      visibility, never the sequence (#929);
@@ -83,8 +83,10 @@ describe("the menu descriptor", () => {
     const nav = sectionOf(shellPageCopy, "nav-alignsynch");
     const ids = new Set(nav.items?.map((item) => item.id) ?? []);
     for (const group of ALIGN_MENU) {
-      // Throws on a missing id, which is the failure mode this case is for.
-      expect(itemLabel(nav, group.label)).toBeTruthy();
+      // Throws on a missing id, which is the failure mode this case is for. A **title-less** group
+      // declares no label id at all (the project-spec group above the Admin heading), and the
+      // absence is the statement — so the check is on a label the group actually carries.
+      if (group.label !== undefined) expect(itemLabel(nav, group.label)).toBeTruthy();
       for (const item of group.items) {
         expect(ids.has(item.id), `${item.href} names id "${item.id}"`).toBe(true);
         expect(itemLabel(nav, item.id)).toBeTruthy();
@@ -104,6 +106,27 @@ describe("the menu descriptor", () => {
   });
 
   /**
+   * 2026-11-19, the owner's request — **the project spec is above the Admin heading.** A row above
+   * a group's heading cannot live in that group, so it has one of its own: first in the document,
+   * exactly one row, and **no heading**, because a heading over a single row that already says
+   * "Project Spec" would be the same word twice. `label` is omitted rather than emptied, which is
+   * what the renderer reads as "draw no heading".
+   */
+  it("opens the rail with the project spec, in a title-less group above the Admin heading", () => {
+    expect(ALIGN_MENU[0]?.id).toBe("group-project-spec");
+    expect(ALIGN_MENU[0]?.label).toBeUndefined();
+    expect(ALIGN_MENU[0]?.items.map((item) => item.href)).toEqual(["/admin/spec"]);
+    // …and the Admin group follows it, so the row is above that group's title and nowhere else.
+    expect(ALIGN_MENU[1]?.id).toBe("group-admin");
+    // One row, one href — the defect two rows pointing at `/admin/spec` would be.
+    const drawn = (navDocument as unknown as { groups: { items: { href: string }[] }[] }).groups
+      .flatMap((group) => group.items)
+      .filter((row) => row.href === "/admin/spec");
+    expect(drawn).toHaveLength(1);
+    expect(allItems().filter((item) => item.href === "/admin/spec")).toHaveLength(1);
+  });
+
+  /**
    * #929 — the owner's order, restored: the inbox leads the operator group and the log closes it.
    * The two rows that left for `group-support` (the review shelf, the health page) are asserted
    * **absent** here and present in Support below, because "moved" — not "deleted" — is the claim.
@@ -111,9 +134,12 @@ describe("the menu descriptor", () => {
    * #1095 took the growth row out: the page charts a *modelled* business, so the owner kept the
    * screen and removed it from the rail. The row is gone from this list, and its absence is
    * asserted below rather than left implied.
+   *
+   * 2026-11-19 took the project-spec row out of this group — not off the rail: it leads the rail
+   * above this group's heading, and the case above pins that.
    */
   it("leads the Admin group with the inbox and ends it with the audit log", () => {
-    const admin = ALIGN_MENU.find((group) => group.label === "group-admin");
+    const admin = ALIGN_MENU.find((group) => group.id === "group-admin");
     expect(admin).toBeDefined();
     expect(admin?.items.map((item) => item.href)).toEqual([
       "/admin/inbox",
@@ -126,8 +152,6 @@ describe("the menu descriptor", () => {
       "/admin/permissions",
       // #1138 — the transactional-mail override editor, the third reference row.
       "/admin/email-templates",
-      // #1252 — the project spec: the fourth reference row, drawn for a stakeholder too.
-      "/admin/spec",
       "/admin/audit",
     ]);
   });
@@ -151,19 +175,21 @@ describe("the menu descriptor", () => {
 
   /**
    * #929 puts exactly **two** admin-gated rows inside `group-support` — the review shelf and the
-   * health page. So the invariant is narrower than it was and exact: every `/admin` destination is
-   * either in `group-admin` or one of those two named rows. A third escaping row, or one escaping
-   * into a member group, is still a failure.
+   * health page. 2026-11-19 adds the project-spec group, which is where `/admin/spec` now lives.
+   * So the invariant is: every `/admin` destination is in `group-admin`, in `group-project-spec`,
+   * or one of those two named Support rows. A third escaping row, or one escaping into a member
+   * group, is still a failure.
    */
   it("keeps every /admin destination in a staff group, and only two outside the operator group", () => {
     const STAFF_ROWS_IN_SUPPORT = ["/admin/review", "/admin/health"];
+    const STAFF_GROUPS = ["group-admin", "group-project-spec"];
     const supportHrefs = (
-      ALIGN_MENU.find((group) => group.label === "group-support")?.items ?? []
+      ALIGN_MENU.find((group) => group.id === "group-support")?.items ?? []
     ).map((item) => item.href);
     expect(supportHrefs.filter((href) => href.startsWith("/admin"))).toEqual(STAFF_ROWS_IN_SUPPORT);
 
     for (const group of ALIGN_MENU) {
-      if (group.label === "group-admin" || group.label === "group-support") continue;
+      if (STAFF_GROUPS.includes(group.id) || group.id === "group-support") continue;
       for (const item of group.items) {
         expect(item.href.startsWith("/admin"), `${item.href} sits outside the staff groups`).toBe(
           false,
@@ -171,9 +197,9 @@ describe("the menu descriptor", () => {
       }
     }
     for (const item of allItems().filter((candidate) => candidate.href.startsWith("/admin"))) {
-      const staffGroupRow = (
-        ALIGN_MENU.find((group) => group.label === "group-admin")?.items ?? []
-      ).some((candidate) => candidate.href === item.href);
+      const staffGroupRow = ALIGN_MENU.filter((group) => STAFF_GROUPS.includes(group.id))
+        .flatMap((group) => [...group.items])
+        .some((candidate) => candidate.href === item.href);
       expect(
         staffGroupRow || STAFF_ROWS_IN_SUPPORT.includes(item.href),
         `${item.href} is in neither staff group`,
@@ -195,6 +221,8 @@ describe("the ladder decides the rows", () => {
   /**
    * #929 — the operator group, as the owner ordered it: the inbox first, the log last.
    * #1095 — the growth row is gone; the page is URL-only, so no rung draws it.
+   * 2026-11-19 — the project-spec row left this group for its own, above the Admin heading; it is
+   * asserted as `PROJECT_SPEC` below, so "moved" is proved rather than assumed.
    */
   const ADMIN_GROUP = [
     "/admin/inbox",
@@ -209,10 +237,11 @@ describe("the ladder decides the rows", () => {
     "/admin/permissions",
     // #1138 — the transactional-mail override editor: what the product writes to a person.
     "/admin/email-templates",
-    // #1252 — the project spec, the fourth reference row and before the log.
-    "/admin/spec",
     "/admin/audit",
   ];
+
+  /** The one row above the Admin heading, in a group that draws no heading of its own. */
+  const PROJECT_SPEC = ["/admin/spec"];
 
   /** #929 — the Support group, in the owner's order: two staff rows among the help pair. */
   const SUPPORT_GROUP = ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"];
@@ -254,10 +283,10 @@ describe("the ladder decides the rows", () => {
         .map((item) => item.href);
       expect(hrefsFor(role), `role "${role}" is a re-sort of the document`).toEqual(visible);
       // And the groups a role sees are the document's groups, in the document's order.
-      expect(menuFor(role).map((group) => group.label)).toEqual(
-        ["group-admin", "group-app", "group-support"].filter((label) =>
+      expect(menuFor(role).map((group) => group.id)).toEqual(
+        ["group-project-spec", "group-admin", "group-app", "group-support"].filter((id) =>
           hrefsFor(role).some((href) =>
-            (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some(
+            (ALIGN_MENU.find((group) => group.id === id)?.items ?? []).some(
               (item) => item.href === href,
             ),
           ),
@@ -280,7 +309,7 @@ describe("the ladder decides the rows", () => {
    * #1131 added `chat` ("Chat") last, where the v2 rail draws it.
    */
   it("draws exactly four Workspace rows — Start, My Relationships, Templates and Chat", () => {
-    const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
+    const workspace = ALIGN_MENU.find((group) => group.id === "group-app");
     expect(workspace?.items.map((item) => item.id)).toEqual([
       "start",
       "my-relationships",
@@ -302,23 +331,26 @@ describe("the ladder decides the rows", () => {
    */
   it("gives a support seat the one queue it works, at the top of the document's order", () => {
     expect(MENUS.support).toEqual(["/admin/inbox", ...MENUS.member]);
-    expect(menuFor("support").map((group) => group.label)).toEqual([
+    // The project-spec group is dropped whole for this rung: its single row needs `spec-read`,
+    // which a support seat — admitted by the rung above it — does not carry.
+    expect(menuFor("support").map((group) => group.id)).toEqual([
       "group-admin",
       "group-app",
       "group-support",
     ]);
   });
 
-  it("gives an admin the operator group first, then the member's work, then Support", () => {
-    expect(MENUS.admin).toEqual([...ADMIN_GROUP, ...WORKSPACE, ...SUPPORT_GROUP]);
+  it("gives an admin the project spec, the operator group, the member's work, then Support", () => {
+    expect(MENUS.admin).toEqual([...PROJECT_SPEC, ...ADMIN_GROUP, ...WORKSPACE, ...SUPPORT_GROUP]);
     // The two admin-gated rows the owner moved into Support are drawn there, for an admin, with
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
     // #901's docs row survived the move, #1095 removed the growth row, #1126 added the CRUD &
-    // Permissions row directly after Docs, #1138 added the mail-override row after that and #1252
-    // the project spec before the log, so eleven rows in the operator group.
-    expect(ADMIN_GROUP).toHaveLength(11);
+    // Permissions row directly after Docs, #1138 added the mail-override row after that, and
+    // 2026-11-19 moved the project spec out into the rail's first group — so ten rows here, with
+    // the log still last.
+    expect(ADMIN_GROUP).toHaveLength(10);
   });
 
   /**
@@ -361,10 +393,11 @@ describe("the ladder decides the rows", () => {
   it("counts the rows each rung draws — five rungs, three shapes", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
     // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
-    // row, #1138 the mail-override row and #1252 the project spec, so a staff rung carries 19
-    // (ADMIN_GROUP 11 + WORKSPACE 4 + SUPPORT_GROUP 4) and the two rungs below it carry 6 and 7.
-    // `stakeholder` and `support` both count 7 by coincidence, not by sharing: the stakeholder's
-    // seventh row is the spec and support's is the inbox (asserted above).
+    // row, #1138 the mail-override row and #1252 the project spec. 2026-11-19 moved the spec out
+    // of the operator group into the rail's first one, so a staff rung still carries 19
+    // (PROJECT_SPEC 1 + ADMIN_GROUP 10 + WORKSPACE 4 + SUPPORT_GROUP 4) and the two rungs below it
+    // carry 6 and 7. `stakeholder` and `support` both count 7 by coincidence, not by sharing: the
+    // stakeholder's seventh row is the spec and support's is the inbox (asserted above).
     expect(counts).toEqual([6, 7, 7, 19, 19]);
     // Not decoration: the first two rungs differ by exactly the row the second exists for.
     expect(counts[1]).toBe(counts[0] + 1);
@@ -380,15 +413,28 @@ describe("the ladder decides the rows", () => {
   });
 
   it("draws no group heading over no rows", () => {
-    expect(menuFor("member").map((group) => group.label)).toEqual(["group-app", "group-support"]);
-    // #929 — the operator group leads the document, so it is the first heading every staff rung
-    // draws; a member's rail drops it entirely rather than drawing an empty Admin heading.
-    for (const role of ["stakeholder", "support", "admin", "owner"] as const) {
-      expect(menuFor(role).map((group) => group.label)).toEqual([
-        "group-admin",
-        "group-app",
-        "group-support",
-      ]);
+    expect(menuFor("member").map((group) => group.id)).toEqual(["group-app", "group-support"]);
+    // The project-spec group leads the document, so it is the first thing a staff rung draws and
+    // the operator group is the first *heading*. A stakeholder reads the spec and nothing else from
+    // the staff side, so the operator group is dropped for it exactly as an empty heading would be;
+    // a support seat is refused `spec-read`, so the leading group is dropped instead; a member's
+    // rail drops both.
+    const STAFF: Record<string, string[]> = {
+      stakeholder: ["group-project-spec", "group-app", "group-support"],
+      support: ["group-admin", "group-app", "group-support"],
+      admin: ["group-project-spec", "group-admin", "group-app", "group-support"],
+      owner: ["group-project-spec", "group-admin", "group-app", "group-support"],
+    };
+    for (const [role, expected] of Object.entries(STAFF)) {
+      const groups = menuFor(role as UserRole);
+      expect(
+        groups.map((group) => group.id),
+        role,
+      ).toEqual(expected);
+      // Every group that survives has something to draw; the spec group is the only one allowed to
+      // name nothing, and only because it is not empty.
+      for (const group of groups)
+        expect(group.items.length, `${role} · ${group.id}`).toBeGreaterThan(0);
     }
   });
 });
@@ -402,13 +448,19 @@ describe("the rendered rail", () => {
 
   /**
    * #929's claim, read off the markup rather than the descriptor: the **operator group is the
-   * first thing an admin's rail draws**, and a member's rail opens on their own work because the
+   * first heading an admin's rail draws**, and a member's rail opens on their own work because the
    * empty operator group is dropped instead of being re-sorted to the bottom.
+   *
+   * 2026-11-19 puts one row above that heading: the project spec. It is in the markup first for
+   * both staff rungs that can read it, and a support seat — which cannot — still opens on its own
+   * queue, so the leading group is dropped the same way an empty heading is.
    */
   it("draws the operator group first for an admin, and opens on the member's work for a member", () => {
-    expect(railHrefs("admin")[0]).toBe("/admin/inbox");
-    expect(railHrefs("owner")[0]).toBe("/admin/inbox");
+    expect(railHrefs("admin")[0]).toBe("/admin/spec");
+    expect(railHrefs("owner")[0]).toBe("/admin/spec");
+    expect(railHrefs("admin")[1]).toBe("/admin/inbox");
     expect(railHrefs("support")[0]).toBe("/admin/inbox");
+    expect(railHrefs("stakeholder")[0]).toBe("/admin/spec");
     expect(railHrefs("member")[0]).toBe("/dashboard");
     // The two staff rows inside Support are in the admin's markup, in the owner's order.
     const admin = railHrefs("admin");
@@ -419,6 +471,32 @@ describe("the rendered rail", () => {
       "/dashboard/support",
     ]);
     expect(railHrefs("member")).not.toContain("/admin/review");
+  });
+
+  /**
+   * 2026-11-19 — the owner asked for the row *above the Admin group title*, and it arrives without
+   * a title of its own. Two claims, and only the second is what a reader sees: the descriptor has
+   * no label for the group, and the markup draws no heading for it. The strip of HTML between the
+   * group's own marker and its row is asserted empty of a heading element, because a heading there
+   * would be the row's own words twice.
+   */
+  it("draws the project spec above the Admin heading, with no heading of its own", () => {
+    const nav = sectionOf(shellPageCopy, "nav-alignsynch");
+    const html = railHtml("admin");
+    const spec = html.indexOf('href="/admin/spec"');
+    const adminHeading = html.indexOf(`>${itemLabel(nav, "group-admin")}<`);
+    expect(spec).toBeGreaterThan(-1);
+    expect(adminHeading).toBeGreaterThan(-1);
+    expect(spec).toBeLessThan(adminHeading);
+
+    const groupAt = html.indexOf('data-nav-group="group-project-spec"');
+    expect(groupAt).toBeGreaterThan(-1);
+    expect(groupAt).toBeLessThan(spec);
+    expect(html.slice(groupAt, spec)).not.toContain("<p");
+
+    // A stakeholder draws the same group; a support seat — refused `spec-read` — draws none of it.
+    expect(railHtml("stakeholder")).toContain('data-nav-group="group-project-spec"');
+    expect(railHtml("support")).not.toContain('data-nav-group="group-project-spec"');
   });
 
   it("renders the console hub for an admin and an owner, and for nobody below them", () => {

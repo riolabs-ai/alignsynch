@@ -374,15 +374,24 @@ export function shellCopy(brand: Brand): PageCopy {
            * #1252 — the project spec. Two words, like the two rows above it in this group that also
            * name a *thing* rather than a verb: "Project Spec" is the bundle's own title (AS-05) and
            * renaming it here would be the screen disagreeing with its card.
+           *
+           * Since 2026-11-19 the row leads the rail in its own group, above the Admin heading. That
+           * group has **no label item here on purpose**: it sits above the first heading, holds one
+           * row, and any heading would repeat this row's own word. `data/nav-menu.json` omits the
+           * group's `label` key, `content/nav.ts` allows the omission, and the rail draws no heading
+           * for it — so a word for that group is not missing from this list, it does not exist.
            */
           { id: "admin-spec", label: "Project Spec" },
           /**
-           * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
+           * The rail's group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,
            * then help, then the staff group" as a structure rather than a sort order the next
            * person can undo by adding a row. The words live here with every other label: a
            * heading typed in `nav-menus.tsx` would be a literal E23 cannot see.
+           *
+           * Three words for four groups: `group-project-spec` is title-less on purpose (see
+           * `admin-spec` above), so it is the one group that names nothing here.
            *
            * `group-admin` reads "Admin" (it was "Administration" under #539): the group is the
            * staff group, and #542 phase 2 names it that way.
