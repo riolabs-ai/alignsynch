@@ -27,8 +27,12 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
   heading: "Templates",
-  subtitle:
-    "Browse the Library to start a relationship, or open one of your own templates and make it yours.",
+  /**
+   * The header line is bundle 06's own (`templates.html`'s `<h1>Templates</h1>` followed by
+   * `Start from the Library, or reuse one of your own.`), verbatim — the reference draws one short
+   * sentence and the screen printed a longer one that said the same thing.
+   */
+  subtitle: "Start from the Library, or reuse one of your own.",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "relationships", label: "{count} relationships" },
@@ -179,12 +183,28 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "mine",
       heading: "My Templates",
-      body: "The templates you own. Opening one shows its Aspects; starting a relationship from it copies those Aspects into that relationship, so editing here never changes one you have already configured. Starting a relationship from the Library does not put that template here — the relationship uses the template, it does not make one.",
+      /**
+       * Bundle 06's own line for this tab, verbatim (`templates.html`: `Your saved copies. Changes
+       * never touch relationships you've already started.`). The screen printed three sentences
+       * here, and the third explained a rule the doc's own *How It Works* carries — "starting a
+       * relationship from the Library does not put that template here" — above an empty state,
+       * which is the wall of text the reference's one line replaces.
+       */
+      body: "Your saved copies. Changes never touch relationships you’ve already started.",
     },
     {
       id: "mine-empty",
       heading: "No Templates Yet",
-      body: "Start one below — blank, or copied from a template in the Library. A template you already own can also be opened above.",
+      /**
+       * The notice draws only on `owned.length === 0` (`app/(mainlayout)/dashboard/templates/page.tsx`),
+       * so its sentence may not point at the shelf above it: "A template you already own can also be
+       * opened above" described a list that is empty by definition whenever a reader sees it. The two
+       * doors it names are the bands drawn below it (`Start Blank`, `Copy a Template`), which the
+       * reference's empty state does not carry — bundle 06's own sentence there is
+       * `Save a Library template to make it yours: reword Aspects, turn some off, reuse it.`, and it
+       * would be wrong here for the opposite reason.
+       */
+      body: "Start one below — blank, or copied from a template in the Library.",
       items: [{ id: "browse", label: "Browse the Library" }],
     },
     {
