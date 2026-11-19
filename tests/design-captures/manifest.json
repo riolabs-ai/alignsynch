@@ -7,14 +7,14 @@
   "tracked": 51,
   "counts": {
     "untracked": 16,
-    "built": 11,
-    "deltas-open": 33,
-    "planned": 3,
-    "designed": 4
+    "built": 15,
+    "deltas-open": 30,
+    "designed": 4,
+    "planned": 2
   },
   "sessions": {
     "initiator": "signed in",
-    "admin": "signed in",
+    "admin": "none: the role button did not sign in",
     "counterparty": "signed in"
   },
   "rows": [
@@ -290,7 +290,8 @@
       "doc": "guides/initiator/create-your-account.md",
       "slug": "initiator-create-your-account",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -303,20 +304,21 @@
         "reference-1280": "tests/design-captures/initiator-create-your-account/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-create-your-account/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:31.370Z",
+      "capturedAt": "2026-11-19T21:33:38.508Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
       "referenceMissing": {
-        "390": 24,
-        "1280": 24
+        "390": 31,
+        "1280": 31
       }
     },
     {
       "doc": "guides/initiator/edit-a-draft-or-sent-invite.md",
       "slug": "initiator-edit-a-draft-or-sent-invite",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/03-spec-design-page-relationship-detail-v2/relationship-detail.html",
@@ -329,13 +331,13 @@
         "reference-1280": "tests/design-captures/initiator-edit-a-draft-or-sent-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-edit-a-draft-or-sent-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:53:44.680Z",
+      "capturedAt": "2026-11-19T21:33:57.089Z",
       "session": "signed in",
       "landed": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-flat",
       "signedOut": false,
       "referenceMissing": {
-        "390": 64,
-        "1280": 64
+        "390": 60,
+        "1280": 60
       }
     },
     {
@@ -472,7 +474,8 @@
       "doc": "guides/initiator/send-the-invite.md",
       "slug": "initiator-send-the-invite",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -485,20 +488,21 @@
         "reference-1280": "tests/design-captures/initiator-send-the-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-send-the-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:54:54.452Z",
+      "capturedAt": "2026-11-19T21:34:15.802Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
       "referenceMissing": {
-        "390": 38,
-        "1280": 38
+        "390": 39,
+        "1280": 39
       }
     },
     {
       "doc": "guides/initiator/set-up-details-settings-and-aspects.md",
       "slug": "initiator-set-up-details-settings-and-aspects",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/brother-sister/create",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/brother-sister/create",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -511,13 +515,13 @@
         "reference-1280": "tests/design-captures/initiator-set-up-details-settings-and-aspects/reference-1280.png",
         "side-by-side": "tests/design-captures/initiator-set-up-details-settings-and-aspects/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:55:07.627Z",
+      "capturedAt": "2026-11-19T21:34:32.189Z",
       "session": "signed in",
       "landed": "/dashboard/templates/brother-sister/create",
       "signedOut": false,
       "referenceMissing": {
-        "390": 29,
-        "1280": 29
+        "390": 35,
+        "1280": 35
       }
     },
     {
@@ -806,7 +810,8 @@
       "doc": "reference/stages/stage-1-details.md",
       "slug": "stages-stage-1-details",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/brother-sister/create",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/brother-sister/create",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -819,20 +824,21 @@
         "reference-1280": "tests/design-captures/stages-stage-1-details/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-1-details/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:35.739Z",
+      "capturedAt": "2026-11-19T21:34:45.958Z",
       "session": "signed in",
       "landed": "/dashboard/templates/brother-sister/create",
       "signedOut": false,
       "referenceMissing": {
-        "390": 29,
-        "1280": 29
+        "390": 35,
+        "1280": 35
       }
     },
     {
       "doc": "reference/stages/stage-2-settings.md",
       "slug": "stages-stage-2-settings",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/brother-sister/create/mode",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/brother-sister/create/mode",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -845,14 +851,14 @@
         "reference-1280": "tests/design-captures/stages-stage-2-settings/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-2-settings/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:56:53.238Z",
+      "capturedAt": "2026-11-19T21:35:03.132Z",
       "session": "signed in",
       "prepared": "wizard driven to stage 2",
       "landed": "/dashboard/templates/brother-sister/create/mode",
       "signedOut": false,
       "referenceMissing": {
-        "390": 36,
-        "1280": 36
+        "390": 40,
+        "1280": 40
       }
     },
     {
@@ -875,7 +881,8 @@
       "doc": "reference/stages/stage-4-account.md",
       "slug": "stages-stage-4-account",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -888,20 +895,21 @@
         "reference-1280": "tests/design-captures/stages-stage-4-account/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-4-account/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:10.828Z",
+      "capturedAt": "2026-11-19T21:35:19.561Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/commit?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
       "referenceMissing": {
-        "390": 24,
-        "1280": 24
+        "390": 31,
+        "1280": 31
       }
     },
     {
       "doc": "reference/stages/stage-5-invite.md",
       "slug": "stages-stage-5-invite",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/01-spec-design-page-wizard-v2/wizard.html",
@@ -914,13 +922,13 @@
         "reference-1280": "tests/design-captures/stages-stage-5-invite/reference-1280.png",
         "side-by-side": "tests/design-captures/stages-stage-5-invite/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:57:24.031Z",
+      "capturedAt": "2026-11-19T21:35:36.246Z",
       "session": "signed in",
       "landed": "/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial",
       "signedOut": false,
       "referenceMissing": {
-        "390": 38,
-        "1280": 38
+        "390": 39,
+        "1280": 39
       }
     },
     {
@@ -1083,7 +1091,8 @@
       "doc": "start/quickstart.md",
       "slug": "start-quickstart",
       "role": "initiator",
-      "url": "https://demo.alignsynch.com/dashboard",
+      "base": "http://localhost:3100",
+      "url": "http://localhost:3100/dashboard",
       "auth": "session",
       "reference": {
         "html": "spec-design-v2-bundles/05-spec-design-page-start-my-relationships-v2/start.html",
@@ -1096,13 +1105,13 @@
         "reference-1280": "tests/design-captures/start-quickstart/reference-1280.png",
         "side-by-side": "tests/design-captures/start-quickstart/side-by-side.png"
       },
-      "capturedAt": "2026-11-19T19:58:50.923Z",
+      "capturedAt": "2026-11-19T21:35:50.898Z",
       "session": "signed in",
       "landed": "/dashboard",
       "signedOut": false,
       "referenceMissing": {
-        "390": 42,
-        "1280": 42
+        "390": 39,
+        "1280": 39
       }
     },
     {
@@ -1131,5 +1140,16 @@
         "1280": 58
       }
     }
+  ],
+  "only": [
+    "initiator-create-your-account",
+    "initiator-edit-a-draft-or-sent-invite",
+    "initiator-send-the-invite",
+    "initiator-set-up-details-settings-and-aspects",
+    "stages-stage-1-details",
+    "stages-stage-2-settings",
+    "stages-stage-4-account",
+    "stages-stage-5-invite",
+    "start-quickstart"
   ]
 }

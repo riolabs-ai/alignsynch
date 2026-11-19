@@ -654,6 +654,10 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
     why: "the sha the fidelity audit's manifest records instead of the tree's own HEAD (scripts/design-audit.mjs)",
   },
   {
+    name: "DESIGN_AUDIT_ONLY",
+    why: "a comma-separated list of rows a fidelity-audit run re-captures, carrying every other row over from the manifest on disk (scripts/design-audit.mjs)",
+  },
+  {
     name: "PROTOTYPE_DIR",
     why: "the v2 prototype drop the fidelity audit resolves reference states against (scripts/design-audit.mjs); outside the checkout, never deployed",
   },

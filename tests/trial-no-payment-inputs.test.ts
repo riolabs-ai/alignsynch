@@ -37,13 +37,15 @@ import {
 import { InviteWalk, PAY_FLOW_STEPS } from "@/components/assessment-flow/invite-walk";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, replace: () => undefined, refresh: () => undefined }),
 }));
 
 const PLANS = sectionOf(assessmentCreatePageCopy, "plans");
+/** The walk's own words — the purchase path's `thanks` panel is the one the create must not draw. */
+const FLOW = sectionOf(assessmentCreatePageCopy, "payment-flow");
 
 const TEMPLATE = {
   slug: "brother-a-brother-b",
@@ -124,9 +126,11 @@ describe("every create stage renders zero payment inputs", () => {
 
   it("stage 5 asks for no card on any panel the create path can reach", () => {
     // The create path renders the walk with no checkout handler and no `initialStep`, so the
-    // panels it can reach are the plan and — after the free continue — the act. Both are checked.
-    for (const extra of [{}, { paid: true }]) {
-      const html = stage(5);
+    // panels it can reach are the plan and — after the free continue — the act. Both are checked,
+    // and both answers to `paid`: an account whose membership is already live is the state the
+    // screen was measured wrong in, and the panel it opened on is pinned below.
+    for (const extra of [{}, { initialPaid: true }]) {
+      const html = stage(5, extra);
       expect(paymentInputs(html), `stage 5 with ${JSON.stringify(extra)}`).toEqual([]);
     }
     expect(paymentInputs(walk())).toEqual([]);
@@ -151,6 +155,58 @@ describe("every create stage renders zero payment inputs", () => {
 });
 
 describe("stage 5's primary action is the free week", () => {
+  /**
+   * **The free week is the *unpaid* creator's panel, and that is measured here.**
+   *
+   * The demo seat this register was captured on holds a live membership, so its stage 5 opens on
+   * the walk's thank-you step — the purchase path's panel, whose sentence anchors the week on a
+   * saved card. That is one state, not the screen the Initiator doc describes: a creator with no
+   * membership opens on the plan panel below, which is the panel the doc's primary action lives on.
+   * Pinned so neither state can be mistaken for the other.
+   */
+  it("draws the free-week control on an unpaid creator's panel", () => {
+    const html = stage(5);
+    expect(html).toContain('data-pay-step="plan"');
+    expect(html).toContain(itemLabel(PLANS, "free-continue"));
+    expect(html).not.toContain(itemLabel(FLOW, "thanks-body"));
+  });
+
+  /**
+   * **The card-free panel states one anchor, not two.**
+   *
+   * `plans.body` is the purchase panel's and anchors the week on a saved card; the create path has
+   * no card to save. Drawing it beside `trial-free` made stage 5 print both anchors in one column —
+   * the register's highest-value stage-5 delta. The card-free panel owns its own body now, and this
+   * pins that it carries no card anchor at all.
+   */
+  it("states the week's anchor once, and never on a card, on the create path", () => {
+    const html = stage(5);
+    expect(html).toContain(itemLabel(PLANS, "body-free"));
+    expect(html).toContain(itemLabel(PLANS, "trial-free"));
+    expect(html).not.toContain(sectionBody(PLANS));
+  });
+
+  /**
+   * **A member's create path must not be told about a card either.** The walk opens on the thank-you
+   * when the account's membership is already live, and both that panel and the act carried the
+   * purchase path's sentence — "the plan is active and the card is on file" — on a flow that takes no
+   * card at any step. The demo seat this register was captured on holds a live membership, which is
+   * exactly how the card anchor came to be measured as the create path's own words.
+   */
+  it("carries no card anchor on the thank-you or the act, paid seat or not", () => {
+    /* The paid seat opens on the thank-you: that is the panel this sentence reached a reader on. */
+    expect(stage(5, { initialPaid: true })).toContain(itemLabel(PLANS, "active-free"));
+    for (const extra of [{}, { initialPaid: true }]) {
+      const html = stage(5, extra);
+      expect(html, `stage 5 with ${JSON.stringify(extra)}`).not.toContain(
+        itemLabel(FLOW, "thanks-body"),
+      );
+      expect(html).not.toContain(
+        itemLabel(sectionOf(assessmentCreatePageCopy, "invite"), "active"),
+      );
+    }
+  });
+
   it("reads `Continue with 7 days free` and is enabled", () => {
     const html = stage(5);
     expect(html).toContain(itemLabel(PLANS, "free-continue"));
