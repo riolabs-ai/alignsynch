@@ -20,6 +20,8 @@ import {
   isBump,
   isPrerelease,
   isVersion,
+  normalizeVersion,
+  stripV,
 } from "../scripts/release-version.mjs";
 
 const CLI = fileURLToPath(new URL("../scripts/release-version.mjs", import.meta.url));
@@ -28,6 +30,12 @@ const CLI = fileURLToPath(new URL("../scripts/release-version.mjs", import.meta.
 function cli(...args: string[]): number {
   const run = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8" });
   return run.status ?? -1;
+}
+
+/** The words a verb prints, for `normalize` and `compare`. */
+function cliOut(...args: string[]): { status: number; stdout: string } {
+  const run = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8" });
+  return { status: run.status ?? -1, stdout: (run.stdout ?? "").trim() };
 }
 
 describe("a version is semver, not three integers", () => {
@@ -138,5 +146,87 @@ describe("the CLI, which is how the shell asks", () => {
     expect(cli("bump", "1.0.0", "1.1.0-rc1")).toBe(0);
     expect(cli("bump", "1.1.0", "1.1.0-rc1")).toBe(1);
     expect(cli("bump", "1.1.0-rc1")).toBe(2); // usage, not "no": the caller is wrong
+  });
+});
+
+/* -------------------------------------------------------------------------- *
+ * #1248 — one normaliser, and the tagged spelling is not a second version
+ * -------------------------------------------------------------------------- */
+
+describe("the tag prefix, accepted once (#1248)", () => {
+  // Found by the `v2.0.0-rc1.3` cut, measured rather than guessed: `pnpm release:preflight
+  // v2.0.0-rc1.3` passed ten checks, `bash scripts/release.sh --tag-only v2.0.0-rc1.3` exited 2 with
+  // "'v2.0.0-rc1.3' is not a semantic version", and `node scripts/release-record.mjs check
+  // v2.0.0-rc1.3` reported `vv2.0.0-rc1.3` — the double prefix is the tell that each script had its
+  // own idea of the spelling. One function strips it now, and the strict answers stay strict.
+
+  it("strips the prefix once, never as a global replace", () => {
+    expect(stripV("v2.0.0-rc1.3")).toBe("2.0.0-rc1.3");
+    expect(stripV("2.0.0-rc1.3")).toBe("2.0.0-rc1.3");
+    expect(stripV("vv1.1.0")).toBe("v1.1.0"); // one `v` off, and the survivor is not a version
+    expect(stripV("")).toBe("");
+  });
+
+  it("normalises either spelling to the bare version", () => {
+    expect(normalizeVersion("v2.0.0-rc1.3")).toBe("2.0.0-rc1.3");
+    expect(normalizeVersion("2.0.0-rc1.3")).toBe("2.0.0-rc1.3");
+    expect(normalizeVersion("v1.1.0+build.5")).toBe("1.1.0+build.5");
+  });
+
+  it("does not buy the `v` form by accepting a malformed version", () => {
+    // The MUST NOT from #1248, as cases: a normaliser that widened validity would make every caller
+    // below it accept these, and a tag would then be cut from a string no parser agrees with.
+    expect(normalizeVersion("vv2.0.0-rc1.3")).toBeNull();
+    expect(normalizeVersion("1.1.0.0")).toBeNull();
+    expect(normalizeVersion("01.0.0")).toBeNull();
+    expect(normalizeVersion("1.1")).toBeNull();
+    expect(normalizeVersion("")).toBeNull();
+    expect(normalizeVersion(undefined)).toBeNull();
+  });
+
+  it("leaves the library answers bare-semver only", () => {
+    // `isVersion` and `compareVersions` are the strict layer; if these ever pass, the normaliser has
+    // been folded into validity and the suite above stopped meaning anything.
+    expect(isVersion("v2.0.0-rc1.3")).toBe(false);
+    expect(compareVersions("2.0.0-rc1.3", "v2.0.0-rc1.3")).toBeNull();
+  });
+});
+
+describe("the CLI answers the same for either spelling (#1248)", () => {
+  it.each(["2.0.0-rc1.3", "v2.0.0-rc1.3"])("valid %s is a version", (version) => {
+    expect(cli("valid", version)).toBe(0);
+  });
+
+  it.each(["1.1.0.0", "01.0.0", "1.1", "vv2.0.0-rc1.3"])(
+    "valid %j is not, tagged spelling or not",
+    (version) => {
+      expect(cli("valid", `v${version}`)).toBe(1);
+      expect(cli("valid", version)).toBe(1);
+    },
+  );
+
+  it.each(["2.0.0-rc1.3", "v2.0.0-rc1.3"])("prerelease %s is a pre-release", (version) => {
+    expect(cli("prerelease", version)).toBe(0);
+  });
+
+  it("bumps across the two spellings", () => {
+    expect(cli("bump", "2.0.0-rc1.2", "2.0.0-rc1.3")).toBe(0);
+    expect(cli("bump", "v2.0.0-rc1.2", "2.0.0-rc1.3")).toBe(0);
+    expect(cli("bump", "2.0.0-rc1.2", "v2.0.0-rc1.3")).toBe(0);
+    expect(cli("bump", "v2.0.0-rc1.3", "2.0.0-rc1.3")).toBe(1); // the same version is not a bump
+    expect(cli("bump", "v2.0.0-rc1.3", "v2.0.0-rc1.2")).toBe(1);
+  });
+
+  it("compares across the two spellings, and prints the order", () => {
+    expect(cliOut("compare", "v2.0.0-rc1.2", "2.0.0-rc1.3")).toEqual({ status: 0, stdout: "-1" });
+    expect(cliOut("compare", "2.0.0-rc1.3", "v2.0.0-rc1.2")).toEqual({ status: 0, stdout: "1" });
+    expect(cliOut("compare", "v2.0.0-rc1.3", "2.0.0-rc1.3")).toEqual({ status: 0, stdout: "0" });
+    expect(cli("compare", "vv2.0.0", "2.0.0")).toBe(2); // not a version: usage, never a guess
+  });
+
+  it("prints the bare form for a script to hold", () => {
+    expect(cliOut("normalize", "v2.0.0-rc1.3")).toEqual({ status: 0, stdout: "2.0.0-rc1.3" });
+    expect(cliOut("normalize", "2.0.0-rc1.3")).toEqual({ status: 0, stdout: "2.0.0-rc1.3" });
+    expect(cliOut("normalize", "vv2.0.0-rc1.3")).toEqual({ status: 1, stdout: "" });
   });
 });

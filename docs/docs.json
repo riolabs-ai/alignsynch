@@ -628,6 +628,11 @@
           "path": "specs/ux-stages.md",
           "title": "Stage display",
           "question": "How is each stage shown, and who acts next?"
+        },
+        {
+          "path": "specs/v2-coverage-matrix.md",
+          "title": "v2 coverage matrix — the 23 screens, measured",
+          "question": "Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?"
         }
       ]
     },

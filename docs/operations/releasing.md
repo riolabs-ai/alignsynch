@@ -252,6 +252,15 @@ just tagged (step 5), so the cut is not done while `/admin/health` still names t
 A machine without the demo branch's credentials uses `--no-record`, which prints the command instead
 of running it.
 
+**A version is written `1.7.0` or `v1.7.0`, and both mean the same cut (#1248).** The tag is always
+`v<version>`, so the prefix is the tag's rather than the version's, and one normaliser
+(`scripts/release-version.mjs::stripV`) takes exactly one `v` off for every verb — `release.sh`, the
+preflight, `release-cut`, `release-record` and `release-version`'s own CLI. A run given the tagged
+spelling prints which form it received. Before this, `pnpm release:preflight v1.7.0` passed ten checks
+while `bash scripts/release.sh --tag-only v1.7.0` refused the same string, and
+`release-record.mjs check v1.7.0` reported a doubled `vv1.7.0`; a version that is not semver at all
+(`1.7.0.0`, `01.7.0`, `1.7`, `vv1.7.0`) is refused in either spelling, exactly as before.
+
 `pnpm release:cut --execute` is the same cut with the number already decided and the actor already
 proven: it re-checks the seven values, refuses outside an interactive TTY, asks for the version to be
 typed back, and then runs exactly `bash scripts/release.sh --tag-only <v>` — the composition is the

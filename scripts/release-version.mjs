@@ -18,9 +18,22 @@
  * in the numeric parts or in numeric pre-release identifiers (`1.1.0-01` is not a version), a build
  * suffix does not change precedence.
  *
- * CLI (exit 0 = yes, 1 = no, 2 = usage — the shell reads the exit status, not the words):
+ * **The `v` is the tag's, not the version's (#1248).** A tag here is `v<version>`, so a transcript
+ * is allowed to name a release either way — but only one function may strip the prefix, because the
+ * four verbs that take a version from a human disagreed: `release-preflight.mjs` stripped it,
+ * `release.sh --tag-only` refused the string with exit 2, and `release-record.mjs check` prefixed a
+ * second `v` and reported `vv2.0.0-rc1.3`. So `stripV` / `normalizeVersion` live here, every caller
+ * takes both forms, and the strict library answers (`parseVersion`, `isVersion`, `compareVersions`)
+ * stay bare-semver only: `v1.1.0` is still not a version, `vv1.1.0` is still not a version, and
+ * `1.1.0.0` / `01.0.0` / `1.1` are refused exactly as before. Normalising a caller's input is not
+ * the same as weakening what counts as one.
+ *
+ * CLI (exit 0 = yes, 1 = no, 2 = usage — the shell reads the exit status, not the words). Every
+ * version argument accepts the `v` form, and `normalize` prints the bare form so a script can hold
+ * one spelling:
  *
  *   node scripts/release-version.mjs token              the ERE, for `grep -E` / `awk`
+ *   node scripts/release-version.mjs normalize <v>      the bare version, printed — exit 0, or 1
  *   node scripts/release-version.mjs valid <v>          is this a version at all
  *   node scripts/release-version.mjs prerelease <v>     does it carry a `-suffix`
  *   node scripts/release-version.mjs bump <from> <to>   is <to> a newer version than <from>
@@ -78,6 +91,27 @@ export function parseVersion(input) {
 
 export function isVersion(input) {
   return parseVersion(input) !== null;
+}
+
+/**
+ * The tag prefix, stripped once — the one normaliser the release verbs share (#1248).
+ *
+ * A tag is `v<version>` and a version is not, so a human may write either and a script must end up
+ * with one spelling. Exactly one leading `v` comes off: `vv1.1.0` keeps a `v` and is therefore still
+ * not a version, which is the case that tells a normaliser from a `replace(/^v/g)`.
+ */
+export function stripV(input) {
+  return typeof input === "string" && input.startsWith("v") ? input.slice(1) : input;
+}
+
+/**
+ * The bare semver a caller may have written `v`-prefixed, or null when it is not a version at all.
+ * This is `stripV` plus the validity answer, in that order — so the `v` form is accepted without
+ * `isVersion` learning to accept `1.1.0.0`, `01.0.0` or `1.1`.
+ */
+export function normalizeVersion(input) {
+  const bare = stripV(input);
+  return isVersion(bare) ? bare : null;
 }
 
 /** True for a `-suffix`. Build metadata (`+build.5`) is not a pre-release: semver says it does not
@@ -150,26 +184,34 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     case "token":
       process.stdout.write(`${VERSION_TOKEN}\n`);
       break;
+    // Every verb below takes either spelling (#1248): the `v` is normalised off here, once, so no
+    // caller has to remember which of the four scripts stripped it and which refused it.
+    case "normalize": {
+      const bare = normalizeVersion(args[0]);
+      if (bare === null) process.exit(1);
+      process.stdout.write(`${bare}\n`);
+      break;
+    }
     case "valid":
-      answer(isVersion(args[0]));
+      answer(normalizeVersion(args[0]) !== null);
       break;
     case "prerelease":
-      answer(isPrerelease(args[0]));
+      answer(isPrerelease(stripV(args[0])));
       break;
     case "bump":
       if (args.length !== 2) process.exit(2);
-      answer(isBump(args[0], args[1]));
+      answer(isBump(stripV(args[0]), stripV(args[1])));
       break;
     case "compare": {
       if (args.length !== 2) process.exit(2);
-      const order = compareVersions(args[0], args[1]);
+      const order = compareVersions(stripV(args[0]), stripV(args[1]));
       if (order === null) process.exit(2);
       process.stdout.write(`${order}\n`);
       break;
     }
     default:
       process.stderr.write(
-        "release-version: usage: token | valid <version> | prerelease <version> | " +
+        "release-version: usage: token | normalize <version> | valid <version> | prerelease <version> | " +
           "bump <from> <to> | compare <a> <b>\n",
       );
       process.exit(2);
