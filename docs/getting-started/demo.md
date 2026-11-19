@@ -367,6 +367,28 @@ A failed reset leaves a branch that still serves, and the script says what it ho
   rebuilds it. `pnpm db:verify` against that state is green (measured on an emptied branch:
   `0 instance(s) checked, 0 template(s) resolved, no Gap column, no drift`).
 
+## Branches retired outside the policy — 2026-11-19
+
+The project sat at its ten-branch limit, so every reset refused before it started: a restore spends
+one slot and the `preserve_under_name` branch a second. Three branches the preserved-branch policy
+does not own were therefore retired by one `DELETE` each, under card `t_4fb43c87`. **No snapshot was
+possible:** manual snapshots are root-branch-only (`400`) and this plan holds one, already spent on
+`pre-1.5.0-migrations-2026-11-07` (`422 SNAPSHOTS_LIMIT_EXCEEDED`).
+
+| branch                                | id                            | held                                                                                 | survives as                                                                                                                      | state recoverable                         |
+| ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `triage-preserved-3bcce2a6`           | `br-sweet-glitter-b4hkjc01`   | production @ LSN `0/E234FF8` (2026-11-18T02:37:35Z), 65 records / 26 relationships   | **byte-identical to `production-preserved-20261118-023745`** on all twelve tables, counts and md5 — that branch is never deleted | yes, in full                              |
+| `repair-v30-t_03ba7f4c-20261118-2211` | `br-frosty-night-b40sw6w2`    | production @ LSN `0/EC612A0` (22:11:13Z), 72 records / 33 relationships              | its V30 repair is applied to production and measured there (6 → 4 violations)                                                    | the repair, on production; the branch, no |
+| `triage-pitr-2130`                    | `br-sparkling-night-b4vgkx32` | production @ LSN `0/EBB8EA8` (21:29:48Z), 72 records / 33 relationships / 29 invites | nearest is `repair-t_03ba7f4c-20261118-2152` — same shape **plus** the rejected V31 write (invites 29 → 33, record hash moved)   | **no**                                    |
+
+**`triage-pitr-2130` is the one that cost something.** It was authorised on the claim that it held
+the same content as `triage-t_3bcce2a6-20261118-2134`; measured, those two differ on every table
+(72/33/29 against 43/4/0), so the equivalence was an inference from two LSNs five minutes apart and
+not a comparison. The state cannot be rebuilt from Neon: the branch is `404`, it is absent from
+`include_deleted`, and the six-hour point-in-time window closed long before. The pre-V31 shape
+survives only as `repair-t_03ba7f4c-20261118-2152`, which carries that rejected write. Anything
+claiming to restore LSN `0/EBB8EA8` exactly should be treated as an approximation, not a copy.
+
 ## In CI
 
 `.github/workflows/demo-reset.yml` runs the same script on a nightly cron and on every `v*` tag, and
