@@ -637,6 +637,30 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "QA_ATLAS_DEBUG_PORT", why: "Chrome debug port for the atlas capture" },
   { name: "QA_ATLAS_SHOTS", why: "where the atlas capture writes its PNGs" },
   { name: "QA_ATLAS_VERSION", why: "which release directory the atlas capture writes" },
+  {
+    name: "BUNDLES_DIR",
+    why: "the v2 design bundle drop the fidelity audit reads its references from (scripts/design-audit.mjs); a path outside the checkout, never deployed",
+  },
+  {
+    name: "CHROME",
+    why: "the Chrome binary the fidelity audit drives (scripts/design-audit.mjs); falls back to /usr/bin/google-chrome",
+  },
+  {
+    name: "DESIGN_AUDIT_BASE",
+    why: "the demo host the fidelity audit captures instead of demo.alignsynch.com (scripts/design-audit.mjs)",
+  },
+  {
+    name: "DESIGN_AUDIT_HEAD",
+    why: "the sha the fidelity audit's manifest records instead of the tree's own HEAD (scripts/design-audit.mjs)",
+  },
+  {
+    name: "PROTOTYPE_DIR",
+    why: "the v2 prototype drop the fidelity audit resolves reference states against (scripts/design-audit.mjs); outside the checkout, never deployed",
+  },
+  {
+    name: "SPEC_DOCS_DIR",
+    why: "the v2 spec docs the fidelity audit derives its document set from (scripts/design-audit.mjs); outside the checkout, never deployed",
+  },
 
   // --- Build cache, release tooling and CI ----------------------------------------------------
   { name: "QUIZHUB_BUILD_SLOT", why: "the gate slot a build holds (scripts/build-cache.mjs)" },

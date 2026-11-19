@@ -631,7 +631,7 @@ async function renderReference(browser, { htmlPath, query, click, out, width }) 
 /**
  * Drive the create flow to a stage, because the stage's own address is not enough: `/create/mode`
  * and `/create/aspects` answer 307 → `/create` until a draft exists (measured 2026-11-19, on every
- * seeded instance). So the harness does what a person does — fills stage 1, presses the advance
+ * seeded session). So the harness does what a person does — fills stage 1, presses the advance
  * control — and records the address it ended on instead of pretending the URL worked.
  */
 async function driveWizard(browser, { base, template, target }) {

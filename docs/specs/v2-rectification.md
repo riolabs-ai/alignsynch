@@ -170,7 +170,7 @@ CRUD & Permissions · Built (#1157, #1179) · design deltas open · route `/admi
 
 ### `guides/admin/email-templates.md`
 
-Email Templates · Built (#1167) · design deltas open (https://github.com/riolabs-ai/alignsynch/issues/1231, https://github.com/riolabs-ai/alignsynch/pull/1242) · route `/admin/email-templates`
+Email Templates · Built (#1167) · design deltas open (#1231, PR #1242) · route `/admin/email-templates`
 
 - The doc promises **"Save as Draft, then Publish"** and a **Preview** with sample data; the live page text carries the register, its Status column and "Open", and no `Draft`, `Publish` or `Preview` control — live `tests/design-captures/admin-email-templates/live.txt`.
 - No reference render exists to pair: rc1.3 bundle 09 (`09-admin-email-templates-1231`) ships only `README.md` and `IMPLEMENTATION-PROMPT.md`. The doc's own frontmatter points at that directory, so the row cannot be paired even by hand.
@@ -202,7 +202,7 @@ Add a Card or Take Your Extra Week · Built (#1143, #1156 via #1170) · design d
 Copy, Resend or Cancel an Invite · Built (#1149 via #1170) · design deltas open · route `/dashboard/relationships/{summer}`
 
 - The doc's two actions — **"Copy Invite Link"** and **"Resend Invite"** — are absent from the live page at rest; the page draws the STATE/INVITED/CONNECTION/MEMBERSHIP card and the Aspects prose instead — live `tests/design-captures/initiator-copy-resend-or-cancel-an-invite/live.txt`.
-- The reference draws the waiting state as **"Waiting on Elena to Join · Invitation sent to elena.r@example.com on Nov 16"** with a **Share the Invite Link** next step and a **Copy Invite Link** control; the live page's equivalent is a **STATE · Complete** line, so the waiting-invite state is not the state the seeded relationship is in — the row is measured against a completed relationship, and the delta is that the state the doc describes could not be reproduced from the seed.
+- The reference draws the waiting state as **"Waiting on Elena to Join · Invitation sent to `elena.r@example.com` on Nov 16"** with a **Share the Invite Link** next step and a **Copy Invite Link** control; the live page's equivalent is a **STATE · Complete** line, so the waiting-invite state is not the state the seeded relationship is in — the row is measured against a completed relationship, and the delta is that the state the doc describes could not be reproduced from the seed.
 - The reference's **"Trial Starts When Elena Accepts"** marker is absent from the live capture.
 
 ### `guides/initiator/create-your-account.md`
@@ -222,7 +222,7 @@ Edit a Draft or Sent Invite · Built (#1144, #1148) · design deltas open · rou
 
 ### `guides/initiator/if-a-draft-cant-be-created.md`
 
-If a Draft Can't Be Created · Planned (https://github.com/riolabs-ai/alignsynch/issues/1226) · #1210 shipped a named 500 without this screen · route `/assessment/new/failed`
+If a Draft Can't Be Created · Planned (#1226) · #1210 shipped a named 500 without this screen · route `/assessment/new/failed`
 
 - The screen is drawn: `/assessment/new/failed` heads **"Couldn't Create This Draft"** and offers **Try Again** and **Back to Dashboard**, which is the doc's first two promises — live `tests/design-captures/initiator-if-a-draft-cant-be-created/live.txt`.
 - The doc's third promise — **"Nothing was sent and nothing was charged"** — is absent from the page text, and it is the sentence the doc says exists so the person knows the failure cost them nothing.
@@ -330,7 +330,7 @@ Retired Terms · Designed · route `—`
 
 ### `reference/emails/counterparty-joined.md`
 
-Counterparty Joined Email · Built · design deltas open (https://github.com/riolabs-ai/alignsynch/issues/1227, https://github.com/riolabs-ai/alignsynch/pull/1240) · route `—`
+Counterparty Joined Email · Built · design deltas open (#1227, PR #1240) · route `—`
 
 - The doc's evidence line has moved: it cites `content/email-bodies.md:91` for **"left. Your trial has started, and it runs from the day the invitation was accepted."**, and line 91 now reads **"The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is left."** — the sentence the doc quotes is in no line of the file.
 - The delta the doc asserts (the trial stated on every send) is therefore closed and its citation is stale, which is the opposite of what the row's `design deltas open` status claims. The subject is live as documented: `lib/email/templates/counterparty-joined.ts:54` **"{joiner} joined — your assessment can start"**.
