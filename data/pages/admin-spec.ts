@@ -137,6 +137,32 @@ export const adminSpecPageCopy: PageCopy = zPageCopy.parse({
     { id: "matrix-pages", label: "Agreement page" },
     { id: "matrix-empty", label: "No rows in this section." },
 
+    /* The GitHub pull (#1296) — the register's editable layer, read-only here. */
+    { id: "issues-heading", label: "GitHub" },
+    { id: "issues-col", label: "Issue" },
+    { id: "issues-none", label: "—" },
+    { id: "issues-open", label: "Open" },
+    { id: "issues-closed", label: "Closed" },
+    { id: "issues-milestone", label: "Milestone" },
+    { id: "issues-tier", label: "Tier" },
+    { id: "issues-reviewed-on", label: "Reviewed" },
+    { id: "issues-reviewed-off", label: "Not reviewed" },
+    { id: "issues-approved-on", label: "Approved" },
+    { id: "issues-approved-off", label: "Not approved" },
+    { id: "issues-count", label: "{count} issues read from GitHub" },
+    { id: "issues-skipped", label: "{skipped} without a row marker, skipped" },
+    { id: "issues-refresh", label: "Refresh from GitHub" },
+    { id: "issues-refresh-title", label: "Re-read the issues now. Nothing here writes to GitHub." },
+    {
+      id: "issues-degraded",
+      label:
+        "GitHub could not be reached and no copy has been read yet, so the issue column is hidden. The register below is unaffected.",
+    },
+    {
+      id: "issues-stale",
+      label: "GitHub could not be reached. The issue column shows the last copy this server read.",
+    },
+
     /* One story page (s03). */
     { id: "story-eyebrow-story", label: "Project Spec 2.0 · Story · {number}" },
     { id: "story-eyebrow-around", label: "Project Spec 2.0 · Around the Story · {number}" },

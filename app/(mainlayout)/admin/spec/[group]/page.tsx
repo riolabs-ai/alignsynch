@@ -28,6 +28,7 @@ import { adminSpecGroupPath } from "@/lib/admin/spec-paths";
 import { requireSpecReader } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 import { readSpecValidationSafe, SPEC_VALIDATION_SOURCE } from "@/lib/spec/file";
+import { readSpecIssues } from "@/lib/spec/issues-cache";
 import { specStoryOf } from "@/content/spec";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,9 @@ export default async function AdminSpecGroupPage({
   await requireSpecReader({ next: adminSpecGroupPath(group) });
   const { doc, reason } = readSpecValidationSafe();
   const story = specStoryOf(group);
+  // The GitHub read (#1296) — the cached set, the last copy, or a degraded reason. The story's own
+  // rows come from the register either way.
+  const issues = await readSpecIssues();
 
   return (
     <StageColumn>
@@ -59,7 +63,13 @@ export default async function AdminSpecGroupPage({
         {doc === null ? (
           <SpecNotice copy={adminSpecPageCopy} path={SPEC_VALIDATION_SOURCE} reason={reason} />
         ) : (
-          <StoryPage copy={adminSpecPageCopy} doc={doc} story={story ?? null} />
+          <StoryPage
+            copy={adminSpecPageCopy}
+            doc={doc}
+            story={story ?? null}
+            issues={issues}
+            path={adminSpecGroupPath(story?.slug ?? group)}
+          />
         )}
       </SpecFrame>
     </StageColumn>

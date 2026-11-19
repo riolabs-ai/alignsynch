@@ -44,8 +44,10 @@ import {
 import { ADMIN_SPEC_VALIDATION_PATH } from "@/lib/admin/spec-paths";
 import { adminSpecStoryDescriptions } from "@/data/pages/admin-spec";
 import { specEvidenceLink } from "@/lib/spec/evidence";
+import { specIssueFor, type SpecIssuesRead } from "@/lib/spec/issues";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 
+import { SpecIssueCell, SpecIssuesBar } from "./spec-issues";
 import { SpecParityChip, SpecStatusChip } from "./spec-status";
 
 /** The group's chips: one per status it actually carries, the counts beside the words. */
@@ -95,10 +97,16 @@ export function StoryPage({
   copy,
   doc,
   story,
+  issues = null,
+  path = ADMIN_SPEC_VALIDATION_PATH,
 }: {
   copy: PageCopy;
   doc: SpecValidation;
   story: SpecStoryGroup | null;
+  /** The GitHub read, or `null` when there is none — see `ValidationMatrix`. */
+  issues?: SpecIssuesRead | null;
+  /** The address this page is served at, for the refresh control's return trip. */
+  path?: string;
 }) {
   const words = (id: string) => pageItemOf(copy, id).label;
 
@@ -120,6 +128,7 @@ export function StoryPage({
   }
 
   const rows = doc.rows.filter((row) => row.group === story.name);
+  const column = issues !== null && issues.kind === "ready";
   const around = Number.parseInt(story.number, 10) > 6;
   const eyebrow = fillLabel(around ? words("story-eyebrow-around") : words("story-eyebrow-story"), {
     number: story.number,
@@ -143,6 +152,8 @@ export function StoryPage({
           {words("story-empty")}
         </p>
       ) : null}
+
+      <SpecIssuesBar copy={copy} read={issues} next={path} />
 
       <section aria-labelledby="spec-story-agreed" className="space-y-2">
         <h2 id="spec-story-agreed" className="text-base font-semibold">
@@ -226,6 +237,7 @@ export function StoryPage({
                 <TableHead>{words("story-col-id")}</TableHead>
                 <TableHead>{words("story-col-status")}</TableHead>
                 <TableHead>{words("story-col-dod")}</TableHead>
+                {column ? <TableHead>{words("issues-col")}</TableHead> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -238,6 +250,11 @@ export function StoryPage({
                     <SpecStatusChip status={row.status} />
                   </TableCell>
                   <TableCell className="align-top text-sm">{row.definitionOfDone}</TableCell>
+                  {column ? (
+                    <TableCell className="align-top">
+                      <SpecIssueCell copy={copy} issue={specIssueFor(issues, row.id)} />
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
