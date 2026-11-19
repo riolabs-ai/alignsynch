@@ -205,6 +205,16 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the project spec's register (data/spec/validation.json — issue #1252)",
+    // One file: the *rule* is `specRegisterProblems` in `content/spec.ts`, which is a model module
+    // (no `fs`, no clock) and so names no code; the walk that reads the file and prints the finding
+    // is `data-check.ts`. Same shape as the brand-icon group below.
+    files: ["data-check.ts"],
+    codes: {
+      E42: "the project spec's register is the generated, quote-free projection of `VALIDATION.csv` — `zSpecValidation` accepts it (a file written with quotes is refused by name), no ID appears twice, every group is a story `SPEC_STORY_GROUPS` carries or `Beyond the Agreement`, and no story page is left with no row",
+    },
+  },
+  {
     owner:
       "rules 6 and 7 of the reference pattern set — numbers and empty states (scripts/ui-census.ts)",
     // The rule *lives* in `ui-census.ts`: the numeric vocabulary, the record-list shape, the guard

@@ -1,23 +1,29 @@
 /**
- * `/admin/spec/validation` — the Validation matrix's route (#1252).
+ * `/admin/spec/validation` — the Validation matrix (#1252).
  *
  * The gate is `/admin/spec`'s, in the same order (`requireAdminProduct()` then the spec-reader
- * gate), and the refusal is the same unknown-URL 404. What this route renders in this card is the
- * spine's own panel, because the matrix — the pinned three-column screen, its 76 rows and their
- * counts — is the next card (t_f5458e3d). The address exists now so the gate's three states are
- * provable at the depth the submenu will link to, rather than only at the parent.
+ * gate), and the refusal is the same unknown-URL 404. What this route adds is the reader: the
+ * pinned three-column screen — a sticky status box, the four sections in the agreement's order,
+ * and every row with its Definition of Done and its release evidence (s02, AS-07).
  *
- * `force-dynamic`, like its parent, and for the same reason: session, profile row, and a source
- * read per request. The `Cache-Control`/`X-Robots-Tag` pair comes from `next.config.mjs`.
+ * **The register is read here, per request (AS-09).** `readSpecValidationSafe()` opens
+ * `data/spec/validation.json` on the visit and hands it down; a missing or invalid file draws the
+ * honest panel instead (s04b), answers 200 and logs nothing as an error. `force-dynamic` is what
+ * makes the read per request, and the `Cache-Control`/`X-Robots-Tag` pair is `next.config.mjs`'s.
+ *
+ * Every word is `data/pages/admin-spec.ts`; every row is the register's (E23 budget 0).
  */
 import type { Metadata } from "next";
 
-import { SpecSpine } from "@/components/admin/spec/spec-spine";
+import { SpecFrame } from "@/components/admin/spec/spec-frame";
+import { SpecNotice } from "@/components/admin/spec/spec-notice";
+import { ValidationMatrix } from "@/components/admin/spec/validation-matrix";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { adminSpecPageCopy } from "@/data/pages/admin-spec";
 import { ADMIN_SPEC_VALIDATION_PATH } from "@/lib/admin/spec-paths";
 import { requireSpecReader } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
+import { readSpecValidationSafe, SPEC_VALIDATION_SOURCE } from "@/lib/spec/file";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +35,17 @@ export const metadata: Metadata = {
 export default async function AdminSpecValidationPage() {
   requireAdminProduct();
   await requireSpecReader({ next: ADMIN_SPEC_VALIDATION_PATH });
+  const { doc, reason } = readSpecValidationSafe();
 
   return (
     <StageColumn>
-      <SpecSpine copy={adminSpecPageCopy} />
+      <SpecFrame copy={adminSpecPageCopy} doc={doc} current={{ kind: "validation" }}>
+        {doc === null ? (
+          <SpecNotice copy={adminSpecPageCopy} path={SPEC_VALIDATION_SOURCE} reason={reason} />
+        ) : (
+          <ValidationMatrix copy={adminSpecPageCopy} doc={doc} />
+        )}
+      </SpecFrame>
     </StageColumn>
   );
 }

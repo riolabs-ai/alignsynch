@@ -1,0 +1,3403 @@
+{
+  "version": 1,
+  "release": "2.0.0-rc1.2",
+  "main": "601ce260f",
+  "generatedAt": "2026-11-19",
+  "source": {
+    "file": "VALIDATION.csv",
+    "sha256": "b9cd94bcd21dd1a3564a27d3f53fbb8d31b718fd25a62d0bb6ffc4966abb1916"
+  },
+  "quotesIncluded": false,
+  "rows": [
+    {
+      "id": "APP-05",
+      "section": "Unfinished Work: TBD",
+      "group": "Play with Aspects",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p32",
+      "quote": null,
+      "requirement": "Offer a Household Pet Peeves template.",
+      "definitionOfDone": "Template appears in the catalogue with at least 5 Aspects.",
+      "today": "Not in the catalogue. Doctor / Patient (08) is covered by Patient–Caregiver.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/relationship-types.ts:740"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Add a Household Pet Peeves template (content only).",
+      "note": null
+    },
+    {
+      "id": "APP-09",
+      "section": "Unfinished Work: TBD",
+      "group": "Play with Aspects",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p4, p14",
+      "quote": null,
+      "requirement": "Each template carries about a dozen Aspects.",
+      "definitionOfDone": "Each offered template has ≥ 12 Aspects, or the Initiator can add up to 12.",
+      "today": "Offered templates carry 5–7 Aspects; the Initiator can add more. My Templates caps at 8.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/flow/template-draft.ts:34"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Fair gap. Shorter sets finish in one sitting, but that's a design view, not a contract offset."
+    },
+    {
+      "id": "APP-11",
+      "section": "Unfinished Work: TBD",
+      "group": "Play with Aspects",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p37, p111+",
+      "quote": null,
+      "requirement": "Key terms carry a short help definition where they appear.",
+      "definitionOfDone": "Every field in the wizard and answer screen has a help line or tooltip.",
+      "today": "Help lines under fields (for example Description, Mode). No glossary tooltip on every term.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/assessment-create.ts:553"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-14",
+      "section": "Unfinished Work: TBD",
+      "group": "Register",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p9, p87",
+      "quote": null,
+      "requirement": "Collect age at sign-up for future age-based templates.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "Date of birth was removed from sign-up because nothing read it. No age-based templates exist.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/register.ts:39"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Walt decides on collecting age.",
+      "note": "Needs Walt: collect age now (privacy cost, no reader) or when age-based templates ship."
+    },
+    {
+      "id": "APP-15",
+      "section": "Unfinished Work: TBD",
+      "group": "Register",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p88",
+      "quote": null,
+      "requirement": "Sign-up sends an email verification link.",
+      "definitionOfDone": "A new email/password account receives a verification email.",
+      "today": "Not evidenced. The auth path list names `send-verification-email`; delivery was not verified end to end.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/forms/auth-paths.ts:53"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Sign up a fresh email on prod; record whether a verification email arrives. Built → Delivered, else move to R2.",
+      "note": "Verify on prod in one loop."
+    },
+    {
+      "id": "APP-16",
+      "section": "Unfinished Work: TBD",
+      "group": "Register",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p88, p121",
+      "quote": null,
+      "requirement": "Optional phone, CC email, text notifications and 2FA.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "Not built. The source marks it undecided; phone was removed from sign-up.",
+      "release": {
+        "v200": "On Roadmap · Later",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/register.ts:39"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-20",
+      "section": "Unfinished Work: TBD",
+      "group": "Register",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p17, p102–p103",
+      "quote": null,
+      "requirement": "The relationship list shows Gap counts, Mode, Setting and last change per relationship.",
+      "definitionOfDone": "Each card shows Gap count, Mode, Setting and last-updated date.",
+      "today": "Cards show name, other person, a status chip and the next step; Gap counts, Mode, Setting and dates are not on the list.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/my-relationships-and-start.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-22",
+      "section": "Unfinished Work: TBD",
+      "group": "Invite",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p88, p124",
+      "quote": null,
+      "requirement": "The Initiator can add a personal note to the invitation and see what was sent.",
+      "definitionOfDone": "Stage 5 has an optional note field; the sent state shows the email.",
+      "today": "No note field and no copy of the sent email was found. The sent state shows Invitation History.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/dashboard-relationship-detail.ts:924"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Decide: optional note field on Stage 5, or mark Out of Scope with Walt.",
+      "note": null
+    },
+    {
+      "id": "APP-34",
+      "section": "Unfinished Work: TBD",
+      "group": "Share and Results",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p27, p82",
+      "quote": null,
+      "requirement": "A results page per relationship, a heat chart, and a keepable record.",
+      "definitionOfDone": "Align shows every Aspect's answers and status; a record can be downloaded.",
+      "today": "Align report with a Next Step. No heat chart. The PDF record exists but downloads from Admin only.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/report/pdf.ts:2"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/instances/[id]/report/export/route.ts:90"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/results-and-align.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-35",
+      "section": "Unfinished Work: TBD",
+      "group": "Share and Results",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p75, p98",
+      "quote": null,
+      "requirement": "Celebrate when a relationship is Aligned (screen and email).",
+      "definitionOfDone": "Reaching Aligned shows a celebration and sends a congratulations email.",
+      "today": "Not built. No congratulations email in the template register.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:94"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-37",
+      "section": "Unfinished Work: TBD",
+      "group": "Discuss",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p90, p93",
+      "quote": null,
+      "requirement": "Both people can message each other in the relationship and tag an Aspect.",
+      "definitionOfDone": "Messages persist across sessions and can be tagged to an Aspect.",
+      "today": "Discussion with Aspect tags is built; messages do not persist yet.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/chat.ts:51"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/chat-and-discussion.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Persist Discussion messages (#1189); reload keeps the thread.",
+      "note": null
+    },
+    {
+      "id": "APP-39",
+      "section": "Unfinished Work: TBD",
+      "group": "Discuss",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p90, p91, p119",
+      "quote": null,
+      "requirement": "Pending changes are marked and every change is listed in a log both people can read.",
+      "definitionOfDone": "The relationship shows a dated list of proposed, accepted and opinion changes.",
+      "today": "Proposals are marked by a card, not shading. No member-visible change log was found (operators have Admin › Audit).",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/audit/page.tsx:18"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/propose-a-change.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-40",
+      "section": "Unfinished Work: TBD",
+      "group": "Discuss",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p74, p91",
+      "quote": null,
+      "requirement": "Email the other person on each proposed change and a daily summary of opinion changes.",
+      "definitionOfDone": "A proposal triggers an email; opinion changes roll into one daily email.",
+      "today": "Neither email is in the template register.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:81"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-41",
+      "section": "Unfinished Work: TBD",
+      "group": "Discuss",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p27, p74–p75",
+      "quote": null,
+      "requirement": "Reminder and retention emails.",
+      "definitionOfDone": "Invite and trial reminders send; a weekly relationship email is defined.",
+      "today": "Invitation reminder and trial-ending emails exist; no weekly relationship email.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:81"
+        },
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:101"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-46",
+      "section": "Unfinished Work: TBD",
+      "group": "Plans and Billing",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p85",
+      "quote": null,
+      "requirement": "A billing page with plan, status, invoices and card.",
+      "definitionOfDone": "Payment tab shows plan, trial or renewal state, card and invoice access.",
+      "today": "Payment tab shows plan, trial state and after-trial price. Invoice access was not evidenced.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/dashboard/payment/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/payment.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Show invoice/receipt link (provider portal) on the Payment tab, or record that the provider emails receipts.",
+      "note": null
+    },
+    {
+      "id": "APP-47",
+      "section": "Unfinished Work: TBD",
+      "group": "Plans and Billing",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p75, p81",
+      "quote": null,
+      "requirement": "Accept a discount code at payment.",
+      "definitionOfDone": "A valid code reduces the charge at checkout.",
+      "today": "Not built. The billing schema leaves coupons to the provider.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "db/migrations/0009_billing.sql:16"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-49",
+      "section": "Unfinished Work: TBD",
+      "group": "Coaches and Professionals",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p38, p142",
+      "quote": null,
+      "requirement": "The Initiator can invite a Coach who reads the relationship and gets copied on emails.",
+      "definitionOfDone": "Relationship has Invite Coach; the coach joins read-only and is CC'd.",
+      "today": "Back-end scaffold only: invite/claim/revoke in the store and a read-only coach state; no screen sends it.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/flow/store.ts:3525"
+        },
+        {
+          "kind": "code",
+          "ref": "lib/flow/answer-gate.ts:105"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Walt decides whether Coach invite is in 2.0 (scaffold exists).",
+      "note": "Needs a decision on whether coaches are in 2.0."
+    },
+    {
+      "id": "APP-50",
+      "section": "Unfinished Work: TBD",
+      "group": "Coaches and Professionals",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p31, p49, p82, p115, p124",
+      "quote": null,
+      "requirement": "Branded coaches: their logo and templates, prepaid months for clients, coupon-funded relationships.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "Not built. It depends on APP-49 and on the Account Bank, which the one-plan decision replaced.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Walt confirms Branded Coach is post-2.0.",
+      "note": "Wholesale B2B model. Needs Walt to confirm it is still wanted."
+    },
+    {
+      "id": "ADMIN-05",
+      "section": "Unfinished Work: TBD",
+      "group": "Admin",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "Staff can manage website content and blog posts.",
+      "definitionOfDone": "Staff can edit public page copy and publish posts without a deploy.",
+      "today": "Staff can edit email templates and send broadcasts. Public page copy and a blog are not editable from Admin.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/email-templates/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/admin/email-templates.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-06",
+      "section": "Unfinished Work: TBD",
+      "group": "Admin",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p82",
+      "quote": null,
+      "requirement": "Staff can change prices and maintain coupon codes.",
+      "definitionOfDone": "Price changes ship as config; coupons per APP-47.",
+      "today": "Prices are configuration (a reviewed change), not an admin screen. Pricing is PM-owned. Coupons are Tentative (APP-47).",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/billing-plans.ts:169"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-06",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p5, p81",
+      "quote": null,
+      "requirement": "A blog where the Company posts articles.",
+      "definitionOfDone": "A `/blog` (or equivalent) lists AlignSynch posts managed from Admin.",
+      "today": "No AlignSynch blog. A `/news` route survives from the base template with quiz copy; whether it is reachable on the AlignSynch build was not verified.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/news/page.tsx:5"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Decide: no blog at launch (hide `/news`) or a later loop.",
+      "note": "Needs a decision: launch without a blog, or add one in a later loop."
+    },
+    {
+      "id": "WEB-07",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p81",
+      "quote": null,
+      "requirement": "Public Reviews and Glossary pages.",
+      "definitionOfDone": "`/glossary` renders the product glossary; Reviews shows only real reviews.",
+      "today": "Glossary is written in the docs, not as a site page. No reviews page (no real reviews exist yet to publish).",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "reference/copy/glossary.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Publish `/glossary` from the docs glossary; Reviews waits for real reviews.",
+      "note": null
+    },
+    {
+      "id": "WEB-08",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p81, p98",
+      "quote": null,
+      "requirement": "Public pages carry titles, descriptions, social cards and are indexable; internal pages are not.",
+      "definitionOfDone": "Each public route has a title and description; OG image renders; admin routes are noindex; a sitemap lists public routes.",
+      "today": "Per-page metadata, OpenGraph image and noindex on admin pages exist. No sitemap/robots route was found under `app/`.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/layout.tsx:63"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/docs/page.tsx:46"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Add `app/sitemap.ts` and `app/robots.ts` for the public routes.",
+      "note": null
+    },
+    {
+      "id": "WEB-11",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p30, p81, p93",
+      "quote": null,
+      "requirement": "Unregistered views are watermarked and cannot be copied or printed.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "Not built. Unregistered visitors see the catalogue and a demo labelled Example; they cannot save or answer.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/relationship-templates/[slug]/demo/page.tsx:3"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Walt signs off on dropping watermark/no-print.",
+      "note": "Recommend dropping: nothing an unregistered visitor sees is a saved relationship. Needs Walt's sign-off."
+    },
+    {
+      "id": "WEB-12",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p29",
+      "quote": null,
+      "requirement": "Multi-language site.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "English only. The source asks the question but does not decide it.",
+      "release": {
+        "v200": "On Roadmap · Later",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-13",
+      "section": "Unfinished Work: TBD",
+      "group": "Website",
+      "check": "☐",
+      "status": "Tentative",
+      "pdfPages": "p82",
+      "quote": null,
+      "requirement": "Seven hidden pages for the Company's other products.",
+      "definitionOfDone": "n/a until decided.",
+      "today": "Not built; no content was supplied for them.",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Walt confirms hidden pages are out of 2.0.",
+      "note": "Needs Walt to confirm whether these are still wanted, and their content."
+    },
+    {
+      "id": "OPS-01",
+      "section": "Unfinished Work: TBD",
+      "group": "Launch and Operations",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p5, p6, p7",
+      "quote": null,
+      "requirement": "The 2.0 platform (website, user app, admin) is deployed and accepted.",
+      "definitionOfDone": "A 2.0.0 release is tagged on main, deployed to production, and this certificate is signed.",
+      "today": "2.0.0-rc1.2 is released and deployed. 2.0.0 GA isn't tagged yet, and sign-off is pending (this document).",
+      "release": {
+        "v200": "Fills Gap · R1",
+        "rc2": "R1",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "CHANGELOG.md:9"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": "Tag 2.0.0 after the open PM PRs land; deploy; collect signatures.",
+      "note": null
+    },
+    {
+      "id": "OPS-04",
+      "section": "Unfinished Work: TBD",
+      "group": "Launch and Operations",
+      "check": "◐",
+      "status": "Partial",
+      "pdfPages": "p140",
+      "quote": null,
+      "requirement": "Measure conversion, churn and retention.",
+      "definitionOfDone": "Sign-up → invite → accept → paid funnel is counted and visible to staff.",
+      "today": "Admin › Growth reads the growth model. No product analytics instrumentation was found.",
+      "release": {
+        "v200": "On Roadmap · R2",
+        "rc2": "—",
+        "rc3": "R2",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/growth/page.tsx:2"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-01",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p14, p32, p81",
+      "quote": null,
+      "requirement": "A public catalogue of business and personal Relationship Templates, viewable before sign-up.",
+      "definitionOfDone": "`/relationship-templates` lists at least 13 offered templates signed out, each opening a template page.",
+      "today": "27 offered templates (2024 list: 16) across Office, Business, Home, Social, School, Medical and Property realms, each with who it's for and who it's not for.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/relationship-templates/page.tsx:21"
+        },
+        {
+          "kind": "code",
+          "ref": "data/relationship-types.ts:145"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/pick-a-template.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-12",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Register",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p87, p121",
+      "quote": null,
+      "requirement": "A visitor can create an account with name, email and password.",
+      "definitionOfDone": "`/register` creates an account and returns the person to their draft.",
+      "today": "Two-step sign-up (email, then name and password) plus Google sign-in; return to the draft after sign-in.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/register.ts:36"
+        },
+        {
+          "kind": "code",
+          "ref": "lib/auth/google-flow.ts:80"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/create-your-account.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-23",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Invite",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p114, p125–p127",
+      "quote": null,
+      "requirement": "Invitations expire after 7 days and can be re-sent or voided.",
+      "definitionOfDone": "A link older than 7 days is refused with a clear message; Resend and Cancel work.",
+      "today": "7-day links, Resend, Cancel Invite; v2 adds Copy Invite Link and editing a sent invite.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/invite.ts:191"
+        },
+        {
+          "kind": "code",
+          "ref": "data/pages/dashboard-relationship-detail.ts:644"
+        },
+        {
+          "kind": "code",
+          "ref": "data/pages/dashboard-relationship-detail.ts:659"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/copy-resend-or-cancel-an-invite.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/edit-a-draft-or-sent-invite.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-24",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Invite",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p74, p81",
+      "quote": null,
+      "requirement": "The invited person registers from the link and lands on the relationship.",
+      "definitionOfDone": "Join steps 1–3 create the account and open the relationship.",
+      "today": "Join steps 1–3 and a You've Joined landing; v2 adds one-click Decline.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/invite/[token]/decline/route.ts:6"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/counterparty/accept-or-decline-an-invite.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-01",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Admin",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "An internal admin app only staff can open.",
+      "definitionOfDone": "Non-admins get no admin rail and admin routes refuse them.",
+      "today": "Admin rail gated by role and an allowlist, with a CRUD & Permissions matrix.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/auth/admin-allowlist.ts:2"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/permissions/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/admin/who-sees-the-admin-rail.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/admin/crud-and-permissions.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-07",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Admin",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "Further back-office tools as needed.",
+      "definitionOfDone": "n/a",
+      "today": "Templates, relationships, audit log, platform health, gap overview and growth model screens.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/templates/page.tsx:3"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/audit/page.tsx:18"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/health/page.tsx:2"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/gaps/page.tsx:12"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-05",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Website",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "User and admin documentation that explains every shipped feature.",
+      "definitionOfDone": "Every feature in the inventory has a docs page with status and evidence.",
+      "today": "51 illustrated docs pages (spec-docs-v2) with file:line evidence, plus in-app Admin › Docs.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/docs/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "README.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "start/what-is-alignsynch.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "OPS-03",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Launch and Operations",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "The platform is tested before launch.",
+      "definitionOfDone": "Automated tests run in CI on main.",
+      "today": "380 entries under `tests/` on main, plus QA atlases and a recorded demo-flow check.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/how-it-works/page.tsx:6"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "B-01",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Pause, read-only and one free Extra Week instead of deletion",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Pause, read-only and one free Extra Week instead of deletion",
+      "release": {
+        "v200": "Shipped in rc1.2 · #1235 merged #1236 merged",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/when-a-relationship-pauses.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-02",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Leave Relationship / Ask to Be Removed (closed, never erased)",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Leave Relationship / Ask to Be Removed (closed, never erased)",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/shared/leave-a-relationship.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-03",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Delete Account (immediate)",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Delete Account (immediate)",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/account/delete-your-account.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-04",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "One-click Decline for the invited person",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "One-click Decline for the invited person",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/counterparty/accept-or-decline-an-invite.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-05",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Edit a draft or sent invite; Copy Invite Link",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Edit a draft or sent invite; Copy Invite Link",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/edit-a-draft-or-sent-invite.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-06",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Counterparty can save the Aspects as their own template",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Counterparty can save the Aspects as their own template",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/counterparty/save-these-aspects-as-a-template.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-07",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "My Templates with archive / restore and template proposals",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "My Templates with archive / restore and template proposals",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/my-templates.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-08",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Google sign-in",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Google sign-in",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/create-your-account.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-09",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Admin CRUD & Permissions matrix",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Admin CRUD & Permissions matrix",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1245 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/admin/crud-and-permissions.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-10",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Admin Email Templates register and override editor",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Admin Email Templates register and override editor",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1242 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/admin/email-templates.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-11",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "Admin audit log, platform health, release notes",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "Admin audit log, platform health, release notes",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/admin/who-sees-the-admin-rail.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "B-12",
+      "section": "Over-Spec Deliverables in v2.0",
+      "group": "Beyond the Agreement",
+      "check": "☑",
+      "status": "Over-Delivered",
+      "pdfPages": null,
+      "quote": null,
+      "requirement": "51-page illustrated docs with file:line evidence",
+      "definitionOfDone": "Works on main as its docs page describes.",
+      "today": "51-page illustrated docs with file:line evidence",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "start/what-is-alignsynch.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Docs page verified; no main citation recorded for this item",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Not asked for in the agreement."
+    },
+    {
+      "id": "APP-03",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Play with Aspects",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p93, p99, p141",
+      "quote": null,
+      "requirement": "A visitor can shape a relationship before registering without losing the work.",
+      "definitionOfDone": "Stages 1–3 work signed out; after sign-up the same draft continues at Stage 4.",
+      "today": "Stages 1–3 (Details, Settings, Aspects) work signed out and the draft is carried through sign-up. Answering moved to Stage 6, after the invite, so both people answer sealed. This replaces the 30-minute timeout and the “you will lose your changes” pop-up.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/auth/demo-form.ts:21"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/assessment/new/aspects/route.ts:77"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/set-up-details-settings-and-aspects.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-04",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Play with Aspects",
+      "check": "→",
+      "status": "Out of Scope",
+      "pdfPages": "p32",
+      "quote": null,
+      "requirement": "Offer the dating templates.",
+      "definitionOfDone": "n/a: removed.",
+      "today": "Kept as records, not offered: “dating is outside this product, by the owner's instruction.”",
+      "release": {
+        "v200": "Future Version",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/relationship-types.ts:1398"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "Owner decision recorded in code; listed for Walt's sign-off."
+    },
+    {
+      "id": "APP-13",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Register",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p87, p121",
+      "quote": null,
+      "requirement": "A unique username is the account identifier.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "Email (or Google) is the identifier; sign-up asks for no username, so there is no Forgot Username to need.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/register.ts:38"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-29",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Opinions",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p9, p15, p40–p41",
+      "quote": null,
+      "requirement": "A Stage Bar shows eight stages (A–D user, 1–4 relationship).",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "Six stages people can act on: Details, Settings, Aspects, Account, Invite, Align. The 1–4 relationship ladder (Invited, Connected, Sharing, Aligned) is kept in the model.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/stages.ts:76"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/stages/stage-6-align.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "start/core-concepts.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-30",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Share and Results",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p41, p91",
+      "quote": null,
+      "requirement": "Answers become visible to both once the Counterparty shares.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "Submitting seals the answers; results open automatically when both have answered (Waiting on {name} → Results In). No separate Share button.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/assessment-answer.ts:112"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/results-and-align.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-32",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Share and Results",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p43",
+      "quote": null,
+      "requirement": "Show each Aspect's Gap as a flag, and a green check when In Synch.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "Status as icon plus word: ✓ In Synch, ≈ Small Gap, ⚑ Gap, with no red and no colour-only meaning. The four severities stay in the model.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/gaps.ts:396"
+        },
+        {
+          "kind": "code",
+          "ref": "data/pages/chat.ts:54"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/states/status-chips.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-36",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Share and Results",
+      "check": "→",
+      "status": "Out of Scope",
+      "pdfPages": "p74, p131–p133",
+      "quote": null,
+      "requirement": "AI-written interpretation and per-gap analytics pages.",
+      "definitionOfDone": "n/a: later version.",
+      "today": "Not in 2.0: the source places AI analysis in version 3 and the analytics pages under “Stuff for Later”.",
+      "release": {
+        "v200": "Future Version",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-42",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Plans and Billing",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p9, p30, p46",
+      "quote": null,
+      "requirement": "A free full-feature trial week for new accounts.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "7 days free, starting when the other person accepts, then one free Extra Week before Stage 6 pauses. No card at sign-up.",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "#1240 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "lib/flow/payment.ts:52"
+        },
+        {
+          "kind": "code",
+          "ref": "lib/relationship/membership.ts:411"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/your-7-days-free.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/add-a-card-or-take-your-extra-week.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-43",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Plans and Billing",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p30–p31, p40, p75",
+      "quote": null,
+      "requirement": "Prepaid Relationship Months in an Account Bank, sold as bundles.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "One plan, Basic, monthly, for one relationship: a PM pricing decision (Family removed by PR #1237, Single Annual by PR #1241). Settled scope.",
+      "release": {
+        "v200": "Offset in rc1.2 · #1237 merged",
+        "rc2": "#1241 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "start/plans-and-trial.md"
+        }
+      ],
+      "parity": "No",
+      "parityBasis": "Docs describe Basic, the one plan; main still sells two plans until #1241 merges.",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-48",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Plans and Billing",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p31, p121–p122",
+      "quote": null,
+      "requirement": "When unpaid, lock the relationship; free relationships are deleted after 30 days.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "When the trial and Extra Week end, Stage 6 pauses read-only and nothing is deleted; Add a Card resumes it.",
+      "release": {
+        "v200": "Offset in rc1.2 · #1235 merged #1236 merged",
+        "rc2": "#1243 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/when-a-relationship-pauses.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-10",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Website",
+      "check": "→",
+      "status": "Offset",
+      "pdfPages": "p4",
+      "quote": null,
+      "requirement": "Build the platform on WordPress.",
+      "definitionOfDone": "n/a: replaced.",
+      "today": "Built on Next.js with Postgres (Neon) and Neon Auth, deployed on Vercel: one typed codebase for site, app and admin, with transactions and email WordPress v1 lacked (p33).",
+      "release": {
+        "v200": "Offset in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "package.json:140"
+        },
+        {
+          "kind": "code",
+          "ref": "package.json:97"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "OPS-05",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Launch and Operations",
+      "check": "→",
+      "status": "Out of Scope",
+      "pdfPages": "p98, p139",
+      "quote": null,
+      "requirement": "Trademark, typo domain, legal and privacy review.",
+      "definitionOfDone": "n/a: Company actions.",
+      "today": "Listed in the source as the Company's own actions, not Consultant deliverables.",
+      "release": {
+        "v200": "Future Version",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "OPS-06",
+      "section": "Under-Spec or Moved to a Future Version",
+      "group": "Launch and Operations",
+      "check": "→",
+      "status": "Out of Scope",
+      "pdfPages": "p5, p28–p29",
+      "quote": null,
+      "requirement": "Growth (including B2B therapist outreach) and ongoing system operations.",
+      "definitionOfDone": "n/a: after Phase 6.",
+      "today": "Phases 7–8 come after the Phase 6 milestone; outreach to therapists is the Company's (p29).",
+      "release": {
+        "v200": "Future Version",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has neither",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-02",
+      "section": "Delivered as Specified",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p104, p142",
+      "quote": null,
+      "requirement": "A fully answered, read-only demo relationship anyone can open.",
+      "definitionOfDone": "Each template page links to a finished example report that needs no account.",
+      "today": "`/relationship-templates/<slug>/demo`: a finished report answered by “You” and “Them”, labelled Example.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/relationship-templates/[slug]/demo/page.tsx:2"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-06",
+      "section": "Delivered as Specified",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p17, p32",
+      "quote": null,
+      "requirement": "A blank template to start from scratch.",
+      "definitionOfDone": "My Templates offers Start Blank.",
+      "today": "My Templates › Start Blank.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/dashboard-templates.ts:203"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/my-templates.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-07",
+      "section": "Delivered as Specified",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p111–p114",
+      "quote": null,
+      "requirement": "The Initiator names the relationship and both people; roles and realm come with the template; a description is optional.",
+      "definitionOfDone": "Stage 1 saves title, both first names, invite email and optional description; the relationship shows them everywhere.",
+      "today": "Stage 1 · Details. Roles and realm live on the template record.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1244 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/assessment-create.ts:532"
+        },
+        {
+          "kind": "code",
+          "ref": "data/relationship-types.ts:148"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/stages/stage-1-details.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-08",
+      "section": "Delivered as Specified",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p15, p116, p119–p120, p128",
+      "quote": null,
+      "requirement": "The Initiator can edit, add, delete and reorder Aspects and their Left and Right Values before inviting.",
+      "definitionOfDone": "Stage 3 edits, adds, deletes and drag-reorders Aspects; the order is saved.",
+      "today": "Stage 3 · Aspects with the Aspect drawer; a drag-drop reorder is a save.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/assessment/new/aspects/route.ts:5"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/stages/stage-3-aspects.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-10",
+      "section": "Delivered as Specified",
+      "group": "Play with Aspects",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p38, p112",
+      "quote": null,
+      "requirement": "Per relationship, the Initiator picks Basic or Advanced Mode and Soft or Full Setting.",
+      "definitionOfDone": "Stage 2 saves both; Align scores with the chosen Setting.",
+      "today": "Stage 2 · Settings. Advanced Mode is offered on paid plans only.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/assessment.ts:93"
+        },
+        {
+          "kind": "code",
+          "ref": "lib/db/rows.ts:80"
+        },
+        {
+          "kind": "code",
+          "ref": "lib/billing/entitlements.ts:105"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/stages/stage-2-settings.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-17",
+      "section": "Delivered as Specified",
+      "group": "Register",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p81, p85",
+      "quote": null,
+      "requirement": "Sign in, sign out and reset a forgotten password.",
+      "definitionOfDone": "`/login`, `/forgot-password` → `/reset/<token>` work; Sign Out is in the account menu.",
+      "today": "All three, plus Google sign-in.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(auth)/forgot-password/page.tsx:13"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/account/account-menu.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-18",
+      "section": "Delivered as Specified",
+      "group": "Register",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p81, p85",
+      "quote": null,
+      "requirement": "A signed-in person can edit their profile and password.",
+      "definitionOfDone": "`/settings` saves Profile and Password and lists the session.",
+      "today": "Account Settings: Profile, Password, Session. Plan and trial are on the Payment tab.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/settings/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/account/profile-and-password.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-19",
+      "section": "Delivered as Specified",
+      "group": "Register",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p84, p101",
+      "quote": null,
+      "requirement": "After sign-in, people land on a list of their relationships with access to templates.",
+      "definitionOfDone": "Signed-in landing lists every relationship with its status; Templates is one click away.",
+      "today": "Start (next steps) and My Relationships (filters, status per card), with Templates as its own tab.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/my-relationships-and-start.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-21",
+      "section": "Delivered as Specified",
+      "group": "Invite",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p88, p124",
+      "quote": null,
+      "requirement": "The Initiator invites the other person by email; the email links to registration and then the relationship.",
+      "definitionOfDone": "Stage 5 sends the invitation email; the link opens the join steps for that relationship.",
+      "today": "Stage 5 · Invite and the invitation email.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:74"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/send-the-invite.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/emails/invitation.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-25",
+      "section": "Delivered as Specified",
+      "group": "Invite",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p74",
+      "quote": null,
+      "requirement": "The Initiator is emailed when the other person joins.",
+      "definitionOfDone": "Claiming the invite sends the Initiator a joined email.",
+      "today": "Counterparty Joined email.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:87"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/emails/counterparty-joined.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-26",
+      "section": "Delivered as Specified",
+      "group": "Opinions",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p15, p42",
+      "quote": null,
+      "requirement": "Each person gives Feel and Wish (Basic) or also Think and Guess (Advanced) per Aspect, on a 1–5 scale between its Left and Right Values.",
+      "definitionOfDone": "The answer screen asks exactly the mode's opinions per Aspect and saves 1–5.",
+      "today": "Answer the Assessment: one Aspect at a time, five steps labelled by its two Values, saves as you go.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/assessment.ts:93"
+        },
+        {
+          "kind": "docs",
+          "ref": "reference/states/answer-scale.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/answer-the-assessment.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-27",
+      "section": "Delivered as Specified",
+      "group": "Opinions",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p91, p128",
+      "quote": null,
+      "requirement": "Answers stay private until both people have finished.",
+      "definitionOfDone": "Neither person can read the other's answers before both submit.",
+      "today": "“Private until you both finish”; answers sealed for Round 1.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/assessment-answer.ts:112"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-28",
+      "section": "Delivered as Specified",
+      "group": "Opinions",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p90",
+      "quote": null,
+      "requirement": "Once invited, the Aspects are locked; changes go through a proposal the other person approves.",
+      "definitionOfDone": "After the invite, Aspects can't be edited directly; a proposal flow is offered.",
+      "today": "Aspects Are Locked; “Changes are proposed and agreed by both of you.”",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/dashboard-relationship-detail.ts:347"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/shared/propose-a-change.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-31",
+      "section": "Delivered as Specified",
+      "group": "Share and Results",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p34–p36, p44–p45",
+      "quote": null,
+      "requirement": "The analysis computes the Feel, Wish, Initiator and Counterparty Gaps (Basic) and the four Think/Guess Gaps (Advanced).",
+      "definitionOfDone": "For an answered pair, every gap kind for the mode is computed from the same function.",
+      "today": "All eight gap kinds, grouped as the 2024 spec groups them. Doubt Gaps, the same kinds read after first showing, are not a separate group.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/gaps.ts:63"
+        },
+        {
+          "kind": "code",
+          "ref": "content/gaps.ts:150"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-33",
+      "section": "Delivered as Specified",
+      "group": "Share and Results",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p74–p75",
+      "quote": null,
+      "requirement": "Both people are emailed when results are ready.",
+      "definitionOfDone": "When both have answered, a report-ready email goes out.",
+      "today": "Report-ready email.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "content/email-bodies.md:94"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-38",
+      "section": "Delivered as Specified",
+      "group": "Discuss",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p90, p128",
+      "quote": null,
+      "requirement": "Either person proposes a change to an Aspect or Value; the other accepts or declines.",
+      "definitionOfDone": "A proposal shows to the other person, who can accept or decline it; accepted changes apply.",
+      "today": "Propose a Change with an incoming proposal card.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "guides/shared/propose-a-change.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-44",
+      "section": "Delivered as Specified",
+      "group": "Plans and Billing",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p123",
+      "quote": null,
+      "requirement": "The Initiator pays through a payment gateway.",
+      "definitionOfDone": "Add a Card completes a provider checkout and the plan shows as active.",
+      "today": "Stripe checkout and signed webhook; Payment tab.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/api/billing/webhook/route.ts:48"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/initiator/payment.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "APP-45",
+      "section": "Delivered as Specified",
+      "group": "Plans and Billing",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p86",
+      "quote": null,
+      "requirement": "Only the Initiator pays; the Counterparty never sees price or card.",
+      "definitionOfDone": "Counterparty screens contain no price, trial or card words.",
+      "today": "“{initiator} covers this relationship.” Counterparty pages carry no billing words.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "data/pages/payment.ts:170"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/counterparty/when-a-relationship-pauses.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-02",
+      "section": "Delivered as Specified",
+      "group": "Admin",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "Staff can see and manage user accounts.",
+      "definitionOfDone": "Admin lists members and their relationships.",
+      "today": "Admin › Console › Users.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/console/users/page.tsx:6"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-03",
+      "section": "Delivered as Specified",
+      "group": "Admin",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5, p82",
+      "quote": null,
+      "requirement": "Staff can see subscription state and make grants.",
+      "definitionOfDone": "Admin shows plan and provider state per relationship and can comp one.",
+      "today": "Admin › Billing: subscription per relationship and an audited owner comp (in place of Account Bank admin).",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/billing/page.tsx:4"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "ADMIN-04",
+      "section": "Delivered as Specified",
+      "group": "Admin",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "Staff can read and answer support requests.",
+      "definitionOfDone": "A contact-form message appears in the inbox and can be replied to.",
+      "today": "Admin › Inbox with reply, triage and assignment; support-reply email.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/inbox/page.tsx:6"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-01",
+      "section": "Delivered as Specified",
+      "group": "Website",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5, p81",
+      "quote": null,
+      "requirement": "A signed-out visitor can open a home page and a How It Works walkthrough that explain the product and lead to templates and sign-up.",
+      "definitionOfDone": "`/` and `/how-it-works` return 200 signed out at 390 and 1280 px, each with a start CTA.",
+      "today": "Home page on AlignSynch copy; How It Works replays a recorded walkthrough that a check keeps current.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/page.tsx:16"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/how-it-works/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "start/what-is-alignsynch.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": "p81 defines About as “How it works”; there is no separate Features page in the p81 site map."
+    },
+    {
+      "id": "WEB-02",
+      "section": "Delivered as Specified",
+      "group": "Website",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p81",
+      "quote": null,
+      "requirement": "A public help centre gives FAQs, help articles and one contact form whose messages reach the support inbox.",
+      "definitionOfDone": "`/help` shows FAQ and the form signed out; a submitted message appears in Admin › Inbox.",
+      "today": "`/help` (FAQ, articles, contact form stored before it is mailed); `/support/articles/<slug>`.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1238 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/help/page.tsx:23"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/support/articles/[slug]/page.tsx:26"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-03",
+      "section": "Delivered as Specified",
+      "group": "Website",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p81",
+      "quote": null,
+      "requirement": "A public pricing page shows the plan(s) on sale and leads into the template pick.",
+      "definitionOfDone": "`/pricing` returns 200 signed out and lists exactly the plans the checkout sells.",
+      "today": "`/pricing` exists. Copy moves to the one Basic plan when PR #1241 merges (PM decision).",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1241 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/pricing/page.tsx:18"
+        },
+        {
+          "kind": "docs",
+          "ref": "start/plans-and-trial.md"
+        }
+      ],
+      "parity": "No",
+      "parityBasis": "Docs describe Basic, the one plan; main still sells two plans until #1241 merges.",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-04",
+      "section": "Delivered as Specified",
+      "group": "Website",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5",
+      "quote": null,
+      "requirement": "Public Terms of Service and Privacy Policy pages.",
+      "definitionOfDone": "`/terms` and `/privacy` return 200 signed out.",
+      "today": "Both pages exist. Legal review of their text is the Company's (see OPS-05).",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/terms/page.tsx:6"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(marketing)/privacy/page.tsx:6"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "WEB-09",
+      "section": "Delivered as Specified",
+      "group": "Website",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p5, p80",
+      "quote": null,
+      "requirement": "Every public and member screen works at phone (390 px) and desktop (1280 px) widths.",
+      "definitionOfDone": "Each screen has a 390 and 1280 reference with no page-level sideways scroll.",
+      "today": "Every v2 bundle ships 390 and 1280 references; the docs show both.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "—",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "docs",
+          "ref": "INVENTORY.md"
+        },
+        {
+          "kind": "docs",
+          "ref": "start/quickstart.md"
+        }
+      ],
+      "parity": "n.a.",
+      "parityBasis": "Needs both a docs page and a main citation; this row has only one",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    },
+    {
+      "id": "OPS-02",
+      "section": "Delivered as Specified",
+      "group": "Launch and Operations",
+      "check": "☑",
+      "status": "Delivered",
+      "pdfPages": "p74",
+      "quote": null,
+      "requirement": "Transactional email is delivered from the platform.",
+      "definitionOfDone": "Invitation, joined, report-ready and pause emails send from production.",
+      "today": "Thirteen registered templates; admin register and override editor.",
+      "release": {
+        "v200": "Shipped in rc1.2",
+        "rc2": "#1239 open #1240 open",
+        "rc3": "—",
+        "beta": "—"
+      },
+      "evidence": [
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/broadcast/page.tsx:84"
+        },
+        {
+          "kind": "code",
+          "ref": "app/(mainlayout)/admin/email-templates/page.tsx:2"
+        },
+        {
+          "kind": "docs",
+          "ref": "guides/admin/email-templates.md"
+        }
+      ],
+      "parity": "Yes",
+      "parityBasis": "Docs page and main citation both verified on disk at 601ce26",
+      "review": {
+        "pm": "Pending",
+        "design": "Pending"
+      },
+      "approval": {
+        "jaden": "Pending",
+        "walt": "Pending"
+      },
+      "next": null,
+      "note": null
+    }
+  ]
+}

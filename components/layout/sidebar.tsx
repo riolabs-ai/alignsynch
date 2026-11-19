@@ -12,10 +12,11 @@ import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
-import Link from "next/link";
+
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import type { ReactNode } from "react";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
 import { LeavingLink } from "@/components/layout/leaving-link";
 
@@ -115,6 +116,7 @@ export function AppSidebar({
   open,
   onClose,
   notice = false,
+  sheetSection,
 }: {
   copy: PageCopy;
   mark?: BrandMark;
@@ -147,6 +149,15 @@ export function AppSidebar({
    * an overlay, not a column, and a `top` there would push it off the viewport's edge.
    */
   notice?: boolean;
+  /**
+   * A surface's own navigation, handed to the drawer by `RailSheetSection` (#1252).
+   *
+   * Rendered above the rail's groups and **only below `md`**: above it the surface draws its
+   * second column beside its page, and the drawer is an invisible column that must not grow a
+   * second copy of the same links. The handover exists so a phone opens one menu rather than two
+   * (AS-11); `undefined` is every route that has no second column.
+   */
+  sheetSection?: ReactNode;
 }) {
   const nav = sectionOf(copy, "nav");
   const rail = sectionOf(copy, "rail");
@@ -513,6 +524,16 @@ export function AppSidebar({
 
         <div className="flex-1 overflow-auto py-4">
           <nav className="grid gap-1 px-2">
+            {/**
+             * The surface's own navigation first (#1252) — the project spec's submenu above the
+             * rail's groups, which is the order the artifact draws. Below `md` only: above it the
+             * drawer is an invisible column and the surface has a column of its own.
+             */}
+            {sheetSection === undefined || sheetSection === null ? null : (
+              <div className="md:hidden" data-rail-sheet-section="">
+                {sheetSection}
+              </div>
+            )}
             {/**
              * `labelled` is the drawer, not a width: the same rows render their text at a 390px
              * viewport because the panel they are in is 250px wide. Following a row closes the
