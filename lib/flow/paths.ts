@@ -129,6 +129,53 @@ export const SAVE_MODE_PATH = "/assessment/new/mode";
 export const SAVE_ASPECTS_PATH = "/assessment/new/aspects";
 
 /**
+ * `/assessment/new/failed` — the screen a browser form post lands on when the create throws (#1226).
+ *
+ * **A child of the endpoint, deliberately.** The address names the write that failed rather than a
+ * template, a session or a row: the failure is the deployment's (`create-failure`), so there is no
+ * record to address and nothing to leak by guessing an id. `POST /assessment/new` is a route
+ * handler and this is a page beneath it, which Next resolves side by side — `/assessment/new`
+ * stays the POST, `/assessment/new/failed` is the GET a person reads afterwards.
+ *
+ * **The template travels as a query value, and it is a handle, not copy.** `?template=<slug>` is
+ * what `createFailedPath()` adds and `templateSlugParam()` reads back, so `Try Again` can return to
+ * the create flow for the template that failed. It is validated against the kebab-case shape a
+ * record's own `slug` carries (`content/core.ts::zSlug`), because the value arrives in a URL a
+ * stranger can write: an address that names no resolvable template falls back to the library
+ * rather than building a path out of whatever the query said.
+ */
+export const CREATE_FAILED_PATH = "/assessment/new/failed";
+
+/** The one query key the create-failed address carries — the template that failed. */
+export const CREATE_FAILED_TEMPLATE_QUERY = "template";
+
+/**
+ * `/assessment/new/failed?template=<slug>` — where a browser form post is sent when the create
+ * throws (#1226). An empty slug is the screen without the query: it still draws, and `Try Again`
+ * then offers the library instead of a template it cannot name.
+ */
+export function createFailedPath(templateSlug: string): string {
+  const slug = templateSlug.trim();
+  return slug === ""
+    ? CREATE_FAILED_PATH
+    : `${CREATE_FAILED_PATH}?${CREATE_FAILED_TEMPLATE_QUERY}=${encodeURIComponent(slug)}`;
+}
+
+/** The shape a record's slug carries (`zSlug` in `content/core.ts`), spelled here to stay pure. */
+const TEMPLATE_SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * The template a create-failed address names, or `""` when it names none.
+ *
+ * A value this build cannot read as a slug is treated as absent: the screen is a dead end for a
+ * crafted address, and building a link out of it would be the only thing that value could do.
+ */
+export function templateSlugParam(value: string | undefined): string {
+  const slug = (value ?? "").trim();
+  return TEMPLATE_SLUG_SHAPE.test(slug) ? slug : "";
+}
+
+/**
  * `/dashboard/support` — the member's support surface (#542 phase 1).
  *
  * The rail's Support row used to open `/support`, whose one action was a link out to the public

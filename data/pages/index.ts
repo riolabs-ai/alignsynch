@@ -51,6 +51,8 @@ import { assessmentAcceptPageCopy } from "./assessment-accept";
 import { assessmentAnswerPageCopy } from "./assessment-answer";
 import { assessmentSentPageCopy } from "./assessment-sent";
 import { assessmentCreatePageCopy } from "./assessment-create";
+// #1226 — the create-failed screen: the four words a person reads when the write throws.
+import { assessmentCreateFailedPageCopy } from "./assessment-create-failed";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -152,6 +154,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // screen, and the two bands it shares (the six stage names, one invitation's vocabulary) are
   // referenced from their own homes rather than copied here.
   "/assessment/instances/[instanceId]/sent": assessmentSentPageCopy,
+  // #1226 — the create-failed screen. Its own fixture rather than a band of the create flow's: the
+  // four words are the whole surface, they exist on no other screen, and a failure screen that
+  // shared a fixture with the form it follows would be edited by whoever edits the form.
+  "/assessment/new/failed": assessmentCreateFailedPageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,

@@ -485,6 +485,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/new/failed",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "Read calmly that the relationship could not be created, and try again or go back to the dashboard.",
+    notes:
+      "The browser outcome of `POST /assessment/new` when the create's transaction throws and the throw is not one of the person's own refusals (#1226). The screen is `create-failed.html` from the v2 bundle: one status card — an icon chip, `Couldn't Create This Draft`, `Try Again Shortly.`, and two actions — so nothing on it explains the cause. The cause is `console.error(\"create-failed\", sqlstate, message)` in the route handler, unchanged from #1205, and it is the only place the SQLSTATE and the driver's sentence exist; neither reaches the page nor the address. The split is by request shape, not by a form field: a browser form post sends `Accept: text/html` and is answered 303 here, while a `curl`, a QA walk or any other caller keeps the named JSON 500 it reads today — which is also why `tests/create-error-shape.test.ts` still passes untouched. `?template=<slug>` is the only value in the address and it is validated as a slug, so `Try Again` reopens that template's create stage (where the draft is still in the cookie) and a crafted value falls back to the library. `Back to Dashboard` is `/dashboard`. The column is `StageColumn`'s, not the artifact's `mx-auto`, per #858; the copy is `data/pages/assessment-create-failed.ts` at budget 0, and no red appears anywhere on the surface.",
+  },
+  {
+    kind: "route",
     surface: "/dashboard/templates/[id]/create",
     status: "db",
     templates: ["alignsynch"],
