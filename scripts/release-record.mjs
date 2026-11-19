@@ -24,6 +24,10 @@
  * It reads `data/health/platform-health.json` and nothing else — no network, no database, no git —
  * so it is a pure function of a file and three arguments, and the cut runs it in a second.
  *
+ * `<version>` may be written either way (#1248): `2.0.0-rc1.3` or `v2.0.0-rc1.3`. The strip is
+ * `release-version.mjs::stripV`, the same normaliser the preflight, the cut and `release.sh` use, and
+ * `tree.latestTag` is always compared as `v<version>` — one prefix, never two.
+ *
  * ---------------------------------------------------------------------------------------------
  * The approval ledger — the second record this module owns
  * ---------------------------------------------------------------------------------------------
@@ -50,7 +54,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { compareVersions } from "./release-version.mjs";
+import { compareVersions, normalizeVersion, stripV } from "./release-version.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const RECORD_PATH = join(ROOT, "data", "health", "platform-health.json");
@@ -169,9 +173,7 @@ export function readApprovalLedger(path = approvalLedgerPath()) {
  * @returns {string} the path written
  */
 export function recordApproval(approval, { path = approvalLedgerPath(), recordedAt = null } = {}) {
-  const version = String(approval?.version ?? "")
-    .trim()
-    .replace(/^v/, "");
+  const version = stripV(String(approval?.version ?? "").trim());
   for (const key of ["commit", "approved_by", "url"]) {
     if (typeof approval?.[key] !== "string" || approval[key].trim() === "") {
       throw new Error(`recordApproval: '${key}' is required — the ledger names who approved what`);
@@ -214,10 +216,21 @@ function flagValue(argv, flag) {
 }
 
 function check(argv) {
-  const [version, tagSha] = argv;
-  if (version === undefined || tagSha === undefined) {
+  const [versionGiven, tagSha] = argv;
+  if (versionGiven === undefined || tagSha === undefined) {
     console.error("release-record: check needs <version> <tag-sha>");
     return 2;
+  }
+  // **Either spelling, one tag name (#1248).** `tree.latestTag` is compared as `v<version>`, so a
+  // caller that passed the tagged spelling used to be told the record named `vv2.0.0-rc1.3` — two
+  // false ✗ against a record that was right. The strip is the shared normaliser, not a local one.
+  const version = normalizeVersion(versionGiven);
+  if (version === null) {
+    console.error(`release-record: '${versionGiven}' is not a semantic version (x.y.z)`);
+    return 2;
+  }
+  if (version !== versionGiven) {
+    console.log(`  · version ${version} (given '${versionGiven}'; the tag is v${version})`);
   }
   const since = flagValue(argv, "--since");
   const path = flagValue(argv, "--record") ?? RECORD_PATH;
@@ -254,13 +267,20 @@ function check(argv) {
 
 /** `approval <version> <commit> --approved-by <login> --url <url> [--approved-at <iso>] …` */
 function approval(argv) {
-  const [version, commit] = argv;
+  const [versionGiven, commit] = argv;
   const approvedBy = flagValue(argv, "--approved-by");
   const url = flagValue(argv, "--url");
-  if (!version || !commit || !approvedBy || !url) {
+  if (!versionGiven || !commit || !approvedBy || !url) {
     console.error(
       "release-record: approval needs <version> <commit> --approved-by <login> --url <url>",
     );
+    return 2;
+  }
+  // The ledger stores the bare version and the tag is `v<version>` (#1248): one normaliser, so a
+  // pre-approved cut recorded as `v1.21.0` and one recorded as `1.21.0` are the same row.
+  const version = normalizeVersion(versionGiven);
+  if (version === null) {
+    console.error(`release-record: '${versionGiven}' is not a semantic version (x.y.z)`);
     return 2;
   }
   const path = flagValue(argv, "--ledger") ?? approvalLedgerPath();
@@ -273,7 +293,7 @@ function approval(argv) {
         approved_at: flagValue(argv, "--approved-at") ?? new Date().toISOString(),
         url,
         reason: flagValue(argv, "--reason"),
-        tag: `v${String(version).replace(/^v/, "")}`,
+        tag: `v${version}`,
       },
       { path },
     );

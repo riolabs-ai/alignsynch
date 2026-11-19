@@ -22,6 +22,11 @@
 # --limits <file> supplies the Known limits block for a generated entry. Without it a generation
 # refuses to write: the block is public release-note content, so a human writes it.
 #
+# **The version may be written either way (#1248):** `2.0.0-rc1.3` or `v2.0.0-rc1.3`. The tag is
+# always `v<version>` — never doubled — and a run that was given the tagged spelling prints the bare
+# version it used, so the transcript answers which form it got. All five release verbs share one
+# normaliser (`scripts/release-version.mjs::stripV` / `normalizeVersion`); this script owns none.
+#
 # **`--tag-only` runs `scripts/release-preflight.mjs` first, and no flag skips it.** Ten facts a cut
 # must be true are checked in one command, one line each, with a ✗ per failure and the remedy printed
 # under it (card t_3c37542f): no concurrent cut; the checkout level with `origin/main`; a clean tree;
@@ -119,7 +124,8 @@ if [ -n "$SLUG" ]; then SLUG_URL="https://github.com/$SLUG"; fi
 
 # --- versions -----------------------------------------------------------------
 # One classifier for the whole script (`scripts/release-version.mjs`), because a version is not
-# three integers: `valid` is "is this a semver at all" (`1.1.0.0`, `1.1` and `v1.1.0` are not),
+# three integers: `valid` is "is this a semver at all" (`1.1.0.0`, `1.1` and `vv1.1.0` are not — the
+# CLI strips a single leading `v`, so the tagged spelling is accepted while a doubled one is not),
 # `prerelease` is "does it carry a `-suffix`", and `bump <from> <to>` is semver precedence — so
 # `1.1.0-rc1 -> 1.1.0` is a bump (a release outranks its own pre-release) and `1.1.0 -> 1.1.0-rc1`
 # is not. The same module prints VERSION_TOKEN, the ERE the greps below interpolate, so the parser
@@ -129,6 +135,28 @@ version_cli() { node "$ROOT/$VERSION_TOOL" "$@"; }
 is_version() { version_cli valid "$1"; }
 is_prerelease() { version_cli prerelease "$1"; }
 is_bump() { version_cli bump "$1" "$2"; }
+
+# **One spelling, whichever the operator wrote (#1248).** The tag is `v<version>`, so a cut may be
+# asked for as `2.0.0-rc1.3` or `v2.0.0-rc1.3` and is the same cut — but everything below this line
+# works on the bare form, because `tag_and_publish` builds the ref as `v$version` and a caller that
+# passed the tagged spelling made `vv2.0.0-rc1.3`. The strip is `release-version.mjs::normalize`,
+# the same normaliser the preflight, the cut and the record check use; this script owns no pattern
+# of its own. Before this existed, `--tag-only v2.0.0-rc1.3` died with
+# `'v2.0.0-rc1.3' is not a semantic version` while the verb next door accepted it.
+#
+# The transcript says which spelling was given, so a log answers "was that v-form or bare?" without
+# a guess, and it says the tag is not doubled.
+normalize_version_arg() {
+  [ -n "$VERSION" ] || return 0
+  local given bare
+  given="$VERSION"
+  bare="$(version_cli normalize "$given")" ||
+    usage_die "'$given' is not a semantic version (x.y.z, optionally -prerelease or +build)"
+  VERSION="$bare"
+  if [ "$given" != "$bare" ]; then
+    say "release: version $bare (given '$given'; the tag is v$bare, never v$given)"
+  fi
+}
 
 VERSION_TOKEN="$(version_cli token)" || die "cannot read the version pattern from $VERSION_TOOL"
 
@@ -857,6 +885,12 @@ fi
 if [ "$ALLOW_OPEN_PRS" -eq 1 ] && [ "$MODE" != "tag-only" ]; then
   usage_die "--allow-open-prs belongs to --tag-only — it is that mode whose preflight reads the queue"
 fi
+
+# Normalise before dispatch, and only for the modes that take a version: `--check` and
+# `--check-limits` reject one by name below, and a normalised version would obscure that refusal.
+case "$MODE" in
+  dry-run | tag-only | "") normalize_version_arg ;;
+esac
 
 case "$MODE" in
   check) [ -n "$VERSION" ] && usage_die "--check takes no version"; cmd_check ;;
