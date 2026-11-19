@@ -19,7 +19,9 @@
  *               same thing in more places, not a different thing).
  *   `frozen`    the sealed sheet — plus the v2 status line: who this reader is waiting on, or that
  *               the results are ready.
- *   `lapsed`    the membership that paid for the relationship ended: read-only, and nothing lost.
+ *   `lapsed`    the membership that paid for the relationship ended: the paused pane, with a copy
+ *               per seat (the Counterparty's carries no billing word). The sheet underneath stays
+ *               writable (#848), so this names a pause rather than a read-only screen.
  *   `coach`     a coach reads the relationship and has no answers to give.
  *
  * `{name}`/`{seat}`/`{other}`/`{aspect}`/`{total}`/`{value}`/`{notch}` are filled by `fillLabel()`
@@ -156,11 +158,22 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
         },
         {
           id: "lapsed",
-          label: "The membership behind this relationship ended, so the sheet is read-only.",
+          label:
+            "This relationship is paused. Your answers are saved. You can return when it resumes.",
+        },
+        /** The Counterparty's version: the prototype's own sentence, no billing word in it. */
+        {
+          id: "lapsed-counterparty",
+          label: "This relationship is paused. Your answers are saved.",
         },
         {
           id: "payment-method-required",
           label: "This relationship needs a payment method before it can go further.",
+        },
+        /** …and the same sentence for the Counterparty, who never reads a payment word. */
+        {
+          id: "payment-method-required-counterparty",
+          label: "This relationship is paused. Your answers are saved.",
         },
         {
           id: "unknown",
@@ -208,18 +221,21 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #533 phase 3 — the membership ended, so both sheets are read-only. Separate from `frozen`
-       * because the cause is different and the remedy is different: nobody accepted this, the
-       * initiator's trial or subscription ended, and the party reading it did not fail at anything.
+       * #533 phase 3 / #1223 — the membership ended, and the screen says so before either seat
+       * reads anything else. **Two copies**, because the Counterparty never reads a billing word:
+       * the Initiator is told the pause can lift, the Counterparty is told they will hear about it.
+       * The words are the prototype's (`assessment.html?state=lapsed&role=…`), not retyped here.
        */
       id: "lapsed",
-      heading: "This relationship is read-only",
-      body: "The membership that paid for it has ended, so neither of you can change an answer. What you marked is below, exactly as it was stored, and it stays readable.",
+      heading: "Answering Is Paused",
+      body: "This relationship is still paused. Your answers are saved.",
       items: [
+        { id: "heading-counterparty", label: "Answering Is Paused For Now" },
+        { id: "body-counterparty", label: "You’ll hear when it resumes. Your answers are saved." },
         {
           id: "lapsed-note",
           label:
-            "This is the initiator's membership, not yours: the trial or the subscription behind the relationship ended. It becomes writable again if a payment lands.",
+            "This is the initiator's membership, not yours: the trial or the subscription behind the relationship ended.",
         },
       ],
     },
