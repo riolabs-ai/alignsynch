@@ -30,6 +30,13 @@ import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import type { Pause } from "@/lib/relationship/pause";
+import {
+  LAPSE_EXTENSION_DAYS,
+  lapseSentenceOf,
+  type LapseReason,
+  type Membership,
+} from "@/lib/relationship/membership";
+import { METHOD_TRIAL_DAYS } from "@/lib/flow/payment";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const template = assessments[0];
@@ -187,7 +194,76 @@ describe("#1121 · the Initiator's paused screen", () => {
   });
 });
 
-/** The reader-visible text: tags and attributes stripped, because a `data-*` value is a handle. */
+/**
+ * #1224 — **the lapse line is written for the seat reading it.**
+ *
+ * The band's words come from `lapseSentenceOf()` (`lib/relationship/membership.ts`), so this file
+ * checks the two halves where a reader would meet them: the Counterparty's render carries no price,
+ * trial, card, payment or extension word in the *sentence*, and the Initiator's render names the
+ * trial's own numbers rather than the promoted total. The line draws where the pause panel does
+ * not — a lapsed membership whose reason is the payment's or the cancellation's, since the trial's
+ * own pause is the panel's story and saying it twice is how two strings start disagreeing.
+ */
+describe("#1224 · the lapse line, per seat", () => {
+  /** A lapsed relationship that is **not** the trial's pause, with the line the read would hand it. */
+  function lapsedView(isInitiator: boolean, reason: LapseReason = "payment-failed") {
+    const membership: Membership = {
+      state: "lapsed",
+      reason,
+      endedAt: new Date("2026-11-19T00:00:00.000Z"),
+      writable: false,
+    };
+    return {
+      ...viewOf({ isInitiator, pause: RUNNING }),
+      membership,
+      lapseSentence: lapseSentenceOf({
+        membership,
+        seat: isInitiator ? ("initiator" as const) : ("counterparty" as const),
+        initiatorName: "Avery",
+      }),
+    } satisfies MemberRelationshipView;
+  }
+
+  it("tells the Counterparty the pause and whose move it is, and no billing word", () => {
+    const markup = html(lapsedView(false));
+    const text = visibleText(markup);
+
+    expect(markup).toContain('data-membership-sentence="lapsed"');
+    expect(text).toContain("stage 6 is paused until avery resumes it. everything is saved.");
+    // The issue's must-not list, over the whole render — the band must not reintroduce a word the
+    // screen already keeps out.
+    for (const forbidden of ["$", "price", "trial", "extension", "add a card", "7 more days"]) {
+      expect(text, forbidden).not.toContain(forbidden);
+    }
+  });
+
+  it("tells the Initiator the trial's own numbers, never the promoted total", () => {
+    const markup = html(lapsedView(true, "trial-ended"));
+    const text = visibleText(markup);
+
+    expect(markup).toContain('data-membership-sentence="lapsed"');
+    expect(text).toContain(
+      `${METHOD_TRIAL_DAYS}-day free trial and ${LAPSE_EXTENSION_DAYS}-day free extension`,
+    );
+    expect(text).toContain("so align is paused");
+    expect(text).not.toContain("14-day");
+  });
+
+  it("draws the line on the status tokens, with an icon and a word", () => {
+    for (const isInitiator of [true, false]) {
+      const markup = html(lapsedView(isInitiator));
+      expect(markup).toContain("border-status-line bg-status");
+      expect(markup).not.toContain("amber-");
+      // An icon plus the word, never colour alone (locked rule 2): the pause mark is immediately
+      // followed by the status word inside one span.
+      expect(markup).toContain("lucide-pause");
+      expect(markup).toContain("</svg>Paused</span>");
+    }
+  });
+});
+
+/**
+ * The reader-visible text: tags and attributes stripped, because a `data-*` value is a handle. */
 function visibleText(markup: string): string {
   return markup
     .replace(/<[^>]*>/g, " ")

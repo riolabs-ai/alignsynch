@@ -57,7 +57,7 @@
  * the courtesy, not the enforcement.
  *
  * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the plan
- * catalogue's handles (`single`, `family`, `annual`), which key its copy; a checkout is named by a
+ * catalogue's handles (`single`, `annual`), which key its copy; a checkout is named by a
  * `billing_plan` row (`basic`, `principal`) at an interval. This module used to post the handle and
  * fall back to `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was
  * invisible to the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a

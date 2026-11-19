@@ -3,9 +3,10 @@
  *
  * The page used to be a grid of `billing_plan` rows with a monthly/yearly switch: every tier had
  * two intervals, so the reader picked a tier and then a frequency. Bundle 02 draws it the other
- * way — **three plans, each with one interval**, and the interval is a property of the plan
+ * way — **one card per plan, each with one interval**, and the interval is a property of the plan
  * (`Single Annual` is a card, not a toggle position). That is also what the owner approved on
- * #1127 (Single · Family · Single Annual), so the switch is gone rather than defaulted.
+ * #1127 (Single · Family · Single Annual) — **less Family, removed from the catalogue on
+ * 2026-11-19** — so the switch is gone rather than defaulted and the band now draws two cards.
  *
  * **This module types no amount.** A card's figure is `formatCurrency(plan.priceCents)` over
  * `data/membership-plans.ts`, which reads the money out of `data/billing-plans.ts` — the same
@@ -38,7 +39,6 @@ export const POPULAR_PLAN_ID: MembershipPlanId = "single";
 /** One plan's feature lines, as item ids into the `plans` section of `data/pages/pricing.ts`. */
 const FEATURE_IDS: Readonly<Record<MembershipPlanId, readonly string[]>> = {
   single: ["feature-single-1", "feature-single-2", "feature-single-3", "feature-single-4"],
-  family: ["feature-family-1", "feature-family-2", "feature-family-3", "feature-family-4"],
   annual: ["feature-annual-1", "feature-annual-2", "feature-annual-3", "feature-annual-4"],
 };
 
@@ -53,7 +53,7 @@ export interface PricingHeroModel {
 export interface PricingCardModel {
   readonly id: MembershipPlanId;
   readonly name: string;
-  /** `1 relationship` / `Up to 4 relationships`. */
+  /** `1 relationship`. */
   readonly summary: string;
   /** The figure, already formatted from the catalogue's cents — never a typed price. */
   readonly price: string;
@@ -110,7 +110,7 @@ export function pricingHero(copy: PageCopy): PricingHeroModel {
   };
 }
 
-/** The three cards, in the catalogue's order — one projection from plans to cards. */
+/** The two cards, in the catalogue's order — one projection from plans to cards. */
 export function pricingCards(input: {
   readonly copy: PageCopy;
   readonly entitledPlanId: BillingPlanId | null;

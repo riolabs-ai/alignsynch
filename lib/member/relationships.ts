@@ -92,6 +92,7 @@ import {
   connectionOf,
   membershipOf,
   membershipSentence,
+  lapseSentenceOf,
   type Connection,
   type Membership,
 } from "@/lib/relationship/membership";
@@ -691,6 +692,11 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
    * at the instant the page was given. `lapsed` is the read-only state, and `lapseSentence` is the
    * sentence the screen prints: it names the initiator's membership and the instant it ended, which
    * is what keeps the counterparty from reading a lapse as their own failure.
+   *
+   * #1224 — **it is written for the seat reading it.** The Initiator reads what ended (the free
+   * trial and the free extension, both derived from constants) and that no card was added; the
+   * Counterparty reads that Stage 6 is paused, whose move it is, and that everything is saved —
+   * with no price, trial, card, payment, plan or membership word in it.
    */
   readonly membership: Membership;
   readonly lapseSentence: string | null;
@@ -963,7 +969,14 @@ export async function readMyRelationship(
     pause,
     trialExtendedAt: trialExtendedAt === null ? null : trialExtendedAt.toISOString(),
     canClaimExtension: base.isInitiator && pause.extensionAvailable,
-    lapseSentence: membership.state === "lapsed" ? membershipSentence(membership) : null,
+    lapseSentence: lapseSentenceOf({
+      membership,
+      // #1224 — the line is written for the seat that reads it: the Counterparty gets the pause,
+      // the Initiator gets what ended. `base.isInitiator` is the same fact the screen's four write
+      // flags are gated on, so the sentence and the controls cannot disagree about who is reading.
+      seat: base.isInitiator ? "initiator" : "counterparty",
+      initiatorName: base.initiatorName,
+    }),
     trialEndsAt:
       subscription !== null && subscription.status === "trialing"
         ? subscription.currentPeriodEnd

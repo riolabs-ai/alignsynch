@@ -1,4 +1,4 @@
-// template-ancestor: components/marketing/relationship-catalogue.tsx   (variation: the pricing route — the hero band, three plan cards with one interval each, the unsure strip, and the How Billing Works panel, all in bundle 02's band vocabulary)
+// template-ancestor: components/marketing/relationship-catalogue.tsx   (variation: the pricing route — the hero band, one card per plan with one interval each, the unsure strip, and the How Billing Works panel, all in bundle 02's band vocabulary)
 
 import type {
   PricingBandsModel,
@@ -14,11 +14,11 @@ import Link from "next/link";
  * **The pre-v2 composition is gone, not restyled around.** It was a grid of `billing_plan` rows
  * with a monthly/yearly switch and a "Save up to N%" badge: every tier had two intervals, so the
  * reader picked a tier and then a frequency, and the page printed a `/mo` figure for a yearly
- * charge divided by twelve. The artifact sells **three plans, each with one interval** — Single,
- * Family, Single Annual — where the interval is a property of the plan, and the owner approved
- * exactly those three on #1127. So the switch, the discount badge and the free tier's card are
- * removed rather than defaulted, and there is no reader-visible control on this page but the three
- * actions.
+ * charge divided by twelve. The artifact sells **one card per plan, each with one interval** —
+ * Single and Single Annual, the two the owner approved on #1127 and then narrowed to on 2026-11-19
+ * by removing Family — where the interval is a property of the plan. So the switch, the discount
+ * badge and the free tier's card are removed rather than defaulted, and there is no reader-visible
+ * control on this page but the two actions.
  *
  * **This component owns no word and no figure.** The hero, every card and the strip arrive from
  * `lib/pricing-page.ts`, which joins `data/pages/pricing.ts` (the words) to
@@ -74,7 +74,7 @@ export function PricingPlans({
       <section>
         <div className="mx-auto w-full max-w-content px-4 lg:px-6">
           <div className="space-y-6 py-10">
-            <ul className="grid gap-6 pt-3 md:grid-cols-3">
+            <ul className="grid gap-6 pt-3 md:grid-cols-2">
               {cards.map((card) => (
                 <PlanCard card={card} key={card.id} />
               ))}
@@ -122,7 +122,7 @@ export function PricingPlans({
  *
  * The ribbon is `card.popular`, which the projection sets from `POPULAR_PLAN_ID` — exactly one card
  * carries it, and the card that does is the one the outline and the filled action follow, so the
- * three signals cannot point at different plans.
+ * signals cannot point at different plans.
  *
  * A card the account already holds (`card.current`) says so and offers no action: a button that
  * would sell someone the plan they are on is the defect the marker replaces.

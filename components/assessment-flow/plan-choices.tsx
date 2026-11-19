@@ -28,7 +28,7 @@
  * **Every word is the fixture's.** Labels, notes, prices and the `/mo` / `/yr` suffixes all come
  * from `data/pages/assessment-create.ts` through `sectionOf`/`itemLabel` (E23 counts what a component
  * writes, and this one writes no sentence at all). The row ids are structure, not copy, and they are
- * the plan catalogue's own (`single`, `family`, `annual`).
+ * the plan catalogue's own (`single`, `annual`).
  */
 import type { PageCopy } from "@/content/pages";
 import { MEMBERSHIP_PLANS, MEMBERSHIP_PLAN_IDS } from "@/data/membership-plans";
@@ -36,7 +36,7 @@ import type { PlanRowId } from "@/data/pages/assessment-create";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /**
- * The three plans, in the order the catalogue and the artifact print them. Their words are the
+ * The plans, in the order the catalogue and the artifact print them. Their words are the
  * fixture's.
  *
  * `satisfies readonly PlanRowId[]` is half of the binding: an id listed here that the fixture's

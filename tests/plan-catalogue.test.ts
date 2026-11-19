@@ -1,23 +1,23 @@
 // @vitest-environment jsdom
 /**
- * **The approved three-plan catalogue (#1127), and the ratchet that keeps one price in one home.**
+ * **The catalogue's two plans, and the ratchet that keeps one price in one home.**
  *
- * The owner approved one catalogue on 2026-11-17:
+ * The owner approved one catalogue on 2026-11-17 and then removed its third plan on 2026-11-19:
  *
  *   Single           $9.99 / month   1 relationship
- *   Family           $19.99 / month   up to 4 relationships
  *   Single Annual    $99 / year      1 relationship
  *
  * Four things are asserted here, in the order a regression would hit them:
  *
- *   1. **The numbers.** Three prices, in cents, written out. A test that read them from the same
+ *   1. **The numbers.** Two prices, in cents, written out. A test that read them from the same
  *      function it is testing proves nothing; these are the owner's figures, and changing one is a
  *      product decision that has to show up as a diff on this line.
- *   2. **The capacity rule.** Family covers four relationships and the two Single plans cover one.
- *      The panel prints the number off the row (`data-plan-capacity`), so a catalogue that says
- *      "Up to 4" in prose and 1 in the field is a defect with two answers.
- *   3. **The provider mapping.** Three plans, the four lookup keys that already exist, and the
- *      fourth key named as unclaimed rather than invented into a plan. This is the table a
+ *   2. **The capacity rule.** Every plan in the catalogue covers one relationship — the Family plan
+ *      that covered four is the one the owner removed. The panel prints the number off the row
+ *      (`data-plan-capacity`), so a catalogue that says "Up to 4" in prose and 1 in the field is a
+ *      defect with two answers.
+ *   3. **The provider mapping.** Two plans, the four lookup keys that already exist, and the two
+ *      `principal` keys named as unclaimed rather than invented into a plan. This is the table a
  *      checkout depends on: a plan mapped to a key the account does not hold is a refused
  *      purchase, and a key resolved by two plans is one plan sold as another.
  *   4. **The ratchet.** No plan surface writes a dollar amount, no retired figure survives anywhere
@@ -47,7 +47,6 @@ import { InviteWalk } from "@/components/assessment-flow/invite-walk";
 import { BILLING_INTERVALS } from "@/data/billing-plans";
 import { BILLING_PRICE_LOOKUP_KEYS, billingPriceLookupKeyFor } from "@/data/billing-prices";
 import {
-  FAMILY_CAPACITY,
   MEMBERSHIP_PLANS,
   MEMBERSHIP_PLAN_IDS,
   membershipPlan,
@@ -119,14 +118,12 @@ describe("the catalogue is coherent", () => {
     expect(membershipPlanProblems()).toEqual([]);
   });
 
-  it("is exactly three plans, in the owner's order", () => {
-    expect(MEMBERSHIP_PLANS.map((plan) => plan.id)).toEqual(["single", "family", "annual"]);
-    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual([
-      "Single",
-      "Family",
-      "Single Annual",
-    ]);
-    expect([...MEMBERSHIP_PLAN_IDS]).toEqual(["single", "family", "annual"]);
+  it("is exactly two plans, in the owner's order", () => {
+    expect(MEMBERSHIP_PLANS.map((plan) => plan.id)).toEqual(["single", "annual"]);
+    expect(MEMBERSHIP_PLANS.map((plan) => plan.name)).toEqual(["Single", "Single Annual"]);
+    expect([...MEMBERSHIP_PLAN_IDS]).toEqual(["single", "annual"]);
+    // The removed plan is gone from the catalogue, not hidden behind a flag: no row, no entry.
+    expect(membershipPlan("family")).toBeUndefined();
   });
 });
 
@@ -136,13 +133,6 @@ describe("the numbers the owner approved (#1127)", () => {
     expect(single?.priceCents).toBe(999);
     expect(single?.interval).toBe("month");
     expect(formatCurrency(999)).toBe("$9.99");
-  });
-
-  it("prices Family at $19.99 a month", () => {
-    const family = membershipPlan("family");
-    expect(family?.priceCents).toBe(1_999);
-    expect(family?.interval).toBe("month");
-    expect(formatCurrency(1_999)).toBe("$19.99");
   });
 
   it("prices Single Annual at $99 a year — one charge, not a monthly figure", () => {
@@ -164,36 +154,33 @@ describe("the numbers the owner approved (#1127)", () => {
 });
 
 describe("the capacity rule", () => {
-  it("gives Family up to four relationships and the Single plans one each", () => {
-    expect(membershipPlan("family")?.capacity).toBe(FAMILY_CAPACITY);
-    expect(FAMILY_CAPACITY).toBe(4);
+  it("gives every plan the catalogue sells one relationship", () => {
     expect(membershipPlan("single")?.capacity).toBe(1);
     expect(membershipPlan("annual")?.capacity).toBe(1);
+    expect(MEMBERSHIP_PLANS.every((plan) => plan.capacity === 1)).toBe(true);
   });
 
   it("says the capacity in words that match the number beside it", () => {
-    expect(membershipPlan("family")?.summary).toBe("Up to 4 relationships");
     expect(membershipPlan("single")?.summary).toBe("1 relationship");
     expect(membershipPlan("annual")?.summary).toContain("1 relationship");
   });
 
-  it("rejects a Family row that contradicts the approved price", () => {
-    // The rule is checked, not assumed: `membershipPlanProblems()` is the single place that says a
-    // Family row must carry four relationships and the Single rows one, and it is what
-    // `data:check`-style validation runs. Here the real catalogue passes it, and the shape the
-    // function polices is the one the panel prints.
+  it("rejects a row advertising more than one relationship", () => {
+    // The rule is checked, not assumed: `membershipPlanProblems()` is the single place that says
+    // every plan covers one relationship — the Family plan was the only row that did not, and it
+    // is the one the owner removed. Here the real catalogue passes it, and the shape the function
+    // polices is the one the panel prints.
     expect(membershipPlanProblems()).toEqual([]);
-    expect(MEMBERSHIP_PLANS.filter((plan) => plan.capacity > 1)).toHaveLength(1);
+    expect(MEMBERSHIP_PLANS.filter((plan) => plan.capacity > 1)).toEqual([]);
     expect(MEMBERSHIP_PLANS.every((plan) => plan.capacity >= 1)).toBe(true);
   });
 });
 
-describe("the four lookup keys, and the three plans that map to them", () => {
+describe("the four lookup keys, and the two plans that map to them", () => {
   it("maps each plan to the exact key the account already holds", () => {
     // Spelled out, because this table *is* the contract with the provider: renaming a key in the
     // dashboard has to fail here rather than at a customer's click.
     expect(membershipPlan("single")?.lookupKey).toBe("alignsynch_basic_month");
-    expect(membershipPlan("family")?.lookupKey).toBe("alignsynch_principal_month");
     expect(membershipPlan("annual")?.lookupKey).toBe("alignsynch_basic_year");
   });
 
@@ -213,12 +200,14 @@ describe("the four lookup keys, and the three plans that map to them", () => {
     }
   });
 
-  it("names the fourth key as unclaimed: no approved plan is a Family Annual", () => {
-    // `alignsynch_principal_year` resolves on both accounts and no plan maps it. That is the
-    // honest shape — the alternative is inventing a fourth plan, which the card forbids.
-    expect(membershipPlan("family")?.interval).toBe("month");
+  it("names the two unclaimed keys: the principal tier has no plan since Family was removed", () => {
+    // Both `principal` keys resolve on the account and no plan maps them. That is the honest shape
+    // after the owner removed the Family plan: the tier and its Prices stay provider-side, and the
+    // catalogue does not pretend to sell them.
+    expect(billingPriceLookupKeyFor("principal", "month")).toBe("alignsynch_principal_month");
     expect(billingPriceLookupKeyFor("principal", "year")).toBe("alignsynch_principal_year");
     const mapped = new Set(MEMBERSHIP_PLANS.map((plan) => plan.lookupKey));
+    expect(mapped.has("alignsynch_principal_month")).toBe(false);
     expect(mapped.has("alignsynch_principal_year")).toBe(false);
     expect(mapped.size).toBe(MEMBERSHIP_PLANS.length);
   });
@@ -323,7 +312,7 @@ describe("the ratchet — no surface quotes a price the catalogue does not carry
     expect(readers).toEqual([]);
   });
 
-  it("prints the catalogue's three amounts on the panel, and nothing else", async () => {
+  it("prints the catalogue's amounts on the panel, and nothing else", async () => {
     const where = await mount(cardFreeWalk());
     const printed = [...where.querySelectorAll("[data-plan-price]")].map(
       (node) => node.textContent ?? "",
@@ -333,30 +322,26 @@ describe("the ratchet — no surface quotes a price the catalogue does not carry
     );
     expect(printed).toEqual(carried);
     // Every figure on the panel is one the catalogue carries — no `$0.00`, no placeholder, no
-    // fourth number from a copy block.
+    // third number from a copy block.
     const figures = (where.textContent ?? "").match(/\$\d[\d,.]*/g) ?? [];
     for (const figure of figures) expect(carried).toContain(figure);
   });
 });
 
 describe("the panel a person actually sees", () => {
-  it("draws the three plans with their amounts, capacities and intervals", async () => {
+  it("draws the plans with their amounts, capacities and intervals", async () => {
     const where = await mount(cardFreeWalk());
 
     const rows = [...where.querySelectorAll("[data-plan]")];
-    expect(rows.map((row) => row.getAttribute("data-plan"))).toEqual([
-      "single",
-      "family",
-      "annual",
-    ]);
+    expect(rows.map((row) => row.getAttribute("data-plan"))).toEqual(["single", "annual"]);
 
     for (const plan of MEMBERSHIP_PLANS) {
       const row = where.querySelector(`[data-plan="${plan.id}"]`);
       expect(row, plan.id).not.toBeNull();
       expect(row?.getAttribute("data-plan-capacity")).toBe(String(plan.capacity));
       expect(row?.getAttribute("data-plan-interval")).toBe(plan.interval);
-      // The row's own figure, printed — `$9.99`, `$19.99`, `$99` — and the fixture's words beside
-      // it, so the DOM cannot disagree with the catalogue it was built from.
+      // The row's own figure, printed — `$9.99`, `$99` — and the fixture's words beside it, so the
+      // DOM cannot disagree with the catalogue it was built from.
       expect(where.querySelector(`[data-plan-price="${plan.id}"]`)?.textContent).toBe(
         formatCurrency(plan.priceCents, { trimZeroCents: true }),
       );
@@ -368,7 +353,7 @@ describe("the panel a person actually sees", () => {
   it("takes no payment input in the create path — the row writes the choice (#1115 D3)", async () => {
     const where = await mount(cardFreeWalk());
 
-    // The panel's only controls are the three radios; there is no card field, no frame, and no
+    // The panel's only controls are the plan radios; there is no card field, no frame, and no
     // control that could start a checkout.
     const inputs = [...where.querySelectorAll("input")];
     expect(inputs.every((input) => input.getAttribute("type") === "radio")).toBe(true);
@@ -378,13 +363,13 @@ describe("the panel a person actually sees", () => {
 
     // Choosing a row records it and opens nothing: the step stays on the plans, and the create
     // path's own action — the free week — is what takes the reader onward.
-    await press(where, 'input[name="plan"][value="family"]');
+    await press(where, 'input[name="plan"][value="annual"]');
     expect(where.querySelector('[data-pay-step="plan"]')).not.toBeNull();
     expect(where.querySelector("[data-checkout-frame]")).toBeNull();
     expect(where.querySelector('[data-pay-action="continue"]')).not.toBeNull();
     // …and the panel's recap names the plan the money would buy, at the plan's own amount.
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "family")} · ${itemLabel(PLANS, "family-price")}${itemLabel(PLANS, "family-interval")}`,
+      `${itemLabel(PLANS, "annual")} · ${itemLabel(PLANS, "annual-price")}${itemLabel(PLANS, "annual-interval")}`,
     );
   });
 });

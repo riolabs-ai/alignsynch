@@ -1,6 +1,17 @@
 /**
- * `data/membership-plans.ts` — the plan catalogue the owner approved on #1127 (2026-11-17):
- * **Single $9.99/month · Family $19.99/month (up to 4 relationships) · Single Annual $99/year.**
+ * `data/membership-plans.ts` — the plan catalogue the owner approved on #1127 (2026-11-17) and
+ * narrowed to **two plans** on 2026-11-19: **Single $9.99/month · Single Annual $99/year.**
+ *
+ * ## Two plans, because Family was the only one that counted relationships
+ *
+ * The approved catalogue used to carry a third row, Family — `$19.99`/month for up to four
+ * relationships — and every open question about how relationships are counted existed only to
+ * answer it. The owner removed the plan on 2026-11-19: the class of drift goes with it instead of
+ * being specified. **Delisting a plan is not a provider act**: the `principal` tier, its
+ * `billing_plan` rows and the Stripe price behind them are all untouched, because archiving a Price
+ * is a dashboard change to a live account and no live Family membership existed to grandfather
+ * (the card's step 0 counted them first). A tier no plan claims is the same shape this file already
+ * described for the unclaimed annual key, one row over.
  *
  * ## One catalogue, and this file holds no amount
  *
@@ -13,33 +24,32 @@
  * `999` here would pass every type check and put two prices in one product, which is the defect
  * `tests/create-plan-prices.test.ts` was written for (#975).
  *
- * ## Three plans, four provider keys, and the fourth one unclaimed
+ * ## Two plans, four provider keys, and two of them unclaimed
  *
  * A subscription renews against a provider **Price**, named by a lookup key
- * (`data/billing-prices.ts`), and the account holds exactly four:
+ * (`data/billing-prices.ts`), and the account still holds exactly four:
  *
  *   plan            tier / interval   lookup key
  *   Single          basic / month     alignsynch_basic_month
- *   Family          principal / month alignsynch_principal_month
  *   Single Annual   basic / year      alignsynch_basic_year
+ *   (no plan)       principal / month alignsynch_principal_month
  *   (no plan)       principal / year  alignsynch_principal_year
  *
- * `alignsynch_principal_year` is a *Family Annual* key and the owner has not approved a Family
- * annual plan, so no row here claims it. It is not deleted from the table — deleting a key is a
- * provider-side change to a Stripe account this card is told not to touch — and it is not invented
- * into a plan either. `tests/plan-catalogue.test.ts` pins that shape: three plans, three distinct
- * keys, and the fourth key named as carried-but-unmapped rather than quietly dropped. A future
- * Family Annual plan is therefore a row here and no new provider object.
+ * The two `principal` keys are the Family tier's, and they are **carried but unmapped** — the tier
+ * and its prices stay in the account and in `data/billing-plans.ts`, because deleting a key is a
+ * provider-side change this card is told not to touch, and re-selling the tier as a plan is the
+ * removal this card is. `tests/plan-catalogue.test.ts` pins that shape: two plans, two distinct
+ * keys, and the two unclaimed keys named rather than quietly dropped. A future plan at that tier is
+ * a row here and no new provider object.
  *
  * ## Capacity is a fact about the plan, and it is not enforced by this file
  *
- * `capacity` is how many relationships one membership covers: Family is four, the two Single plans
- * are one. Copy and the plan panel read it from here, so a row cannot advertise a number the
- * catalogue does not carry. **The entitlement gate is not wired to it yet** — `lib/billing/
- * entitlements.ts` still treats every paid tier as unlimited active relationships, so a Family
- * member is not refused a fifth relationship today. That gap is named in the card's handoff rather
- * than guessed at here: enforcing a cap is a change to what a paid account is *allowed*, and this
- * card is the catalogue and the display.
+ * `capacity` is how many relationships one membership covers: every plan here covers one, and a row
+ * that advertised more would be the plan this catalogue no longer sells. Copy and the plan panel
+ * read it from here, so a row cannot advertise a number the catalogue does not carry. **The
+ * entitlement gate is not wired to it** — `lib/billing/entitlements.ts` treats every paid tier as
+ * unlimited active relationships. That gap is named rather than guessed at here: enforcing a cap is
+ * a change to what a paid account is *allowed*, and this card is the catalogue and the display.
  *
  * Imported through relative paths on purpose, like `data/relationship-types.ts`: `tsconfig.
  * datacheck.json` compiles this tree under `module: commonjs` and does not resolve the `@/` alias.
@@ -48,8 +58,8 @@
 import { type BillingInterval, billingPlans, planPriceCents } from "./billing-plans";
 import { billingPriceLookupKeyFor, type PaidPlanId } from "./billing-prices";
 
-/** The three plans, in the order the pricing artifact and the plan panel draw them. */
-export const MEMBERSHIP_PLAN_IDS = ["single", "family", "annual"] as const;
+/** The two plans, in the order the pricing artifact and the plan panel draw them. */
+export const MEMBERSHIP_PLAN_IDS = ["single", "annual"] as const;
 
 export type MembershipPlanId = (typeof MEMBERSHIP_PLAN_IDS)[number];
 
@@ -57,11 +67,11 @@ export type MembershipPlanId = (typeof MEMBERSHIP_PLAN_IDS)[number];
 export interface MembershipPlan {
   /** The stable id — the row's `data-plan` value and the create fixture's copy-key prefix. */
   readonly id: MembershipPlanId;
-  /** What the card's title renders: `Single`, `Family`, `Single Annual`. */
+  /** What the card's title renders: `Single`, `Single Annual`. */
   readonly name: string;
-  /** The capacity in words, printed under the name: `1 relationship`, `Up to 4 relationships`. */
+  /** The capacity in words, printed under the name: `1 relationship`. */
   readonly summary: string;
-  /** How many relationships one membership covers. Family is {@link FAMILY_CAPACITY}. */
+  /** How many relationships one membership covers — one, for every plan here. */
   readonly capacity: number;
   /** How the amount is charged, and what the price's suffix says. */
   readonly interval: BillingInterval;
@@ -72,9 +82,6 @@ export interface MembershipPlan {
   /** The provider's handle for that amount, read from `data/billing-prices.ts`. */
   readonly lookupKey: string;
 }
-
-/** The owner's Family limit (#1127): one membership, up to four relationships. */
-export const FAMILY_CAPACITY = 4;
 
 /**
  * One plan, with its money resolved from the two fixtures that own it.
@@ -116,16 +123,16 @@ function plan(
 }
 
 /**
- * The three approved plans.
+ * The two plans the catalogue sells.
  *
  * The words are the approved artifact's — `docs/specs/v2-bundles/02-spec-design-page-onboarding-v2/
- * pricing.html` draws exactly these three cards, with these names and these summaries — and the
- * amounts arrive from the price fixture. `2 months free` is the artifact's own phrase for the
- * annual plan: $9.99 × 12 is $119.88, and $99 is the owner's round price for paying once.
+ * pricing.html` draws the same names and summaries on its Single and Single Annual cards, and the
+ * artifact's third card is the one the owner removed — and the amounts arrive from the price
+ * fixture. `2 months free` is the artifact's own phrase for the annual plan: $9.99 × 12 is $119.88,
+ * and $99 is the owner's round price for paying once.
  */
 export const MEMBERSHIP_PLANS: readonly MembershipPlan[] = [
   plan("single", "Single", "1 relationship", 1, "basic", "month"),
-  plan("family", "Family", "Up to 4 relationships", FAMILY_CAPACITY, "principal", "month"),
   plan("annual", "Single Annual", "1 relationship · 2 months free", 1, "basic", "year"),
 ];
 
@@ -139,9 +146,9 @@ export function membershipPlan(id: string): MembershipPlan | undefined {
  *
  * This is the crossing the create flow needs in both directions: a `/pricing` card carries a tier
  * and an interval, and the plan panel draws rows keyed by plan id. The exact pair is matched first,
- * so `basic/year` resolves to Single Annual rather than to Single; a tier whose yearly interval no
- * plan claims (the unclaimed Family Annual key) falls back to the plan for that tier, which is the
- * Family row, with the carried interval left as it arrived (`lib/flow/plan-intent.ts`).
+ * so `basic/year` resolves to Single Annual rather than to Single; a pair no plan claims — either
+ * `principal` key, and any interval at that tier — resolves to `null` rather than to a row, which
+ * is what makes a stale cookie carrying the removed plan select nothing (`lib/flow/plan-intent.ts`).
  */
 export function membershipPlanFor(
   tier: PaidPlanId,
@@ -158,16 +165,15 @@ export function membershipPlanFor(
 /** The row id each tier is drawn by, for the walk's map — `PLAN_BILLING_TIER` is built from this. */
 export const MEMBERSHIP_PLAN_TIERS: Readonly<Record<MembershipPlanId, PaidPlanId>> = {
   single: "basic",
-  family: "principal",
   annual: "basic",
 };
 
 /**
  * The catalogue's own invariants, so a bad edit is a named failure rather than a render.
  *
- * `tests/plan-catalogue.test.ts` runs every one of these. The capacity rule is the owner's:
- * Family covers four relationships and the two Single plans cover one, so a Family row advertised
- * at five, or a Single row at four, is a catalogue that contradicts the approved prices.
+ * `tests/plan-catalogue.test.ts` runs every one of these. The capacity rule is the owner's after the
+ * Family removal: every plan covers one relationship, so a row advertised at four is a plan the
+ * catalogue does not sell coming back in through a copy edit.
  */
 export function membershipPlanProblems(): string[] {
   const problems: string[] = [];
@@ -201,14 +207,9 @@ export function membershipPlanProblems(): string[] {
         `plan "${row.id}": capacity must be a whole number of relationships, at least 1`,
       );
     }
-    if (row.id === "family" && row.capacity !== FAMILY_CAPACITY) {
+    if (row.capacity !== 1) {
       problems.push(
-        `plan "family": capacity is ${row.capacity}; the approved catalogue says ${FAMILY_CAPACITY}`,
-      );
-    }
-    if (row.id !== "family" && row.capacity !== 1) {
-      problems.push(
-        `plan "${row.id}": the Single plans cover one relationship; capacity is ${row.capacity}`,
+        `plan "${row.id}": every plan covers one relationship; capacity is ${row.capacity}`,
       );
     }
     if (MEMBERSHIP_PLAN_TIERS[row.id] !== row.tier) {

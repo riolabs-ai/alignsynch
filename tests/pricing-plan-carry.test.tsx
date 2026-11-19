@@ -126,6 +126,10 @@ describe("what a plan card can carry, and what it cannot", () => {
     expect(planIntentFromSearch(query({ plan: "principal", interval: "weekly" }))).toBeNull();
     expect(planIntentFromSearch(query({ plan: "enterprise", interval: "month" }))).toBeNull();
     expect(planIntentFromSearch(query({ plan: "principal", interval: "" }))).toBeNull();
+    // Since the Family plan was removed (2026-11-19) its tier is not one a card prices, so an
+    // address naming it carries nothing — a stale link cannot reselect a plan nobody sells.
+    expect(planIntentFromSearch(query({ plan: "principal", interval: "month" }))).toBeNull();
+    expect(planIntentFromSearch(query({ plan: "principal", interval: "year" }))).toBeNull();
   });
 
   it("survives the cookie round trip, and reads junk as nothing carried", () => {
@@ -158,11 +162,20 @@ describe("what a plan card can carry, and what it cannot", () => {
       expect(row === null ? null : PLAN_BILLING_TIER[row]).toBe(tier);
     }
     // …and what stage 5 actually receives keeps both halves of the choice.
-    const carried = carriedPlanOf({ planId: "principal", interval: "year" });
+    const carried = carriedPlanOf({ planId: "basic", interval: "year" });
     expect(carried).not.toBeNull();
-    expect(carried && PLAN_BILLING_TIER[carried.row]).toBe("principal");
+    expect(carried && PLAN_BILLING_TIER[carried.row]).toBe("basic");
     expect(carried?.interval).toBe("year");
+    // The yearly tier is Single Annual's row, not Single's — the pair is matched exactly.
+    expect(carried?.row).toBe("annual");
     expect(carriedPlanOf(null)).toBeNull();
+    // The removed Family plan's tier claims no row any more, so a cookie that still names it reads
+    // as no plan carried at all rather than as a fallback row.
+    const stale = Buffer.from(
+      JSON.stringify({ planId: "principal", interval: "month" }),
+      "utf8",
+    ).toString("base64url");
+    expect(carriedPlanOf(parsePlanIntent(stale))).toBeNull();
   });
 });
 
@@ -251,7 +264,7 @@ describe("the carry route", () => {
 
   it("writes the chosen pair and answers 303 to the catalogue", async () => {
     const response = await pricingStart(
-      new Request("https://alignsynch.test/pricing/start?plan=principal&interval=year"),
+      new Request("https://alignsynch.test/pricing/start?plan=basic&interval=year"),
     );
 
     expect(response.status).toBe(303);
@@ -261,7 +274,7 @@ describe("the carry route", () => {
     expect(written).toHaveLength(1);
     const cookie = written[0];
     expect(cookie?.name).toBe(PLAN_INTENT_COOKIE);
-    expect(parsePlanIntent(cookie?.value)).toEqual({ planId: "principal", interval: "year" });
+    expect(parsePlanIntent(cookie?.value)).toEqual({ planId: "basic", interval: "year" });
     // The flow's own cookie options: httpOnly, sameSite lax, one day.
     expect(cookie?.options).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/" });
     expect(cookie?.options?.maxAge).toBe(24 * 60 * 60);
@@ -298,7 +311,7 @@ let container: HTMLDivElement | null = null;
 let posted: { planId?: string; interval?: string }[] = [];
 
 async function mountWalk(
-  carriedPlan?: PlanIntent & { row: "single" | "family" | "annual" },
+  carriedPlan?: PlanIntent & { row: "single" | "annual" },
 ): Promise<HTMLDivElement> {
   container = document.createElement("div");
   document.body.append(container);
@@ -354,19 +367,19 @@ afterEach(async () => {
 
 describe("stage 5 opens with the carried plan already selected", () => {
   it("draws the row checked, names it, and continues with the carried tier and interval", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "year", row: "family" });
+    const where = await mountWalk({ planId: "basic", interval: "year", row: "annual" });
 
     // The render says what it carried — the attribute the acceptance quotes.
     const section = where.querySelector("[data-plan-carried]");
-    expect(section?.getAttribute("data-plan-carried")).toBe("principal");
+    expect(section?.getAttribute("data-plan-carried")).toBe("basic");
     expect(section?.getAttribute("data-plan-carried-interval")).toBe("year");
 
     // …and the row itself is the selected one, before anything is pressed.
     const checked = where.querySelector<HTMLInputElement>('input[name="plan"]:checked');
-    expect(checked?.value).toBe("family");
+    expect(checked?.value).toBe("annual");
     // The panel's own recap names the plan the money would buy (#1036's line, now filled).
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "family")} · ${itemLabel(PLANS, "family-price")}${itemLabel(PLANS, "family-interval")}`,
+      `${itemLabel(PLANS, "annual")} · ${itemLabel(PLANS, "annual-price")}${itemLabel(PLANS, "annual-interval")}`,
     );
 
     // A checked row fires no `change`, so the panel carries one control that opens the card step.
@@ -377,7 +390,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
 
     expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
     // The checkout names the tier, and the interval the reader chose on `/pricing`.
-    expect(posted).toEqual([{ planId: "principal", interval: "year" }]);
+    expect(posted).toEqual([{ planId: "basic", interval: "year" }]);
   });
 
   it("carries the row, not the walk's own id, whatever the interval", async () => {
@@ -389,12 +402,12 @@ describe("stage 5 opens with the carried plan already selected", () => {
   });
 
   it("restores the carried choice on Back instead of dropping it", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "month", row: "family" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
     await press(where, '[data-pay-action="continue"]');
     await press(where, '[data-pay-action="plan"]');
 
     expect(where.querySelector<HTMLInputElement>('input[name="plan"]:checked')?.value).toBe(
-      "family",
+      "single",
     );
     expect(where.querySelector('[data-pay-action="continue"]')).not.toBeNull();
   });
@@ -426,11 +439,10 @@ describe("stage 5 opens with the carried plan already selected", () => {
     expect(page).toContain("{...(carriedPlan === null ? {} : { carriedPlan })}");
   });
 
-  it("keeps the plan rows' own words: the approved catalogue's three plans (#1127)", () => {
-    // #1043 changes where a plan is chosen, never what it is called; #1127 then replaced the two
-    // rows with the owner's three, so the words are Single, Family and Single Annual.
+  it("keeps the plan rows' own words: the catalogue's two plans", () => {
+    // #1043 changes where a plan is chosen, never what it is called; #1127 set the catalogue and
+    // the owner narrowed it to these two on 2026-11-19 by removing Family.
     expect(itemLabel(PLANS, "single")).toBe("Single");
-    expect(itemLabel(PLANS, "family")).toBe("Family");
     expect(itemLabel(PLANS, "annual")).toBe("Single Annual");
     // …and the copy that only the deleted checkout button read is gone, so nothing names a state
     // this product no longer has on `/pricing`.
