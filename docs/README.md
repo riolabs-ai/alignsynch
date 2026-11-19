@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**197 documents in 9 sections.** Every page carries the same nav block, generated
+**198 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -41,7 +41,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 21 documents
-- [Specs & design briefs](#specs-design-briefs) — 84 documents
+- [Specs & design briefs](#specs-design-briefs) — 85 documents
 - [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -193,6 +193,7 @@ What the product promises, written down before it was built.
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
 - [`specs/ux-stages.md`](specs/ux-stages.md) — **Stage display** — How is each stage shown, and who acts next?
 - [`specs/v2-coverage-matrix.md`](specs/v2-coverage-matrix.md) — **v2 coverage matrix — the 23 screens, measured** — Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?
+- [`specs/v2-rectification.md`](specs/v2-rectification.md) — **v2 rectification register — every delta, named** — Which v2 spec doc's screen differs from its bundle reference, exactly how, and what would a card have to accept to close it?
 
 ## Records & QA
 

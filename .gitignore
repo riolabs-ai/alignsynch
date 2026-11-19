@@ -58,6 +58,14 @@ data/generated/
 # leg, never committed — the committed half is the manifest and the summaries.
 tests/parity/artifacts/
 
+# The v2 fidelity evidence (scripts/design-audit.mjs`): one live capture, one reference
+# render and one side-by-side per doc, 79 MB for 51 rows. The committed half is
+# `manifest.json` — the sha, the URL, the two widths and the reference path — on the same
+# discipline as `tests/parity/`. Evidence is never committed; the manifest always is.
+/tests/design-captures/**
+!/tests/design-captures/manifest.json
+!/tests/design-captures/README.md
+
 # Hermes profile/board state occasionally lands in a card workspace; never commit it.
 .hermes/
 
