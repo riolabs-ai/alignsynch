@@ -396,19 +396,31 @@ async function signIn(browser, { base, pin, role }) {
   })()`);
   if (submitted !== "ok") return { ok: false, reason: `the PIN gate refused: ${submitted}` };
   await sleep(3800);
-  const clicked = await browser.evaluate(`(() => {
-    const wanted = ${JSON.stringify(role)};
-    const button = [...document.querySelectorAll('button')]
-      .find((b) => (b.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase().startsWith(wanted));
-    if (!button) return 'no role button for ' + wanted;
-    button.click();
-    return 'ok';
-  })()`);
-  if (clicked !== "ok") return { ok: false, reason: `the role button: ${clicked}` };
-  await sleep(5200);
-  const landed = await browser.evaluate("location.pathname");
-  if (landed.startsWith("/login")) return { ok: false, reason: "the role button did not sign in" };
-  return { ok: true, landed };
+  /*
+   * The role button, twice at most — and the reason is measured, not defensive.
+   *
+   * `/demo`'s unlock cookie can be one round-trip behind the first role post: the first press signs
+   * nothing in and leaves the reader on `/login`, and the same press on the second pass signs in.
+   * Measured 2026-11-19 against the local demo branch, where the Initiator seat recorded
+   * `NO SESSION` on every single-attempt run. Only the sign-in is retried, never the PIN, and two
+   * attempts without a session is still `NO SESSION` — a retry that swallowed a real failure would
+   * be worse than the race it hides.
+   */
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const clicked = await browser.evaluate(`(() => {
+      const wanted = ${JSON.stringify(role)};
+      const button = [...document.querySelectorAll('button')]
+        .find((b) => (b.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase().startsWith(wanted));
+      if (!button) return 'no role button for ' + wanted;
+      button.click();
+      return 'ok';
+    })()`);
+    if (clicked !== "ok") return { ok: false, reason: `the role button: ${clicked}` };
+    await sleep(5200);
+    const landed = await browser.evaluate("location.pathname");
+    if (!landed.startsWith("/login")) return { ok: true, landed };
+  }
+  return { ok: false, reason: "the role button did not sign in (two attempts)" };
 }
 
 /* ---------------------------------------------------------------------------------------------
