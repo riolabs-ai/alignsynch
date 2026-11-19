@@ -97,6 +97,12 @@ export interface CrudCell {
 export interface CrudMatrixDocument {
   readonly cells: readonly CrudCell[];
   readonly columns: readonly CrudColumn[];
+  /**
+   * The triage pass the source says it was generated from — the `(pass 10, …)` in its own preamble,
+   * or `null` when the document does not say. Read rather than typed: the page's snapshot line
+   * prints what the file states, and a file that states nothing prints no pass at all.
+   */
+  readonly snapshotPass: number | null;
 }
 
 /** The header figures, all derived. `applicable` excludes the cells whose prototype is `n/a`. */
@@ -111,6 +117,12 @@ export interface CrudCounts {
   readonly p2: number;
   readonly wont: number;
   readonly conflicts: number;
+  /**
+   * The P0 cells the prototype still does not draw — hinted or missing. The artifact's summary line
+   * prints it as "N P0 still open (hinted or missing)", so it is a count of the rank *and* the
+   * prototype's answer, never of the rank alone.
+   */
+  readonly p0Open: number;
 }
 
 /** The matrix could not be read or parsed. `reason` is a sentence an owner can act on. */
@@ -373,7 +385,17 @@ export function parseCrudMatrixDocument(markdown: string): CrudMatrixDocument {
     );
   }
 
-  return { cells, columns: columns ?? [] };
+  return { cells, columns: columns ?? [], snapshotPass: snapshotPassOf(markdown) };
+}
+
+/**
+ * The triage pass the document says it was generated from. The source's own preamble reads
+ * "Generated from the v2 prototype triage (pass 10, 16 Nov 2026)", so the number is a fact of the
+ * file; a file that does not state one answers `null` rather than borrowing the artifact's.
+ */
+function snapshotPassOf(markdown: string): number | null {
+  const match = /\(pass (\d+)\b/i.exec(markdown);
+  return match === null ? null : Number(match[1]);
 }
 
 /**
@@ -403,6 +425,10 @@ export function countsOf(cells: readonly CrudCell[]): CrudCounts {
     p2: count((cell) => cell.priority === "P2"),
     wont: count((cell) => cell.priority === "Won't"),
     conflicts: count((cell) => cell.upstream === "conflict"),
+    p0Open: count(
+      (cell) =>
+        cell.priority === "P0" && (cell.prototype === "hinted" || cell.prototype === "missing"),
+    ),
   };
 }
 
