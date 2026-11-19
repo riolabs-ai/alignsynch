@@ -13,9 +13,9 @@ PR #1264. This is a **measurement**: it runs no migration, writes no row, and fi
 finds. Every defect it names is somebody else's card.
 
 Measured **2026-11-19**, read only, through the **unpooled** connection, from the tree at
-`66e18ce31` (that is `main` **plus** PR #1264's `0043_stakeholder_role.sql`, which is applied on
-both branches but whose file has not merged yet — the one caveat on this page, spelled out under
-§2).
+`66e18ce31` **plus** PR #1264's `0043_stakeholder_role.sql`. That commit's `origin/main` carries 46
+of the 47 files; the 47th is the file #1264 adds, and it is applied on both branches already. The
+page states the census at both tree states for that reason (§2) rather than assuming either one.
 
 | Branch     | `NEON_BRANCH` | Endpoint, unpooled                                      |
 | ---------- | ------------- | ------------------------------------------------------- |
@@ -189,19 +189,20 @@ Both lists are empty on **both** branches: the set on disk is the set in the led
 names each. **No orphan ledger row exists** — the defect the card asked to look for (a row applied
 but missing from disk) is not present, so it does not need its own card today.
 
-**The one caveat, stated because the tree and the databases disagree until it closes.** The same
-comparison against `origin/main`'s **46**-file tree returns one row in the first list and nothing in
-the second, on both branches:
+**The census at the other tree state, measured rather than assumed.** The same comparison against
+`origin/main`'s **46**-file tree at `66e18ce31` returns one row in the first list and nothing in the
+second, on both branches:
 
 ```text
   · 0043_stakeholder_role.sql is applied here but is not in this tree — the database is ahead of the checkout, not behind
 ✓ db:schema — 46 files · 46 applied · 0 pending
 ```
 
-That is PR #1264, which carries the file. `db:schema` reads it correctly as "the database is ahead
-of the checkout" rather than as drift, and it closes by merging #1264 — not by re-running anything.
-Until it does, `47 rows / 47 files / 0 pending` is the ledger's fact on both branches and
-`46 files / 47 rows` is `main`'s.
+That one row is PR #1264, which adds the file. `db:schema` reads it correctly as "the database is
+ahead of the checkout" rather than as drift, and it is not repaired by re-running anything: it is a
+file that has not landed yet. So the census depends on which tree you ask from — `47 files · 47
+applied · 0 pending` once #1264's file is in the tree, `46 files · 47 rows` at `66e18ce31`, with the
+one extra row named above. Both are facts; neither is drift.
 
 ## 3. The drift check — `pnpm db:verify`, both branches, verbatim
 
