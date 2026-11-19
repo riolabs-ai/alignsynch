@@ -125,7 +125,7 @@ import {
   reportPath,
 } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { Pause, X } from "lucide-react";
 import { useState, useTransition, type ReactNode } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -1892,15 +1892,29 @@ export function RelationshipDetail({
             {itemLabel(viewCopy, "trial-running-no-invite")}
           </p>
         ) : null}
-        {/* #533 phase 3 — the sentence both parties read. It names the initiator's membership
-            and the instant it ended, from the row, so a lapse is never mistaken for a failure of
-            the person reading it. */}
+        {/* #533 phase 3 — the lapse line, per seat since #1224. It says Stage 6 is paused and who
+            moves next, never a bare "expired"; the words themselves are chosen by the read
+            (`lapseSentenceOf()`), so the Counterparty's half cannot carry a billing word and the
+            Initiator's half cannot name a trial length that disagrees with the constants.
+
+            Status is an icon plus a word on the status ground, never colour alone (locked rule 2),
+            and it takes the `status` tokens rather than a raw amber step — this is "where you
+            stand", not a warning.
+
+            `paused` is the trial's own pause, and the pause panel above already tells both seats
+            that story in the owner's words — so this line draws for the reasons the panel does
+            *not* name (a failed payment, a cancelled subscription), which is where the shared
+            sentence used to hand the Counterparty a payment word. */}
         {relationship.lapseSentence === null || paused ? null : (
           <p
             data-membership-sentence="lapsed"
-            className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+            className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-md border border-status-line bg-status p-3 text-sm text-foreground"
           >
-            {relationship.lapseSentence}
+            <span className="inline-flex items-center gap-1 whitespace-nowrap font-semibold">
+              <Pause className="size-4 shrink-0" aria-hidden="true" />
+              {itemLabel(pauseCopy, "badge")}
+            </span>
+            <span>{relationship.lapseSentence}</span>
           </p>
         )}
         {/* #706 — the sentence that stands in for the three absent bands, so a Counterparty reads
