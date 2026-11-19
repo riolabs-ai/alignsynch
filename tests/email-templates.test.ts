@@ -173,7 +173,13 @@ const SAMPLES: readonly Sample[] = [
   ),
   sample(
     joinedTemplate,
-    { joiner: "Rowan", inviter: "Avery", template: "Relationship Basics", link: LINK },
+    {
+      joiner: "Rowan",
+      inviter: "Avery",
+      template: "Relationship Basics",
+      link: LINK,
+      onFreeTrial: true,
+    },
     {
       name: "counterparty joined (#4)",
       subject: "Rowan joined — your assessment can start",
@@ -577,12 +583,37 @@ describe("the register as the editor's source", () => {
     }
   });
 
-  it("says the trial has started in the join notice, and never on the invitation", () => {
-    // The decision in force (#1119, #1115): the 7-day trial clocks from acceptance, so the notice
-    // that announces the acceptance is the one that must say so — and the invitation, sent before
+  it("says the week starts today in the join notice, and never on the invitation", () => {
+    // #1227 — the 7-day trial clocks from acceptance, so the notice that announces the acceptance is
+    // the one that says so — and it says it as the specified line. The invitation, sent before
     // anybody accepted, must not mention a trial at all.
-    expect(renderSampleEmail("counterparty-joined").text).toMatch(/trial has started/i);
+    expect(renderSampleEmail("counterparty-joined").text).toContain(
+      "Your 7 days free start today.",
+    );
     expect(renderSampleEmail("counterparty-invitation").text.toLowerCase()).not.toContain("trial");
+  });
+
+  it("drops the trial line on a paid plan, and links to the Relationship either way", () => {
+    // #1227's copy spec: the line is a fact, not a constant. A paying Initiator told "Your 7 days
+    // free start today." is the defect the issue names, so the paid variant must not carry it — and
+    // the link label is the product noun now, not the retired one.
+    const facts = {
+      joiner: "Rowan",
+      inviter: "Avery",
+      template: "Relationship Basics",
+      link: LINK,
+    };
+    const textOf = (onFreeTrial: boolean): string =>
+      renderTemplate(joinedTemplate, { ...facts, onFreeTrial }).text;
+
+    const trial = textOf(true);
+    const paid = textOf(false);
+
+    expect(trial).toContain("Your 7 days free start today.");
+    expect(trial).toContain(`Open the Relationship: ${LINK}`);
+    expect(trial).not.toContain("Open the session:");
+    expect(paid).toContain(`Open the Relationship: ${LINK}`);
+    expect(paid).not.toMatch(/trial|days free/i);
   });
 
   it("keeps the operator's release note off the member register", () => {

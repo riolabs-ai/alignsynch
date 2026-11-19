@@ -911,6 +911,19 @@ export type ClaimResult =
        * the same row, a fresh browser cookie. No account is created and no seat is re-pointed.
        */
       readonly resumed: boolean;
+      /**
+       * #1227 — did **this acceptance** open the card-free 7-day week for the Initiator's account?
+       *
+       * `grantAcceptanceTrial()` runs inside the claim, and its two outcomes are the answer:
+       * `granted` means the week starts now, `nothing-written` means the account already held an
+       * entitling subscription (a paid plan included) or had already spent its one week, so no
+       * week opened here. The join notice says "Your 7 days free start today." on the first and
+       * nothing about a trial on the second — which is the whole of #1227.
+       *
+       * A **resume is not a claim** and grants nothing, so it answers `false`: the week, if any,
+       * started on the claim that took the seat, and a re-issued cookie does not start a second one.
+       */
+      readonly onFreeTrial: boolean;
     }
   | {
       readonly ok: false;
@@ -1101,6 +1114,10 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     // lapse had no state to leave. Guarded on `published` so a re-claim of a reactivated
     // relationship (`expired → active` already applied by the payment event) is a no-op rather
     // than a write that hides which path got here first.
+    //
+    // #1227 — whether this acceptance is what opens the card-free week, answered by the grant below
+    // and carried out to `ClaimResult` so the join notice can tell a trial week from a paid plan.
+    let onFreeTrial = false;
     if (relationshipId !== null) {
       await client.query(
         "UPDATE relationship SET status = 'active' WHERE id = $1 AND status = 'published'",
@@ -1149,12 +1166,19 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       // A relationship with no Initiator account (a signed-out create) has nobody to key a week to.
       // The seat is still bound: the claim is not the payer's write, and refusing it would make the
       // invitation the first thing to stop working.
+      //
+      // #1227 — the grant's own outcome is carried out of this transaction, because the notice sent
+      // after it is only allowed to say "Your 7 days free start today." when this acceptance is what
+      // opened the week. `nothing-written` is not a failure: it is an account that already holds an
+      // entitling subscription (a paid plan included) or one that has already spent its week, and
+      // either way the notice must not mention a trial.
       if (trialUserId !== null) {
-        await grantAcceptanceTrial(sqlOf(client), {
-          userId: trialUserId,
-          relationshipId,
-          now,
-        });
+        onFreeTrial =
+          (await grantAcceptanceTrial(sqlOf(client), {
+            userId: trialUserId,
+            relationshipId,
+            now,
+          })) === "granted";
       }
       // The relationship's own mirror of the seat, bound in the same transaction. `party` is the
       // fact (`party_session_user_key` makes one account one seat) and this column is what the
@@ -1189,6 +1213,7 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       sessionToken,
       accountUserId: claimerUserId,
       resumed: false,
+      onFreeTrial,
     };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
@@ -1368,6 +1393,10 @@ async function resumeClaimedSeat(
     sessionToken,
     accountUserId: bound ?? input.claimerUserId,
     resumed: true,
+    // #1227 — a resume grants nothing (the docstring above: it writes one column and nothing else),
+    // so it cannot say a week started today. The acceptance that took the seat is where the week
+    // opened, and this post is a second cookie for it.
+    onFreeTrial: false,
   };
 }
 

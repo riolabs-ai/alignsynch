@@ -9,7 +9,8 @@
  *   - a template with no markdown body cannot be given one
  *   - the send path reads the **published** override and falls back to the default when it cannot
  *   - `trial-ending`, `purchase-confirmation` and the extension pair cannot reach a Counterparty
- *   - `counterparty-joined`'s default says the trial has started (the decision in force on #1119)
+ *   - `counterparty-joined`'s default says the week starts today, and only when the claim opened one
+ *     (#1227 supersedes the always-on trial sentence the #1119 row described)
  *   - no Counterparty-recipient **default** already leaks, so the page opens on a clean register
  *
  * The render is the real band (`renderTemplate`), not a stub: a test that asserts on a sentence has
@@ -233,11 +234,13 @@ describe("the register's own promises", () => {
     }
   });
 
-  it("says the trial has started in the join notice to the Initiator", () => {
-    // #1119's decision, in force since #1115: the trial clocks from the Counterparty's acceptance,
-    // so the notice that announces the acceptance is the one that must say so.
+  it("says the week starts today in the join notice to the Initiator", () => {
+    // #1227 — the trial clocks from the Counterparty's acceptance, so the notice that announces the
+    // acceptance is the one that says so, and it says it as the specified line. The line is a fact:
+    // the sample facts are the card-free week, so this is the variant a trial actually sends.
     const rendered = renderSampleEmail("counterparty-joined");
-    expect(rendered.text).toMatch(/trial has started/i);
+    expect(rendered.text).toContain("Your 7 days free start today.");
+    expect(rendered.text).toContain("Open the Relationship:");
   });
 
   it("renders the marketing template with a way out, so its preview is not a refusal", () => {
