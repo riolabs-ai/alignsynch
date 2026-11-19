@@ -28,7 +28,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     "The spec reference for every v2 card that adds a create, edit, archive or leave action: what each object and action is worth to each role, what the prototype draws for it, and what upstream already answers. Read-only — this page states the matrix, it never edits it.",
   items: [
     { id: "read-only", label: "Read-only" },
-    { id: "triage-link", label: "Open the triage Page" },
+    { id: "triage-link", label: "Open the Triage Page" },
     { id: "epic-link", label: "Epic #1119" },
     // The four filters' headings and the two words that let a reader out of a filter.
     { id: "filter-object", label: "Object" },
@@ -37,7 +37,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     { id: "filter-upstream", label: "Upstream" },
     { id: "filter-priority", label: "Priority" },
     { id: "filter-all", label: "All" },
-    { id: "filter-clear", label: "Clear filters" },
+    { id: "filter-clear", label: "Clear Filters" },
     { id: "showing", label: "{count} of {cells} cells shown" },
     {
       id: "matches-nothing",
@@ -50,7 +50,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     { id: "status-not-applicable", label: "N/A" },
     // What upstream answers.
     { id: "upstream-exists", label: "Exists" },
-    { id: "upstream-not-found", label: "Not found" },
+    { id: "upstream-not-found", label: "Not Found" },
     { id: "upstream-conflict", label: "Conflict" },
     // The priorities, including the dash the matrix uses for "not scheduled".
     { id: "priority-p0", label: "P0" },
@@ -72,7 +72,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "rules",
-      heading: "Role × action rules",
+      heading: "Role × Action Rules",
       body: "Every card that adds a write states these, and the matrix is the evidence behind them. They are #1119's decisions, not this page's.",
       items: [
         {
@@ -106,7 +106,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "gaps",
-      heading: "P0 gaps",
+      heading: "P0 Gaps",
       body: "The eleven items the matrix ranks P0 — the backbone of this release, each one a child of the epic or a card of its own.",
       items: [
         {
@@ -168,7 +168,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "counts",
-      heading: "The matrix at a glance",
+      heading: "The Matrix at a Glance",
       body: "Recomputed from the source rows on every request. No figure here is typed, so a matrix that changes changes this band.",
       items: [
         { id: "count-cells", label: "{count} cells" },
@@ -185,7 +185,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "matrix",
-      heading: "Every cell",
+      heading: "Every Cell",
       body: "One row per object × action × role, in the order the source file lists them. The address carries the filters, so a narrowed table is a link.",
       items: [
         {
@@ -197,7 +197,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "conflicts",
-      heading: "Conflicts & decisions",
+      heading: "Conflicts & Decisions",
       body: "The cells whose upstream answer disagrees with the prototype — the places a card has to settle a question rather than port a screen.",
       items: [
         {

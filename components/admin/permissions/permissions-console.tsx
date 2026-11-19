@@ -31,11 +31,18 @@
  * eleven P0 gaps and the conflicts panel still render: those are the issue's text, not the
  * source's rows.
  *
+ * **A status reads as an icon plus a word (#1232).** The prototype and upstream columns, and the
+ * rank column, are drawn as chips rather than bare text: `Badge`'s geometry, the artifact's tone
+ * as this tree's design tokens, and the mark the artifact draws beside the word. The chip's label
+ * is still `cellText()`'s word, so the vocabulary keeps its one home in the fixture — a status
+ * edit is a fixture edit, and the chip follows it.
+ *
  * Every word comes from `data/pages/admin-permissions.ts` (E23 budget 0) — the status vocabulary,
  * the column names, the counts' captions and the failure sentence included.
  */
-import { ClipboardCheck } from "lucide-react";
+import { Check, ClipboardCheck, EqualApproximately, Flag, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { LeavingLink } from "@/components/layout/leaving-link";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +77,7 @@ import {
   withFacet,
 } from "@/lib/admin/crud-matrix";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { cn } from "@/lib/utils";
 
 export interface PermissionsConsoleProps {
   copy: PageCopy;
@@ -124,6 +132,90 @@ function priorityWords(copy: PageCopy): Record<CrudPriority, string> {
   };
 }
 
+/** The three sets of words one cell's columns are read from — the fixture's, never a literal. */
+interface CellWords {
+  readonly prototypes: Record<CrudPrototypeStatus, string>;
+  readonly upstreams: Record<CrudUpstreamStatus, string>;
+  readonly priorities: Record<CrudPriority, string>;
+}
+
+/**
+ * The chip's tone, as the design system's own tokens (#1232) — never a raw palette step, never
+ * red. The artifact names the prototype's classes; this tree paints the same three Gap statuses
+ * through `synch` / `small-gap` / `gap`, which is one colour language shared with the scale and
+ * the party marks. The neutral trio is a status that is a fact rather than a gap: no tint, no
+ * mark, the page's own ground, and the hairline a chip or a control draws here — the prototype's
+ * `--line` is not a token in this tree, and `--input` is the role that carries it (globals.css
+ * re-toned the pair warm).
+ */
+const TONE_NEUTRAL = "border-input bg-background font-medium text-foreground";
+const TONE_SYNCH = "border-synch-mark bg-synch-tint text-synch";
+const TONE_SMALL_GAP = "border-small-gap-mark bg-small-gap-tint text-small-gap";
+const TONE_GAP = "border-gap-mark bg-gap-tint text-gap";
+
+interface ChipTone {
+  readonly tone: string;
+  /** The mark the artifact draws beside the word; `null` where the status is a fact. */
+  readonly icon: LucideIcon | null;
+}
+
+const NEUTRAL_CHIP: ChipTone = { tone: TONE_NEUTRAL, icon: null };
+
+/** ✓ covered, ≈ hinted, ⚑ missing — the three the artifact marks, in the Gap scale's tones. */
+const PROTOTYPE_CHIP: Record<CrudPrototypeStatus, ChipTone> = {
+  covered: { tone: TONE_SYNCH, icon: Check },
+  hinted: { tone: TONE_SMALL_GAP, icon: EqualApproximately },
+  missing: { tone: TONE_GAP, icon: Flag },
+  "n/a": NEUTRAL_CHIP,
+};
+
+/** What upstream answers; only a conflict is a gap, and it carries the gap tone and mark. */
+const UPSTREAM_CHIP: Record<CrudUpstreamStatus, ChipTone> = {
+  exists: NEUTRAL_CHIP,
+  "not-found": NEUTRAL_CHIP,
+  conflict: { tone: TONE_GAP, icon: Flag },
+  "n/a": NEUTRAL_CHIP,
+};
+
+/** The rank, filled the way the artifact fills it: P0 solid, P1 a tint, P2 soft, the rest plain. */
+const PRIORITY_CHIP: Record<CrudPriority, ChipTone> = {
+  P0: { tone: "border-transparent bg-action text-action-foreground", icon: null },
+  P1: { tone: "border-action/40 bg-action/5 font-medium text-primary", icon: null },
+  P2: { tone: "border-transparent bg-secondary text-foreground", icon: null },
+  "Won't": NEUTRAL_CHIP,
+  none: NEUTRAL_CHIP,
+};
+
+/**
+ * One status, drawn as an icon plus a word (#1232). The geometry is `Badge`'s — the primitive
+ * the artifact maps this chip to — and the tone is merged over `outline`'s, so a tone never has
+ * to fight the base string's `text-white` by source order.
+ *
+ * `marker` is a test hook, not copy: it names the column and the status value so a suite can
+ * assert the drawn state without reading a class list.
+ */
+function StatusChip({
+  marker,
+  label,
+  status,
+}: {
+  readonly marker: string;
+  readonly label: string;
+  readonly status: ChipTone;
+}) {
+  const Icon = status.icon;
+  return (
+    <Badge
+      variant="outline"
+      className={cn("gap-1 whitespace-nowrap", status.tone)}
+      data-status-chip={marker}
+    >
+      {Icon === null ? null : <Icon className="size-3.5 shrink-0" aria-hidden />}
+      {label}
+    </Badge>
+  );
+}
+
 /** Each column's heading, as the page prints it — keyed by the canonical column name. */
 function columnWords(copy: PageCopy): Record<CrudColumn, string> {
   return {
@@ -146,16 +238,12 @@ const CELL_CLASS: Partial<Record<CrudColumn, string>> = {
   rationale: "max-w-md text-muted-foreground",
 };
 
-/** One cell's words, read from the column the source names — never another column's value. */
-function cellText(
-  cell: CrudCell,
-  column: CrudColumn,
-  words: {
-    readonly prototypes: Record<CrudPrototypeStatus, string>;
-    readonly upstreams: Record<CrudUpstreamStatus, string>;
-    readonly priorities: Record<CrudPriority, string>;
-  },
-): string {
+/**
+ * One cell's words, read from the column the source names — never another column's value. This is
+ * the plain-text reading of every column, and it is also where a chip's label comes from: the
+ * chip is a drawing of this word, not a second copy of it.
+ */
+function cellText(cell: CrudCell, column: CrudColumn, words: CellWords): string {
   switch (column) {
     case "object":
       return cell.object;
@@ -175,6 +263,48 @@ function cellText(
       return cell.rationale;
     case "priority":
       return words.priorities[cell.priority];
+  }
+}
+
+/**
+ * The chip a column draws, or `null` for a column that stays plain text (#1232).
+ *
+ * `rankColumn` is the parser's own choice — `priority` when the source names one, `mvp` when it
+ * folds the rank into it — so the rank is never read off a column that carries something else: a
+ * source with a separate `priority` column can put anything in `mvp`, and that text is printed as
+ * the file wrote it rather than replaced with a rank the file did not store there.
+ */
+function cellChip(
+  cell: CrudCell,
+  column: CrudColumn,
+  rankColumn: CrudColumn,
+  words: CellWords,
+): ReactNode {
+  switch (column) {
+    case "prototype":
+      return (
+        <StatusChip
+          marker={`prototype-${cell.prototype}`}
+          label={words.prototypes[cell.prototype]}
+          status={PROTOTYPE_CHIP[cell.prototype]}
+        />
+      );
+    case "upstream":
+      return (
+        <StatusChip
+          marker={`upstream-${cell.upstream}`}
+          label={words.upstreams[cell.upstream]}
+          status={UPSTREAM_CHIP[cell.upstream]}
+        />
+      );
+    default:
+      return column === rankColumn ? (
+        <StatusChip
+          marker={`priority-${cell.priority}`}
+          label={words.priorities[cell.priority]}
+          status={PRIORITY_CHIP[cell.priority]}
+        />
+      ) : null;
   }
 }
 
@@ -258,6 +388,13 @@ export function PermissionsConsole({
   };
   const headings = columnWords(copy);
   const facetHeadings = facetHeading(copy);
+
+  /**
+   * The column that carries the rank — the parser's own choice: `priority` when the source's
+   * header names one, otherwise `mvp`, which is how the landed source writes it. Reading it here
+   * rather than assuming `mvp` keeps the chip honest on a source that separates the two.
+   */
+  const rankColumn: CrudColumn = columns.includes("priority") ? "priority" : "mvp";
 
   /** The header band, filled from the matrix's own totals — the ids are the fixture's, checked. */
   const band = [
@@ -448,7 +585,8 @@ export function PermissionsConsole({
                     >
                       {columns.map((column) => (
                         <TableCell key={column} className={CELL_CLASS[column]}>
-                          {cellText(cell, column, words)}
+                          {cellChip(cell, column, rankColumn, words) ??
+                            cellText(cell, column, words)}
                         </TableCell>
                       ))}
                     </TableRow>
