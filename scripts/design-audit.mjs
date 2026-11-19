@@ -688,6 +688,39 @@ async function capture() {
   const outDir = resolve(ROOT, CAPTURES);
   mkdirSync(outDir, { recursive: true });
 
+  /**
+   * `DESIGN_AUDIT_ONLY` narrows the run to the rows a card owns.
+   *
+   * A rectification card is carded **by bundle**, so it needs the two or three rows its bundle
+   * names — not the other forty-eight, which belong to other cards and cost ~90 s each in live
+   * navigations, reference renders and side-by-side compositions. Without this the only way to
+   * capture one surface is to photograph every surface, so a per-bundle card either spends an
+   * hour per capture or quietly skips the evidence its own acceptance line asks for.
+   *
+   * Default: **every row**, unchanged. The filter is a narrowing of the run, never of the
+   * instrument: the verdict vocabulary, the reference pairing and the comparison are the same
+   * code either way, and `--capture` with no environment still means "the whole register".
+   * Both doc paths (`guides/initiator/pick-a-template.md`) and slugs
+   * (`initiator-pick-a-template`) are accepted; an entry that matches no row is named, not
+   * ignored, because a silent typo would produce an empty run that reads like a clean one.
+   */
+  const only = (process.env.DESIGN_AUDIT_ONLY ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+  const selected = routeMap.rows.filter(
+    (row) => only.length === 0 || only.includes(row.doc) || only.includes(slugFor(row.doc)),
+  );
+  if (only.length > 0) {
+    const matched = new Set(selected.flatMap((row) => [row.doc, slugFor(row.doc)]));
+    for (const entry of only) {
+      if (!matched.has(entry)) console.log(`  ✗ DESIGN_AUDIT_ONLY "${entry}" matches no row`);
+    }
+    if (selected.length === 0) {
+      throw new Error("design-audit: DESIGN_AUDIT_ONLY matched no row — refusing to write a run");
+    }
+  }
+
   console.log("design-audit — resolved inputs");
   console.log(`  SPEC_DOCS_DIR  ${inputs.docs}`);
   console.log(`  BUNDLES_DIR    ${inputs.bundles}`);
@@ -712,7 +745,7 @@ async function capture() {
   // placeholder must have an id, or the run says which one it could not resolve and stops.
   const entities = routeMap.entities ?? {};
   const unresolved = [];
-  for (const row of routeMap.rows) {
+  for (const row of selected) {
     if (row.route === null) continue;
     const filled = fillRoute(row.route, entities);
     if (/\{\w+\}/.test(filled)) unresolved.push(`${row.doc}: ${row.route}`);
@@ -722,9 +755,7 @@ async function capture() {
     for (const line of unresolved) console.log(`  ✗ ${line}`);
   }
 
-  const roles = [...new Set(routeMap.rows.map((r) => r.role ?? "public"))].filter(
-    (r) => r !== "public",
-  );
+  const roles = [...new Set(selected.map((r) => r.role ?? "public"))].filter((r) => r !== "public");
   const sessions = new Map();
   const browsers = new Map();
   const pin = process.env.DEMO_PIN ?? "";
@@ -762,6 +793,7 @@ async function capture() {
     docs: docs.length,
     tracked: tracked.length,
     counts,
+    ...(only.length > 0 ? { only } : {}),
     sessions: Object.fromEntries(
       [...sessions].map(([role, s]) => [role, s.ok ? "signed in" : `none: ${s.reason}`]),
     ),
@@ -770,7 +802,7 @@ async function capture() {
 
   let written = 0;
   let sideBySides = 0;
-  for (const row of routeMap.rows) {
+  for (const row of selected) {
     const doc = docs.find((d) => d.doc === row.doc);
     if (!doc) {
       console.log(`  ✗ ${row.doc}: mapped but not a doc — remove the row`);
@@ -897,7 +929,7 @@ async function capture() {
     );
   }
 
-  writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  writeManifest(outDir, manifest, { only });
   for (const browser of browsers.values()) await browser.stop();
 
   console.log("");
@@ -926,6 +958,49 @@ function guessBundleHtml(inputs, doc) {
 /* ---------------------------------------------------------------------------------------------
  * 8. `--check`
  * ------------------------------------------------------------------------------------------- */
+
+/**
+ * Write the manifest, merging when the run was narrowed.
+ *
+ * A whole run replaces the record — that is the register's full measurement. A `DESIGN_AUDIT_ONLY`
+ * run has measured two rows out of fifty-one, so replacing the file would delete the other
+ * forty-nine rows' evidence and turn a per-bundle card's capture into a regression in the record.
+ * It instead keeps every row it did not touch, replaces the ones it did, and appends itself to a
+ * `runs` log so the file still says which tree, which live base and which rows each measurement
+ * came from. Each row also carries its own `capturedAt`, so a merged file is dated per row rather
+ * than only at the top.
+ */
+function writeManifest(outDir, manifest, { only }) {
+  const file = join(outDir, "manifest.json");
+  let out = manifest;
+  if (only.length > 0 && existsSync(file)) {
+    const previous = JSON.parse(readFileSync(file, "utf8"));
+    const captured = new Set(manifest.rows.map((row) => row.doc));
+    const kept = (previous.rows ?? []).filter((row) => !captured.has(row.doc));
+    out = {
+      ...manifest,
+      // The top-level measurement describes the last **whole** run, not this one: the other rows
+      // in this file were not captured here, so claiming this run's live base and tree for the
+      // whole file would misdescribe them. The narrowed run is in `runs`.
+      measuredAt: previous.measuredAt ?? manifest.measuredAt,
+      base: previous.base ?? manifest.base,
+      head: previous.head ?? manifest.head,
+      rows: [...kept, ...manifest.rows],
+      runs: [
+        ...(previous.runs ?? []),
+        {
+          measuredAt: manifest.measuredAt,
+          base: manifest.base,
+          head: manifest.head,
+          only,
+          rows: manifest.rows.map((row) => row.doc),
+        },
+      ],
+    };
+    delete out.only;
+  }
+  writeFileSync(file, `${JSON.stringify(out, null, 2)}\n`, "utf8");
+}
 
 function check() {
   const inputs = resolveInputs();
@@ -968,7 +1043,8 @@ if (argv.includes("--help") || argv.length === 0) {
     "usage: node scripts/design-audit.mjs --capture | --check\n" +
       "  --capture  resolve the three inputs, count the docs, capture live + reference, write the manifest\n" +
       "  --check    assert the register covers every doc with a build status, in one of four verdicts\n" +
-      "  env        SPEC_DOCS_DIR, BUNDLES_DIR, PROTOTYPE_DIR, DEMO_AUTH, DEMO_PIN, DESIGN_AUDIT_BASE, CHROME",
+      "  env        SPEC_DOCS_DIR, BUNDLES_DIR, PROTOTYPE_DIR, DEMO_AUTH, DEMO_PIN, DESIGN_AUDIT_BASE, DESIGN_AUDIT_ONLY, CHROME\n" +
+      "             DESIGN_AUDIT_ONLY=<doc,doc|slug,slug> captures only the rows a card owns",
   );
   process.exit(argv.includes("--help") ? 0 : 2);
 }

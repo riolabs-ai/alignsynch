@@ -371,3 +371,21 @@ export function formatTimeRemaining(endsAtIso: string, now: Date = new Date()): 
 export function formatPlayerCount(count: number): string {
   return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
 }
+
+/**
+ * How long one person's answers take, from the number of Aspects: **about 35 seconds each**,
+ * rounded to the nearest minute, and never less than one.
+ *
+ * A template carries no duration of its own, so this is a *reading* of the work rather than a
+ * stored field — which is why it is a pure function here and not a column. It lives in `content/`
+ * because two surfaces print the same figure and neither may reach the database module to get it:
+ * the in-app shelf (`lib/member/shelf.ts`) and the public catalogue
+ * (`lib/relationship-catalogue.ts`). The constant reproduces the bundles' own samples exactly —
+ * `templates.html` and `relationship-templates.html` both draw `4 Aspects` / `About 2 Minutes`,
+ * `5 Aspects` / `About 3 Minutes`, `6 Aspects` / `About 4 Minutes` — so neither port can drift
+ * from the artifact it was taken from.
+ */
+export function minutesForAspects(aspects: number): number {
+  if (!Number.isFinite(aspects) || aspects <= 0) return 1;
+  return Math.max(1, Math.round((aspects * 35) / 60));
+}

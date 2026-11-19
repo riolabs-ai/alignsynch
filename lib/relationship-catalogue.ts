@@ -21,6 +21,7 @@
  * draws no example card rather than a made-up one.
  */
 import type { PageCopy } from "@/content/pages";
+import { minutesForAspects } from "@/content/core";
 import { demoAnswersFor, type RelationshipType } from "@/data/relationship-types";
 import { createRelationshipPath, relationshipTypePath } from "@/lib/flow/paths";
 import { fillLabel, itemBody, itemLabel, itemValue, pageItemOf, sectionOf } from "@/lib/page-copy";
@@ -45,6 +46,14 @@ export interface CatalogueCardModel {
   readonly realm: string;
   /** `"5 Aspects"` — counted, never typed. */
   readonly aspects: string;
+  /** `"About 3 Minutes"` — the reference's third chip, read from the Aspect count. */
+  readonly minutes: string;
+  /**
+   * The badge the bundle puts on the exemplar card. True for the one template `catalogueCards()`
+   * was told is the popular one — the same id the hero's `Start With the Most Popular` opens, so
+   * the badge and the action cannot name two templates.
+   */
+  readonly popular: boolean;
   /** `"Manager ↔ Report"` — the two named ends. */
   readonly roles: string;
   /** The type's own page. */
@@ -79,6 +88,7 @@ export function catalogueCard(
   copy: PageCopy,
   type: RelationshipType,
   carry = "",
+  popularId?: string,
 ): CatalogueCardModel {
   // #1127 — a plan chosen on `/pricing` rides the card's own links. Both of them: the card's title
   // opens the template page, and its shelf action opens stage 1, and a reader who takes either must
@@ -91,6 +101,10 @@ export function catalogueCard(
     summary: type.descriptor.whoItsFor,
     realm: type.realm,
     aspects: fillLabel(pageLabel(copy, "aspects"), { count: String(type.aspects.length) }),
+    minutes: fillLabel(pageLabel(copy, "minutes"), {
+      count: String(minutesForAspects(type.aspects.length)),
+    }),
+    popular: popularId !== undefined && type.id === popularId,
     roles: fillLabel(pageLabel(copy, "template-roles"), {
       initiator: type.roles.initiator,
       counterparty: type.roles.counterparty,
@@ -100,13 +114,19 @@ export function catalogueCard(
   };
 }
 
-/** Every type as a card, in the taxonomy's own order. */
+/**
+ * Every type as a card, in the taxonomy's own order.
+ *
+ * `popularId` is the template the hero's second action opens. Passed rather than inferred: the badge
+ * is a claim about *this* page's exemplar, and the page is where that choice is made.
+ */
 export function catalogueCards(
   copy: PageCopy,
   types: readonly RelationshipType[],
   carry = "",
+  popularId?: string,
 ): CatalogueCardModel[] {
-  return types.map((type) => catalogueCard(copy, type, carry));
+  return types.map((type) => catalogueCard(copy, type, carry, popularId));
 }
 
 /**
@@ -284,6 +304,8 @@ export interface CatalogueBandModel {
   readonly emptyBody: string;
   readonly emptyReset: string;
   readonly groupsName: string;
+  /** The exemplar card's badge — the bundle's `Popular`. */
+  readonly popularBadge: string;
 }
 
 export function catalogueBand(copy: PageCopy): CatalogueBandModel {
@@ -296,6 +318,7 @@ export function catalogueBand(copy: PageCopy): CatalogueBandModel {
     emptyBody: pageLabel(copy, "empty-body"),
     emptyReset: pageLabel(copy, "empty-reset"),
     groupsName: pageLabel(copy, "filter-name"),
+    popularBadge: pageLabel(copy, "popular-badge"),
   };
 }
 

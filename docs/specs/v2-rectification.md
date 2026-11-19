@@ -122,7 +122,7 @@ measures one state per screen — the state the seed is in — not every state t
 | `guides/initiator/my-relationships-and-start.md`          | My Relationships and Start           | Built (#1150 via #1170) · design deltas open                                                | `/dashboard` <br>↳ `/dashboard`                                                                                                                                                  | `05-spec-design-page-start-my-relationships-v2/reference`                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1129               |
 | `guides/initiator/my-templates.md`                        | My Templates                         | Built (#1151, #1153 via #1170) · design deltas open                                         | `/dashboard/templates?tab=mine` <br>↳ `/dashboard/templates?tab=mine`                                                                                                            | `06-spec-design-page-templates-v2/reference`                                          | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | #1130, #1134        |
 | `guides/initiator/payment.md`                             | Payment                              | Built (#1156 via #1170) · Planned: Basic-only price (PR #1241), per-plan price line (#1230) | `/dashboard/payment` <br>↳ `/dashboard/payment`                                                                                                                                  | `08-spec-design-page-payment-v2/reference`                                            | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `matches`      | —            | #1132, #1230        |
-| `guides/initiator/pick-a-template.md`                     | Pick a Template                      | Built (#1170, via #1159 / #1127) · design deltas open                                       | `/relationship-templates` <br>↳ `/relationship-templates`                                                                                                                        | `02-spec-design-page-onboarding-v2/reference`                                         | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1127               |
+| `guides/initiator/pick-a-template.md`                     | Pick a Template                      | Built (#1170, via #1159 / #1127) · design deltas open                                       | `/relationship-templates` <br>↳ `/relationship-templates`                                                                                                                        | `02-spec-design-page-onboarding-v2/reference`                                         | re-measured `b8868c6b1` (`wt/rect-02-onboarding`)             | `deltas`       | 2 named      | #1127               |
 | `guides/initiator/send-the-invite.md`                     | Send the Invite                      | Built (#1144, #1217) · design deltas open                                                   | `/dashboard/templates/{wizardTemplate}/create/invite?instance={draftInstance}` <br>↳ `/dashboard/templates/friends/create/invite?instance=assessment-instance-avery-rowan-trial` | `01-spec-design-page-wizard-v2/reference/wizard-stage5-*`                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1123, #1115, #1216 |
 | `guides/initiator/set-up-details-settings-and-aspects.md` | Set Up Details, Settings and Aspects | Built (#1144, drawer via #1170 / #1133) · design deltas open                                | `/dashboard/templates/{template}/create` <br>↳ `/dashboard/templates/brother-sister/create`                                                                                      | `01-spec-design-page-wizard-v2/reference`                                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 3 named      | #1123, #1133        |
 | `guides/initiator/when-a-relationship-pauses.md`          | When a Relationship Pauses           | Built (#1143, #1235, #1236) · design deltas open                                            | `/dashboard/relationships/{trial}` <br>↳ `/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial`                                                           | `03-spec-design-page-relationship-detail-v2/reference`                                | —                                                             | `deltas`       | 3 named      | —                   |
@@ -154,7 +154,7 @@ measures one state per screen — the state the seed is in — not every state t
 | `start/core-concepts.md`                                  | Core Concepts                        | Built (v2.0.0-rc1.2) · glossary deltas open                                                 | `/how-it-works` <br>↳ `/how-it-works`                                                                                                                                            | `09-spec-design-system-tokens-v2/reference`                                           | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | —                   |
 | `start/plans-and-trial.md`                                | Plans and the Free Trial             | Planned (Basic only: PR #1241) · trial Built (#1116, #1117, #1143)                          | `/pricing` <br>↳ `/pricing`                                                                                                                                                      | `08-spec-design-page-payment-v2/reference`                                            | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `not-built`    | —            | —                   |
 | `start/quickstart.md`                                     | Quickstart                           | Built (#1144, #1147, #1173, #1145) · design deltas open                                     | `/dashboard` <br>↳ `/dashboard`                                                                                                                                                  | `01-spec-design-page-wizard-v2/reference`                                             | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | —                   |
-| `start/what-is-alignsynch.md`                             | What Is AlignSynch                   | Built (v2.0.0-rc1.2 on main) · design deltas open per guide                                 | `/` <br>↳ `/`                                                                                                                                                                    | `02-spec-design-page-onboarding-v2/reference`                                         | **stale** — `main @ 601ce26`, 21 commits before `03e4984`     | `deltas`       | 2 named      | —                   |
+| `start/what-is-alignsynch.md`                             | What Is AlignSynch                   | Built (v2.0.0-rc1.2 on main) · design deltas open per guide                                 | `/` <br>↳ `/`                                                                                                                                                                    | `02-spec-design-page-onboarding-v2/reference`                                         | re-measured `b8868c6b1` (`wt/rect-02-onboarding`)             | `deltas`       | 2 named      | —                   |
 
 ## The deltas, named — one bullet per difference a card can accept
 
@@ -247,9 +247,49 @@ My Templates · Built (#1151, #1153 via #1170) · design deltas open · route `/
 
 Pick a Template · Built (#1170, via #1159 / #1127) · design deltas open · route `/relationship-templates`
 
-- The doc promises **Categories** and a **Create Relationship** action on each template page; the live catalog draws a **Family | Couples | Friends | Work** filter row instead of the reference's category grouping, and its per-template action is a link into the wizard rather than a button labelled **Create Relationship** — live `tests/design-captures/initiator-pick-a-template/live.txt`.
-- The reference's worked example (**"EXAMPLE · BROTHER–SISTER · Parent Decisions · 1 · Avoided or fought · 5 · Shared and agreed"**) is drawn live as **"EXAMPLE · STAFF–MANAGER"**, a different template: the example slot is live but does not follow the doc's own subject.
-- The doc's opening promise that each template page lists **every Aspect with its left (1) and right (5) labels** is not drawn on the catalog; it is drawn on the template page, which this row does not capture.
+- **Open — the worked example does not follow the doc's own subject.** The bundle draws
+  **"EXAMPLE · BROTHER–SISTER"** over **"Parent Decisions"**, **"1 · Avoided or fought"**,
+  **"5 · Shared and agreed"** and **"Marcus wishes 5" / "Elena wishes 3"**; the live card draws
+  **"EXAMPLE · STAFF–MANAGER"** over an Office Aspect, because `catalogueExample()` takes the first
+  template with an authored demo answer sheet and `data/relationship-types.ts::demoAnswersByType`
+  holds exactly two (`staff-manager`, `co-founders`). Drawing Brother–Sister is a content change,
+  not a UI one: the sheet is 5 Aspects × 2 parties × 4 opinions of authored answers, and
+  `tests/alignment-home.test.ts` pins `/`'s six featured cards to exactly the sheet set, so adding
+  one re-cuts the home band too. Left open on purpose — re-measured `b8868c6b1`, live
+  `tests/design-captures/initiator-pick-a-template/live.txt`.
+- **Open — the Aspect line prints its question, not a title.** The bundle's card names the Aspect
+  (**"Parent Decisions"**); the live card prints the question it is asked with
+  (`aspect.prompt`). The taxonomy carries no Aspect title — only `prompt`, `leftValue`,
+  `rightValue` — so this one is a schema addition, and it belongs with whoever decides the
+  taxonomy's Aspect shape rather than with a screen.
+- **Fixed — the `Choose a Template` heading was drawn twice.** The band paired an `sr-only` copy
+  (for the section's `aria-labelledby`) with the visible heading in the browser island, so the
+  document carried two headings with the same words. One heading now, and its `id` is the one the
+  section names (`components/marketing/catalogue-browser.tsx`).
+- **Fixed — the exemplar card had no `Popular` badge.** The bundle draws `Popular` on the card the
+  hero's **"Start With the Most Popular"** opens; the page drew neither. The badge now sits on that
+  card by construction — the page resolves the exemplar once and passes its id to
+  `catalogueCards()`, so the badge and the action cannot name two templates.
+- **Fixed — every card was missing its duration chip.** The bundle draws **"About 3 Minutes"** on a
+  **"5 Aspects"** card; the catalogue drew the realm, the Aspect count and the roles only. The chip
+  is derived from the Aspect count by `content/core.ts::minutesForAspects()`, the same reading the
+  in-app shelf prints (`lib/member/shelf.ts`), and it reproduces the bundle's samples exactly
+  (`4`→2, `5`→3, `6`→4).
+- **Fixed — four strings carried the ASCII apostrophe.** The bundle uses `’` (`you’re`, `there’s`,
+  `haven’t`, `each other’s`), and the comparison is glyph-sensitive on purpose, so these four were
+  reported as real differences; the fixture now spells them as the bundle does.
+- **Withdrawn — "the live catalog draws a Family | Couples | Friends | Work filter row instead of the
+  reference's category grouping".** Measured false on `b8868c6b1`: the catalog draws a `Categories`
+  group (`aria-label`) of nine chips with counts — **All 27 · Office 5 · Business 4 · Property 1 ·
+  School 2 · Medical 1 · Home 10 · Social 4** — which is the bundle's own pattern. The names differ
+  because the product's taxonomy is 27 relationship types across seven realms and the prototype had
+  eight across six; that is the taxonomy moving, not the screen.
+- **Withdrawn — "every Aspect with its 1 and 5 labels is not drawn on the catalog".** The doc's
+  promise is about _the template page_ ("The template page lists every Aspect with its left (1) and
+  right (5) labels"), and that page draws it: `lib/template-detail.ts` maps every Aspect to
+  `left`/`right`, and `data/pages/templates-detail.ts:44` carries the **Create Relationship**
+  label. This row captures the catalog, so it never photographed the page the promise is about —
+  the gap was in the instrument, not the screen.
 
 ### `guides/initiator/send-the-invite.md`
 
@@ -413,8 +453,21 @@ Quickstart · Built (#1144, #1147, #1173, #1145) · design deltas open · route 
 
 What Is AlignSynch · Built (v2.0.0-rc1.2 on main) · design deltas open per guide · route `/`
 
-- The doc's public explainer is the marketing home; the live `/` opens **"For business and corporate relationships"** with **"Explore business templates"**, and its text carries no **In Synch** or **Gap** explainer — live `tests/design-captures/start-what-is-alignsynch/live.txt`.
-- No bundle draws `/`; the pair for this row is the pricing/onboarding bundle, so the vocabulary comparison above is the only claim made.
+- **Open — the home's vocabulary is not the doc's, and the gap is narrower than it looked.** The doc
+  explains the product in its own words: **Aspects**, the **1–5 scale**, and **Align** marking every
+  Aspect **✓ In Synch**, **≈ Small Gap** or **⚑ Gap**. The live `/` opens **"For business and
+  corporate relationships" → "Bring expectations into the open at work."** and its primary action is
+  **"Explore business templates"**. It does carry two of those words — **"Are you In-Synch with
+  ______?"** in the Questions band and **"Where the answers part is the Gap."** above the footer —
+  but **Small Gap** appears nowhere and the three-word status set is never drawn. Re-measured
+  `b8868c6b1`, live `tests/design-captures/start-what-is-alignsynch/live.txt`. This is a copy and
+  positioning decision on the product's front door (business-first, with personal relationships as
+  the second family), not a delta against a drawn reference, so it is named here rather than fixed.
+- **Open, and out of this instrument's reach — no bundle draws `/`.** The pair for this row is
+  bundle 02's `pricing.html`, which is not the home page, so no reference render of `/` exists to
+  compare against and the vocabulary comparison above is the only claim this row makes. Closing the
+  row needs either a bundle render of the home page or the doc re-pointed at the screen it actually
+  describes.
 
 ## Matches — the doc's promise is drawn
 
