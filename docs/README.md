@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**197 documents in 9 sections.** Every page carries the same nav block, generated
+**198 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 21 documents
 - [Specs & design briefs](#specs-design-briefs) — 84 documents
-- [Records & QA](#records-qa) — 25 documents
+- [Records & QA](#records-qa) — 26 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 30 documents
@@ -216,6 +216,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/release-2.0.0-rc1.1/billing-checkout.md`](qa/release-2.0.0-rc1.1/billing-checkout.md) — **A test-mode checkout on production, #1053** — Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?
 - [`qa/rel-detail-edit/README.md`](qa/rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
 - [`qa/stage5/README.md`](qa/stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
+- [`qa/spec-issues/README.md`](qa/spec-issues/README.md) — **The spec register's GitHub column** — Does a reader see the issue for a filed row and an em dash for one nobody filed, and does the register still render when GitHub does not answer?
 - [`qa/swiper-12/README.md`](qa/swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
