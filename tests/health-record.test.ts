@@ -24,8 +24,11 @@ import {
   DEMO_ENDPOINT,
   DEMO_LABEL_PREFIX,
   demoDatabaseLabel,
+  gateLaneProblems,
+  gateLaneRequestRefusal,
   platformDatabaseRefusal,
   postconditionProblems,
+  requestedGateLane,
 } from "../scripts/health-record-rules.mjs";
 
 const DEMO_URL = `postgresql://neondb_owner:***@${DEMO_ENDPOINT}.c-6.us-east-2.aws.neon.tech/neondb`;
@@ -35,7 +38,11 @@ const PROBE_URL =
 const PRODUCTION_URL =
   "postgresql://neondb_owner:***@ep-winter-block-12345678.c-6.us-east-2.aws.neon.tech/neondb";
 
-/** A record shaped like the one the recorder writes, with the two fields the checks read. */
+/** The `env -i` argv the recorder runs, as `gate.command` records it. */
+const GATE_COMMAND = (request: string) =>
+  `env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 GATE_LANE=${request} bash scripts/verify.sh`;
+
+/** A record shaped like the one the recorder writes, with the fields the checks read. */
 function record(overrides: Record<string, unknown> = {}) {
   return {
     dbVerify: {
@@ -46,6 +53,12 @@ function record(overrides: Record<string, unknown> = {}) {
       result: "pass",
       summary: "✓ db:verify — no drift",
       violations: [],
+    },
+    gate: {
+      command: GATE_COMMAND("auto"),
+      lane: "code",
+      measuredAt: "2026-11-07T20:00:00.000Z",
+      seconds: 122.8,
     },
     recordedAt: "2026-11-07T20:00:01.000Z",
     recorder: "pnpm health:record",
@@ -121,6 +134,75 @@ describe("the database label is derived, never typed", () => {
   });
 });
 
+describe("which lane the gate ran, held against the lane it was asked for", () => {
+  it("reads the request out of the command transcript, and says `null` when there is none", () => {
+    expect(requestedGateLane(GATE_COMMAND("full"))).toBe("full");
+    expect(requestedGateLane(GATE_COMMAND("auto"))).toBe("auto");
+    // The shape the recorder wrote before the lane was forwarded — the defect, in one string.
+    expect(
+      requestedGateLane("env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh"),
+    ).toBeNull();
+    expect(requestedGateLane(undefined)).toBeNull();
+  });
+
+  it("accepts `auto` with whatever the classifier chose, and `full` with the code lane", () => {
+    expect(gateLaneProblems({ command: GATE_COMMAND("auto"), lane: "docs" })).toEqual([]);
+    expect(gateLaneProblems({ command: GATE_COMMAND("auto"), lane: "config" })).toEqual([]);
+    // GATE_LANE=full *is* the code lane; that is resolve_lane's own sentence, not a second lane.
+    expect(gateLaneProblems({ command: GATE_COMMAND("full"), lane: "code" })).toEqual([]);
+  });
+
+  it("fails a recorded lane that disagrees with the lane the gate was asked for", () => {
+    // The reproduction: `GATE_LANE=full pnpm health:record --gate --carry` under the old recorder
+    // produced exactly this pair — the request dropped by `env -i`, the record left saying `docs`,
+    // 13 s and no build, as though somebody had chosen the cheapest lane.
+    const problems = gateLaneProblems({ command: GATE_COMMAND("full"), lane: "docs" });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("GATE_LANE=full");
+    expect(problems[0]).toContain('"docs"');
+    expect(problems[0]).toContain("code lane");
+  });
+
+  it("fails a measured block whose command names no lane at all", () => {
+    const problems = gateLaneProblems({
+      command: "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
+      lane: "code",
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("does not name GATE_LANE=auto|full");
+  });
+
+  it("does not hold a carried block to a request this run never made", () => {
+    const carriedBlock = {
+      command: "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
+      lane: "code",
+    };
+    expect(gateLaneProblems(carriedBlock, { measured: false })).toEqual([]);
+    // …but it is still held to agreement when its own command does name one.
+    expect(
+      gateLaneProblems({ command: GATE_COMMAND("full"), lane: "content" }, { measured: false }),
+    ).toHaveLength(1);
+  });
+
+  it("refuses a request verify.sh would exit 2 on, instead of recording it", () => {
+    expect(gateLaneRequestRefusal("auto")).toBeNull();
+    expect(gateLaneRequestRefusal("full")).toBeNull();
+    expect(gateLaneRequestRefusal("fast")).toContain("is not a lane");
+    expect(gateLaneProblems({ command: GATE_COMMAND("fast"), lane: "code" })[0]).toContain(
+      "is not a lane",
+    );
+  });
+
+  it("reaches the recorder's postcondition, not only the rule", () => {
+    const problems = postconditionProblems(
+      record({ gate: { ...record().gate, command: GATE_COMMAND("full"), lane: "docs" } }),
+      { packageVersion: "1.6.0", now: AT(0) },
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("GATE_LANE=full");
+  });
+});
+
 describe("the recorder's postcondition", () => {
   it("passes a record this run wrote, from this tree, about demo", () => {
     expect(postconditionProblems(record(), { packageVersion: "1.6.0", now: AT(0) })).toEqual([]);
@@ -191,6 +273,7 @@ describe("the recorder's postcondition", () => {
   });
 
   it("does not throw on a record that is not an object at all", () => {
-    expect(postconditionProblems(null, { packageVersion: "1.6.0", now: AT(0) }).length).toBe(3);
+    // recordedAt, tree.packageVersion, dbVerify.database, and the gate lane nobody asked for.
+    expect(postconditionProblems(null, { packageVersion: "1.6.0", now: AT(0) }).length).toBe(4);
   });
 });

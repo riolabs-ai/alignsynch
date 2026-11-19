@@ -11,6 +11,8 @@
  *   node … scripts/health-record.mjs                 tree + production probe
  *   node … scripts/health-record.mjs --db            also run `pnpm db:verify` and record its lines
  *   node … scripts/health-record.mjs --gate          also run the gate in a clean env and time it
+ *                                                    (`GATE_LANE=auto|full` is forwarded into that
+ *                                                    env and named in the record)
  *   node … scripts/health-record.mjs --ci 2026-11-02 also run docs/gate-baseline.py for that window
  *   node … scripts/health-record.mjs --carry         keep blocks this run did not measure
  *   node … scripts/health-record.mjs --probe <name> --db --proves "…"
@@ -26,10 +28,11 @@
  * status (#599).
  *
  * **The recorder asserts its own postcondition.** After writing, it reads the bytes back and
- * requires a fresh `recordedAt`, `tree.packageVersion == package.json`, and a `dbVerify.database`
- * that names the demo branch — and fails the command when any of them is wrong (R-29: assert the
- * postcondition, not the exit code of the thing that ran). `--probe` is exempt by construction: its
- * output is evidence, and evidence is allowed to be red.
+ * requires a fresh `recordedAt`, `tree.packageVersion == package.json`, a `gate.lane` that is the
+ * lane `gate.command` asked for, and a `dbVerify.database` that names the demo branch — and fails
+ * the command when any of them is wrong (R-29: assert the postcondition, not the exit code of the
+ * thing that ran). `--probe` is exempt by construction: its output is evidence, and evidence is
+ * allowed to be red.
  *
  * **A record has an age, and the gate holds it to one (#599).** `tests/platform-health.test.ts`
  * fails when `data/health/platform-health.json` is older than `PLATFORM_HEALTH_FRESHNESS_HOURS`
@@ -49,6 +52,7 @@ import { dirname, join } from "node:path";
 import { zPlatformHealthRecord } from "@/content/platform-health";
 import {
   demoDatabaseLabel,
+  gateLaneRequestRefusal,
   platformDatabaseRefusal,
   postconditionProblems,
 } from "./health-record-rules.mjs";
@@ -315,10 +319,21 @@ function dbVerifyBlock() {
 function gateBlock() {
   const startedAt = now();
   const started = Date.now();
+  // The lane this run *asks* for, forwarded into the clean environment below. `env -i` drops every
+  // inherited variable, so before this line an exported `GATE_LANE=full` never reached the gate: the
+  // classifier chose, the record read the classifier's pick, and the record stated a gate depth
+  // nobody selected (a `docs`-lane record from a request for the full one). `verify.sh` accepts
+  // `auto` (classify) and `full` (the code lane) and exits 2 on anything else, so an unrecognised
+  // value is refused here rather than recorded as though it had been honoured.
+  const requestedLane = (process.env.GATE_LANE ?? "").trim() || "auto";
+  const refusal = gateLaneRequestRefusal(requestedLane);
+  if (refusal !== null) throw new Error(refusal);
+
   // A clean environment, the way CI has one: an inherited `.env` would make `demo:verify` refuse
-  // for a reason that is not the diff (`docs/operations/gate.md`, `AGENTS.md`).
-  const run = sh("env", [
-    "-i",
+  // for a reason that is not the diff (`docs/operations/gate.md`, `AGENTS.md`). The lane request is
+  // the one inherited variable that is deliberately forwarded — it is the operator's choice about
+  // how much gate to run, not a credential the clean environment is protecting.
+  const assignments = [
     `HOME=${process.env.HOME}`,
     `PATH=${process.env.PATH}`,
     "CI=1",
@@ -326,9 +341,9 @@ function gateBlock() {
     // the file it will write does not exist yet, so a run that enforced freshness here would
     // deadlock on the very artifact it is replacing. Every other gate run enforces it.
     "HEALTH_RECORD_REFRESH=1",
-    "bash",
-    "scripts/verify.sh",
-  ]);
+    `GATE_LANE=${requestedLane}`,
+  ];
+  const run = sh("env", ["-i", ...assignments, "bash", "scripts/verify.sh"]);
   const seconds = Math.round((Date.now() - started) / 100) / 10;
   const lane = /lane=([a-z]+)/.exec(`${run.stdout}\n${run.stderr}`)?.[1];
   if (lane === undefined) {
@@ -346,12 +361,21 @@ function gateBlock() {
   const yieldBlock = ciWindow === undefined ? carried("gate").yield : ciYieldBlock(ciWindow);
 
   return {
-    command: "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
+    // The transcript of the invocation, derived from the argv above so the two cannot drift. The
+    // `GATE_LANE` assignment is what `postconditionProblems()` reads the request back from, and the
+    // lane beside it is the depth the gate itself printed — held equal to it below.
+    command: `env -i ${assignments.map(abbreviateAssignment).join(" ")} bash scripts/verify.sh`,
     lane,
     measuredAt: startedAt,
     seconds,
     yield: yieldBlock,
   };
+}
+
+/** `HOME=/home/somebody` → `HOME…`: the record is committed, and a shell's paths are not. */
+function abbreviateAssignment(assignment) {
+  const [name] = assignment.split("=");
+  return name === "HOME" || name === "PATH" ? `${name}…` : assignment;
 }
 
 function ciYieldBlock(window) {
@@ -448,6 +472,9 @@ const packageVersionOnDisk = JSON.parse(
 const problems = postconditionProblems(written, {
   packageVersion: packageVersionOnDisk,
   now: new Date(),
+  // Only a block this run measured was asked for a lane; a `--carry` block is held to agreement
+  // with the request its own command names, never to naming one it never made.
+  gateMeasured: wantGate,
 });
 
 if (problems.length > 0) {

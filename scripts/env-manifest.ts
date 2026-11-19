@@ -613,6 +613,10 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "DEMO_FLOW_SKIP_SEED", why: "skips the seed phase of the demo walk" },
   { name: "FLOW_E2E_DUMP", why: "dumps each page the live flow walk judges" },
   {
+    name: "GATE_LANE",
+    why: "the gate depth `scripts/verify.sh` runs — auto classifies the diff, full forces the code lane; forwarded by scripts/health-record.mjs",
+  },
+  {
     name: "HEALTH_RECORD_REFRESH",
     why: "re-measures instead of reading the recorded platform health",
   },
