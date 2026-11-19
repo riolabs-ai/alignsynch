@@ -275,11 +275,11 @@ describe("the editor", () => {
     expect(html).toContain('id="email-body"');
     expect(html).toContain("data-email-template-chips");
     expect(html).toContain("{{inviter}}");
-    for (const label of ["Save draft", "Publish", "Reset to Default", "Send Test"]) {
+    for (const label of ["Save Draft", "Publish", "Reset to Default", "Send Test"]) {
       expect(html, label).toContain(label);
     }
     expect(html).toContain('data-email-template-version="counterparty-invitation-v1"');
-    expect(html).toContain("Restore to draft");
+    expect(html).toContain("Restore to Draft");
   });
 
   it("shows the default copy when nothing is stored, and no Publish is offered", () => {

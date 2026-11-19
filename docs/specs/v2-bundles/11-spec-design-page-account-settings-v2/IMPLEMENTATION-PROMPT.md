@@ -20,9 +20,11 @@
 **Target:** the header avatar menu on every signed-in page, and `/settings` (existing route, v2 visuals).  
 **Stack constraint:** Existing Next.js App Router, React, TypeScript and Tailwind CSS v3. The repository pins Tailwind CSS `3.4.17`; do not migrate to Tailwind v4 as part of this work. Reuse QuizHub (ThemeForest React/TW3) components plus the AlignSynch globals only.
 
+**Revised:** 2026-11-19 ([#1233](https://github.com/riolabs-ai/alignsynch/issues/1233)) — the **Notifications** section is not drawn. The app stores no notification preference, so a card of three switches and a Save would write nowhere; the page carries Profile, Password, Session and Delete Account, and the purpose line reads "Your name, email and password." The `reference/` renders were re-captured from `settings.html` and `reference/settings-delete-confirm-1280.png` was added.
+
 ## Copy-ready team prompt
 
-> Implement the approved v2 account menu and Account Settings page from `11-spec-design-page-account-settings-v2/`. Use `settings.html`, `css/tokens.css`, `js/tw-config.js`, `reference/settings-*` and `reference/account-menu-1280.png` as the reference. The header avatar becomes a button that opens a menu with the name and email, Account Settings and Sign Out. Settings has Profile, Password, Notifications, Session and Delete Account sections; Delete Account uses the shared neutral confirm. Reuse the existing auth and profile actions. Check at 390 and 1280 px, run the repository checks, and do not deploy until the owner has reviewed it.
+> Implement the approved v2 account menu and Account Settings page from `11-spec-design-page-account-settings-v2/`. Use `settings.html`, `css/tokens.css`, `js/tw-config.js`, `reference/settings-*` and `reference/account-menu-1280.png` as the reference. The header avatar becomes a button that opens a menu with the name and email, Account Settings and Sign Out. Settings has Profile, Password, Session and Delete Account sections; Delete Account uses the shared neutral confirm. Reuse the existing auth and profile actions. Check at 390 and 1280 px, run the repository checks, and do not deploy until the owner has reviewed it.
 
 ## Source-of-truth order
 
@@ -44,14 +46,12 @@
 ## Page and interaction requirements
 
 - **Account menu:** name and email header, **Account Settings**, **Sign Out**; keyboard and focus as the shared kebab.
-- **Settings (H1 "Account Settings", purpose "Your name, email, password and notifications."):**
+- **Settings (H1 "Account Settings", purpose "Your name, email and password."):**
   - **Profile** ("How you appear to the people you align with."): First Name, Last Name, Email ("We send invites and results here."), **Save Profile**.
   - **Password** ("Use at least 8 characters."): Current Password, New Password, **Update Password**.
-  - **Notifications** ("Email only. No marketing."): switches When the Other Person Finishes ("So you know results are ready."), New Chat Messages ("A daily summary, never one email per message."), Billing Reminders ("Before a trial ends or a card is charged."); **Save Notifications**.
   - **Session:** "Signed in as Marcus Reyes on this device." **Sign Out**.
   - **Delete Account:** "Closes every relationship you’re in and removes your account immediately. Relationship answers stay readable to the other person." **Delete Account** (neutral outline + ×, neutral confirm).
 - Save buttons confirm with the shared toast.
-- **Counterparty-only accounts:** hide the Billing Reminders switch (or reword it without "trial"/"card"), so the no-price rule holds for people who only ever joined.
 
 ## QuizHub components to reuse (`data-qh` mapping)
 
@@ -63,17 +63,16 @@
 | `components/layout/page-header` | settings.html (1) |
 | `components/layout/sidebar` | settings.html (1) |
 | `components/ui/avatar` | settings.html (1) |
-| `components/ui/button` | settings.html (5) |
-| `components/ui/card (settings section)` | settings.html (5) |
+| `components/ui/button` | settings.html (4) |
+| `components/ui/card (settings section)` | settings.html (4) |
 | `components/ui/dropdown-menu (account)` | settings.html (1) |
 | `components/ui/input` | settings.html (1) |
 | `components/ui/input + label` | settings.html (5) |
 | `components/ui/sheet` | settings.html (1) |
-| `components/ui/switch` | settings.html (3) |
 
 ## Copy strings (exact)
 
-"Account menu" (label) · "Account Settings" · "Sign Out" · "You’re signed out." · "Profile" · "Save Profile" · "Password" · "Update Password" · "Notifications" · "Save Notifications" · "Session" · "Delete Account".
+"Account menu" (label) · "Account Settings" · "Sign Out" · "You’re signed out." · "Profile" · "Save Profile" · "Password" · "Update Password" · "Session" · "Delete Account".
 
 ## Locked rules (apply to every v2 surface)
 
@@ -95,7 +94,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 
 ## Suggested React component boundaries
 
-`AccountMenu` (in the shared header) · `SettingsPage` → `ProfileSection`, `PasswordSection`, `NotificationsSection`, `SessionSection`, `DeleteAccountSection`.
+`AccountMenu` (in the shared header) · `SettingsPage` → `ProfileSection`, `PasswordSection`, `SessionSection`, `DeleteAccountSection`.
 
 ## Prototype mechanics that must not be ported
 
@@ -150,9 +149,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 
 ### `settings.html` · Account Settings · AlignSynch v2.0 prototype
 
-**Headings:** H1 “Account Settings” · H2 “Profile” · H2 “Password” · H2 “Notifications” · H2 “Session” · H2 “Delete Account”
+**Headings:** H1 “Account Settings” · H2 “Profile” · H2 “Password” · H2 “Session” · H2 “Delete Account”
 
-**Buttons and actions:** “Delete Account” · “MR” · “Save Notifications” · “Save Profile” · “Sign Out” · “Update Password”
+**Buttons and actions:** “Delete Account” · “MR” · “Save Profile” · “Sign Out” · “Update Password”
 
 
 <!-- bundle-nav:begin -->

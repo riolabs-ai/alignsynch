@@ -38,6 +38,19 @@ export interface JoinedFacts {
   /** The session's own screen; no token, because the recipient already holds their seat. */
   readonly link: string;
   /**
+   * #1227 — did **this acceptance** open the card-free 7-day week for this relationship?
+   *
+   * It is a fact and not a constant because the two cases read differently: on the trial the notice
+   * says the week starts today (it does — `grantAcceptanceTrial()` runs inside the claim that sends
+   * this), and on a paid plan it says nothing about a trial at all. A paying Initiator told "Your
+   * trial has started" is the defect #1227 names.
+   *
+   * The answer is the claim's own grant result, not a later read: `nothing-written` (the account
+   * already holds an entitling subscription, or already spent its one week) means no week opened
+   * here, so the line would be a claim about an event that did not happen.
+   */
+  readonly onFreeTrial: boolean;
+  /**
    * #1125 — what the Counterparty suggested about the Aspects, when they suggested anything.
    *
    * **A message the joiner chose to send, printed as one.** The join's third step offers an optional
@@ -73,7 +86,12 @@ export function joinedDocument(facts: JoinedFacts, body?: string): EmailDocument
         kind: "paragraph",
         text: `Hi ${facts.inviter}, ${facts.joiner} claimed the invitation to ${facts.template}, so both seats exist and both of you can answer.`,
       },
-      { kind: "paragraph", text: `Open the session: ${facts.link}` },
+      // #1227 — the trial line is a fact, not a constant: this acceptance opens the card-free week,
+      // so the notice that announces it is the one that may say so — and a paid plan says nothing.
+      ...(facts.onFreeTrial
+        ? [{ kind: "paragraph" as const, text: "Your 7 days free start today." }]
+        : []),
+      { kind: "paragraph", text: `Open the Relationship: ${facts.link}` },
       {
         kind: "paragraph",
         text: "Your answers stay hidden from each other until you have both answered and accepted the session.",

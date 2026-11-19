@@ -126,6 +126,9 @@ export async function POST(
   // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
   await sendJoinNotice({
     sessionRecordId: result.sessionRecordId,
+    // #1227 — the claim's own grant outcome, so the notice says "Your 7 days free start today." only
+    // when this acceptance opened the week, and says nothing about a trial on a paid plan.
+    onFreeTrial: result.onFreeTrial,
     ...(suggestionText === ""
       ? {}
       : { suggestion: { aspect: suggestionAspect, text: suggestionText } }),

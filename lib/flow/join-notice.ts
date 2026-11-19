@@ -51,6 +51,16 @@ export async function sendJoinNotice(input: {
    * not interpret them — the template prints them, and nothing writes an Aspect.
    */
   readonly suggestion?: { readonly aspect: string; readonly text: string } | undefined;
+  /**
+   * #1227 — did the claim that triggered this notice open the card-free 7-day week?
+   *
+   * Passed straight through from `ClaimResult.onFreeTrial`, which is `grantAcceptanceTrial()`'s own
+   * outcome inside the claim's transaction. Absent means "no week opened here" — the paid case, the
+   * already-spent case, and the resume (a resume grants nothing) — and the notice then says nothing
+   * about a trial. It is a fact the caller knows, so this module does not go and read one: the
+   * closure grants a week and knows whether it did.
+   */
+  readonly onFreeTrial?: boolean | undefined;
   readonly base?: string;
   readonly fetchImpl?: typeof fetch;
 }): Promise<JoinNoticeOutcome> {
@@ -79,6 +89,7 @@ export async function sendJoinNotice(input: {
     inviter: recipient.name,
     template: facts.title,
     link: sessionLink(facts.sessionRecordId, input.base),
+    onFreeTrial: input.onFreeTrial === true,
     ...(input.suggestion === undefined ? {} : { suggestion: input.suggestion }),
   });
 

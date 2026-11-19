@@ -96,6 +96,9 @@ const SAMPLE_FACTS: Readonly<Record<string, unknown>> = {
     inviter: SAMPLE_NAMES.initiator,
     template: SAMPLE_NAMES.template,
     link: SAMPLE_NAMES.relationshipLink,
+    // #1227 — the sample is the card-free week, because that is the variant with a line to check:
+    // the preview then shows the trial sentence the send path prints when the claim granted one.
+    onFreeTrial: true,
   } satisfies JoinedFacts,
   "gap-report-ready": {
     recipient: SAMPLE_NAMES.initiator,
