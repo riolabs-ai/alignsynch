@@ -1043,6 +1043,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/templates/relationship/[slug]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "One template from the member's Library, read inside the app shell: its kicker and name, the shelf · Aspects · minutes · people chips, two actions (Create Relationship into the shipped create flow, and Save to My Templates through the shipped copy writer), who it is for and who it is explicitly not for, every Aspect on the locked 1–5 scale with both named ends, and a sticky aside carrying the start panel, the 7-day trial summary and How It Works. A bad slug is a plain 404; a template with no Aspects draws its empty state instead of an empty list.",
+    notes:
+      "**The last screen #1127's v2 wave left absent**, and it was absent in the way a route hides: the Library card's `View Details` built `relationshipTemplatePath(slug)` and `next.config.mjs` 308'd that address to `/relationship-templates`, the **public marketing** catalogue — so a signed-in member asking about a template on their own shelf left the app, the exact rule the repo states the other way round for a dashboard link (E39). #1259 deleted that redirect and mounted this page, so the address the constant already produced answers in the shell. One read: `readLibraryTemplate(slug, viewerUserId)` — the same row the shelf listed, refused the same way (a session, somebody else's template and a withdrawn draft are all one `notFound()`), joined by `lib/member/template-page.ts` with the type the slug names (`data/relationship-types.ts`) for the descriptor, the role word and the filing; `undefined` for a hand-authored template or a member's own copy, which then draw the plain `Template` chip, the record's own summary and the generic start panel rather than a default nobody authored. Bundle 06's *What It Covers* tiles are **not** drawn: the taxonomy carries no theme grouping, and inventing one in the page would be the second catalogue these pages must not become. Holds no words of its own — `data/pages/template-page.ts` is the surface's fixture at budget 0, and the shelf's chip and action words are read from `data/pages/dashboard-templates.ts` so a card and the page it opens cannot disagree.",
+  },
+  {
+    kind: "route",
     surface: "/terms",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
