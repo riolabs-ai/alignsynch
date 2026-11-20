@@ -136,10 +136,10 @@ describe("sendMembershipLapsedNotices", () => {
     // `lib/relationship/pause.ts` refuses to draw.
     expect(initiator?.subject).toBe("Your relationship is read-only");
     expect(initiator?.text).toContain("Hi Avery");
-    expect(initiator?.text).not.toContain("7-day extension");
+    expect(initiator?.text).not.toContain("Extra Week");
 
     // The Counterparty reads one neutral sentence: no cause, no plan, no price, no card.
-    expect(counterparty?.subject).toBe("Align is paused for now");
+    expect(counterparty?.subject).toBe("Stage 6 is paused for now");
     expect(counterparty?.text).toContain("Hi Blake");
     expect(counterparty?.text).not.toMatch(COUNTERPARTY_MONEY);
 
@@ -165,14 +165,14 @@ describe("sendMembershipLapsedNotices", () => {
     });
 
     const initiator = sent.find((message) => message.to === "avery@example.test");
-    expect(initiator?.subject).toBe("Your trial ended — Align is paused");
-    expect(initiator?.text).toContain("7-day extension");
+    expect(initiator?.subject).toBe("Your trial ended — Stage 6 is paused");
+    expect(initiator?.text).toContain("Extra Week");
     expect(initiator?.text).toContain(`https://alignsynch.com${PLANS_PATH}`);
 
     // The Counterparty's mail does not change with the reason: the pause is the whole of what they
     // are told, whatever ended the membership.
     const counterparty = sent.find((message) => message.to === "blake@example.test");
-    expect(counterparty?.subject).toBe("Align is paused for now");
+    expect(counterparty?.subject).toBe("Stage 6 is paused for now");
     expect(counterparty?.text).not.toMatch(COUNTERPARTY_MONEY);
   });
 
@@ -190,7 +190,7 @@ describe("sendMembershipLapsedNotices", () => {
     // `isTrialPauseReason()` is the screen's own predicate: an unknown or absent reason is the pause
     // that loses nothing, and the mail must not be the one place that guesses differently.
     expect(sent.find((message) => message.to === "avery@example.test")?.subject).toBe(
-      "Your trial ended — Align is paused",
+      "Your trial ended — Stage 6 is paused",
     );
   });
 

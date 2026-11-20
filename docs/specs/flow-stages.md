@@ -24,7 +24,7 @@ superseded v5; each was approved in its turn and the decisions it carried are re
 | 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                           | `Continue to Stage 3` (Aspects)                                                                                                                      |
 | 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one          | `Continue to Stage 4` (Account)                                                                                                                      |
 | 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                             | `Continue to Stage 5` (Invite)                                                                                                                       |
-| 5   | **Invite**   | The walk — the plans compared, then the free week (no card at any step) — and the act: send the invitation, or keep the draft | `send email to counterparty now` → **`/dashboard/relationships/<id>`**, the relationship published; or keep the draft → the same page, still a draft |
+| 5   | **Invite**   | The walk — the plans compared, then the free week (no card at any step) — and the act: send the invitation, or keep the draft | `Send Email to Counterparty Now` → **`/dashboard/relationships/<id>`**, the relationship published; or keep the draft → the same page, still a draft |
 
 **The foot is one shape on stages 1–5** (#760): `[Back][Cancel]` as a single left group and the act
 that advances the flow flush right. `Cancel` leaves the flow — it goes where the shell's close goes,
@@ -323,7 +323,7 @@ Stage 5 is one decision, drawn as **one four-step walk** in one column
 | 4    | **Action** — the send, and under every step of the walk, the draft: **the act is in the walk**                                                     | —       |
 
 **The act is inside the walk, and it is one control per act (#1014).** Step 4 draws
-**`send email to counterparty now`** — the same write stage 5 has always made, `POST
+**`Send Email to Counterparty Now`** — the same write stage 5 has always made, `POST
 /assessment/instances/<id>/send`, which publishes the relationship, mails the one invitation and
 writes the Initiator's own copy of the link — and every step of the walk draws **the draft**, which
 is a navigation rather than a write: stage 4 already wrote the row as a `draft`, and nothing but the
