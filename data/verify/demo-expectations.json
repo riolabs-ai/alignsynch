@@ -2,14 +2,14 @@
   "dataset": "demo-dataset.alignsynch.json",
   "brand": "alignsynch",
   "rows": {
-    "record": 60,
-    "item": 307,
+    "record": 62,
+    "item": 320,
     "response_option": 0,
-    "relationship": 31,
-    "session": 31,
-    "session_invite": 31,
-    "party": 56,
-    "opinion": 205,
+    "relationship": 33,
+    "session": 33,
+    "session_invite": 33,
+    "party": 60,
+    "opinion": 231,
     "billing_plan": 6,
     "billing_subscription": 2,
     "demo_account": 3,
@@ -37,7 +37,7 @@
     {
       "path": "/pricing",
       "status": 200,
-      "mustContain": ["Simple, transparent pricing", "$9.99", "$19.99"],
+      "mustContain": ["Simple Pricing. Start Free.", "$9.99"],
       "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
     },
     {
@@ -70,13 +70,13 @@
     },
     {
       "path": "/templates/relationship",
-      "status": 307,
-      "redirect": "/login"
+      "status": 308,
+      "redirect": "/dashboard/templates"
     },
     {
       "path": "/assessment/templates",
       "status": 308,
-      "redirect": "/templates/relationship"
+      "redirect": "/dashboard/templates"
     },
     {
       "path": "/assessments",
