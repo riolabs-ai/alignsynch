@@ -36,7 +36,10 @@ import { describe, expect, it } from "vitest";
 
 import { TemplatesPageView } from "@/components/templates/templates-page";
 import { formatCurrency } from "@/content/core";
+import { isFileMedia, type FileMediaEntry, type MediaEntry } from "@/content/media";
 import { billingPlan } from "@/data/billing-plans";
+import { FEATURED_ART } from "@/data/featured-art";
+import { media, type MediaKey } from "@/data/media";
 import { EXCLUDED_TYPE_IDS, REALMS, relationshipTypes } from "@/data/relationship-types";
 import { templatesPageCopy } from "@/data/pages/templates";
 import { ROUTE_PATTERNS } from "@/content/routes";
@@ -400,6 +403,65 @@ describe("the hero and the art", () => {
     expect(staff?.roles).toBe("Staff ↔ Manager");
     expect(staff?.aspects).toBe(`${record?.aspects.length} Aspects`);
     expect(html).toContain(staff?.aspects as string);
+  });
+});
+
+describe("the featured-image slot (#t_f96ad328)", () => {
+  /**
+   * The slot is a **chain**, and both ends are asserted here: a record the art tranche has
+   * reached draws its picture out of `data/media.ts`, and a record it has not reached draws the
+   * realm band — on the same page, in the same grid, with no component deciding which.
+   */
+  const featuredCards = cards.filter((card) => card.featured !== undefined);
+  const bandCount = html.split("data-featured-art").length - 1;
+
+  it("draws a picture on exactly the records the tranche names", () => {
+    expect(featuredCards.map((card) => card.id).sort()).toEqual(
+      FEATURED_ART.map((row) => row.record).sort(),
+    );
+    // One band per covered card, so a card cannot silently inherit a neighbour's picture.
+    expect(bandCount).toBe(FEATURED_ART.length);
+  });
+
+  it("resolves every picture through the registry, with a real intrinsic size", () => {
+    for (const card of featuredCards) {
+      const entry = card.featured as MediaEntry;
+      expect(isFileMedia(entry)).toBe(true);
+      const file = entry as FileMediaEntry;
+      expect(file.src).toMatch(/^\/relationship-types\/featured\/[a-z-]+\.svg$/);
+      // The band is a `fill` slot, but `next/image` still needs the entry sized for the
+      // generated default it falls back to — an entry with no bytes would collapse the band.
+      expect(file.width).toBeGreaterThan(0);
+      expect(file.height).toBeGreaterThan(0);
+      expect(html).toContain(file.src);
+    }
+  });
+
+  it("draws the realm band on every record with no art yet — the fallback, in place", () => {
+    const fallback = cards.find((card) => card.id === "co-founders");
+    expect(fallback?.featured).toBeUndefined();
+    // Every card that has no picture still carries the realm band, and none of them carries a
+    // featured one: the arms are exclusive.
+    expect(html.split("data-realm-art").length - 1).toBe(cards.length - FEATURED_ART.length);
+  });
+
+  it("keeps registry and tranche a bijection: no row without a file, no file without a row", () => {
+    const fileKeys = Object.keys(media)
+      .filter((key) => key.startsWith("relationship-types.featured."))
+      .sort();
+    const rowKeys = FEATURED_ART.flatMap((row) => row.keys).sort();
+    expect(rowKeys).toEqual(fileKeys);
+    for (const key of rowKeys) {
+      const entry = media[key as MediaKey];
+      expect(isFileMedia(entry), `${key} is not a file entry`).toBe(true);
+    }
+  });
+
+  it("names only records the catalogue actually draws", () => {
+    const drawn = new Set(offered.map((type) => type.id));
+    for (const row of FEATURED_ART) {
+      expect(drawn.has(row.record), `${row.record} is not a purchasable type`).toBe(true);
+    }
   });
 });
 

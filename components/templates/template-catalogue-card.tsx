@@ -43,7 +43,12 @@ export function TemplateCatalogueCard({
       data-realm={card.realm}
       data-template-card={card.id}
     >
-      <TemplateArt art={art} className="max-[620px]:row-span-2 max-[620px]:h-full" mark={mark} />
+      <TemplateArt
+        art={art}
+        className="max-[620px]:row-span-2 max-[620px]:h-full"
+        featured={card.featured}
+        mark={mark}
+      />
       <div className="flex flex-1 flex-col px-4 pt-3 pb-3.5 max-[620px]:col-start-2 max-[620px]:row-start-1 max-[620px]:px-3 max-[620px]:pt-[11px] max-[620px]:pb-[9px]">
         <p className="mb-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
           <span className="font-semibold">{card.realm}</span>

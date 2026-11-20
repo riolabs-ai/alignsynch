@@ -14,6 +14,14 @@
  * summary is the type's own `descriptor.whoItsFor` — the sentence the detail page prints — because
  * a catalogue card that worded its own description would be a second copy of the record.
  *
+ * **Every card has an art band, and most of them have no picture (#t_f96ad328).** `art` is the
+ * realm's icon on its flat tint — the same table the in-app shelves and the template page read —
+ * so the grid has one band height and a reader scanning for an area still sees it. `featured` is
+ * the record's own picture, present only where the art tranche has reached it
+ * (`lib/featured-art.ts`); when it is absent the band draws `art`, which is the fallback and not a
+ * gap. Both are resolved **here**, on the server: the client island that filters the grid receives
+ * plain objects and decides nothing about what a card looks like.
+ *
  * **What is the example.** The bundle draws one Aspect with both parties' answers, a Gap chip and
  * a Next Step. The numbers here are **the fixture's authored demo sheet** (`demoAnswersByType`),
  * not an invention: the Aspect chosen is the one whose *wish* answers differ most, the two values
@@ -22,8 +30,11 @@
  */
 import type { PageCopy } from "@/content/pages";
 import { minutesForAspects } from "@/content/core";
+import type { MediaEntry } from "@/content/media";
 import { demoAnswersFor, type RelationshipType } from "@/data/relationship-types";
+import { featuredArt } from "@/lib/featured-art";
 import { createRelationshipPath, relationshipTypePath } from "@/lib/flow/paths";
+import { realmArt, type RealmArt } from "@/lib/relationship-art";
 import { fillLabel, itemBody, itemLabel, itemValue, pageItemOf, sectionOf } from "@/lib/page-copy";
 
 /** The catalogue band's anchor. One spelling, read by the hero, the CTA and the header. */
@@ -56,6 +67,17 @@ export interface CatalogueCardModel {
   readonly popular: boolean;
   /** `"Manager ↔ Report"` — the two named ends. */
   readonly roles: string;
+  /**
+   * The realm's art — one outline icon on the realm's flat tint (`lib/relationship-art.ts`).
+   * Every card draws it, so the grid has one band height whether or not a card has a picture.
+   */
+  readonly art: RealmArt;
+  /**
+   * The record's featured picture, when the art tranche has reached it (#t_f96ad328). `undefined`
+   * is the designed state for most records: the band then draws `art` — the fallback — and the
+   * card is complete, not missing a part.
+   */
+  readonly featured?: MediaEntry;
   /** The type's own page. */
   readonly href: string;
   /** The flow's stage 1 for this template. */
@@ -95,11 +117,14 @@ export function catalogueCard(
   // not lose the plan they picked one page earlier. `carry` is already a validated query string
   // (`carriedPlanQuery()`), so this appends a fact and never re-reads one.
   const suffix = carry === "" ? "" : `?${carry}`;
+  const featured = featuredArt(type.id);
   return {
     id: type.id,
     name: type.name,
     summary: type.descriptor.whoItsFor,
     realm: type.realm,
+    art: realmArt(type.realm),
+    ...(featured === undefined ? {} : { featured }),
     aspects: fillLabel(pageLabel(copy, "aspects"), { count: String(type.aspects.length) }),
     minutes: fillLabel(pageLabel(copy, "minutes"), {
       count: String(minutesForAspects(type.aspects.length)),

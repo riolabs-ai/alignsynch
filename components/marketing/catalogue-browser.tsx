@@ -7,6 +7,7 @@ import type {
   CatalogueCardModel,
   CatalogueGroupModel,
 } from "@/lib/relationship-catalogue";
+import { TemplateArt } from "@/components/templates/template-art";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -136,11 +137,17 @@ export function CatalogueBrowser({
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
           {visible.map((card) => (
             <li
-              className="relative flex flex-col rounded-lg border bg-card transition-colors hover:border-action"
+              className="relative flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-action"
               data-rel-filter={card.realm.toLowerCase()}
               data-template-card={card.id}
               key={card.id}
             >
+              {/*
+                The art band: the record's own picture where the tranche has reached it, and the
+                realm's icon on its tint everywhere else (#t_f96ad328). One band on every card, so
+                the grid rows line up and a card without art is a card, not a hole.
+              */}
+              <TemplateArt art={card.art} featured={card.featured} />
               <div className="flex flex-1 flex-col p-4">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-base font-semibold text-primary">

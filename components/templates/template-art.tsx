@@ -1,5 +1,7 @@
 // template-ancestor: components/categories/category-tile.tsx   (variation: a record's cover is one realm outline icon on a flat tint, not a seeded gradient with a monogram — the catalog's art identifies the *area*, because twenty-seven monograms are twenty-seven shapes a reader cannot sort, while seven icons are a taxonomy they can)
 
+import type { MediaEntry } from "@/content/media";
+import { Media } from "@/components/media/media";
 import type { RealmArt } from "@/lib/relationship-art";
 
 /**
@@ -24,21 +26,67 @@ import type { RealmArt } from "@/lib/relationship-art";
  * **The two-party mark is a cue, not a state.** It sits at the band's trailing edge because every
  * record on this page is a two-person record; it never encodes status, role or permission, and the
  * band is `aria-hidden` for the same reason a decorative image is.
+ *
+ * **The band has two arms, and the record decides which one draws (#t_f96ad328).** A record the
+ * featured-art tranche has reached carries a picture — a file out of `data/media.ts` — and the
+ * band paints it, cropped to the band's box by `object-cover`. Every other record draws the realm
+ * art above, which is the fallback and the state twenty-four of the twenty-seven records are in;
+ * the band is not "empty" for those, it is the approved catalogue art. The picture arrives as a
+ * prop because the choice between the two arms is `lib/featured-art.ts`'s, not this file's: a
+ * component that held a registry key would be a picture a fixture edit could never reach.
  */
 export function TemplateArt({
   art,
   mark,
+  featured,
   className,
 }: {
   art: RealmArt;
   /** The two-party mark's `src`, or `undefined` where the surface does not draw it. */
   mark?: string;
+  /**
+   * The record's featured art, when the tranche has reached it (#t_f96ad328). A **file entry**
+   * resolved by `lib/featured-art.ts`; absent means "this record has no picture yet", and the
+   * band draws the realm art instead. The band never picks a picture itself — it draws the one
+   * it is handed.
+   */
+  featured?: MediaEntry;
   className?: string;
 }) {
+  /**
+   * The band's box, shared by both arms: the same height, the same rule, and the same
+   * compact-card collapse. Only what fills it differs, so a record with a picture and a record
+   * without one still line up in the grid.
+   */
+  const band = `h-[72px] shrink-0 overflow-hidden border-b border-border/60 max-[620px]:h-auto max-[620px]:min-h-full max-[620px]:border-r max-[620px]:border-b-0 ${className ?? ""}`;
+
+  if (featured !== undefined) {
+    return (
+      <div
+        className={`relative ${band}`}
+        data-featured-art=""
+        style={{ backgroundColor: art.tint }}
+      >
+        {/*
+          `Media` owns the failure: a file that 404s paints a generated default seeded by its own
+          path instead of a broken icon, and `fill` inside this `relative` parent is what gives the
+          picture a box — a generated entry has no intrinsic size, so an unfilled slot would
+          collapse the band the moment the bytes failed (#t_f96ad328).
+        */}
+        <Media
+          entry={featured}
+          fill
+          className="object-cover"
+          sizes="(min-width: 1000px) 33vw, (min-width: 621px) 50vw, 84px"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       aria-hidden="true"
-      className={`flex h-[72px] shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-border/60 px-4 max-[620px]:h-auto max-[620px]:min-h-full max-[620px]:flex-col max-[620px]:justify-center max-[620px]:gap-2 max-[620px]:border-r max-[620px]:border-b-0 max-[620px]:px-[5px] max-[620px]:py-2.5 ${className ?? ""}`}
+      className={`flex items-center justify-between gap-3 px-4 max-[620px]:flex-col max-[620px]:justify-center max-[620px]:gap-2 max-[620px]:px-[5px] max-[620px]:py-2.5 ${band}`}
       data-realm-art=""
       style={{ backgroundColor: art.tint }}
     >
