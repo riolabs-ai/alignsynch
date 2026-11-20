@@ -72,11 +72,13 @@ export default async function AdminPermissionsPage({
 
   let cells: CrudCell[] = [];
   let columns: readonly CrudColumn[] = [];
+  let snapshotPass: number | null = null;
   let unreadable: string | null = null;
   try {
     const matrix = readCrudMatrix();
     cells = [...matrix.cells];
     columns = matrix.columns;
+    snapshotPass = matrix.snapshotPass;
   } catch (error) {
     if (!(error instanceof CrudMatrixUnreadable)) throw error;
     unreadable = error.reason;
@@ -92,6 +94,7 @@ export default async function AdminPermissionsPage({
         conflicts={conflictedCells(cells)}
         facets={facetsOf(cells)}
         filter={filter}
+        snapshotPass={snapshotPass}
         unreadable={unreadable}
       />
     </StageColumn>
