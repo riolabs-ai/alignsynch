@@ -56,6 +56,12 @@
  *                                             carries a build status, uses only the four verdict
  *                                             words, and gives each `deltas` row a named bullet
  *
+ * `DESIGN_AUDIT_ONLY=<slug,…>` narrows a `--capture` run to the named rows and carries every other
+ * row over from the manifest on disk, so a card that owns one bundle re-photographs its own screens
+ * without replacing 42 rows of somebody else's evidence. `DESIGN_AUDIT_BASE` says where the named
+ * rows were measured, and each row records its own `base`. A run with no `DESIGN_AUDIT_ONLY` is
+ * still the whole register in one pass.
+ *
  * `--check` is **not** a gate step on purpose: it reads three directories outside the checkout and
  * a network, so it cannot run in `verify.sh` or CI. It is the command the PR body and the register
  * quote, run by hand on a machine that has the spec drop.
@@ -380,8 +386,21 @@ class Browser {
     return path;
   }
 
-  async text() {
-    return this.evaluate("document.body ? document.body.innerText : ''");
+  async text(width = 1280) {
+    /**
+     * **Read the text at the width it claims.** `innerText` answers what the *current* layout
+     * renders, so a read at the browser's default window is a read at ~800px — below Tailwind's
+     * `lg` breakpoint, where the wizard's sticky rail is `hidden`. That is how this register once
+     * recorded "no per-stage state word" for a rail that prints one: the words were there and the
+     * viewport was not. The metrics are set for the read and cleared after it, so a capture's text
+     * and its 1280 PNG describe the same layout.
+     */
+    const height = HEIGHT_FOR[width] ?? 800;
+    const command = "Emulation.setDeviceMetricsOverride";
+    await this.send(command, { width, height, deviceScaleFactor: 1, mobile: false });
+    const body = await this.evaluate("document.body ? document.body.innerText : ''");
+    await this.send("Emulation.clearDeviceMetricsOverride");
+    return body;
   }
 
   async stop() {
@@ -416,29 +435,49 @@ async function signIn(browser, { base, pin, role }) {
     return 'ok';
   })()`);
   if (submitted !== "ok") return { ok: false, reason: `the PIN gate refused: ${submitted}` };
-  await sleep(3800);
-  /*
-   * The role button, twice at most — and the reason is measured, not defensive.
-   *
-   * `/demo`'s unlock cookie can be one round-trip behind the first role post: the first press signs
-   * nothing in and leaves the reader on `/login`, and the same press on the second pass signs in.
-   * Measured 2026-11-19 against the local demo branch, where the Initiator seat recorded
-   * `NO SESSION` on every single-attempt run. Only the sign-in is retried, never the PIN, and two
+
+  /**
+   * **Wait for the button, never for a clock.** The unlock is a server action and the role buttons
+   * are `/login`'s own render, so how long they take is the server's answer and not a number this
+   * script can know: on a cold dev server the first POST compiles the action and 3.8 s is a coin
+   * toss, which read as "the role button did not sign in" on a page that had simply not drawn one
+   * yet. Polling for the state the next step needs is the same wait with an honest failure.
+   */
+  const roleButton = `[...document.querySelectorAll('button')]
+      .find((b) => b.textContent.trim().toLowerCase().startsWith(${JSON.stringify(role)}))`;
+  let found = false;
+  for (let attempt = 0; attempt < 20 && !found; attempt += 1) {
+    await sleep(1000);
+    found = (await browser.evaluate(`Boolean(${roleButton})`)) === true;
+  }
+  if (!found) return { ok: false, reason: `no role button for ${role}` };
+
+  /**
+   * **And the press, twice at most — the reason is measured, not defensive.** `/demo`'s unlock
+   * cookie can be one round-trip behind the first role post: the first press signs nothing in and
+   * leaves the reader on `/login`, and the same press on the second pass signs in. Measured
+   * 2026-11-19 against the local demo branch, where the Initiator seat recorded `NO SESSION` on
+   * every single-attempt run. Only the press and the landing are retried, never the PIN, and two
    * attempts without a session is still `NO SESSION` — a retry that swallowed a real failure would
    * be worse than the race it hides.
+   *
+   * The landing is observed the same way the button is: a navigation is a state this script waits
+   * for, not one it assumes happened because five seconds passed.
    */
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let press = 1; press <= 2; press += 1) {
     const clicked = await browser.evaluate(`(() => {
-      const wanted = ${JSON.stringify(role)};
-      const button = [...document.querySelectorAll('button')]
-        .find((b) => (b.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase().startsWith(wanted));
-      if (!button) return 'no role button for ' + wanted;
+      const button = ${roleButton};
+      if (!button) return 'no role button for ' + ${JSON.stringify(role)};
       button.click();
       return 'ok';
     })()`);
     if (clicked !== "ok") return { ok: false, reason: `the role button: ${clicked}` };
-    await sleep(5200);
-    const landed = await browser.evaluate("location.pathname");
+
+    let landed = "/login";
+    for (let attempt = 0; attempt < 20 && landed.startsWith("/login"); attempt += 1) {
+      await sleep(1000);
+      landed = String(await browser.evaluate("location.pathname"));
+    }
     if (!landed.startsWith("/login")) return { ok: true, landed };
   }
   return { ok: false, reason: "the role button did not sign in (two attempts)" };
@@ -668,6 +707,14 @@ async function renderReference(browser, { htmlPath, query, click, out, width }) 
  * control — and records the address it ended on instead of pretending the URL worked.
  */
 async function driveWizard(browser, { base, template, target }) {
+  /** The advance control each stage draws, in order (`docs/specs/flow-stages.md`'s stage table). */
+  const ADVANCE = {
+    1: "Continue to Stage 2",
+    2: "Continue to Stage 3",
+    3: "Continue to Stage 4",
+    4: "Continue to Stage 5",
+  };
+
   await browser.go(`${base}/dashboard/templates/${template}/create`, { settle: 3200 });
   if (target < 2) return await browser.evaluate("location.pathname + location.search");
   const filled = await browser.evaluate(`(() => {
@@ -689,15 +736,36 @@ async function driveWizard(browser, { base, template, target }) {
     return 'ok';
   })()`);
   if (filled !== "ok") throw new Error(`stage 1 would not fill: ${filled}`);
+
   for (let step = 1; step < target; step += 1) {
-    const labels = {
-      1: "Continue to Stage 2",
-      2: "Continue to Stage 3",
-      3: "Continue to Stage 4",
-      4: "Continue to Stage 5",
-    };
-    const label = labels[step];
+    const label = ADVANCE[step];
+    const next = ADVANCE[step + 1];
     if (!label) throw new Error(`no advance control known for stage ${step}`);
+
+    /**
+     * **Nothing is pre-selected on stage 2, on purpose.** Both groups arrive unchecked and both are
+     * `required`, so a press there prints the group's own refusal and stays put. The drive therefore
+     * answers every group it finds before pressing — native radios and the two `role="radio"` cells
+     * alike — because a drive that skipped this walked to stage 2 and stopped, while this function
+     * returned the path it was on and the row recorded "driven to stage 4". That is how the register
+     * came to describe stage 4 and stage 5 from a photograph of stage 1.
+     */
+    await browser.evaluate(`(() => {
+      const answered = [];
+      const groups = [...document.querySelectorAll('fieldset, [role="radiogroup"]')];
+      for (const group of groups) {
+        const radios = [...group.querySelectorAll('input[type="radio"], [role="radio"]')];
+        if (radios.length === 0) continue;
+        const chosen = radios.some(
+          (r) => r.checked === true || r.getAttribute('aria-checked') === 'true',
+        );
+        if (chosen) continue;
+        radios[0].click();
+        answered.push(radios[0].name || radios[0].id || 'group');
+      }
+      return answered;
+    })()`);
+
     const pressed = await browser.evaluate(`(() => {
       const button = [...document.querySelectorAll('button')]
         .find((b) => new RegExp(${JSON.stringify(label)}, 'i').test(b.textContent || ''));
@@ -706,7 +774,22 @@ async function driveWizard(browser, { base, template, target }) {
       return 'ok';
     })()`);
     if (pressed !== "ok") throw new Error(pressed);
-    await sleep(4200);
+
+    /**
+     * **The landing is observed, never assumed.** Success is the next stage's own control appearing
+     * (or, past the last known stage, this one leaving); a fixed sleep and a returned pathname were
+     * the two halves of the same silence.
+     */
+    let moved = false;
+    for (let attempt = 0; attempt < 15 && !moved; attempt += 1) {
+      await sleep(1000);
+      moved = await browser.evaluate(
+        next
+          ? `(document.body ? document.body.innerText : '').indexOf(${JSON.stringify(next)}) !== -1`
+          : `(document.body ? document.body.innerText : '').indexOf(${JSON.stringify(label)}) === -1`,
+      );
+    }
+    if (!moved) throw new Error(`stage ${step} never advanced past "${label}"`);
   }
   return await browser.evaluate("location.pathname + location.search");
 }
@@ -717,9 +800,32 @@ async function capture() {
   const routeMap = JSON.parse(readFileSync(join(ROOT, ROUTE_MAP), "utf8"));
   const tracked = docs.filter((d) => BUCKET_VERDICT[d.bucket] !== null);
 
+  /**
+   * **`--only` re-captures named rows and leaves the rest alone.**
+   *
+   * The owner carded the v2 rectification **by bundle**, so the fixing cards arrive one bundle at a
+   * time — and a full run is ~70 minutes and rewrites all 51 rows. Without this flag a bundle's card
+   * has two bad choices: capture everything against the deployment (which cannot show an unmerged
+   * fix) or capture everything against `localhost` (which silently replaces 42 rows' evidence with
+   * a local run). The flag makes the unit of capture the unit of work: the named rows are re-driven
+   * and re-photographed, and every other row is carried over untouched — its own `base`,
+   * `capturedAt` and `url` staying what they were.
+   */
+  const only = new Set(
+    (process.env.DESIGN_AUDIT_ONLY ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+
   const base = process.env.DESIGN_AUDIT_BASE ?? routeMap.base ?? "https://demo.alignsynch.com";
   const outDir = resolve(ROOT, CAPTURES);
   mkdirSync(outDir, { recursive: true });
+  const previousFile = join(outDir, "manifest.json");
+  const previous =
+    only.size > 0 && existsSync(previousFile)
+      ? JSON.parse(readFileSync(previousFile, "utf8"))
+      : null;
 
   console.log("design-audit — resolved inputs");
   console.log(`  SPEC_DOCS_DIR  ${inputs.docs}`);
@@ -821,6 +927,12 @@ async function capture() {
     }
     if (BUCKET_VERDICT[doc.bucket] === null) continue;
     const slug = slugFor(doc.doc);
+    if (only.size > 0 && !only.has(slug)) {
+      /** Carried over, not re-driven: this row's evidence is the run that last measured it. */
+      const kept = previous?.rows?.find((r) => r.slug === slug);
+      if (kept) manifest.rows.push(kept);
+      continue;
+    }
     const dir = join(outDir, slug);
     const url = fillRoute(row.route, entities);
     const unresolvedRoute = url !== null && /\{\w+\}/.test(url);
@@ -834,6 +946,8 @@ async function capture() {
         doc: doc.doc,
         slug,
         role,
+        /** The run that produced this row, so a mixed manifest is still auditable row by row. */
+        base,
         url: url ? `${base}${url}` : null,
         auth: row.auth,
         reference: null,
@@ -940,6 +1054,18 @@ async function capture() {
     );
   }
 
+  /**
+   * A partial run keeps the manifest it did not measure. `measuredAt`, `base` and `head` describe the
+   * run that produced most of the rows, so they stay as they were; each row carries its own `base`
+   * and `capturedAt`, which is what an auditor reads.
+   */
+  if (only.size > 0 && previous) {
+    manifest.measuredAt = previous.measuredAt ?? manifest.measuredAt;
+    manifest.base = previous.base ?? manifest.base;
+    manifest.head = previous.head ?? manifest.head;
+    manifest.sessions = { ...(previous.sessions ?? {}), ...manifest.sessions };
+    manifest.only = [...only];
+  }
   writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   for (const browser of browsers.values()) await browser.stop();
 
@@ -1011,7 +1137,8 @@ if (argv.includes("--help") || argv.length === 0) {
     "usage: node scripts/design-audit.mjs --capture | --check\n" +
       "  --capture  resolve the three inputs, count the docs, capture live + reference, write the manifest\n" +
       "  --check    assert the register covers every doc with a build status, in one of four verdicts\n" +
-      "  env        SPEC_DOCS_DIR, BUNDLES_DIR, PROTOTYPE_DIR, DEMO_AUTH, DEMO_PIN, DESIGN_AUDIT_BASE, CHROME",
+      "  env        SPEC_DOCS_DIR, BUNDLES_DIR, PROTOTYPE_DIR, DEMO_AUTH, DEMO_PIN,\n" +
+      "             DESIGN_AUDIT_BASE, DESIGN_AUDIT_ONLY, DESIGN_AUDIT_HEAD, CHROME",
   );
   process.exit(argv.includes("--help") ? 0 : 2);
 }
