@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**199 documents in 9 sections.** Every page carries the same nav block, generated
+**200 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,7 +40,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 21 documents
+- [Operations](#operations) — 22 documents
 - [Specs & design briefs](#specs-design-briefs) — 85 documents
 - [Records & QA](#records-qa) — 26 documents
 - [Code wiki](#code-wiki) — 15 documents
@@ -86,6 +86,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/branch-triage.md`](operations/branch-triage.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`operations/brand-release.md`](operations/brand-release.md) — **Two brands, one tree** — How does a brand version ship without moving parity?
 - [`operations/deploying.md`](operations/deploying.md) — **Deploying** — How does this repository reach `alignsynch.com`?
+- [`operations/demo-walkthrough.md`](operations/demo-walkthrough.md) — **Demo walkthrough** — Which ten screens does the demo visit, and what must each one say?
 - [`operations/env-stores.md`](operations/env-stores.md) — **Env stores** — Which store holds each variable, in which scope — and which Preview entry wins?
 - [`operations/env-manifest.md`](operations/env-manifest.md) — **Env manifest** — Which environment variable is required where, and where does its value come from?
 - [`operations/gate.md`](operations/gate.md) — **The gate** — What does `scripts/verify.sh` run, in what order, and what are its current numbers?
