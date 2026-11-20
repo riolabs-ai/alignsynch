@@ -1,0 +1,41 @@
+v2.0.0-rc1.3
+A
+Recent Messages
+No messages
+
+Conversations will appear here.
+
+Notifications
+No notifications
+
+You're all caught up! We'll notify you when something new happens.
+
+Templates
+
+Start from the Library, or reuse one of your own.
+
+Library
+29
+My Templates
+0
+My Templates
+
+Your saved copies. Changes never touch relationships you’ve already started.
+
+No Templates Yet
+
+Start one below — blank, or copied from a template in the Library.
+
+Browse the Library
+Start Blank
+A title, a summary and the first Aspect. A template needs at least one Aspect — it is what both people answer — so this is the one field the model will not let you leave empty. The save lands in the audit log in the same transaction, with a sentence written for you.
+Title
+Summary
+First Aspect
+Left Value (1)
+Right Value (5)
+Create the template
+Copy a Template
+Copy a template into one of your own — the Library's, which the operators of this site curate, or a template you already own. The copy carries the words and the Aspects, it is private to you, and the original does not change.
+Choose a template
+Copy it
