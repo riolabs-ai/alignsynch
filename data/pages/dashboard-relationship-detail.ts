@@ -215,6 +215,54 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #rect-04 — **the Align summary: what the pair's two answer sheets add up to.**
+       *
+       * `guides/shared/results-and-align.md` promises *"When you've both answered, Align puts your
+       * answers side by side"*, and bundle 04's reference is the screen that keeps that promise: a
+       * heading, the tally — **"3 of 5 Aspects Aligned"** with one count per status word — and a
+       * Next Step naming the widest Gap with one action into the Discussion. None of it was on this
+       * page: the rail went on saying *"Continue Your Assessment"* and *"5 of 5 Aspects answered"*
+       * over five answered Aspects, and the results sat behind a separate *"Complete and open the
+       * Gap"* act.
+       *
+       * The words are the reference's. `{aligned}` / `{total}` are `alignmentSummaryOf()`'s own
+       * figures (never a second count), `{aspect}` is the widest Gap's Aspect and `{gap}` its width
+       * in steps, so the sentence and the tally cannot disagree about the same rows.
+       */
+      id: "align",
+      heading: "Where You Agree, and Where You Differ",
+      body: "Both answers on every Aspect, side by side. Start with the widest Gap.",
+      items: [
+        { id: "stage", label: "Stage 6 · Align" },
+        { id: "live", label: "Live" },
+        { id: "summary", label: "Summary" },
+        { id: "aligned", label: "{aligned} of {total} Aspects Aligned" },
+        { id: "in-synch", label: "In Synch" },
+        { id: "small-gap", label: "Small Gap" },
+        { id: "gap", label: "Gap" },
+        {
+          id: "headline",
+          label: "{count} Aspects need a conversation before this relationship is aligned.",
+        },
+        {
+          id: "headline-all",
+          label: "Every Aspect is aligned — there is nothing waiting for a conversation.",
+        },
+        { id: "next-step", label: "Next Step" },
+        { id: "next-heading", label: "Talk About Your Widest Gap" },
+        {
+          /* The Aspect is named by its prompt, because that is all an Aspect carries here: bundle
+             04's reference has both a short name ("Parent Decisions") and a question, and this
+             model has the question only — so the heading names the Gap and the sentence names the
+             Aspect, rather than pressing a question into a title. */
+          id: "next-body",
+          label: "“{aspect}” is {gap} steps apart — the widest on this relationship. Start there.",
+        },
+        { id: "start", label: "Start the Conversation" },
+      ],
+    },
+    {
+      /**
        * #1121 — **Stage 6's pause, in the owner's words.**
        *
        * Every string here is verbatim from the issue's state table (and the ported bundle,

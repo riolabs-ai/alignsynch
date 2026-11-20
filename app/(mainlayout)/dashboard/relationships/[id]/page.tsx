@@ -37,6 +37,8 @@ import {
 } from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
+import { readMemberAlignments } from "@/lib/db/member-alignments";
+import { type AlignmentSummary, alignmentSummaryOf } from "@/lib/member/alignment-summary";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -118,6 +120,30 @@ export default async function MemberRelationshipPage({
 
   const editSection = sectionOf(dashboardRelationshipDetailPageCopy, RELATIONSHIP_EDIT_SECTION);
 
+  /*
+   * #rect-04 — **the pair's alignment, read beside the view.**
+   *
+   * `guides/shared/results-and-align.md`: *"When you've both answered, Align puts your answers side
+   * by side."* `readMemberAlignments` is the same read My Relationships and the Start page use, and
+   * it projects a session only once both sheets are complete — so a relationship with one sheet in
+   * has no entry here, and the summary is absent rather than zero-filled. The Setting comes off the
+   * session row, which is why the tally is `alignmentSummaryOf()`'s answer and not a second count
+   * done on this page.
+   *
+   * A database that cannot answer is not a 404 and not an error band: the page reads, and the
+   * Align summary is simply the one thing missing — the rail's own Next Step still stands.
+   */
+  let align: AlignmentSummary | undefined;
+  try {
+    const entry = (await readMemberAlignments(user.userId)).find(
+      (candidate) => candidate.sessionRecordId === view.sessionRecordId,
+    );
+    align = entry === undefined ? undefined : alignmentSummaryOf(entry.setting, entry.answers);
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("member-relationship: the alignment could not be read", error);
+    align = undefined;
+  }
   return (
     <StageColumn>
       <div className="space-y-6">
@@ -224,6 +250,8 @@ export default async function MemberRelationshipPage({
             "Mine" tab is the honest destination and not the catalogue.
           */
           templatesHref={`${TEMPLATE_LIBRARY_PATH}?view=mine`}
+          /* #rect-04 — the Align summary: absent until both sheets are in. */
+          align={align}
         />
       </div>
     </StageColumn>
