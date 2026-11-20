@@ -210,7 +210,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/relationship-templates` — **fixture**
   - capability: The public catalogue of Relationship Templates — the #889 shop listing: a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. No clock and no app tables; one session read (`currentUserIfConfigured()`) resolves the **authored** membership action — a bare `/register` means an account to a visitor and an account home to a member — while every card's and the closing _create_ action's destination is the flow's stage 1 for both viewers (#1042), so the page renders per request rather than prerendering.
-  - components: `components/marketing`
+  - components: `components/marketing`, `components/media`, `components/templates`
   - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The endpoint the owner asked for, and the one door the header's `Templates` row, the footer's catalogue link and every ‘start with a template’ action point at (`lib/flow/paths.ts::TEMPLATE_CATALOGUE_PATH`). **This address rendered the V2 composition from #905 until #1040**; #1040 restored the v1 shop listing here, on both builds, so this page and `/relationship-types` now render the same composition from the same model (`lib/templates-page.ts` over `data/pages/templates.ts`) — measured as byte-identical markup on both brands, not merely similar. The V2 composition is **retained, not deleted** (`components/templates/templates-catalogue-v2.tsx` + `lib/templates-catalogue.ts`, and `tests/templates-catalogue.test.ts` still pins its claims), but no route mounts it: the template doctrine catalogues a surface rather than deleting it. Types and links are `purchasableTypesByGroup()` over `data/relationship-types.ts`; every card's action is the create flow's stage 1, carrying the template in the path, for a visitor and a member alike (#1042).
 
@@ -308,7 +308,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
   - files (2): `generated-avatar.tsx`, `media.tsx`
-  - routes (24): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/tournaments`, `/tournaments/[id]`
+  - routes (25): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/relationship-templates`, `/tournaments`, `/tournaments/[id]`
 
 - `components/not-found` — **mock**
   - capability: The 404 body: floating glyph decoration and a go-back button.
@@ -334,7 +334,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/templates` — **fixture**
   - capability: The public catalogue's eleven files: a hero, the explainer with one real Aspect, the membership line, the sticky realm menu, the searchable catalogue and its journey band — plus the record card (realm outline icon on a flat tint, name, two roles, one facts line, `Details` / `Example` / `Create Relationship`) and the older signpost card the front page's shelf still draws.
   - files (12): `how-it-works-preview.tsx`, `membership-summary.tsx`, `template-art.tsx`, `template-card.tsx`, `template-catalogue-card.tsx`, `template-catalogue.tsx`, `template-detail.tsx`, `template-journey.tsx`, `template-realm-nav.tsx`, `templates-catalogue-v2.tsx`, `templates-hero.tsx`, `templates-page.tsx`
-  - routes (1): `/relationship-templates/[slug]`
+  - routes (2): `/relationship-templates`, `/relationship-templates/[slug]`
   - notes: `/relationship-types` is the surface (#889); `template-card.tsx` remains because `/` renders it in its capped six-card shelf and that rollout is a separate, route-sized review the issue defers. `template-art.tsx` is the shared `RecordArtwork` the design system names: one realm icon from `data/media.ts`, masked and painted in the realm's ink, so no card ever draws a monogram or a per-slug hue again. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and everything the cards print is a record from `lib/template-catalogue.ts`.
 
 - `components/ui` — **mock**

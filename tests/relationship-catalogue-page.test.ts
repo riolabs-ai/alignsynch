@@ -32,6 +32,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { test } from "vitest";
 
 import { RelationshipCatalogue } from "@/components/marketing/relationship-catalogue";
+import { isFileMedia } from "@/content/media";
+import { FEATURED_ART } from "@/data/featured-art";
+import { media, type MediaKey } from "@/data/media";
 import { relationshipCatalogueCopy } from "@/data/pages/relationship-catalogue";
 import { purchasableRelationshipTypes } from "@/data/relationship-types";
 import {
@@ -122,4 +125,64 @@ test("the catalog copy carries the reference's typographic apostrophes", () => {
   assert.ok(!html.includes("you're In Synch"), "an ASCII apostrophe survived in the subtitle");
   assert.ok(!html.includes("haven't added a card"), "an ASCII apostrophe survived in a question");
   assert.ok(!html.includes("each other's answers"), "an ASCII apostrophe survived in a question");
+});
+
+/**
+ * The featured-image slot (#t_f96ad328), on the surface a reader actually reaches.
+ *
+ * The slot is a **chain**: a record the art tranche has reached draws its own picture, and a
+ * record it has not draws the realm's band — on the same grid, with no component deciding which.
+ * Asserting only the tranche would leave the fallback untested, and asserting only the fallback
+ * would leave the tranche unproven; both arms are one band per card, so the counts must sum to
+ * the catalogue.
+ */
+test("every card carries one art band, and only the tranche's cards carry a picture", () => {
+  const { cards } = models();
+  const withPicture = cards
+    .filter((card) => card.featured !== undefined)
+    .map((card) => card.id)
+    .sort();
+  assert.deepEqual(withPicture, FEATURED_ART.map((row) => row.record).sort());
+
+  const featured = html.match(/data-featured-art/g)?.length ?? 0;
+  const realm = html.match(/data-realm-art/g)?.length ?? 0;
+  assert.equal(featured, FEATURED_ART.length, "a covered card is missing its picture");
+  assert.equal(
+    realm,
+    cards.length - FEATURED_ART.length,
+    "a card with no art has no fallback band",
+  );
+  assert.equal(featured + realm, cards.length, "a card drew two bands, or none");
+});
+
+test("a record with no art yet draws the realm band — the fallback, on its own card", () => {
+  const { cards } = models();
+  const noArt = cards.find((card) => card.id === "co-founders");
+  assert.ok(noArt, "co-founders is not in the catalogue");
+  assert.equal(noArt.featured, undefined);
+
+  const at = html.indexOf('data-template-card="co-founders"');
+  assert.ok(at > 0, "the co-founders card is not in the markup");
+  const card = html.slice(at, html.indexOf("</li>", at));
+  assert.match(card, /data-realm-art/, "the fallback band is not drawn");
+  assert.doesNotMatch(card, /data-featured-art/, "a card with no art drew a featured band");
+  assert.doesNotMatch(card, /relationship-types\/featured/, "a neighbour's picture leaked on");
+});
+
+test("the tranche is a bijection with the media registry, and every picture has a size", () => {
+  const fileKeys = Object.keys(media)
+    .filter((key) => key.startsWith("relationship-types.featured."))
+    .sort();
+  assert.deepEqual(
+    FEATURED_ART.flatMap((row) => row.keys).sort(),
+    fileKeys,
+    "a featured file has no row, or a row names no file",
+  );
+  for (const key of fileKeys) {
+    const entry = media[key as MediaKey];
+    assert.ok(isFileMedia(entry), `${key} is not a file entry`);
+    // `next/image` needs an intrinsic size, and the band's generated default is sized from it.
+    assert.ok(entry.width > 0 && entry.height > 0, `${key} has no intrinsic size`);
+    assert.ok(html.includes(entry.src), `${entry.src} is not in the served markup`);
+  }
 });

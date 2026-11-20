@@ -200,6 +200,15 @@ const ALT_OVERRIDES = {
     "AlignSynch banner — two answers, one Gap, beside the relationship screen",
   "/og/email-banner.png": "AlignSynch release-note header — two answers, one Gap",
   "/og/release-default.png": "AlignSynch release notes card — what changed, and why",
+  /** The first featured-art tranche (#t_f96ad328): a catalogue card's band draws the picture,
+   * so it is content, not decoration — a title-cased filename would read "Staff Manager" over a
+   * picture of two people. Written per file, exactly as the /home photographs are. */
+  "/relationship-types/featured/spouses.svg":
+    "Two people drawn side by side, linked by a dashed line — the spouses template's featured art",
+  "/relationship-types/featured/staff-manager.svg":
+    "Two people drawn side by side, with stepped levels between them — the staff and manager template's featured art",
+  "/relationship-types/featured/friends.svg":
+    "Two people drawn side by side, with a rising arc of dots between them — the friends template's featured art",
 };
 
 /** Alt text a screen reader can use. Decorative media legitimately carries none. */
