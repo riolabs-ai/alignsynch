@@ -472,11 +472,15 @@ const nextConfig = {
         destination: "/dashboard/templates?tab=mine",
         permanent: true,
       },
-      {
-        source: "/templates/relationship/:slug",
-        destination: "/relationship-templates",
-        permanent: true,
-      },
+      /**
+       * **`/templates/relationship/:slug` is no longer redirected (#1259).** It was a 308 to the
+       * public catalogue (`/relationship-templates`), which ejected a signed-in member from the app
+       * shell into marketing when they pressed **View Details** on their own shelf. The address now
+       * answers `app/(mainlayout)/templates/relationship/[slug]/page.tsx` — the member's own
+       * template page — so the rule is deleted rather than narrowed: a page behind a permanent
+       * redirect is a page nothing can reach, and a test that follows the 308 would pass while the
+       * screen stayed absent. The bare namespace row above and the five stage rows below stay.
+       */
       // #1109 phase 2 — the create flow's five addresses, each keeping its stage.
       {
         source: "/templates/relationship/:slug/create",
