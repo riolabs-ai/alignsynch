@@ -50,7 +50,9 @@ Four properties are the whole design:
   `.transform()`), so a canonical bundle is a fixed point:
   `serialize(parse(serialize(x))) === serialize(x)`. Export → import → export is therefore
   byte-identical, by construction rather than by careful comparison.
-- **No timestamp.** `appVersion` is provenance and is never gated; an `exportedAt` field would
+- **No timestamp.** `appVersion` is provenance — the build the records came from — and E32 holds
+  the committed file's stamp equal to `package.json` (`pnpm bundles export --dataset --fix`
+  re-stamps it, a release bump carries it); an `exportedAt` field would
   make two exports of the same records differ, which is exactly what the round trip forbids.
   `bundleVersion` is the one format gate: a reader that does not know the number refuses the
   file instead of half-reading it.
@@ -292,9 +294,11 @@ cleanup — so they run through `bin/withenv.sh`, and **no gate step ever calls 
 ## What the gate checks
 
 - **E32** — `data/bundles/demo-dataset.alignsynch.json` is the canonical export of
-  `data/assessments.ts`, byte for byte. A fixture edited without regenerating the bundle is drift
-  in a file other people import, and no other check can see it: the records are valid, the bundle
-  is valid, and they say different things. Regenerate with `pnpm bundles export --dataset --fix`.
+  `data/assessments.ts`, byte for byte, **and its `appVersion` is `package.json`'s version**. A
+  fixture edited without regenerating the bundle is drift in a file other people import, and no
+  other check can see it: the records are valid, the bundle is valid, and they say different
+  things. So is a stamp naming another build — the file would tell an importer a false answer.
+  Regenerate both with `pnpm bundles export --dataset --fix`.
 - **E33** — when a tenant store exists, it parses as a dataset payload and the active set passes
   E0/E1/E2/E31 against itself.
 - **`scripts/__tests__/zip.test.ts`** — round trip, determinism (twice, and in a shuffled order),
@@ -309,8 +313,11 @@ cleanup — so they run through `bin/withenv.sh`, and **no gate step ever calls 
 None of these opens a connection: `pack`, `unpack` and every test are file work, and the only
 code that touches Postgres is `bundle:identities --cleanup`, which no gate step calls.
 
-`appVersion` in the committed bundle is provenance: E32 compares the committed file's **own**
-version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
+`appVersion` in the committed bundle is provenance a reader trusts, so E32 **gates** it: the
+committed stamp must equal `package.json`'s version, and a release bump carries
+`pnpm bundles export --dataset --fix` in the same commit (#1320). The stamp is never hand-edited —
+for four releases it drifted from `1.20.1` while the comparison re-stamped with the committed
+file's own version, so the gate could not see it.
 
 ## What this does not do
 

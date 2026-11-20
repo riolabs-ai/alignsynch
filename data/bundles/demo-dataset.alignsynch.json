@@ -2,7 +2,7 @@
   "format": "alignsynch-bundle",
   "bundleVersion": 3,
   "kind": "dataset",
-  "appVersion": "1.20.1",
+  "appVersion": "2.0.0-rc1.3",
   "payload": {
     "templates": [
       {
