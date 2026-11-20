@@ -120,6 +120,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
+import { seedActivityEvents } from "../lib/activity/events.ts";
+import { replaceSourceActivity } from "../lib/db/activity-events.ts";
 import { syncBillingPlans } from "./billing-plans.mjs";
 import { reconcileAllowlistedAdmins } from "./db-admin-allowlist.mjs";
 import {
@@ -1451,6 +1453,10 @@ const COUNT_SQL = {
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
+  // t_6cc2b56a — the feed's **seed-owned** rows only. `source = 'simulate'` is deliberately not
+  // counted here: that is the explicit action's rows, it may run any number of times, and an exact
+  // count over it would be a check that fails for the right reason (`demo:verify` bounds it instead).
+  activity_event_seed: "SELECT count(*)::int AS n FROM activity_event WHERE source = 'seed'",
 };
 
 async function counts(client) {
@@ -1706,6 +1712,17 @@ async function main() {
     (instance) => `relationship-${instance.id}`,
   );
 
+  /* t_6cc2b56a — the feed's timeline, derived from the same dataset objects the rows above are
+   * written from, so the count the seed asserts and `pnpm demo:verify` records are one number and
+   * not a list kept beside the fixtures. Pure: no clock (the instants come from each session's own
+   * `date`), no database. */
+  const activityEvents = seedActivityEvents(
+    assessmentInstances.map((instance) => ({
+      session: instance,
+      lifecycle: lifecycles.get(instance.id),
+    })),
+  );
+
   // #289 — the billing plan rows come from the same fixture a pricing surface renders, so the
   // table and the page cannot hold two prices. `checkedPlanRows()` throws on a fixture that
   // contradicts itself before any SQL runs.
@@ -1748,6 +1765,10 @@ async function main() {
     }, 0),
     // #289 — one row per tier × interval, from `data/billing-plans.ts`.
     billing_plan: billingFixtures.length,
+    // t_6cc2b56a — one row per act the dataset's lifecycle records, derived above. The seed asserts
+    // it exactly, which is what makes "a reseed leaves no stale feed row and duplicates nothing" a
+    // check rather than a claim: the replacement write is counted against the derivation.
+    activity_event_seed: activityEvents.length,
   };
 
   const client = new Client({ connectionString: writeDatabaseUrl(), application_name: "db:seed" });
@@ -1874,6 +1895,17 @@ async function main() {
     // #667 — the review catalogue. After the content rows because nothing here references them; the
     // todos and issues under an artifact are written by people at runtime and are never seeded.
     const reviewArtifactCount = await syncReviewArtifacts(client);
+
+    /* t_6cc2b56a — the activity feed's seeded half, written after the seats and the answers exist
+     * because every row's party reference is a real FK to `party`.
+     *
+     * It is a **replacement**, not an append: `replaceSourceActivity` removes the rows source='seed'
+     * wrote last time and inserts this run's, inside the transaction that already holds every other
+     * write. So a relationship the dataset stops describing loses its timeline, a re-run writes the
+     * same rows once, and a rollback puts the previous timeline back rather than leaving a gap.
+     * Nothing here is scheduled — the seed is the writer, and the other writer is the explicit
+     * `pnpm demo:simulate-activity` (see `0044`'s header). */
+    const activityOutcome = await replaceSourceActivity(client, "seed", activityEvents);
 
     // "Only seeded rows": an assessment record this seed does not author is drift, and the
     // honest move is to name it rather than to delete a row someone may have meant.
@@ -2057,6 +2089,12 @@ async function main() {
     // which is what makes stage 5's Send able to reissue it.
     console.log(
       `    ${"draft (invited)".padEnd(20)} ${draftCensus.invited} of ${draftCensus.drafts} — every seeded draft carries the session_invite row its create wrote; Send reissues it`,
+    );
+    // t_6cc2b56a — the feed, as a replacement rather than an accumulation: the previous run's
+    // source='seed' rows are gone before this run's are written, and the count below is the
+    // derivation's own number (the assertion above has already checked it against the table).
+    console.log(
+      `    ${"activity (seed)".padEnd(20)} ${activityOutcome.written} written, ${activityOutcome.removed} replaced — the feed's timeline for ${bundleRelationshipIds.length} relationship(s), written by the seed and by nothing else`,
     );
 
     if (demo) {

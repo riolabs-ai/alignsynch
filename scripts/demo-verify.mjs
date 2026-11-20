@@ -37,6 +37,14 @@
  * dependency, and no Playwright: the acceptance is on the **rendered HTML**, which is what a
  * `fetch` returns and what an assertion can read.
  *
+ * **The activity feed is checked in both of its sources, differently on purpose** (t_6cc2b56a).
+ * The `seed` rows are derived from the dataset and replaced by every seed, so their count is exact —
+ * it is one of the row counts above. The `simulate` rows belong to an **explicit action**
+ * (`pnpm demo:simulate-activity`), which this check *invokes* — the same way it invokes the seed,
+ * and never on a schedule — and then presses twice: the count must land inside the band the
+ * expectations file authors and must not move between the presses. An exact number there would be a
+ * check that fails the first time somebody presses it on a different dataset.
+ *
  * ## The refusals
  *
  *   * `NEON_BRANCH=production`, or a `DATABASE_URL` on `ep-winter-block` — a demo seeder pointed
@@ -87,6 +95,7 @@ import {
   routeKey,
   routeProblems,
   serializeExpectations,
+  simulateBoundProblems,
 } from "./demo-verify-rules.mjs";
 
 const ARGS = process.argv.slice(2);
@@ -133,6 +142,11 @@ const COUNT_SQL = {
   // (`scripts/db-seed-payments.mjs`), not the console's, so it is counted here beside the other
   // rows that half writes rather than in `ADMIN_SURFACE_COUNT_SQL`.
   relationship_payment: "SELECT count(*)::int AS n FROM relationship_payment",
+  // t_6cc2b56a — the feed's **seed-owned** rows: an exact count, because the seed derives them from
+  // the dataset's lifecycle (`lib/activity/events.ts::seedActivityEvents`) and replaces them every
+  // run. Source 'simulate' is deliberately **not** here — it is the explicit action's, it may run
+  // any number of times, and it is held to a bounded band below instead (`activity.simulate`).
+  activity_event_seed: "SELECT count(*)::int AS n FROM activity_event WHERE source = 'seed'",
   ...ADMIN_SURFACE_COUNT_SQL,
 };
 
@@ -548,6 +562,78 @@ async function main() {
         Object.keys(expectations.rows ?? counts)
           .map((table) => `${table} ${counts[table]}`)
           .join(" · "),
+      );
+    }
+
+    /* t_6cc2b56a — the activity feed's two halves, checked the two different ways they deserve.
+     *
+     * `activity_event_seed` is already an exact count above (it is in `COUNT_SQL`), because the seed
+     * derives that timeline from the dataset and replaces it on every run: a number that moves is
+     * drift.
+     *
+     * The **simulate** source is the opposite fact — an explicit action a person presses, which
+     * writes one row per seat on the relationships the branch happens to have live, stamped at the
+     * instant it ran. Two things follow, and both are checked here rather than assumed:
+     *
+     *   * it is **pressed twice**, and the count must not move between the presses. That is the
+     *     idempotency claim proved against a real database instead of against the derivation — the
+     *     second press replaces the first's rows, and a writer that appended would double the band;
+     *   * the count is held to a **band** (`activity.simulate` in the expectations file), never an
+     *     exact number: the action writes as many rows as the branch has live relationships and
+     *     stamps them at the instant it ran, so an exact assertion would fail the first time
+     *     somebody pressed it on a different dataset. The band's ceiling is held to
+     *     `SIMULATE_MAX_EVENTS` by `tests/activity-events.test.ts`, so it cannot be widened to hide
+     *     a duplicate writer.
+     *
+     * This is the check **invoking** the action, the same way it invokes `pnpm db:seed` above — not
+     * a scheduler. Nothing in this tree schedules either of them, and `vercel.json` has no `crons`
+     * block (0044's header says why that matters). */
+    const simulateEnv = { DATABASE_URL: seedUrl, DATABASE_URL_UNPOOLED: seedUrl };
+    const simulateCount = async () => {
+      const { rows } = await client.query(
+        "SELECT count(*)::int AS n FROM activity_event WHERE source = 'simulate'",
+      );
+      return rows[0]?.n ?? 0;
+    };
+
+    const firstPress = runScript("demo:simulate-activity", { env: simulateEnv });
+    if (!firstPress.ok) {
+      console.log(`  ✗ activity \`pnpm demo:simulate-activity\` failed — the simulate path is a`);
+      console.log(
+        "             writer this check exists to hold, so a failure here is not a skip:",
+      );
+      for (const line of tail(firstPress.output)) console.log(line);
+      return 1;
+    }
+    const afterFirst = await simulateCount();
+    const secondPress = runScript("demo:simulate-activity", { env: simulateEnv });
+    if (!secondPress.ok) {
+      console.log(`  ✗ activity \`pnpm demo:simulate-activity\` failed on the second press:`);
+      for (const line of tail(secondPress.output)) console.log(line);
+      return 1;
+    }
+    const afterSecond = await simulateCount();
+
+    const band = {
+      min: expectations.activity?.simulate?.min,
+      max: expectations.activity?.simulate?.max,
+    };
+    const bandProblems = simulateBoundProblems({ count: afterSecond, ...band });
+    if (bandProblems.length > 0) {
+      problem("activity", `${bandProblems[0]} (\`activity.simulate\` in ${EXPECTATIONS_LABEL})`);
+    }
+    if (afterFirst !== afterSecond) {
+      problem(
+        "activity",
+        `a second simulate press moved the count from ${afterFirst} to ${afterSecond} — the writer appends where it must replace, and the feed would grow a duplicate timeline on every press`,
+      );
+    }
+    if (bandProblems.length === 0 && afterFirst === afterSecond) {
+      const bandText = `${band.min ?? 0}–${band.max ?? "∞"}`;
+      step(
+        "✓",
+        "activity",
+        `${counts.activity_event_seed} seeded event(s), exactly · ${afterSecond} simulated, inside the band ${bandText}, and unmoved by a second press (a replay replaces, it does not append) — written by an explicit action, never a schedule`,
       );
     }
 
