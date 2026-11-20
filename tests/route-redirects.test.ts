@@ -202,7 +202,13 @@ describe("the legacy redirects", () => {
     expect(hits("/templates/spouses")).toEqual(["/relationship-templates/spouses"]);
     expect(hits("/templates/relationship")).toEqual(["/dashboard/templates"]);
     expect(hits("/templates/relationship/new")).toEqual(["/dashboard/templates?tab=mine"]);
-    expect(hits("/templates/relationship/spouses")).toEqual(["/relationship-templates"]);
+    /**
+     * #1259 — **the single-template address is a page again, so nothing may redirect it.** It used
+     * to answer 308 to the public catalogue, which is what ejected a member from the shell when
+     * they pressed `View Details`; `app/(mainlayout)/templates/relationship/[slug]` answers it now,
+     * and a redirect here would shadow that page exactly as a page shadows a redirect.
+     */
+    expect(hits("/templates/relationship/spouses")).toEqual([]);
     // The five stage addresses keep their stage: a deep link lands on Aspects, not on the library.
     expect(hits("/templates/relationship/spouses/create")).toEqual([
       "/dashboard/templates/spouses/create",
@@ -257,9 +263,13 @@ describe("the legacy redirects", () => {
     // answers 308 to the surface that replaced it: the dashboard's templates tab for the first two,
     // the public catalogue for a single template, whose owner's editor needs an id the old path
     // does not carry.
+    //
+    // **#1259 took the third row back out, and it is not a redirect any more.** The single-template
+    // address is the member's own template page now (`/templates/relationship/<slug>` inside the
+    // shell), so a 308 here would shadow the page — the same defect in the other direction, and the
+    // reason the row is asserted absent in the test above rather than moved.
     ["/templates/relationship", "/dashboard/templates"],
     ["/templates/relationship/new", "/dashboard/templates?tab=mine"],
-    ["/templates/relationship/spouses", "/relationship-templates"],
     // #1109 phase 2 — the flow's five addresses, each keeping its stage. Spelled out because
     // `:slug` matches one segment: a bookmark that named Aspects lands on Aspects.
     ["/templates/relationship/spouses/create", "/dashboard/templates/spouses/create"],

@@ -614,6 +614,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/templates-detail",
     budget: 0,
   },
+  /**
+   * #1259 — the **in-app** template page. Budget 0 from the first commit, like every member
+   * surface: the kicker, the four chips, both action labels, the two descriptor headings, the
+   * Aspects band's heading, body, legend and scale frames, the aside's three panels and the
+   * closing band are `data/pages/template-page.ts`, and the shelf words the chips share are read
+   * from `data/pages/dashboard-templates.ts`. The one string the page module owns is `?problem=`,
+   * which is a query key and not copy.
+   */
+  "/templates/relationship/[slug]": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/template-page",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],

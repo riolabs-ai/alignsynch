@@ -183,9 +183,15 @@ export const AUTH_CLASS_TABLE: readonly {
   { prefix: "/dashboard", auth: "member", why: 'requireRole("member") / currentUser()' },
   { prefix: "/settings", auth: "member", why: "currentUser()" },
   // #1109 — the member's template library was `/templates/relationship`, and it moved to
-  // `/dashboard/templates` (the row above classifies it now). The old noun has no page left to
-  // classify: its three screens 308 to the dashboard and its create flow moved with them, so the
-  // only `/templates/` row here is the public catalogue's.
+  // `/dashboard/templates` (the row above classifies it now). #1259 put **one** page back under the
+  // old noun — the member's own template page, gated by `requireRole("member")` — and it is the row
+  // immediately below. The rest of the old tree still 308s to the dashboard, and the only other
+  // `/templates/` address is the public catalogue's.
+  {
+    prefix: "/templates/relationship",
+    auth: "member",
+    why: 'requireRole("member") — the member\'s own template page; signed out is /login?next=',
+  },
   {
     prefix: "/assessment/instances",
     auth: "member",

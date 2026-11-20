@@ -1,0 +1,249 @@
+{
+  "takenAt": "2026-11-20T15:37:40.106Z",
+  "baseUrl": "http://localhost:4317",
+  "account": "qa-template-page-1795189060106@example.test",
+  "widths": [390, 1280],
+  "slug": "brother-sister",
+  "http": {
+    "path": "/templates/relationship/brother-sister",
+    "status": 200,
+    "location": null
+  },
+  "stills": [
+    {
+      "file": "docs/qa-template-page/relationship-template-page-390.png",
+      "width": 390,
+      "height": 2527,
+      "h1": "Brother–Sister",
+      "railWidth": 250,
+      "aspects": 5,
+      "scrollWidth": 390,
+      "clientWidth": 390
+    },
+    {
+      "file": "docs/qa-template-page/relationship-template-page-1280.png",
+      "width": 1280,
+      "height": 1400,
+      "h1": "Brother–Sister",
+      "railWidth": 250,
+      "aspects": 5,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    }
+  ],
+  "checks": [
+    {
+      "name": "the shelf answers for this account",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "the shelf draws the View Details link",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "the page answers 200, not a redirect",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "no 308 Location header",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "the server-rendered page is the template page",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "it renders inside the shell",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "no environment value in the HTML",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "no environment value in the HTML",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "no environment value in the HTML",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "no environment value in the HTML",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the browser stayed on the page",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the viewport is the emulated width",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: no horizontal overflow",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the page marker is present",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the Aspects render",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the create action renders three times",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: Save to My Templates renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the trial panel renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: How It Works renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the h1 is the template's name",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: the shell's rail is in the document",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "390px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the browser stayed on the page",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the viewport is the emulated width",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: no horizontal overflow",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the page marker is present",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the Aspects render",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the create action renders three times",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: Save to My Templates renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the trial panel renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: How It Works renders",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the h1 is the template's name",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: the shell's rail is in the document",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    },
+    {
+      "name": "1280px: no environment value on screen",
+      "ok": true,
+      "detail": "pass"
+    }
+  ],
+  "accountId": "8fa7043d-2519-4493-8271-3d79035fbcbc",
+  "shelfSlugs": [
+    "brother-sister",
+    "brothers",
+    "business-partners",
+    "co-founders",
+    "colleagues",
+    "customer-vendor-product",
+    "customer-vendor-services",
+    "father-daughter",
+    "father-son",
+    "friends"
+  ]
+}
