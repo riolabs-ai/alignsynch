@@ -39,6 +39,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { readMemberAlignments } from "@/lib/db/member-alignments";
 import { type AlignmentSummary, alignmentSummaryOf } from "@/lib/member/alignment-summary";
+import { membershipPrice } from "@/lib/billing/payment-view";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -121,28 +122,35 @@ export default async function MemberRelationshipPage({
   const editSection = sectionOf(dashboardRelationshipDetailPageCopy, RELATIONSHIP_EDIT_SECTION);
 
   /*
-   * #rect-04 — **the pair's alignment, read beside the view.**
+   * **The pair's alignment — one read, two surfaces (rect-04 + rect-03).**
    *
    * `guides/shared/results-and-align.md`: *"When you've both answered, Align puts your answers side
    * by side."* `readMemberAlignments` is the same read My Relationships and the Start page use, and
    * it projects a session only once both sheets are complete — so a relationship with one sheet in
-   * has no entry here, and the summary is absent rather than zero-filled. The Setting comes off the
-   * session row, which is why the tally is `alignmentSummaryOf()`'s answer and not a second count
-   * done on this page.
+   * has no entry here, and the summary is absent rather than zero-filled.
    *
-   * A database that cannot answer is not a 404 and not an error band: the page reads, and the
-   * Align summary is simply the one thing missing — the rail's own Next Step still stands.
+   * Two rectification lanes draw from this answer and neither may drop the other's surface:
+   * rect-03 prints it as the At a Glance card's tally (`alignment`), rect-04 as the Align band and
+   * its Next Step (`align`). Both are the *one* summary for the round this page is about, so the
+   * page reads once and hands the same value to both — three screens cannot print three counts
+   * about one relationship when there is only one count.
+   *
+   * `null` is "nobody read anything", never zero: a database that cannot answer is not a 404 and
+   * not an error band, so the page still renders and both surfaces draw nothing rather than
+   * "0 of 5 Aspects Aligned" over answers nobody read.
    */
-  let align: AlignmentSummary | undefined;
-  try {
-    const entry = (await readMemberAlignments(user.userId)).find(
-      (candidate) => candidate.sessionRecordId === view.sessionRecordId,
-    );
-    align = entry === undefined ? undefined : alignmentSummaryOf(entry.setting, entry.answers);
-  } catch (error) {
-    if (!(error instanceof DatabaseUnavailableError)) throw error;
-    console.error("member-relationship: the alignment could not be read", error);
-    align = undefined;
+  let alignment: AlignmentSummary | null = null;
+  if (view.sessionRecordId !== null) {
+    try {
+      const alignments = await readMemberAlignments(user.userId);
+      const row = alignments.find(
+        (candidate) => candidate.sessionRecordId === view.sessionRecordId,
+      );
+      alignment = row === undefined ? null : alignmentSummaryOf(row.setting, row.answers);
+    } catch (error) {
+      if (!(error instanceof DatabaseUnavailableError)) throw error;
+      console.error("member-relationship: the alignment could not be read", error);
+    }
   }
   return (
     <StageColumn>
@@ -167,6 +175,15 @@ export default async function MemberRelationshipPage({
               ? undefined
               : { mode: editState.mode, setting: editState.setting }
           }
+          /* The At a Glance card's tally, the round it is about, and the price after the trial:
+             three server facts this component cannot read for itself (E34). */
+          alignment={alignment}
+          round={
+            view.round === null || view.round === undefined || view.roundStartedAt == null
+              ? null
+              : { ordinal: view.round, startedAt: view.roundStartedAt }
+          }
+          planPrice={membershipPrice()}
           /*
             #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
             render inline in the 320 px actions rail, so the detail and its editor described the
@@ -250,8 +267,8 @@ export default async function MemberRelationshipPage({
             "Mine" tab is the honest destination and not the catalogue.
           */
           templatesHref={`${TEMPLATE_LIBRARY_PATH}?view=mine`}
-          /* #rect-04 — the Align summary: absent until both sheets are in. */
-          align={align}
+          /* #rect-04 — the Align band and its Next Step: the same summary as the card's tally. */
+          align={alignment}
         />
       </div>
     </StageColumn>

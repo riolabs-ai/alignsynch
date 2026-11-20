@@ -252,8 +252,12 @@ describe("#1124 — the panels say what the record says, and the Counterparty re
         }),
       ),
     );
-    expect(initiator).toContain("Running");
+    /* The v2 rectification replaced the membership chip with bundle 03's summary table: the
+       window's own state as *Status*, the billing owner, and — while it runs — the date it ends.
+       `Running` is still the Initiator's answer, now said as the window's date rather than a chip
+       that could not name it. */
+    expect(initiator).toContain("Status");
+    expect(initiator).toContain("Free Trial · Ends");
     expect(initiator).toContain("Billing Owner");
-    expect(initiator).toContain("Trial ends");
   });
 });
