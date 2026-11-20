@@ -1,0 +1,489 @@
+{
+  "route": "/admin/spec/03-invite",
+  "before": {
+    "served": "https://alignsynch.com, /api/version = 2.0.0-rc1.3 @ 03e498492 (the commit this branch is cut from)",
+    "widths": {
+      "390": {
+        "innerWidth": 390,
+        "docScrollWidth": 390,
+        "docClientWidth": 390,
+        "ariaCurrent": [
+          {
+            "text": "",
+            "inSheet": true,
+            "visible": true
+          },
+          {
+            "text": "03 Invite4/5",
+            "inSheet": false,
+            "visible": false
+          }
+        ],
+        "columnPresent": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "columnVisible": false,
+        "sheetPresent": true,
+        "sheetVisible": true,
+        "sheetContainerVisible": true,
+        "firstColumnRow": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "firstColumnRowCss": {
+          "fontSize": "14px",
+          "padding": "6px 8px",
+          "padLeft": "8px",
+          "font": "500",
+          "radius": "3px"
+        },
+        "firstColumnCount": {
+          "w": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "css": {
+            "fontSize": "14px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "500",
+            "radius": "0px"
+          },
+          "text": "Overview"
+        },
+        "groupLabel": {
+          "css": {
+            "fontSize": "12px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "400",
+            "radius": "0px"
+          },
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          "text": "v2.0.0-rc1.2 \u00b7 Read-only"
+        },
+        "title": "Invite",
+        "nda": "Confidential. Drawn from the 2024 Consulting Agreement (NDA, Exhibit C). Visible only to Project Spec readers. Fees: see Exhibit B."
+      },
+      "768": {
+        "innerWidth": 768,
+        "docScrollWidth": 768,
+        "docClientWidth": 768,
+        "ariaCurrent": [
+          {
+            "text": "03 Invite4/5",
+            "inSheet": true,
+            "visible": false
+          },
+          {
+            "text": "03 Invite\n4/5",
+            "inSheet": false,
+            "visible": true
+          }
+        ],
+        "columnPresent": {
+          "x": 112,
+          "y": 218,
+          "w": 208,
+          "h": 585
+        },
+        "columnVisible": true,
+        "sheetPresent": true,
+        "sheetVisible": false,
+        "sheetContainerVisible": false,
+        "firstColumnRow": {
+          "x": 112,
+          "y": 277,
+          "w": 246,
+          "h": 32
+        },
+        "firstColumnRowCss": {
+          "fontSize": "14px",
+          "padding": "6px 8px",
+          "padLeft": "8px",
+          "font": "500",
+          "radius": "3px"
+        },
+        "firstColumnCount": {
+          "w": {
+            "x": 120,
+            "y": 283,
+            "w": 64,
+            "h": 20
+          },
+          "css": {
+            "fontSize": "14px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "500",
+            "radius": "0px"
+          },
+          "text": "Overview"
+        },
+        "groupLabel": {
+          "css": {
+            "fontSize": "12px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "400",
+            "radius": "0px"
+          },
+          "box": {
+            "x": 120,
+            "y": 240,
+            "w": 230,
+            "h": 16
+          },
+          "text": "v2.0.0-rc1.2 \u00b7 Read-only"
+        },
+        "title": "Invite",
+        "nda": "Confidential. Drawn from the 2024 Consulting Agreement (NDA, Exhibit C). Visible only to Project Spec readers. Fees: see Exhibit B."
+      },
+      "1280": {
+        "innerWidth": 1280,
+        "docScrollWidth": 1280,
+        "docClientWidth": 1280,
+        "ariaCurrent": [
+          {
+            "text": "03 Invite4/5",
+            "inSheet": true,
+            "visible": false
+          },
+          {
+            "text": "03 Invite\n4/5",
+            "inSheet": false,
+            "visible": true
+          }
+        ],
+        "columnPresent": {
+          "x": 298,
+          "y": 202,
+          "w": 208,
+          "h": 585
+        },
+        "columnVisible": true,
+        "sheetPresent": true,
+        "sheetVisible": false,
+        "sheetContainerVisible": false,
+        "firstColumnRow": {
+          "x": 298,
+          "y": 261,
+          "w": 246,
+          "h": 32
+        },
+        "firstColumnRowCss": {
+          "fontSize": "14px",
+          "padding": "6px 8px",
+          "padLeft": "8px",
+          "font": "500",
+          "radius": "3px"
+        },
+        "firstColumnCount": {
+          "w": {
+            "x": 306,
+            "y": 267,
+            "w": 64,
+            "h": 20
+          },
+          "css": {
+            "fontSize": "14px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "500",
+            "radius": "0px"
+          },
+          "text": "Overview"
+        },
+        "groupLabel": {
+          "css": {
+            "fontSize": "12px",
+            "padding": "0px",
+            "padLeft": "0px",
+            "font": "400",
+            "radius": "0px"
+          },
+          "box": {
+            "x": 306,
+            "y": 224,
+            "w": 230,
+            "h": 16
+          },
+          "text": "v2.0.0-rc1.2 \u00b7 Read-only"
+        },
+        "title": "Invite",
+        "nda": "Confidential. Drawn from the 2024 Consulting Agreement (NDA, Exhibit C). Visible only to Project Spec readers. Fees: see Exhibit B."
+      }
+    },
+    "drawer390": {
+      "triggerExpanded": "true",
+      "asideBox": {
+        "x": 0,
+        "y": 0,
+        "w": 250,
+        "h": 4389
+      },
+      "wrapBox": {
+        "x": 8,
+        "y": 80,
+        "w": 246,
+        "h": 598
+      },
+      "sheetBox": {
+        "x": 8,
+        "y": 80,
+        "w": 246,
+        "h": 598
+      },
+      "navPadding": "0px 8px",
+      "validationExpanded": "true",
+      "horizontalOverflow": 0
+    },
+    "escape390": {
+      "width": "390-escape",
+      "visible": "hidden",
+      "expanded": "false",
+      "focusIsTrigger": false,
+      "activeTag": "BODY:"
+    }
+  },
+  "after": {
+    "served": "http://localhost:3001 from this branch's tree (next dev, Next 16.4.5)",
+    "widths": {
+      "390": {
+        "innerWidth": 390,
+        "docScrollWidth": 390,
+        "docClientWidth": 390,
+        "ariaCurrent": 1,
+        "columnVisible": false,
+        "ariaCurrentVisible": 0,
+        "columnBox": {
+          "x": 0,
+          "right": 0,
+          "w": 0,
+          "h": 0
+        },
+        "rowWidth": 0,
+        "rowWidths": [0],
+        "rowHeights": [0],
+        "firstRowRight": 0,
+        "columnRight": 0,
+        "countRight": 0,
+        "pinnedCountRight": 0,
+        "nda": {
+          "bg": "rgb(251, 241, 236)",
+          "border": "rgb(236, 198, 182)",
+          "text": "rgb(54, 61, 73)"
+        }
+      },
+      "768": {
+        "innerWidth": 768,
+        "docScrollWidth": 768,
+        "docClientWidth": 768,
+        "ariaCurrent": 1,
+        "columnVisible": true,
+        "ariaCurrentVisible": 1,
+        "columnBox": {
+          "x": 112,
+          "right": 320,
+          "w": 208,
+          "h": 625
+        },
+        "rowWidth": 195,
+        "rowWidths": [195],
+        "rowHeights": [32, 52],
+        "firstRowRight": 307,
+        "columnRight": 320,
+        "countRight": 299,
+        "pinnedCountRight": 299,
+        "nda": {
+          "bg": "rgb(251, 241, 236)",
+          "border": "rgb(236, 198, 182)",
+          "text": "rgb(54, 61, 73)"
+        }
+      },
+      "1280": {
+        "innerWidth": 1280,
+        "docScrollWidth": 1280,
+        "docClientWidth": 1280,
+        "ariaCurrent": 1,
+        "columnVisible": true,
+        "ariaCurrentVisible": 1,
+        "columnBox": {
+          "x": 298,
+          "right": 506,
+          "w": 208,
+          "h": 625
+        },
+        "rowWidth": 195,
+        "rowWidths": [195],
+        "rowHeights": [32, 52],
+        "firstRowRight": 493,
+        "columnRight": 506,
+        "countRight": 485,
+        "pinnedCountRight": 485,
+        "nda": {
+          "bg": "rgb(251, 241, 236)",
+          "border": "rgb(236, 198, 182)",
+          "text": "rgb(54, 61, 73)"
+        }
+      }
+    },
+    "drawer390": {
+      "triggerExpanded": "true",
+      "panelWidth": 250,
+      "navBodyWidth": 233,
+      "wrapBox": {
+        "x": 8,
+        "right": 241,
+        "w": 233,
+        "h": 774
+      },
+      "sheetBox": {
+        "x": 8,
+        "right": 241,
+        "w": 233,
+        "h": 774
+      },
+      "rowWidths": [233],
+      "rowHeights": [44, 64],
+      "labelLefts": [16],
+      "railLabelLefts": [20],
+      "railRowHeights": [40],
+      "countRights": [80, 233, 233, 233, 233, 233, 233, 233, 233, 233, 233, 233, 233],
+      "ariaCurrentCount": 2,
+      "validationExpanded": "true",
+      "buttons": 0,
+      "horizontalOverflow": 0,
+      "longRowHeight": 64
+    },
+    "escape390": {
+      "width": "390-escape",
+      "panelVisibility": "hidden",
+      "triggerExpanded": "false",
+      "focusIsTrigger": true,
+      "sheetUnmounted": true
+    },
+    "tabOrder390": [
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "Overview"
+      },
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "Validation 44/76"
+      },
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "01 Play with Aspects 7/11"
+      },
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "02 Register 5/9"
+      },
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "03 Invite 4/5"
+      },
+      {
+        "tag": "A",
+        "inSheet": true,
+        "text": "04 Opinions 4/4"
+      }
+    ],
+    "focus": [
+      {
+        "width": 1280,
+        "rows": [
+          {
+            "surface": "column",
+            "tag": "A",
+            "text": "Overview",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          },
+          {
+            "surface": "column",
+            "tag": "A",
+            "text": "Validation 44/76",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          },
+          {
+            "surface": "column",
+            "tag": "A",
+            "text": "01 Play with Aspects 7/11",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          }
+        ]
+      },
+      {
+        "width": 390,
+        "rows": [
+          {
+            "surface": "sheet",
+            "tag": "A",
+            "text": "Overview",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          },
+          {
+            "surface": "sheet",
+            "tag": "A",
+            "text": "Validation 44/76",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          },
+          {
+            "surface": "sheet",
+            "tag": "A",
+            "text": "01 Play with Aspects 7/11",
+            "outlineStyle": "solid",
+            "outlineWidth": "2px",
+            "outlineColor": "rgba(0, 0, 0, 0)",
+            "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 0px, rgb(2, 8, 23) 0px 0px 0px 2px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+            "ringMatches": true
+          }
+        ]
+      }
+    ]
+  },
+  "versionChip": {
+    "apiVersion": "2.0.0-rc1.3 @ 03e498492",
+    "railChip": "v2.0.0-rc1.3",
+    "submenuSubtitle": "v2.0.0-rc1.2 \u00b7 Read-only (data/spec/validation.json release field)"
+  },
+  "capturedAt": "2026-11-19"
+}

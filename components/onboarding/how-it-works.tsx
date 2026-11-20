@@ -63,6 +63,12 @@ export function HowItWorks({
     sectionOf(copy, "step-next"),
   ];
   const limits = sectionOf(copy, "limits");
+  /**
+   * The two vocabulary bands. They sit between the moves and the limits because they answer the
+   * question the moves raise — "six of what?" — and because the Extra Week is about the thing that
+   * pays for the ladder, which a reader should meet before the honest-limits band.
+   */
+  const vocabulary = [sectionOf(copy, "stage-six"), sectionOf(copy, "extra-week")];
 
   const youLabel = itemLabel(labels, "you");
   const productLabel = itemLabel(labels, "product");
@@ -148,6 +154,22 @@ export function HowItWorks({
             </li>
           ))}
         </ol>
+
+        {/* The vocabulary the doc defines and the moves above only imply: the six stages, what
+            Stage 6 is, and the Extra Week that keeps it running. Text, not a third walk — the
+            recording stops at creation and these are the words a reader needs to read it. */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {vocabulary.map((band) => (
+            <section
+              key={band.id}
+              className="rounded-xl border border-border bg-card p-5 md:p-6"
+              data-band={band.id}
+            >
+              <h3 className="text-lg font-semibold text-foreground">{band.heading}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{sectionBody(band)}</p>
+            </section>
+          ))}
+        </div>
       </section>
 
       {/*

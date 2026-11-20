@@ -111,13 +111,25 @@ import {
   type ResendInviteOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
+import type { AlignmentSummary } from "@/lib/member/alignment-summary";
+import { opinionKindsFor, type AssessmentMode } from "@/content/assessment";
 import {
   ASPECT_EDITOR_SECTION,
   ASPECTS_LIVE_SECTION,
+  RELATIONSHIP_EDIT_SECTION,
+  RELATIONSHIP_GLANCE_SECTION,
 } from "@/data/pages/dashboard-relationship-detail";
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
-import { fillLabel, itemLabel, itemOf, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import {
+  fillLabel,
+  itemLabel,
+  itemLabelOr,
+  itemOf,
+  pageItemOf,
+  sectionBody,
+  sectionOf,
+} from "@/lib/page-copy";
 import {
   RELATIONSHIPS_PATH,
   answerSheetPath,
@@ -125,7 +137,7 @@ import {
   reportPath,
 } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
-import { Pause, X } from "lucide-react";
+import { ArrowRight, MessageSquare, Pause, X } from "lucide-react";
 import { useState, useTransition, type ReactNode } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -239,6 +251,9 @@ export function RelationshipDetail({
   relationship,
   editTrigger,
   settings,
+  alignment,
+  round,
+  planPrice,
   onSaveAspects,
   onPublish,
   onRepublish,
@@ -252,6 +267,7 @@ export function RelationshipDetail({
   onRequestRemoval,
   arrival,
   templatesHref,
+  align,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
@@ -275,6 +291,26 @@ export function RelationshipDetail({
    * editing, gets the panel's sentence about who sets these instead of two invented defaults.
    */
   settings?: { readonly mode: string; readonly setting: string };
+  /**
+   * The v2 rectification register's **At a Glance** tally: this round's alignment, computed by the
+   * page with `alignmentSummaryOf()` over both seats' opinion rows.
+   *
+   * Absent (`undefined`) is a view literal written before the read existed, and the card is then
+   * not drawn — never a zero, which would claim every Aspect is In Synch about answers nobody gave.
+   * `null` is a relationship with no round, or a round only one side has answered: real, and the
+   * page says so by drawing no tally.
+   */
+  alignment?: AlignmentSummary | null;
+  /** The latest round's ordinal and start, from the relationship read (same rule as `alignment`). */
+  round?: { readonly ordinal: number; readonly startedAt: string } | null;
+  /**
+   * The price after the trial, from the billing plan (`membershipPrice()`, read by the page).
+   *
+   * A prop, not an import: `lib/billing/payment-view.ts` is a server module and a `"use client"`
+   * value-import of it is E34's failure mode (#228). Absent means the Payment tab draws no price
+   * row rather than a typed one that could drift from what the plan charges.
+   */
+  planPrice?: string;
   onSaveAspects: (payload: {
     relationshipId?: string;
     record?: unknown;
@@ -355,6 +391,21 @@ export function RelationshipDetail({
    * that reaches Postgres, which a `"use client"` file may not value-import (E34).
    */
   templatesHref: string;
+  /**
+   * #rect-04 — **the pair's alignment, once both sheets are in.**
+   *
+   * `guides/shared/results-and-align.md`: *"When you've both answered, Align puts your answers side
+   * by side."* The read behind it (`readMemberAlignments` + `alignmentSummaryOf`) reaches Postgres,
+   * so the page computes it and passes the finished summary: this file may only take the *type*,
+   * because a `"use client"` value-import of that module is E34's failure mode (#228), and the
+   * arithmetic is not duplicated here for the same reason.
+   *
+   * `null`/absent is the state the page is in before both have answered (and the state every suite
+   * that builds this screen by hand is in): the summary is not drawn, and the rail keeps the
+   * "Start/Continue Your Assessment" Next Step. A summary is never invented over answers nobody
+   * gave — a bar of zeroes reads as agreement the pair never reached.
+   */
+  align?: AlignmentSummary | null;
 }) {
   const identityCopy = sectionOf(copy, "identity");
   /** #873 — the page's own way-back string, reused as the Counterparty notice's one door. */
@@ -981,6 +1032,151 @@ export function RelationshipDetail({
   ];
 
   /**
+   * Bundle 03's **At a Glance** card — the rectification register's most repeated delta on this
+   * screen. It is a summary of reads the page already performs, never a fourth arithmetic:
+   *
+   *   the tally   `alignmentSummaryOf()` over both seats' opinions, keyed by the round the read
+   *               names — the same function the Start page's bar and the Align screen use, so
+   *               three screens cannot print three counts about one relationship
+   *   Mode        the Settings tab's own two values (`settings`), plus the opinion count the mode
+   *               asks — `opinionKindsFor()`, so "2 Opinions" cannot drift from Basic Mode
+   *   Round       the ordinal and start the relationship read carries
+   *
+   * Every part is optional and the panel is absent when none of them is known: a view literal
+   * written before these reads existed (the suites) draws the screen it always drew, and a draft —
+   * no round, no answers, no Settings row — gets no card headed with three em dashes.
+   */
+  const glanceCopy = sectionOf(copy, RELATIONSHIP_GLANCE_SECTION);
+  /* The mode's *short* name lives in the edit band's items ("Basic" against the publish panel's
+     long gloss), and the glance card's row is a value, not a definition. */
+  const modeCopy = sectionOf(copy, RELATIONSHIP_EDIT_SECTION);
+  const modeValue: AssessmentMode | null =
+    settings === undefined
+      ? null
+      : settings.mode === "basic" || settings.mode === "advanced"
+        ? settings.mode
+        : null;
+  const modeRow =
+    modeValue === null
+      ? null
+      : `${itemLabelOr(modeCopy, `mode-${modeValue}`) ?? modeValue} · ${fillLabel(
+          itemLabel(glanceCopy, "opinions"),
+          { count: opinionKindsFor(modeValue).length },
+        )}`;
+  const toleranceRow =
+    settings === undefined
+      ? null
+      : (itemLabelOr(glanceCopy, `tolerance-${settings.setting}`) ?? null);
+  const roundRow =
+    round === undefined || round === null
+      ? null
+      : fillLabel(itemLabel(glanceCopy, "round-value"), {
+          round: round.ordinal,
+          date: formatDate(round.startedAt),
+        });
+  /* The report the round opened, when it exists: a relationship with an unanswered sheet has no
+     Gap to open, so the reference's one control is drawn only where it leads somewhere. */
+  const glanceAlignHref =
+    relationship.sessionRecordId === null ? null : reportPath(relationship.sessionRecordId);
+  const glanceRows: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly value: string;
+  }[] = [
+    ...(modeRow === null
+      ? []
+      : [{ id: "mode", label: itemLabel(glanceCopy, "mode"), value: modeRow }]),
+    ...(toleranceRow === null
+      ? []
+      : [{ id: "tolerance", label: itemLabel(glanceCopy, "tolerance"), value: toleranceRow }]),
+    ...(roundRow === null
+      ? []
+      : [{ id: "round", label: itemLabel(glanceCopy, "round"), value: roundRow }]),
+  ];
+  const glancePanel =
+    alignment == null && glanceRows.length === 0 ? null : (
+      <section
+        data-relationship-glance="true"
+        data-glance-alignment={alignment === null || alignment === undefined ? "absent" : "present"}
+        className={`space-y-3 ${DETAIL_CARD}`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-base font-semibold leading-tight tracking-tight">
+            {glanceCopy.heading ?? ""}
+          </h2>
+          {glanceAlignHref === null || alignment === null || alignment === undefined ? null : (
+            <a
+              href={glanceAlignHref}
+              data-glance-align="true"
+              className="text-xs font-medium text-action underline underline-offset-4"
+            >
+              {itemLabel(glanceCopy, "open-align")}
+            </a>
+          )}
+        </div>
+        {alignment === null || alignment === undefined ? null : (
+          <div className="space-y-2" data-glance-tally="true">
+            <p className="text-2xl font-bold tabular-nums">
+              {fillLabel(itemLabel(glanceCopy, "aligned"), {
+                aligned: alignment.aligned,
+                total: alignment.total,
+              })}
+            </p>
+            {/* One mark per Aspect, in the model's own severity colours: the legend below spells
+                the counts out, so the strip is decoration and says so (`aria-hidden`). */}
+            <div className="flex gap-1" aria-hidden="true">
+              {alignment.aspects.map((aspect) => (
+                <span
+                  key={aspect.itemId}
+                  title={aspect.prompt}
+                  data-glance-mark={aspect.status}
+                  data-glance-aspect={aspect.itemId}
+                  className={`flex h-6 flex-1 rounded-md ${
+                    aspect.status === "gap"
+                      ? "bg-gap-mark"
+                      : aspect.status === "in-synch"
+                        ? "bg-synch-mark"
+                        : "bg-small-gap-mark ring-1 ring-inset ring-small-gap"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              {(
+                [
+                  ["in-synch", alignment.tally.inSynch, "bg-synch-mark"],
+                  [
+                    "small-gap",
+                    alignment.tally.smallGap,
+                    "bg-small-gap-mark ring-1 ring-inset ring-small-gap",
+                  ],
+                  ["gap", alignment.tally.gap, "bg-gap-mark"],
+                ] as const
+              ).map(([id, count, mark]) => (
+                <span key={id} data-glance-legend={id} className="inline-flex items-center gap-1">
+                  <span className={`size-2.5 rounded-full ${mark}`} aria-hidden="true" />
+                  {fillLabel(itemLabel(glanceCopy, id), { count })}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
+        {glanceRows.length === 0 ? null : (
+          <dl className="divide-y border-t text-sm">
+            {glanceRows.map((row) => (
+              <div key={row.id} className="flex items-center justify-between gap-3 py-2.5">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd className="text-right font-medium" data-glance-row={row.id}>
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </section>
+    );
+
+  /**
    * #1128 — **the Next Step while the relationship is answering, and the door #1128 says was
    * missing.**
    *
@@ -994,11 +1190,23 @@ export function RelationshipDetail({
    * a reader who wants their own answers should not have to guess a URL to find them.
    */
   const assessmentCopy = sectionOf(copy, "assessment");
+  /** #rect-04 — the Align summary's own words (bundle 04's reference, verbatim). */
+  const alignCopy = sectionOf(copy, "align");
   const answerHref =
     relationship.sessionRecordId === null ? null : answerSheetPath(relationship.sessionRecordId);
   const answered = relationship.viewerAnswered ?? 0;
+  /*
+   * **Once both sheets are in, the answering Next Step is over** (#rect-04).
+   *
+   * `align !== null` is the read's own answer to "has the pair finished?" — `readMemberAlignments`
+   * only projects a session whose two sheets are complete. Holding the *Continue Your Assessment*
+   * band up over five answered Aspects is the delta the register names, so the band is dropped for
+   * the summary below rather than drawn beside it: one Next Step per state, never two, and never a
+   * verb the state has outgrown.
+   */
+  const bothAnswered = align !== null && align !== undefined;
   const assessmentPanel =
-    paused || relationship.closed || answerHref === null ? null : (
+    paused || relationship.closed || answerHref === null || bothAnswered ? null : (
       <section
         data-next-step-assessment={answered > 0 ? "continue" : "start"}
         className={`space-y-3 ${DETAIL_CARD}`}
@@ -1025,6 +1233,123 @@ export function RelationshipDetail({
         >
           {itemLabel(assessmentCopy, answered > 0 ? "continue" : "start")}
         </a>
+      </section>
+    );
+
+  /*
+   * #rect-04 — **the Align summary, drawn once both sheets are in.**
+   *
+   * This is the screen `guides/shared/results-and-align.md` promises and bundle 04's reference
+   * photographs: the heading, the tally in the reference's own line — *"3 of 5 Aspects Aligned"* with
+   * one count per status word — and the Next Step band naming the widest Gap with one door into the
+   * Discussion. Before this card the page reached that state and said *"Continue Your Assessment"*,
+   * with the results behind a separate *"Complete and open the Gap"* act.
+   *
+   * Every figure is `alignmentSummaryOf()`'s: the tally, the width, the Aspect' prompt and the kind
+   * all come off the same `AlignmentSummary`, so the sentence, the counts and the Aspect named
+   * cannot describe three different relationships. `nextStep === null` is a finished Align — every
+   * Gap inside the Alignment Tolerance — and the band is simply absent rather than offering a
+   * conversation about nothing.
+   */
+  const nextStep = align?.nextStep ?? null;
+  const conversationCount = align === null || align === undefined ? 0 : align.total - align.aligned;
+  const alignPanel =
+    align === null || align === undefined ? null : (
+      <section
+        data-align-summary={nextStep === null ? "nothing-left" : "next-step"}
+        className={DETAIL_CARD}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip variant="soft" data-align-stage="live">
+            {itemLabel(alignCopy, "stage")}
+          </Chip>
+          <Chip variant="soft">{itemLabel(alignCopy, "live")}</Chip>
+        </div>
+        <div className="mt-2 space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight text-primary">{alignCopy.heading}</h2>
+          <p className="text-base text-foreground">{sectionBody(alignCopy)}</p>
+        </div>
+        <div className="mt-4 grid gap-6 rounded-lg border border-status-line bg-status p-5 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-deep">
+              {itemLabel(alignCopy, "summary")}
+            </p>
+            <div>
+              <p className="text-3xl font-bold tracking-tight text-primary" data-align-tally="true">
+                {fillLabel(itemLabel(alignCopy, "aligned"), {
+                  aligned: align.aligned,
+                  total: align.total,
+                })}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground" data-align-headline="true">
+                {nextStep === null
+                  ? itemLabel(alignCopy, "headline-all")
+                  : fillLabel(itemLabel(alignCopy, "headline"), { count: conversationCount })}
+              </p>
+            </div>
+            {/* The three status words, each with its own count and mark — icon plus word, never colour
+              alone (rule 2), and the reference's own three words. */}
+            <div className="flex flex-wrap gap-x-6 gap-y-3">
+              <div className="flex items-center gap-2" data-align-count="in-synch">
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-synch-mark" />
+                <span className="text-lg font-bold leading-none text-foreground">
+                  {align.tally.inSynch}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {itemLabel(alignCopy, "in-synch")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2" data-align-count="small-gap">
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-small-gap-mark" />
+                <span className="text-lg font-bold leading-none text-foreground">
+                  {align.tally.smallGap}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {itemLabel(alignCopy, "small-gap")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2" data-align-count="gap">
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-gap-mark" />
+                <span className="text-lg font-bold leading-none text-foreground">
+                  {align.tally.gap}
+                </span>
+                <span className="text-xs text-muted-foreground">{itemLabel(alignCopy, "gap")}</span>
+              </div>
+            </div>
+          </div>
+          {nextStep === null ? null : (
+            <div
+              data-align-next-step={nextStep.itemId}
+              className="rounded-lg bg-action p-4 text-action-foreground"
+            >
+              {/* A link out of this screen that stays inside the app: the Discussion is a hash on this
+                page (#1124), so it is a plain anchor with the 44px target and no leaving marker. */}
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-action-foreground/80">
+                <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+                {itemLabel(alignCopy, "next-step")}
+              </p>
+              <h3 className="mt-1 text-base font-semibold">
+                {itemLabel(alignCopy, "next-heading")}
+              </h3>
+              <p className="mt-1 text-sm text-action-foreground/90">
+                {fillLabel(itemLabel(alignCopy, "next-body"), {
+                  aspect: nextStep.prompt,
+                  gap: nextStep.gap,
+                })}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href="#discussion"
+                  data-align-conversation="true"
+                  className="inline-flex h-11 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-primary transition-colors hover:bg-mist lg:h-9"
+                >
+                  <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
+                  {itemLabel(alignCopy, "start")}
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
     );
 
@@ -1152,7 +1477,7 @@ export function RelationshipDetail({
    * own yet (#921's thread, #1135's invitation hygiene) are not faked behind a tab.
    */
   const panels: Readonly<Record<string, ReactNode>> = {
-    discussion: <DiscussionPanel copy={copy} />,
+    discussion: <DiscussionPanel copy={copy} relationship={relationship} />,
     aspects: (
       <DetailSection
         title={aspectCopy.heading}
@@ -1275,7 +1600,7 @@ export function RelationshipDetail({
       />
     ),
     settings: <SettingsPanel copy={copy} settings={settings} />,
-    payment: <PaymentPanel copy={copy} relationship={relationship} />,
+    payment: <PaymentPanel copy={copy} relationship={relationship} planPrice={planPrice} />,
   };
 
   return (
@@ -1296,6 +1621,8 @@ export function RelationshipDetail({
           {/* #1121 — the pause block first, then the facts card: the bundle's aside order. */}
           {assessmentPanel}
           {pausePanel}
+          {/* The v2 rectification — bundle 03's **At a Glance** card, above the record's own facts. */}
+          {glancePanel}
           <DetailFacts
             facts={factRows}
             hooks={{ "data-relationship-facts": "true" }}
@@ -1666,6 +1993,11 @@ export function RelationshipDetail({
               hooks={{ "data-completion-gate": gate.sealed ? "sealed" : "open" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(completionCopy)}</p>
+              {/* The reference's one sentence about what completing does not do: the Gap stays
+                  readable until the relationship itself closes. */}
+              <p className="text-sm text-muted-foreground" data-completion-align-live="true">
+                {itemLabel(completionCopy, "live-until-closes")}
+              </p>
               <div className="space-y-3">
                 {gate.sealed ? (
                   <p data-completion-sealed="true" className="text-sm font-medium">
@@ -1974,6 +2306,9 @@ export function RelationshipDetail({
         tabs={tabs}
         panels={panels}
       />
+      {/* #rect-04 — the Align summary sits above the tab layer: it is the record's own answer to
+          "where do we stand", and the six tabs are how you go and look at the parts of it. */}
+      {alignPanel}
     </RecordDetailShell>
   );
 }

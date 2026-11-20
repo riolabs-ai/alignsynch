@@ -414,7 +414,7 @@ export const LAPSE_EXTENSION_DAYS = TRIAL_DAYS - METHOD_TRIAL_DAYS;
 function initiatorLapseClause(reason: LapseReason | null): string {
   switch (reason) {
     case "trial-ended":
-      return `Your ${METHOD_TRIAL_DAYS}-day free trial and ${LAPSE_EXTENSION_DAYS}-day free extension ended with no card added`;
+      return `Your ${METHOD_TRIAL_DAYS}-day free trial and free ${LAPSE_EXTENSION_DAYS}-day Extra Week ended with no card added`;
     case "payment-failed":
       return "The payment did not go through";
     case "subscription-canceled":
@@ -428,8 +428,10 @@ function initiatorLapseClause(reason: LapseReason | null): string {
  * The lapse line for one seat, or `null` when nothing has lapsed.
  *
  * **Initiator** reads the facts: what ended, that no card was added, and what that means —
- * *"Your 7-day free trial and 7-day free extension ended with no card added, so Align is paused."*
- * Both numbers come from constants (`METHOD_TRIAL_DAYS`, `LAPSE_EXTENSION_DAYS`), never typed.
+ * *"Your 7-day free trial and free 7-day Extra Week ended with no card added, so Stage 6 is
+ * paused."* Both numbers come from constants (`METHOD_TRIAL_DAYS`, `LAPSE_EXTENSION_DAYS`), never
+ * typed. The closing clause says **Stage 6**, never "Align is paused" — copy rule 5, and the same
+ * words the Counterparty's half already uses, so one lapse reads as one event from both seats.
  *
  * **Counterparty** reads the pause and nothing about money — *"Stage 6 is paused until Marcus
  * resumes it. Everything is saved."* No price, trial, card, payment, plan or membership word
@@ -456,5 +458,5 @@ export function lapseSentenceOf(input: {
     return `Stage 6 is paused until ${who} resumes it. Everything is saved.`;
   }
 
-  return `${initiatorLapseClause(membership.reason)}, so Align is paused.`;
+  return `${initiatorLapseClause(membership.reason)}, so Stage 6 is paused.`;
 }

@@ -72,6 +72,8 @@ const source = vi.hoisted(() => ({
         rationale: string;
         priority: "P0" | "P1" | "P2" | "Won't" | "none";
       }[],
+  /** The triage pass the stubbed source states about itself — `null` is a source that says none. */
+  pass: 10 as number | null,
 }));
 
 /** How the stub's header reads — `null` keeps the nine columns, a case may narrow it to eight. */
@@ -142,7 +144,11 @@ vi.mock("@/lib/admin/crud-matrix-file", async (importOriginal) => {
           `${matrix.CRUD_MATRIX_PATH} is not present in this tree, so there is no matrix to read`,
         );
       }
-      return { cells: source.cells, columns: [...(header.columns ?? STUB_COLUMNS)] };
+      return {
+        cells: source.cells,
+        columns: [...(header.columns ?? STUB_COLUMNS)],
+        snapshotPass: source.pass,
+      };
     },
   };
 });
@@ -234,7 +240,7 @@ describe("/admin/permissions — a source that is absent", () => {
     source.cells = null;
     const html = await render();
 
-    expect(html).toContain("Role × Action Rules");
+    expect(html).toContain("Rules Every #1119 Child Must Honour");
     expect(html).toContain(
       "The Counterparty never sees a price, the word trial, a card or an extension.",
     );
@@ -366,7 +372,7 @@ describe("/admin/permissions — a source that parses", () => {
     ]) {
       expect(html, `${figure} is a header figure`).toContain(figure);
     }
-    expect(html).toContain("5 of 5 cells shown");
+    expect(html).toContain("5 Rows");
   });
 
   it("carries each filter as a link, and the facets combine in the address", async () => {
@@ -393,7 +399,7 @@ describe("/admin/permissions — a source that parses", () => {
     );
 
     expect(html.match(/data-cell=/g) ?? []).toHaveLength(3);
-    expect(html).toContain("3 of 5 cells shown");
+    expect(html).toContain("Showing 3 of 5 Rows");
     // A narrowed view is a link back out of the view.
     expect(html).toContain("Clear Filters");
   });
@@ -403,7 +409,7 @@ describe("/admin/permissions — a source that parses", () => {
     source.cells = CELLS;
     const html = await render();
 
-    expect(html).toContain("Conflicts &amp; Decisions");
+    expect(html).toContain("Conflicts and Decisions");
     // Two tables: the matrix, then the conflicts list built from the one row with `upstream:
     // conflict` — the panel is derived, never a typed sentence.
     expect(html.match(/<table/g) ?? []).toHaveLength(2);
@@ -445,7 +451,7 @@ describe("/admin/permissions — the committed source (#1158)", () => {
     expect(html.match(/data-cell=/g) ?? []).toHaveLength(document.cells.length);
     expect(document.cells.length).toBe(169);
     expect(html).toContain("169 cells");
-    expect(html).toContain("169 of 169 cells shown");
+    expect(html).toContain("169 Rows");
     // The counts band is the file's, not a sentence: the applicable figure is derived too.
     expect(html).toContain(
       `${document.cells.filter((cell) => cell.prototype !== "n/a").length} applicable`,
@@ -476,7 +482,41 @@ describe("/admin/permissions — the committed source (#1158)", () => {
     expect(expected).toBeGreaterThan(0);
     expect(expected).toBeLessThan(document.cells.length);
     expect(html.match(/data-cell=/g) ?? []).toHaveLength(expected);
-    expect(html).toContain(`${expected} of 169 cells shown`);
+    expect(html).toContain(`Showing ${expected} of 169 Rows`);
+
+    source.cells = null;
+  });
+
+  it("prints the artifact's snapshot line, and its Status and Priority facets (#rectification 12)", async () => {
+    gate.role = "admin";
+    source.cells = undefined;
+
+    const document = await fromFile();
+    const html = await render();
+
+    // Delta 1: the summary line under the band — the triage pass the source states about itself,
+    // the rank split, then the P0s the prototype still does not draw. Every figure is derived.
+    expect(html).toContain("Pass 10 snapshot · 34 P0 · 23 P1 · 29 P2 · 15 Won&#x27;t · ");
+    expect(html).toContain("2 P0 still open (hinted or missing).");
+    expect(html).toContain("Counts are computed from the source file, not hardcoded.");
+    // Delta 1, second half: the count line in the artifact's words — a whole matrix prints its size
+    // bare, a narrowed one says what it shows.
+    expect(html).toContain(`${document.cells.length} Rows`);
+
+    // Delta 3: the five facets the artifact draws, Status among them — the prototype column's
+    // question asked as a filter, beside Object, Role, Upstream and Priority.
+    for (const facet of ["Object", "Role", "Status", "Upstream", "Priority"]) {
+      expect(html, `${facet} is a filter heading`).toContain(`>${facet}</p>`);
+    }
+
+    // Delta 2: the six rules, under the artifact's own heading, in its own sentences.
+    expect(html).toContain("Rules Every #1119 Child Must Honour");
+    expect(html).toContain(
+      "Archive over delete: templates archive or restore; permanent delete only when unused and unpublished; relationships close or are abandoned, never deleted.",
+    );
+    expect(html).toContain(
+      "No silent edits. The Initiator or staff rewrite-with-confirm in lib/relationship/edit.ts is the conflict to replace, not to port.",
+    );
 
     source.cells = null;
   });
@@ -683,11 +723,11 @@ describe("/admin/permissions — icon-plus-word status (#1232)", () => {
       "Open the Triage Page",
       "Clear Filters",
       "Not Found",
-      "Role × Action Rules",
+      "Rules Every #1119 Child Must Honour",
       "P0 Gaps",
       "The Matrix at a Glance",
       "Every Cell",
-      "Conflicts &amp; Decisions",
+      "Conflicts and Decisions",
     ]) {
       expect(html, `${label} is on the page`).toContain(label);
     }

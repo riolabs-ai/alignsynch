@@ -56,7 +56,9 @@ export function CatalogueBrowser({
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-primary">{band.heading}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-primary" id="catalog-title">
+            {band.heading}
+          </h2>
           <p className="mt-1 text-base text-muted-foreground">{band.subtitle}</p>
         </div>
         <label className="relative block w-full lg:w-72">
@@ -140,17 +142,24 @@ export function CatalogueBrowser({
               key={card.id}
             >
               <div className="flex flex-1 flex-col p-4">
-                <h3 className="text-base font-semibold text-primary">
-                  <Link
-                    className="after:absolute after:inset-0 after:rounded-lg hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    href={card.href}
-                  >
-                    {card.name}
-                  </Link>
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-base font-semibold text-primary">
+                    <Link
+                      className="after:absolute after:inset-0 after:rounded-lg hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      href={card.href}
+                    >
+                      {card.name}
+                    </Link>
+                  </h3>
+                  {card.popular ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-action/40 bg-action/5 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                      {band.popularBadge}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-1 flex-1 text-sm text-muted-foreground">{card.summary}</p>
                 <p className="mt-3 flex flex-wrap gap-1.5">
-                  {[card.realm, card.aspects, card.roles].map((chip) => (
+                  {[card.realm, card.aspects, card.minutes, card.roles].map((chip) => (
                     <span
                       className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-line bg-background px-2.5 py-0.5 text-xs font-medium text-foreground"
                       key={chip}

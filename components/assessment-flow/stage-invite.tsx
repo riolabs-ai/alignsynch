@@ -103,6 +103,11 @@ export function StageInvite({
 }) {
   const invite = sectionOf(copy, "invite");
   const draftFact = sectionOf(copy, "review");
+  /** The preview's values, trimmed once: the draft is raw form text, never a normalised row. */
+  const counterpartyFirst = draft.counterpartyFirst.trim();
+  const initiatorFirst = draft.initiatorFirst.trim();
+  /** A blank row is worse than a dash — the copy file's own rule for the review column. */
+  const none = itemLabel(draftFact, "none");
 
   const [paid, setPaid] = useState(initialPaid === true);
 
@@ -125,6 +130,40 @@ export function StageInvite({
 
         {/* The two sentences that make "keep it as a draft" safe to choose. */}
         <aside className="space-y-5">
+          {/*
+            The reference's **What {name} Sees** panel (v2 rectification, bundle 01-wizard).
+            A person pressing send is deciding what a second person will read, so the panel states
+            the three facts the invitation carries — from whom, about what, to which address — and
+            nothing more: the email's own subject and body stay in `lib/email/templates/`, because
+            a preview that spelled them again is the copy that drifts first. Every word is
+            `data/pages/assessment-create.ts` (`invite`), and every value is the draft's.
+          */}
+          <section aria-labelledby="create-invite-preview-heading" className={CARD}>
+            <h2 id="create-invite-preview-heading" className={HEADING}>
+              {counterpartyFirst === ""
+                ? itemLabel(invite, "preview-heading-unnamed")
+                : fillLabel(itemLabel(invite, "preview-heading"), { name: counterpartyFirst })}
+            </h2>
+            <p className={SMALL}>{itemLabel(invite, "preview-body")}</p>
+            <ul className="space-y-1">
+              <li className={SMALL}>
+                {fillLabel(itemLabel(invite, "preview-from"), {
+                  name: initiatorFirst === "" ? none : initiatorFirst,
+                })}
+              </li>
+              <li className={SMALL}>
+                {fillLabel(itemLabel(invite, "preview-title"), {
+                  title: draft.title.trim() === "" ? none : draft.title.trim(),
+                })}
+              </li>
+              <li className={SMALL}>
+                {fillLabel(itemLabel(invite, "preview-to"), {
+                  email: draft.email.trim() === "" ? none : draft.email.trim(),
+                })}
+              </li>
+            </ul>
+          </section>
+
           {/*
             #1127 — **the plan the reader chose on `/pricing`, stated once on the stage that sells.**
             The v2 bundle draws this as a chip beside the invite action: the tier's own name from

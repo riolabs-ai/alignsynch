@@ -284,9 +284,9 @@ bash scripts/install-hooks.sh   # once per clone: pre-push runs the same script
 ```
 
 It runs `deps → glossary → ui-registry → columns → release:check → changelog:check → docs:check →
-md:check → email:bodies → qa:atlas:check → demo:flow:verify → nav:menu → env:check → bash -n →
-whitespace → typecheck → lint → format:check → data:check → growth:check → demo:verify → test → parity →
-build`, stops at the first failure and names it. The depth follows the diff —
+md:check → md:normalised:check → email:bodies → qa:atlas:check → demo:flow:verify → nav:menu →
+env:check → bash -n → whitespace → typecheck → lint → format:check → data:check → growth:check →
+demo:verify → test → parity → build`, stops at the first failure and names it. The depth follows the diff —
 `lane=docs|content|config|code`, highest wins, printed on every run — and `GATE_LANE=full bash
 scripts/verify.sh` forces all of it after a dependency bump. CI runs this script, once per brand as a
 matrix, and the required context `typecheck / lint / build` is reported by a `gate` job that only collects

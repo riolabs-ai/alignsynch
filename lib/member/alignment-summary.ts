@@ -139,6 +139,21 @@ export function alignmentSummaryOf(
   };
 
   /*
+   * **Aligned is the Setting's word, not "no Gap at all".**
+   *
+   * Under Soft a one-step Small Gap counts as aligned (`gapMeetsSetting`), so the figure the member
+   * reads — *"3 of 5 Aspects Aligned"* — is the In Synch Aspects **plus** the Small Gaps the
+   * tolerance lets through; under Full only the In Synch ones survive. Counting `inSynch` alone, as
+   * this did, printed the stricter number under Soft and left the summary's own line arithmetic
+   * unable to add up (bundle 04's reference prints `3 of 5 Aspects Aligned · 1 In Synch · 2 Small
+   * Gap · 2 Gap`, where 3 = 1 + 2). `small-gap-tight` is a Gap under Full and is already rank 1, so
+   * the word — not the rank — is what this reads.
+   */
+  const aligned = aspects.filter(
+    (aspect) => aspect.status === "in-synch" || aspect.status === "small-gap-ok",
+  ).length;
+
+  /*
    * The candidates, in one pass: every Gap the Setting does not tolerate, keyed with the three
    * tie-breaks so the sort reads as the rule it is. `GAP_KINDS.indexOf` is the last one — two
    * equal-width Feel Gaps on two Aspects at the same position cannot happen (positions are
@@ -174,7 +189,7 @@ export function alignmentSummaryOf(
   return {
     aspects,
     tally,
-    aligned: tally.inSynch,
+    aligned,
     total: aspects.length,
     nextStep:
       winner === undefined

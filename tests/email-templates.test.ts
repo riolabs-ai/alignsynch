@@ -289,10 +289,10 @@ const SAMPLES: readonly Sample[] = [
       plansLink: PLAN,
     },
     {
-      name: "trial ended, Align paused (#12, the Initiator's)",
-      subject: "Your trial ended — Align is paused",
+      name: "trial ended, Stage 6 paused (#12, the Initiator's)",
+      subject: "Your trial ended — Stage 6 is paused",
       links: [RELATIONSHIP, PLAN],
-      mustSay: ["Avery", "Relationship Basics", "2026-11-05", "7-day extension"],
+      mustSay: ["Avery", "Relationship Basics", "2026-11-05", "Extra Week"],
     },
   ),
   sample(
@@ -305,7 +305,7 @@ const SAMPLES: readonly Sample[] = [
     },
     {
       name: "relationship paused (#13, the Counterparty's)",
-      subject: "Align is paused for now",
+      subject: "Stage 6 is paused for now",
       links: [RELATIONSHIP],
       mustSay: ["Rowan", "Relationship Basics", "2026-11-05"],
     },

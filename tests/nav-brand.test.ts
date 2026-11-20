@@ -186,18 +186,24 @@ const ADMIN_GROUP = [
   "/admin/permissions",
   // #1138 — the transactional-mail override editor, the third reference row.
   "/admin/email-templates",
-  // #1252 — the project spec, the fourth reference row and still before the log.
-  "/admin/spec",
   "/admin/audit",
 ];
 
 /**
- * What an admin's rail draws, start to finish (#929): the operator group, the member's three
- * Workspace rows, then Support — where `review` and `admin-health` are admin-gated rows drawn among
- * the help pair. One order for every role; a seat that cannot reach a row loses that row and
- * nothing else moves.
+ * The project spec, in the title-less group above the Admin heading (owner request, 2026-11-19).
+ * It is not in `ADMIN_GROUP` any more: a row above a group's title cannot live in that group, and
+ * one row drawn twice is the defect that move exists to avoid.
+ */
+const PROJECT_SPEC_GROUP = ["/admin/spec"];
+
+/**
+ * What an admin's rail draws, start to finish: the project spec above the Admin heading (#929's
+ * operator group), then the member's four Workspace rows, then Support — where `review` and
+ * `admin-health` are admin-gated rows drawn among the help pair. One order for every role; a seat
+ * that cannot reach a row loses that row and nothing else moves.
  */
 const ADMIN_RAIL = [
+  ...PROJECT_SPEC_GROUP,
   ...ADMIN_GROUP,
   // #1129 — the member's three rows, Start first; the admin sees the same sequence.
   "/dashboard",
@@ -352,6 +358,8 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       expect(admin).toContain(`href="${href}"`);
     }
     // The three group labels, from the fixture, in the owner's order: admin, workspace, support.
+    // (The project-spec row above them draws no heading — `tests/nav-menu.test.ts` reads that off
+    // the markup.)
     const staff = admin.indexOf(itemLabelOf("group-admin"));
     const workspace = admin.indexOf(itemLabelOf("group-app"));
     const support = admin.indexOf(itemLabelOf("group-support"));
@@ -367,7 +375,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     const memberRows = adminHrefs.filter((href) => memberHrefs.includes(href));
     expect(memberRows).toEqual(memberHrefs);
     expect(memberHrefs[0]).toBe("/dashboard");
-    expect(adminHrefs[0]).toBe("/admin/inbox");
+    expect(adminHrefs[0]).toBe("/admin/spec");
   });
 
   it("draws the console hub for an owner too — above an admin is not outside it", () => {

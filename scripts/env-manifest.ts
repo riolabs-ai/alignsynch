@@ -625,6 +625,10 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "PARITY_REASON", why: "the sentence a parity hash rewrite records" },
   { name: "PARITY_UPDATE", why: "rewrites the parity manifest instead of comparing it" },
   { name: "PAYMENT_E2E_STATE", why: "the handoff file `pnpm payment:e2e setup` writes" },
+  {
+    name: "POSTCHECK_PRODUCTION_URL",
+    why: "the host `pnpm release:postcheck` asks in place of alignsynch.com — a preview or a harness; the check itself is an unauthenticated public read",
+  },
   { name: "PROTOTYPE_SAVE_PORT", why: "the loopback sink the review artifact's Save posts to" },
   { name: "QA_ATLAS_ARCHIVE_DIR", why: "archive directory for the release atlas capture" },
   { name: "QA_ATLAS_BASE", why: "the base URL the atlas capture drives" },
@@ -633,6 +637,34 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "QA_ATLAS_DEBUG_PORT", why: "Chrome debug port for the atlas capture" },
   { name: "QA_ATLAS_SHOTS", why: "where the atlas capture writes its PNGs" },
   { name: "QA_ATLAS_VERSION", why: "which release directory the atlas capture writes" },
+  {
+    name: "BUNDLES_DIR",
+    why: "the v2 design bundle drop the fidelity audit reads its references from (scripts/design-audit.mjs); a path outside the checkout, never deployed",
+  },
+  {
+    name: "CHROME",
+    why: "the Chrome binary the fidelity audit drives (scripts/design-audit.mjs); falls back to /usr/bin/google-chrome",
+  },
+  {
+    name: "DESIGN_AUDIT_BASE",
+    why: "the demo host the fidelity audit captures instead of demo.alignsynch.com (scripts/design-audit.mjs)",
+  },
+  {
+    name: "DESIGN_AUDIT_HEAD",
+    why: "the sha the fidelity audit's manifest records instead of the tree's own HEAD (scripts/design-audit.mjs)",
+  },
+  {
+    name: "DESIGN_AUDIT_ONLY",
+    why: "narrows a fidelity-audit capture to the rows one card owns, comma-separated doc paths or slugs (scripts/design-audit.mjs); unset captures every row, and a narrowed run carries every other row over from the manifest on disk",
+  },
+  {
+    name: "PROTOTYPE_DIR",
+    why: "the v2 prototype drop the fidelity audit resolves reference states against (scripts/design-audit.mjs); outside the checkout, never deployed",
+  },
+  {
+    name: "SPEC_DOCS_DIR",
+    why: "the v2 spec docs the fidelity audit derives its document set from (scripts/design-audit.mjs); outside the checkout, never deployed",
+  },
 
   // --- Build cache, release tooling and CI ----------------------------------------------------
   { name: "QUIZHUB_BUILD_SLOT", why: "the gate slot a build holds (scripts/build-cache.mjs)" },

@@ -247,6 +247,34 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "7 days free, no card. The trial starts when the person you invite accepts, and nothing is charged before that.",
         },
+        /**
+         * **The card-free panel's opening sentence (#1115 D3, v2 rectification).**
+         *
+         * `body` above is the purchase panel's, and it anchors the week on a saved card. The create
+         * path has no card to save, so drawing that body beside `trial-free` made stage 5 state the
+         * opposite anchor in the same column — the register's stage-5 delta. This is the create
+         * panel's own body: it says what the panel is for and leaves the week's one anchor to
+         * `trial-free`, so no sentence on the screen is contradicted by the one under it.
+         */
+        {
+          id: "body-free",
+          label:
+            "Two things the money buys: you join a membership plan, and this relationship is activated. No card is taken at any step of this flow.",
+        },
+        /**
+         * **The two sentences a member meets on the walk's later steps, in the create path's words.**
+         *
+         * `invite.active` and `payment-flow.thanks-body` both say the plan is active **and the card is
+         * on file**. That is true of the purchase path and false of this one: the create path takes
+         * no card at any step (#1115), so a creator who already holds a membership was told the week
+         * starts when a card is saved — the register's stage-5 delta, on the seat the demo holds.
+         * Both steps draw this instead, and the anchor is stated once, on the acceptance.
+         */
+        {
+          id: "active-free",
+          label:
+            "The invitation can go now. The seven days start when they accept — nothing has been charged, and no card was asked for.",
+        },
         { id: "trial-ends", label: "Your 7 days free end on {date}." },
         /**
          * The stage-5 primary action (#1115). The owner's phrase, verbatim: it says what pressing it
@@ -287,7 +315,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * The artifact (`prototype-relationship-lifecycle-v9.html`) draws the pay flow in the left
        * column and the send in the right one; #911 made the send **wait for the walk**, so the two
        * columns are one decision and one control: the foot's advance is
-       * `send email to counterparty now`, disabled until the card is saved.
+       * `Send Email to Counterparty Now`, disabled until the card is saved.
        *
        * Three steps, not five. `account` is stage 4 now (#825), so a sign-in panel here would be a
        * second sign-in the spec forbids, and the confirmation the old walk drew is the card step's
@@ -360,10 +388,10 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * A fact is stated once. Adding a fourth sentence back in is how this stage read as a wall.
        */
       id: "account",
-      heading: "Create your account",
+      heading: "Create Your Account",
       body: "Your answers stay on this device until you sign in.",
       items: [
-        { id: "signed-in-heading", label: "You're signed in" },
+        { id: "signed-in-heading", label: "You're Signed In" },
         {
           id: "signed-in-body",
           label: "The invitation is sent from this account.",
@@ -403,7 +431,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
         },
-        { id: "submit", label: "send email to counterparty now" },
+        { id: "submit", label: "Send Email to Counterparty Now" },
         {
           id: "locked",
           label:
@@ -453,6 +481,35 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
             "A draft sends nothing and charges nothing. It stays under My relationships until you send it.",
         },
         { id: "sent-to", label: "The invitation goes to" },
+        /**
+         * The invitee's side of the send — the reference's **What Elena Sees** panel.
+         *
+         * `docs/specs/v2-rectification.md` records the delta twice (stage 5's row and the
+         * `send-the-invite` guide): the reference draws a preview of what the Counterparty opens,
+         * the live stage drew **What you can do later** and no invitee-facing panel at all. A
+         * sender deciding whether to press send is deciding what a second person will read, so the
+         * panel states the three facts the invitation actually carries — who it is from, what it is
+         * about, and the address it reaches — and never a second copy of the email's subject or
+         * body: those live in `lib/email/templates/invitation.ts`, and a preview that typed them
+         * again would be the copy that drifts first.
+         *
+         * `{name}` is the Counterparty's first name from the draft, filled at render; a draft with
+         * no name yet falls back to the unnamed heading, the same pairing the wizard rail's Align
+         * sentences use.
+         */
+        { id: "preview-heading", label: "What {name} Sees" },
+        {
+          id: "preview-heading-unnamed",
+          label: "What They See",
+        },
+        {
+          id: "preview-body",
+          label:
+            "One email with one link. It carries the title, who it is from, and the message you wrote — no answers, and no card.",
+        },
+        { id: "preview-from", label: "From {name}" },
+        { id: "preview-title", label: "About {title}" },
+        { id: "preview-to", label: "To {email}" },
         { id: "back", label: "Back" },
       ],
     },

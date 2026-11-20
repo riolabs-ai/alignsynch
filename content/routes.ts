@@ -128,11 +128,16 @@ const STATIC_ROUTES = [
   "/search",
   "/settings",
   "/support",
-  // #1109 — the whole `/templates/relationship` tree is **not** a route any more: the member's
-  // library is `/dashboard/templates` (`?tab=mine` for the rows and the two ways to start one), and
-  // the create flow that used to hang off the old noun is `/dashboard/templates/[slug]/create…`
-  // (listed in `DYNAMIC_ROUTES` below). Every retired address answers a 308 from `next.config.mjs`,
-  // stage for stage, so a bookmark lands on the stage it named rather than on the library.
+  // #1109 retired the whole `/templates/relationship` tree: the member's library is
+  // `/dashboard/templates` (`?tab=mine` for the rows and the two ways to start one), and the create
+  // flow that used to hang off the old noun is `/dashboard/templates/[slug]/create…` (listed in
+  // `DYNAMIC_ROUTES` below). Every retired address answers a 308 from `next.config.mjs`, stage for
+  // stage, so a bookmark lands on the stage it named rather than on the library.
+  //
+  // **One page comes back under that noun (#1259), and only one.** `/templates/relationship/[slug]`
+  // is the member's own template page — the screen the Library card's `View Details` opens — so the
+  // `:slug` 308 is gone while the namespace's bare row and the create stage rows stay retired. A
+  // page and a `permanent: true` source cannot both own an address: the page would be unreachable.
   "/terms",
   "/tournaments",
   "/welcome",
@@ -195,6 +200,11 @@ const DYNAMIC_ROUTES = [
   // #825 — stage 5 (Invite): send the invitation or keep the draft. It replaces the account gate
   // that used to sit *after* the create (`…/create/account`, retired with #659's decision).
   "/dashboard/templates/[id]/create/invite",
+  // #1259 — the member's own template page: the screen the Library card's `View Details` opens.
+  // The address is `relationshipTemplatePath()`'s, kept from #794 because every card, mail and
+  // report that names a template already spells it; what changed is that a page answers it now
+  // instead of the 308 into the public catalogue.
+  "/templates/relationship/[slug]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",

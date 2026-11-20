@@ -118,20 +118,21 @@ pinned in `tests/gate-lanes-base.test.ts` against real throwaway repositories.
  lane=content content/**, data/**, public/** (2 changed file(s) · base origin/main@2742e2d (local ref))
 ```
 
-| Step                 | docs | content | config | code |
-| -------------------- | ---- | ------- | ------ | ---- |
-| `deps`               | ✓    | ✓       | ✓      | ✓    |
-| `glossary`           | ✓    | ✓       | ✓      | ✓    |
-| `docs:check`         | ✓    | ✓       | ✓      | ✓    |
-| `bash -n` scripts    |      |         | ✓      |      |
-| `whitespace`         | ✓    |         |        |      |
-| `typecheck`          |      | ✓       | ✓      | ✓    |
-| `lint` (biome)       | ✓    | ✓       | ✓      | ✓    |
-| `format:check`       | ✓    | ✓       | ✓      | ✓    |
-| `data:check`         |      | ✓       | ✓      | ✓    |
-| `test`               |      | ✓       | ✓      | ✓    |
-| `parity`             |      | ✓       | ✓      | ✓    |
-| `build` (next build) |      |         |        | ✓    |
+| Step                  | docs | content | config | code |
+| --------------------- | ---- | ------- | ------ | ---- |
+| `deps`                | ✓    | ✓       | ✓      | ✓    |
+| `glossary`            | ✓    | ✓       | ✓      | ✓    |
+| `docs:check`          | ✓    | ✓       | ✓      | ✓    |
+| `md:normalised:check` | ✓    | ✓       | ✓      | ✓    |
+| `bash -n` scripts     |      |         | ✓      |      |
+| `whitespace`          | ✓    |         |        |      |
+| `typecheck`           |      | ✓       | ✓      | ✓    |
+| `lint` (biome)        | ✓    | ✓       | ✓      | ✓    |
+| `format:check`        | ✓    | ✓       | ✓      | ✓    |
+| `data:check`          |      | ✓       | ✓      | ✓    |
+| `test`                |      | ✓       | ✓      | ✓    |
+| `parity`              |      | ✓       | ✓      | ✓    |
+| `build` (next build)  |      |         |        | ✓    |
 
 `test` is `pnpm test` — `vitest run` over `tests/**/*.test.ts`, the app-side units
 (card projection, promotion window, search index, media registry). It is a **second
@@ -172,6 +173,14 @@ Two deviations from the layer table, both in the same direction — a lane may b
   the page is `docs/`, the comments are `content/`, the generator is `scripts/`. A lane
   that dropped it would hand a green local gate to a stale page in CI, which is the loop
   this file exists to delete. It costs ~0.1 s, so it runs before the lane branch.
+- **`md:normalised:check` runs in every lane, and the docs lane is the one that needs it.**
+  `tests/md-normalised.test.ts` holds `tests/fixtures/md-normalised.json` against the word sequence of
+  every page under `docs/`, and it rides inside `pnpm test` — a step the docs lane does not run, because
+  127 s of vitest for a prose edit buys nothing. So a `docs/**`-only diff skipped the one check that can
+  see the drift it causes, and three of those PRs landed green over a red `main` in four hours (#1251,
+  #1257, #1265). The step is the generator's read-only mode: it names every page whose word sequence
+  moved and exits 1, and it never writes — regenerating is the deliberate act a legitimate edit lands
+  with. ~0.3 s, so the docs lane pays it instead of the whole suite.
 - **config runs `typecheck` and `data:check`.** The card's config row is
   "meta" only, but `tsconfig.json`, `package.json` and `scripts/data-check.ts`
   are precisely the files typecheck exists to catch — the cheap lane there

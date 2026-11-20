@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**196 documents in 9 sections.** Every page carries the same nav block, generated
+**199 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,9 +40,9 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 20 documents
-- [Specs & design briefs](#specs-design-briefs) — 84 documents
-- [Records & QA](#records-qa) — 25 documents
+- [Operations](#operations) — 21 documents
+- [Specs & design briefs](#specs-design-briefs) — 85 documents
+- [Records & QA](#records-qa) — 26 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 30 documents
@@ -96,6 +96,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/history/V1-RETIREMENT.md`](operations/history/V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`operations/iteration.md`](operations/iteration.md) — **Iteration rhythm** — Which loop do I run for this edit — `check:fast` or the full gate?
 - [`operations/migrations.md`](operations/migrations.md) — **Migrations** — How is a migration numbered, and why can an applied one never be renumbered?
+- [`operations/migration-inventory.md`](operations/migration-inventory.md) — **Migration inventory** — What is applied on each branch, what would replaying it cost, and what is unverified?
 - [`operations/orchestration.md`](operations/orchestration.md) — **Orchestration rules** — How does the orchestrator behave — decisions, blocking, re-carding?
 - [`operations/release-train.md`](operations/release-train.md) — **Release-train card template** — What does a release-train card carry — children, sequence, cutoff, proof?
 - [`operations/releasing.md`](operations/releasing.md) — **Releasing** — Which four artefacts must agree for a release, and how is the tag cut?
@@ -192,6 +193,7 @@ What the product promises, written down before it was built.
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
 - [`specs/ux-stages.md`](specs/ux-stages.md) — **Stage display** — How is each stage shown, and who acts next?
 - [`specs/v2-coverage-matrix.md`](specs/v2-coverage-matrix.md) — **v2 coverage matrix — the 23 screens, measured** — Which of the 23 v2 prototype screens are actually rebuilt in the tree, which are absent, and what is the file:line evidence for each verdict?
+- [`specs/v2-rectification.md`](specs/v2-rectification.md) — **v2 rectification register — every delta, named** — Which v2 spec doc's screen differs from its bundle reference, exactly how, and what would a card have to accept to close it?
 
 ## Records & QA
 
@@ -215,6 +217,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/release-2.0.0-rc1.1/billing-checkout.md`](qa/release-2.0.0-rc1.1/billing-checkout.md) — **A test-mode checkout on production, #1053** — Does a test-mode checkout complete on alignsynch.com — session id, mode, return URL, the row the webhook writes, and the decline path — and where does the relationship half stop?
 - [`qa/rel-detail-edit/README.md`](qa/rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
 - [`qa/stage5/README.md`](qa/stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
+- [`qa/spec-issues/README.md`](qa/spec-issues/README.md) — **The spec register's GitHub column** — Does a reader see the issue for a filed row and an em dash for one nobody filed, and does the register still render when GitHub does not answer?
 - [`qa/swiper-12/README.md`](qa/swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?

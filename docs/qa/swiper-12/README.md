@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../stage5/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [The spec register's GitHub column](../spec-issues/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->
 
@@ -61,6 +61,6 @@ across the two versions at both widths.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../stage5/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [The spec register's GitHub column](../spec-issues/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->

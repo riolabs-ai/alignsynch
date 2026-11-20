@@ -33,15 +33,20 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     // The four filters' headings and the two words that let a reader out of a filter.
     { id: "filter-object", label: "Object" },
     { id: "filter-role", label: "Role" },
-    { id: "filter-prototype", label: "Prototype" },
+    // The reference names this facet **Status** — the prototype column's own word is the heading on
+    // the table, and the filter above it asks the same question the artifact asks: "Status".
+    { id: "filter-prototype", label: "Status" },
     { id: "filter-upstream", label: "Upstream" },
     { id: "filter-priority", label: "Priority" },
     { id: "filter-all", label: "All" },
     { id: "filter-clear", label: "Clear Filters" },
-    { id: "showing", label: "{count} of {cells} cells shown" },
+    // The matrix's own count line, in the artifact's words: the whole matrix prints its size bare,
+    // a narrowed one says what it is showing — "169 Rows" / "Showing 18 of 169 Rows".
+    { id: "rows", label: "{cells} Rows" },
+    { id: "showing", label: "Showing {count} of {cells} Rows" },
     {
       id: "matches-nothing",
-      label: "No cell matches these filters. Clearing them shows all {cells} cells.",
+      label: "No rows match these filters. Clearing them shows all {cells} rows.",
     },
     // The prototype's vocabulary, as the page prints it.
     { id: "status-covered", label: "Covered" },
@@ -72,7 +77,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "rules",
-      heading: "Role × Action Rules",
+      heading: "Rules Every #1119 Child Must Honour",
       body: "Every card that adds a write states these, and the matrix is the evidence behind them. They are #1119's decisions, not this page's.",
       items: [
         {
@@ -82,12 +87,12 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "rule-propose-change",
           label:
-            "Once Stage 6 is live, Aspect changes are proposed and agreed by both parties: nothing changes under a party until both agree, and any answers that would be discarded are named first.",
+            "Once Stage 6 is live, Aspect changes are proposed and agreed by both parties. Nothing changes under a party until both agree, and any answers that would be discarded are named first.",
         },
         {
           id: "rule-archive-over-delete",
           label:
-            "Archive over delete: templates archive and restore, permanent delete only when unused and unpublished; relationships close or are abandoned, never deleted.",
+            "Archive over delete: templates archive or restore; permanent delete only when unused and unpublished; relationships close or are abandoned, never deleted.",
         },
         {
           id: "rule-locked-scale",
@@ -96,11 +101,11 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "rule-no-silent-edit",
           label:
-            "No silent edits: the Initiator and staff rewrite-with-confirm in lib/relationship/edit.ts is the conflict to replace, not to port, and session.mode and session.alignment_setting stay immutable once the session exists (V18).",
+            "No silent edits. The Initiator or staff rewrite-with-confirm in lib/relationship/edit.ts is the conflict to replace, not to port. session.mode and session.alignment_setting stay immutable once the session exists (V18).",
         },
         {
           id: "rule-destructive-graphite",
-          label: "Destructive actions are graphite with an × icon, never red (#1119 D-E).",
+          label: "Destructive actions are graphite with an × icon, never red.",
         },
       ],
     },
@@ -181,6 +186,19 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
         { id: "count-p2", label: "{count} P2" },
         { id: "count-wont", label: "{count} won't" },
         { id: "count-conflicts", label: "{count} upstream conflicts" },
+        // The artifact's summary line under the band (#rectification 12). Every figure is the
+        // parser's, including the triage pass the source states about itself — and the P0-open
+        // count, which is the P0 rank intersected with the prototype's hinted/missing answers.
+        {
+          id: "snapshot",
+          label:
+            "Pass {pass} snapshot · {p0} P0 · {p1} P1 · {p2} P2 · {wont} Won't · {p0Open} P0 still open (hinted or missing). Counts are computed from the source file, not hardcoded.",
+        },
+        {
+          id: "snapshot-undated",
+          label:
+            "{p0} P0 · {p1} P1 · {p2} P2 · {wont} Won't · {p0Open} P0 still open (hinted or missing). Counts are computed from the source file, not hardcoded.",
+        },
       ],
     },
     {
@@ -197,7 +215,7 @@ export const adminPermissionsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "conflicts",
-      heading: "Conflicts & Decisions",
+      heading: "Conflicts and Decisions",
       body: "The cells whose upstream answer disagrees with the prototype — the places a card has to settle a question rather than port a screen.",
       items: [
         {
