@@ -237,6 +237,34 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * The vocabulary the Core Concepts doc defines and the page did not carry. `start/core-concepts.md`
+       * names four concepts — Stage 6, Extra Week, Gap and Aspect — and this page carried only `Gap`:
+       * its "six moves" are a *different* six from the product's six stages, so a reader who left with
+       * only the moves had the wrong model of the word "six", and never met Stage 6 or the Extra Week
+       * at all. Two bands, because they answer two questions: what the ladder is, and what happens
+       * when the trial that pays for it runs out.
+       *
+       * The stage names are written here rather than imported from a ladder on purpose: the doc's six
+       * are the *create flow's* stages (`docs/specs/flow-stages.md`), while `content/stages.ts` owns a
+       * four-rung *relationship* ladder (Invited, Connected, Sharing, Aligned) that answers a different
+       * question. Importing the second to mean the first is how two vocabularies became one screen.
+       */
+      id: "stage-six",
+      heading: "Where the moves end: Stage 6, Align",
+      body: "A relationship moves through six stages — 1 Details, 2 Settings, 3 Aspects, 4 Account, 5 Invite and 6 Align — and the moves above are those stages seen from your side. Stage 6 is the one the two of you stay in: both sheets side by side, every Aspect carrying one status, In Synch, Small Gap or Gap, judged against the Setting the relationship was created with, and one Step for each Aspect whose Gap the two of you have to work on.",
+    },
+    {
+      /**
+       * The Extra Week — the Initiator's one free 7-day extension (`lib/relationship/pause.ts`), and
+       * the reason a lapsed relationship is *paused* rather than closed: both parties keep reading,
+       * nothing is deleted, and the Counterparty is never asked for money.
+       */
+      id: "extra-week",
+      heading: "The Extra Week",
+      body: "Each relationship runs a 7-day free trial, and the person you invite is never charged. If the trial ends with no card on file, Stage 6 pauses rather than closing: both of you can still read everything, nothing is deleted, and adding a card resumes it straight away. The person who started the relationship also gets one Extra Week — seven free days, once — to take before deciding.",
+    },
+    {
       id: "limits",
       heading: "What this build does not do yet",
       body: "The sequence above is the product; these are the places where this build is honest about the gaps, so you meet them here rather than on a screen you thought had worked.",
