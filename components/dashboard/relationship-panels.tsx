@@ -32,8 +32,20 @@ import {
   DETAIL_MUTED,
   DetailSection,
 } from "@/components/assessment-flow/record-detail-shell";
-import { formatDate } from "@/content/core";
+import {
+  DiscussionThread,
+  type DiscussionAspect,
+  type DiscussionMessageView,
+} from "@/components/dashboard/discussion-thread";
+import { formatClockTime, formatDate, formatWeekdayShort } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
+import { chatThreadFor } from "@/data/chat-threads";
+import {
+  chatMessageIsMine,
+  chatMessagesOf,
+  chatThreadStateOf,
+  initialsOf,
+} from "@/lib/chat/thread";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import {
   fillLabel,
@@ -60,24 +72,107 @@ function FactRows({ rows }: { rows: readonly { label: string; value: ReactNode }
 }
 
 /**
- * Discussion — the heading, the one-line body, and the empty state.
+ * Discussion — the thread the relationship has, and the composer that answers it.
  *
- * The thread is #921's model and nobody else's. What this panel refuses to do is draw a composer
- * over a table that does not exist: a person who typed there would lose the words on reload and
- * the screen would have promised a feature the database cannot keep.
+ * The v2 rectification's `chat-and-discussion` row (`docs/specs/v2-rectification.md`) found the
+ * panel drawing a heading and one sentence where both the doc and the reference draw a conversation
+ * and a composer. So this panel now draws the same thread `/dashboard/chat` does — read from
+ * `data/chat-threads.ts`, keyed on the relationship — in the relationship screen's own expression
+ * (`discussion-thread.tsx`): comment cards with the author's seat and instant, an **Add a Comment**
+ * box, a **Tag an Aspect** selector and **Send**.
+ *
+ * **The three states are derived, and only one of them writes.** `waiting` when the pair is not
+ * both in (`connectionOf`), `paused` when the trial lapsed (`pauseOf`), `live` otherwise — the same
+ * `chatThreadStateOf` the Chat page uses, so the two surfaces cannot disagree about whether a
+ * relationship has a conversation. A waiting or paused relationship draws no composer at all.
+ *
+ * **Nothing durable is written yet.** A message sent here joins this session's list; the thread's
+ * model is #921's and it has no schema, so the write is stated as absent (in the docstring and in
+ * the fixture's comment) rather than faked.
  */
-export function DiscussionPanel({ copy }: { copy: PageCopy }) {
+export function DiscussionPanel({
+  copy,
+  relationship,
+}: {
+  copy: PageCopy;
+  relationship: MemberRelationshipView;
+}) {
   const discussion = sectionOf(copy, "discussion");
+  const viewerRole = relationship.viewerRole;
+  const otherName =
+    (viewerRole === "initiator"
+      ? (relationship.counterpartySeatName ?? relationship.counterpartyName)
+      : relationship.initiatorName) ??
+    pageItemOf(copy, viewerRole === "initiator" ? "role-counterparty" : "role-initiator").label;
+  const viewerName =
+    (viewerRole === "initiator" ? relationship.initiatorName : relationship.counterpartySeatName) ??
+    pageItemOf(copy, viewerRole === "initiator" ? "role-initiator" : "role-counterparty").label;
+
+  /** Both seats bound and a session open — the row's own answer, with the invitation as the fallback. */
+  const connected = relationship.connection?.connected ?? relationship.invite?.claimed === true;
+  const state = chatThreadStateOf({ connected, paused: relationship.pause?.paused === true });
+
+  /**
+   * A closed relationship keeps its Discussion readable and stops taking messages — the band above
+   * the tab layer already says so ("your answers and Discussion stay readable"), and `/dashboard/chat`
+   * leaves a closed relationship out of its list for the same reason. Paused reads differently, so
+   * the two sentences are two fixture items and the panel picks the true one.
+   */
+  const readOnlyLine =
+    state === "waiting"
+      ? null
+      : relationship.closed
+        ? itemLabel(discussion, "closed")
+        : state === "paused"
+          ? itemLabel(discussion, "read-only")
+          : null;
+
+  const thread = chatThreadFor(relationship.id);
+  const aspects: readonly DiscussionAspect[] = relationship.template.items.map((item) => ({
+    id: item.id,
+    prompt: item.prompt,
+  }));
+
+  const messages: readonly DiscussionMessageView[] =
+    thread === undefined
+      ? []
+      : chatMessagesOf(thread).map((message) => ({
+          id: message.id,
+          mine: chatMessageIsMine(message, viewerRole),
+          seat: message.sender,
+          body: message.body,
+          at: message.at,
+          // `Wed 8:10 PM` — formatted from the fixture instant, never from a render-time clock.
+          timeLabel: `${formatWeekdayShort(message.at)} ${formatClockTime(message.at)}`,
+          // The Aspect is matched against this relationship's own record: an id it does not have
+          // drops the chip rather than printing a raw handle.
+          aspectPrompt: aspects.find((aspect) => aspect.id === message.aspectId)?.prompt ?? null,
+        }));
+
   return (
     <DetailSection
       title={discussion.heading}
       body={sectionBody(discussion)}
       framed
-      hooks={{ "data-relationship-discussion": "empty" }}
+      hooks={{ "data-relationship-discussion": state }}
     >
-      <p className={`mt-4 ${DETAIL_MUTED}`} data-discussion-empty="true">
-        {itemLabel(discussion, "empty")}
-      </p>
+      <div className="mt-4">
+        <DiscussionThread
+          section={discussion}
+          state={state}
+          messages={messages}
+          aspects={aspects}
+          viewerSeat={viewerRole}
+          otherName={otherName}
+          otherInitials={initialsOf(otherName)}
+          selfInitials={initialsOf(viewerName)}
+          seatLabels={{
+            initiator: pageItemOf(copy, "role-initiator").label,
+            counterparty: pageItemOf(copy, "role-counterparty").label,
+          }}
+          readOnlyLine={readOnlyLine}
+        />
+      </div>
     </DetailSection>
   );
 }

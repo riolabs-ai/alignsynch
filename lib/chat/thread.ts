@@ -206,3 +206,23 @@ export function chatMessagesOf(thread: ChatThread): readonly ChatMessage[] {
     left.at === right.at ? left.id.localeCompare(right.id) : left.at < right.at ? -1 : 1,
   );
 }
+
+/**
+ * Up to two letters for a person's mark — the bundle's avatar, without a stored image.
+ *
+ * One rule for both surfaces that draw a thread (`/dashboard/chat`'s bubbles and the relationship
+ * screen's Discussion tab), because two copies of "first letter of the first word plus the first of
+ * the last" is how the same person gets `AR` on one screen and `A` on the other. A name with one
+ * word gives one letter; an empty name gives `?` rather than nothing, because a mark with no glyph
+ * in it is a hole in the row.
+ */
+export function initialsOf(name: string): string {
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word !== "");
+  const first = words[0]?.[0] ?? "";
+  const last = words.length > 1 ? (words[words.length - 1]?.[0] ?? "") : "";
+  const initials = `${first}${last}`.toUpperCase();
+  return initials === "" ? "?" : initials;
+}

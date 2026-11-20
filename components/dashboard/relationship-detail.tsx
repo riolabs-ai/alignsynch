@@ -1152,7 +1152,7 @@ export function RelationshipDetail({
    * own yet (#921's thread, #1135's invitation hygiene) are not faked behind a tab.
    */
   const panels: Readonly<Record<string, ReactNode>> = {
-    discussion: <DiscussionPanel copy={copy} />,
+    discussion: <DiscussionPanel copy={copy} relationship={relationship} />,
     aspects: (
       <DetailSection
         title={aspectCopy.heading}

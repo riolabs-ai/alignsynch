@@ -895,17 +895,39 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #1124 — the Discussion panel.
+       * #1124 — the Discussion panel, re-cut by the v2 rectification (`chat-and-discussion`).
        *
-       * **The thread has no model yet** (#921 owns it), so the panel draws what the read can
-       * support: the heading and one honest empty state. It is not a fake composer and it is not
-       * a comment box that would write nowhere — the layer ships the tab, and the thread lands
-       * when the model does.
+       * The panel used to draw a heading and one empty sentence, because the durable thread is
+       * #921's model and a composer over a table nobody had built would lose the words. The
+       * reference (`v2-bundles/03-…/relationship-detail.html`, `data-tab="discussion"` and
+       * `v2-bundles/07-…/chat.html`) draws the thread itself: the composer with an Aspect selector,
+       * then the conversation with its timestamps. So the panel now draws the demo thread the
+       * relationship has (`data/chat-threads.ts`) and the composer over it, and says so honestly —
+       * a message this session appends is session state, and the write lands when #921 does.
+       *
+       * Every word below is the doc's or the bundle's, verbatim: **Add a Comment** is the form's
+       * label, **Message {name}** the box's placeholder, **Tag an Aspect** the selector, **Send**
+       * the button.
        */
       id: "discussion",
       heading: "Relationship Discussion",
       body: "One thread for the two of you, beside the Aspects you are answering.",
-      items: [{ id: "empty", label: "Nothing has been said here yet." }],
+      items: [
+        { id: "empty", label: "Nothing has been said here yet." },
+        { id: "messages", label: "Messages" },
+        { id: "composer-label", label: "Add a Comment" },
+        { id: "composer-placeholder", label: "Message {name}" },
+        { id: "tag-label", label: "Tag an Aspect" },
+        { id: "tag-none", label: "No Aspect" },
+        { id: "send", label: "Send" },
+        { id: "you", label: "You" },
+        { id: "waiting", label: "Chat opens when {name} joins." },
+        { id: "read-only", label: "Stage 6 is paused, so chat is read-only. Nothing is lost." },
+        {
+          id: "closed",
+          label: "This relationship is closed, so the Discussion is read-only.",
+        },
+      ],
     },
     {
       /**
