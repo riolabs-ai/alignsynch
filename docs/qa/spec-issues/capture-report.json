@@ -1,0 +1,74 @@
+{
+  "branch": "wt/spec-issue-pull",
+  "head": "56900f015336f65cc382ef1f5973d52c9c7e0551",
+  "base": "origin/main 03e498492cb79e62bc06b415238f70fefb9cda10",
+  "url": "http://127.0.0.1:4317",
+  "viewport": {
+    "width": 1440,
+    "deviceScaleFactor": 1,
+    "mobile": false
+  },
+  "session": "throwaway qa-spec-issues@alignsynch.test, allowlisted through ADMIN_EMAILS, signed in through POST /api/auth/sign-in/email; cookie __Secure-neon-auth.session_token handed to headless Chrome over CDP",
+  "runs": {
+    "filed-story": {
+      "path": "/admin/spec/01-play-with-aspects",
+      "facts": {
+        "path": "/admin/spec/01-play-with-aspects",
+        "h1": "Play with Aspects",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "documentHeight": 4370,
+        "bar": "28 issues read from GitHub",
+        "notice": null,
+        "filed": 3,
+        "unfiled": 8,
+        "pills": 6,
+        "refresh": "/api/admin/spec-issues/refresh?next=%2Fadmin%2Fspec%2F01-play-with-aspects",
+        "leaked": false,
+        "barTop": 342,
+        "endBottom": 3495
+      }
+    },
+    "filed-matrix": {
+      "path": "/admin/spec/validation",
+      "facts": {
+        "path": "/admin/spec/validation",
+        "h1": "Validation",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "documentHeight": 38042,
+        "bar": "28 issues read from GitHub",
+        "notice": null,
+        "filed": 28,
+        "unfiled": 60,
+        "pills": 56,
+        "refresh": "/api/admin/spec-issues/refresh?next=%2Fadmin%2Fspec%2Fvalidation",
+        "leaked": false,
+        "barTop": 332,
+        "endBottom": 13631
+      }
+    },
+    "degraded-matrix": {
+      "path": "/admin/spec/validation",
+      "token": "GH_FEEDBACK_TOKEN=deliberately-broken-token-for-the-degradation-run",
+      "cache": "moved aside before start",
+      "facts": {
+        "path": "/admin/spec/validation",
+        "h1": "Validation",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "documentHeight": 31750,
+        "bar": null,
+        "notice": "GitHub could not be reached and no copy has been read yet, so the issue column is hidden. The register below is unaffected.",
+        "filed": 0,
+        "unfiled": 0,
+        "pills": 0,
+        "refresh": "/api/admin/spec-issues/refresh?next=%2Fadmin%2Fspec%2Fvalidation",
+        "leaked": false,
+        "barTop": 0,
+        "endBottom": 9829
+      }
+    }
+  },
+  "stills": ["validation-filed-1440.png", "story-status-1440.png", "validation-degraded-1440.png"]
+}

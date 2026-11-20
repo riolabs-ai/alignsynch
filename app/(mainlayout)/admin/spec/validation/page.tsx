@@ -24,6 +24,7 @@ import { ADMIN_SPEC_VALIDATION_PATH } from "@/lib/admin/spec-paths";
 import { requireSpecReader } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 import { readSpecValidationSafe, SPEC_VALIDATION_SOURCE } from "@/lib/spec/file";
+import { readSpecIssues } from "@/lib/spec/issues-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,12 @@ export default async function AdminSpecValidationPage() {
   requireAdminProduct();
   await requireSpecReader({ next: ADMIN_SPEC_VALIDATION_PATH });
   const { doc, reason } = readSpecValidationSafe();
+  /**
+   * The GitHub read (#1296), in parallel with nothing else and never a blocking dependency: it
+   * answers the cached set, the last copy the process read, or a degraded reason — and the register
+   * below is drawn from `data/spec/validation.json` whatever it says.
+   */
+  const issues = await readSpecIssues();
 
   return (
     <StageColumn>
@@ -43,7 +50,7 @@ export default async function AdminSpecValidationPage() {
         {doc === null ? (
           <SpecNotice copy={adminSpecPageCopy} path={SPEC_VALIDATION_SOURCE} reason={reason} />
         ) : (
-          <ValidationMatrix copy={adminSpecPageCopy} doc={doc} />
+          <ValidationMatrix copy={adminSpecPageCopy} doc={doc} issues={issues} />
         )}
       </SpecFrame>
     </StageColumn>
