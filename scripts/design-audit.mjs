@@ -800,32 +800,46 @@ async function capture() {
   const routeMap = JSON.parse(readFileSync(join(ROOT, ROUTE_MAP), "utf8"));
   const tracked = docs.filter((d) => BUCKET_VERDICT[d.bucket] !== null);
 
-  /**
-   * **`--only` re-captures named rows and leaves the rest alone.**
-   *
-   * The owner carded the v2 rectification **by bundle**, so the fixing cards arrive one bundle at a
-   * time — and a full run is ~70 minutes and rewrites all 51 rows. Without this flag a bundle's card
-   * has two bad choices: capture everything against the deployment (which cannot show an unmerged
-   * fix) or capture everything against `localhost` (which silently replaces 42 rows' evidence with
-   * a local run). The flag makes the unit of capture the unit of work: the named rows are re-driven
-   * and re-photographed, and every other row is carried over untouched — its own `base`,
-   * `capturedAt` and `url` staying what they were.
-   */
-  const only = new Set(
-    (process.env.DESIGN_AUDIT_ONLY ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
-  );
-
   const base = process.env.DESIGN_AUDIT_BASE ?? routeMap.base ?? "https://demo.alignsynch.com";
   const outDir = resolve(ROOT, CAPTURES);
   mkdirSync(outDir, { recursive: true });
-  const previousFile = join(outDir, "manifest.json");
-  const previous =
-    only.size > 0 && existsSync(previousFile)
-      ? JSON.parse(readFileSync(previousFile, "utf8"))
-      : null;
+
+  /**
+   * `DESIGN_AUDIT_ONLY` re-captures named rows and leaves the rest alone.
+   *
+   * A rectification card is carded **by bundle**, so it needs the two or three rows its bundle
+   * names — not the other forty-eight, which belong to other cards and cost ~90 s each in live
+   * navigations, reference renders and side-by-side compositions. A full run is ~70 minutes and
+   * rewrites all 51 rows, so without this flag a bundle's card has two bad choices: capture
+   * everything against the deployment (which cannot show an unmerged fix) or capture everything
+   * against `localhost` (which silently replaces 42 rows' evidence with a local run). The flag
+   * makes the unit of capture the unit of work: the named rows are re-driven and re-photographed,
+   * and every other row is carried over untouched — its own `base`, `capturedAt` and `url` staying
+   * what they were.
+   *
+   * Default: **every row**, unchanged. The filter is a narrowing of the run, never of the
+   * instrument: the verdict vocabulary, the reference pairing and the comparison are the same
+   * code either way, and `--capture` with no environment still means "the whole register".
+   * Both doc paths (`guides/initiator/pick-a-template.md`) and slugs
+   * (`initiator-pick-a-template`) are accepted; an entry that matches no row is named, not
+   * ignored, because a silent typo would produce an empty run that reads like a clean one.
+   */
+  const only = (process.env.DESIGN_AUDIT_ONLY ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+  const selected = routeMap.rows.filter(
+    (row) => only.length === 0 || only.includes(row.doc) || only.includes(slugFor(row.doc)),
+  );
+  if (only.length > 0) {
+    const matched = new Set(selected.flatMap((row) => [row.doc, slugFor(row.doc)]));
+    for (const entry of only) {
+      if (!matched.has(entry)) console.log(`  ✗ DESIGN_AUDIT_ONLY "${entry}" matches no row`);
+    }
+    if (selected.length === 0) {
+      throw new Error("design-audit: DESIGN_AUDIT_ONLY matched no row — refusing to write a run");
+    }
+  }
 
   console.log("design-audit — resolved inputs");
   console.log(`  SPEC_DOCS_DIR  ${inputs.docs}`);
@@ -851,7 +865,7 @@ async function capture() {
   // placeholder must have an id, or the run says which one it could not resolve and stops.
   const entities = routeMap.entities ?? {};
   const unresolved = [];
-  for (const row of routeMap.rows) {
+  for (const row of selected) {
     if (row.route === null) continue;
     const filled = fillRoute(row.route, entities);
     if (/\{\w+\}/.test(filled)) unresolved.push(`${row.doc}: ${row.route}`);
@@ -861,9 +875,7 @@ async function capture() {
     for (const line of unresolved) console.log(`  ✗ ${line}`);
   }
 
-  const roles = [...new Set(routeMap.rows.map((r) => r.role ?? "public"))].filter(
-    (r) => r !== "public",
-  );
+  const roles = [...new Set(selected.map((r) => r.role ?? "public"))].filter((r) => r !== "public");
   const sessions = new Map();
   const browsers = new Map();
   const pin = process.env.DEMO_PIN ?? "";
@@ -911,6 +923,7 @@ async function capture() {
     docs: docs.length,
     tracked: tracked.length,
     counts,
+    ...(only.length > 0 ? { only } : {}),
     sessions: Object.fromEntries(
       [...sessions].map(([role, s]) => [role, s.ok ? "signed in" : `none: ${s.reason}`]),
     ),
@@ -919,7 +932,7 @@ async function capture() {
 
   let written = 0;
   let sideBySides = 0;
-  for (const row of routeMap.rows) {
+  for (const row of selected) {
     const doc = docs.find((d) => d.doc === row.doc);
     if (!doc) {
       console.log(`  ✗ ${row.doc}: mapped but not a doc — remove the row`);
@@ -927,12 +940,6 @@ async function capture() {
     }
     if (BUCKET_VERDICT[doc.bucket] === null) continue;
     const slug = slugFor(doc.doc);
-    if (only.size > 0 && !only.has(slug)) {
-      /** Carried over, not re-driven: this row's evidence is the run that last measured it. */
-      const kept = previous?.rows?.find((r) => r.slug === slug);
-      if (kept) manifest.rows.push(kept);
-      continue;
-    }
     const dir = join(outDir, slug);
     const url = fillRoute(row.route, entities);
     const unresolvedRoute = url !== null && /\{\w+\}/.test(url);
@@ -1054,19 +1061,7 @@ async function capture() {
     );
   }
 
-  /**
-   * A partial run keeps the manifest it did not measure. `measuredAt`, `base` and `head` describe the
-   * run that produced most of the rows, so they stay as they were; each row carries its own `base`
-   * and `capturedAt`, which is what an auditor reads.
-   */
-  if (only.size > 0 && previous) {
-    manifest.measuredAt = previous.measuredAt ?? manifest.measuredAt;
-    manifest.base = previous.base ?? manifest.base;
-    manifest.head = previous.head ?? manifest.head;
-    manifest.sessions = { ...(previous.sessions ?? {}), ...manifest.sessions };
-    manifest.only = [...only];
-  }
-  writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  writeManifest(outDir, manifest, { only });
   for (const browser of browsers.values()) await browser.stop();
 
   console.log("");
@@ -1095,6 +1090,52 @@ function guessBundleHtml(inputs, doc) {
 /* ---------------------------------------------------------------------------------------------
  * 8. `--check`
  * ------------------------------------------------------------------------------------------- */
+
+/**
+ * Write the manifest, merging when the run was narrowed.
+ *
+ * A whole run replaces the record — that is the register's full measurement. A `DESIGN_AUDIT_ONLY`
+ * run has measured two rows out of fifty-one, so replacing the file would delete the other
+ * forty-nine rows' evidence and turn a per-bundle card's capture into a regression in the record.
+ * It instead keeps every row it did not touch, replaces the ones it did, and appends itself to a
+ * `runs` log so the file still says which tree, which live base and which rows each measurement
+ * came from. Each row also carries its own `capturedAt`, so a merged file is dated per row rather
+ * than only at the top.
+ */
+function writeManifest(outDir, manifest, { only }) {
+  const file = join(outDir, "manifest.json");
+  let out = manifest;
+  if (only.length > 0 && existsSync(file)) {
+    const previous = JSON.parse(readFileSync(file, "utf8"));
+    const captured = new Set(manifest.rows.map((row) => row.doc));
+    const kept = (previous.rows ?? []).filter((row) => !captured.has(row.doc));
+    out = {
+      ...manifest,
+      // The top-level measurement describes the last **whole** run, not this one: the other rows
+      // in this file were not captured here, so claiming this run's live base and tree for the
+      // whole file would misdescribe them. The narrowed run is in `runs`.
+      measuredAt: previous.measuredAt ?? manifest.measuredAt,
+      base: previous.base ?? manifest.base,
+      head: previous.head ?? manifest.head,
+      // The role sign-ins this file reports are every role any run proved, not just the roles this
+      // narrowed run signed in as — a `--only` run measures rows, not identities.
+      sessions: { ...(previous.sessions ?? {}), ...manifest.sessions },
+      rows: [...kept, ...manifest.rows],
+      runs: [
+        ...(previous.runs ?? []),
+        {
+          measuredAt: manifest.measuredAt,
+          base: manifest.base,
+          head: manifest.head,
+          only,
+          rows: manifest.rows.map((row) => row.doc),
+        },
+      ],
+    };
+    delete out.only;
+  }
+  writeFileSync(file, `${JSON.stringify(out, null, 2)}\n`, "utf8");
+}
 
 function check() {
   const inputs = resolveInputs();
@@ -1138,7 +1179,9 @@ if (argv.includes("--help") || argv.length === 0) {
       "  --capture  resolve the three inputs, count the docs, capture live + reference, write the manifest\n" +
       "  --check    assert the register covers every doc with a build status, in one of four verdicts\n" +
       "  env        SPEC_DOCS_DIR, BUNDLES_DIR, PROTOTYPE_DIR, DEMO_AUTH, DEMO_PIN,\n" +
-      "             DESIGN_AUDIT_BASE, DESIGN_AUDIT_ONLY, DESIGN_AUDIT_HEAD, CHROME",
+      "             DESIGN_AUDIT_BASE, DESIGN_AUDIT_ONLY, DESIGN_AUDIT_HEAD, CHROME\n" +
+      "             DESIGN_AUDIT_ONLY=<doc,doc|slug,slug> captures only the rows a card owns;\n" +
+      "             a partial run carries every other row over from the manifest on disk",
   );
   process.exit(argv.includes("--help") ? 0 : 2);
 }

@@ -31,7 +31,7 @@ export const relationshipCatalogueCopy: PageCopy = zPageCopy.parse({
   eyebrow: "Relationship Templates",
   heading: "See Where You Agree. Talk About the Rest.",
   subtitle:
-    "Pick a template, invite one person, and answer privately on the same 1–5 scale. AlignSynch shows where you're In Synch and where there's a Gap.",
+    "Pick a template, invite one person, and answer privately on the same 1–5 scale. AlignSynch shows where you’re In Synch and where there’s a Gap.",
   items: [
     /* The hero's three billing ticks — the promise the whole conversion path rests on. */
     { id: "tick-trial", label: "7-day free trial" },
@@ -70,6 +70,12 @@ export const relationshipCatalogueCopy: PageCopy = zPageCopy.parse({
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
     { id: "aspects", label: "{count} Aspects" },
     { id: "template-price", label: "{plan} · {price}/mo" },
+
+    /* The card's two reference chips the catalogue drew without: how long the answers take, and the
+       badge the bundle puts on the exemplar card. `minutesForAspects()` is the reading behind
+       `{count}` — the same one the in-app shelf prints (bundle 06 draws the same trio). */
+    { id: "minutes", label: "About {count} Minutes" },
+    { id: "popular-badge", label: "Popular" },
 
     /* The closing band. */
     { id: "closing-heading", label: "Start Your First Relationship" },
@@ -140,12 +146,12 @@ export const relationshipCatalogueCopy: PageCopy = zPageCopy.parse({
         {
           id: "q-trial-ends",
           label: "What happens when the trial ends?",
-          body: "If you haven't added a card, Stage 6 pauses. Everything is saved, and you get one free extra week if you need it.",
+          body: "If you haven’t added a card, Stage 6 pauses. Everything is saved, and you get one free extra week if you need it.",
         },
         {
           id: "q-who-sees",
           label: "Who sees my answers?",
-          body: "Nobody, until you both finish. Then you see each other's answers side by side.",
+          body: "Nobody, until you both finish. Then you see each other’s answers side by side.",
         },
         {
           id: "q-change-template",

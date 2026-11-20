@@ -33,7 +33,7 @@
  * No React and no database: a node test drives both builders without a browser, and the page stays
  * the only module that reads a session.
  */
-import { formatCurrency } from "@/content/core";
+import { formatCurrency, minutesForAspects } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { relationshipType } from "@/data/relationship-types";
@@ -99,19 +99,14 @@ function aspectsLabel(card: PageCopySection, count: number): string {
 }
 
 /**
- * How long one person's answers take, from the number of Aspects: **about 35 seconds each**, rounded
- * to the nearest minute, and never less than one.
+ * How long one person's answers take, from the number of Aspects.
  *
- * A template carries no duration of its own, so this is a *reading* of the work rather than a stored
- * field — which is why it is a pure function here and not a column. The constant reproduces bundle
- * 06's own samples exactly (`templates.html` draws `4 Aspects` / `About 2 Minutes`,
- * `5 Aspects` / `About 3 Minutes`, `6 Aspects` / `About 4 Minutes`), so the port cannot drift from
- * the artifact it was taken from.
+ * The reading itself is `content/core.ts::minutesForAspects()` — its one home — because the public
+ * catalogue prints the same figure (`/relationship-templates`) and that module may not reach the
+ * database module this file pulls in. Re-exported from here so the shelf's own callers and tests
+ * keep one import, and so the two surfaces cannot drift into two constants.
  */
-export function minutesForAspects(aspects: number): number {
-  if (!Number.isFinite(aspects) || aspects <= 0) return 1;
-  return Math.max(1, Math.round((aspects * 35) / 60));
-}
+export { minutesForAspects };
 
 /** `"About 3 Minutes"` — bundle 06's third card chip, derived from the Aspect count. */
 function minutesLabel(card: PageCopySection, count: number): string {

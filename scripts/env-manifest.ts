@@ -655,7 +655,7 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   },
   {
     name: "DESIGN_AUDIT_ONLY",
-    why: "a comma-separated list of rows a fidelity-audit run re-captures, carrying every other row over from the manifest on disk (scripts/design-audit.mjs)",
+    why: "narrows a fidelity-audit capture to the rows one card owns, comma-separated doc paths or slugs (scripts/design-audit.mjs); unset captures every row, and a narrowed run carries every other row over from the manifest on disk",
   },
   {
     name: "PROTOTYPE_DIR",
