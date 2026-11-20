@@ -42,8 +42,14 @@ export const PAUSE_STATES = ["running", "trial-ended", "extra-week-ended"] as co
 
 export type PauseState = (typeof PAUSE_STATES)[number];
 
-/** The length of the one free extension, in days. One extension, once — the issue's number. */
-export const EXTENSION_DAYS = 7;
+/**
+ * The length of the one free Extra Week, in days. One Extra Week, once — the issue's number.
+ *
+ * The name says **Extra Week**, not "extension": copy rule 5 retires the word, and an identifier
+ * that keeps saying it is how the retired word comes back into a sentence. `docs/glossary.md`
+ * generates the term from the schema comments the same way.
+ */
+export const EXTRA_WEEK_DAYS = 7;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

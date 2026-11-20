@@ -267,19 +267,22 @@ describe("#1224 — the lapse line, per seat", () => {
     expect(METHOD_TRIAL_DAYS).toBe(7);
     expect(LAPSE_EXTENSION_DAYS).toBe(TRIAL_DAYS - METHOD_TRIAL_DAYS);
     expect(sentence).toBe(
-      `Your ${METHOD_TRIAL_DAYS}-day free trial and ${LAPSE_EXTENSION_DAYS}-day free extension ended with no card added, so Align is paused.`,
+      `Your ${METHOD_TRIAL_DAYS}-day free trial and free ${LAPSE_EXTENSION_DAYS}-day Extra Week ended with no card added, so Stage 6 is paused.`,
     );
     // The defect #1224 names: the promoted total is not the trial's name.
     expect(sentence).not.toContain("14-day");
+    // Copy rule 5: the word is "Stage 6" and "Extra Week", never "Align is paused" or "extension".
+    expect(sentence).not.toContain("Align is paused");
+    expect(sentence).not.toContain("extension");
   });
 
   it("keeps today's fact for a failed payment and a cancellation, in the same calm tone", () => {
     expect(lapseSentenceOf({ membership: lapsed("payment-failed"), seat: "initiator" })).toBe(
-      "The payment did not go through, so Align is paused.",
+      "The payment did not go through, so Stage 6 is paused.",
     );
     expect(
       lapseSentenceOf({ membership: lapsed("subscription-canceled"), seat: "initiator" }),
-    ).toBe("The subscription was cancelled, so Align is paused.");
+    ).toBe("The subscription was cancelled, so Stage 6 is paused.");
   });
 
   it("says nothing at all while nothing has lapsed", () => {

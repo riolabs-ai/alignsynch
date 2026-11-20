@@ -93,6 +93,8 @@ export interface PermissionsConsoleProps {
   facets: { readonly objects: readonly string[]; readonly roles: readonly string[] };
   /** The filter the address selected. */
   filter: CrudFilter;
+  /** The triage pass the source says it was generated from, or `null` when it says none. */
+  snapshotPass: number | null;
   /** Why the source could not be read, or `null`. */
   unreadable: string | null;
 }
@@ -373,6 +375,7 @@ export function PermissionsConsole({
   conflicts,
   facets,
   filter,
+  snapshotPass,
   unreadable,
 }: PermissionsConsoleProps) {
   const rules = sectionOf(copy, "rules");
@@ -502,6 +505,22 @@ export function PermissionsConsole({
                 </div>
               ))}
             </dl>
+            {/* The artifact's summary line (#rectification 12): the triage pass the source states
+                about itself, then the rank split, then the P0s the prototype still does not draw.
+                Every figure is `countsOf()`'s — including `p0Open`, which is P0 ∩ hinted/missing. */}
+            <p className="mt-3 text-sm text-muted-foreground" data-matrix-snapshot>
+              {fillLabel(
+                itemLabel(countBand, snapshotPass === null ? "snapshot-undated" : "snapshot"),
+                {
+                  pass: snapshotPass ?? "",
+                  p0: counts?.p0 ?? 0,
+                  p1: counts?.p1 ?? 0,
+                  p2: counts?.p2 ?? 0,
+                  wont: counts?.wont ?? 0,
+                  p0Open: counts?.p0Open ?? 0,
+                },
+              )}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -553,10 +572,14 @@ export function PermissionsConsole({
                   ? fillLabel(pageItemOf(copy, "matches-nothing").label, {
                       cells: counts?.cells ?? 0,
                     })
-                  : fillLabel(pageItemOf(copy, "showing").label, {
-                      count: cells.length,
-                      cells: counts?.cells ?? 0,
-                    })}
+                  : narrowed
+                    ? fillLabel(pageItemOf(copy, "showing").label, {
+                        count: cells.length,
+                        cells: counts?.cells ?? 0,
+                      })
+                    : fillLabel(pageItemOf(copy, "rows").label, {
+                        cells: counts?.cells ?? 0,
+                      })}
               </p>
               {narrowed ? (
                 <Link

@@ -243,9 +243,12 @@ describe("#1224 · the lapse line, per seat", () => {
 
     expect(markup).toContain('data-membership-sentence="lapsed"');
     expect(text).toContain(
-      `${METHOD_TRIAL_DAYS}-day free trial and ${LAPSE_EXTENSION_DAYS}-day free extension`,
+      `${METHOD_TRIAL_DAYS}-day free trial and free ${LAPSE_EXTENSION_DAYS}-day extra week`,
     );
-    expect(text).toContain("so align is paused");
+    expect(text).toContain("so stage 6 is paused");
+    // Copy rule 5: no "Align is paused", and no "extension" anywhere in the sentence.
+    expect(text).not.toContain("align is paused");
+    expect(text).not.toContain("extension");
     expect(text).not.toContain("14-day");
   });
 

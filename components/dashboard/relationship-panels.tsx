@@ -32,8 +32,20 @@ import {
   DETAIL_MUTED,
   DetailSection,
 } from "@/components/assessment-flow/record-detail-shell";
-import { formatDate } from "@/content/core";
+import {
+  DiscussionThread,
+  type DiscussionAspect,
+  type DiscussionMessageView,
+} from "@/components/dashboard/discussion-thread";
+import { formatClockTime, formatDate, formatWeekdayShort } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
+import { chatThreadFor } from "@/data/chat-threads";
+import {
+  chatMessageIsMine,
+  chatMessagesOf,
+  chatThreadStateOf,
+  initialsOf,
+} from "@/lib/chat/thread";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import {
   fillLabel,
@@ -60,24 +72,107 @@ function FactRows({ rows }: { rows: readonly { label: string; value: ReactNode }
 }
 
 /**
- * Discussion — the heading, the one-line body, and the empty state.
+ * Discussion — the thread the relationship has, and the composer that answers it.
  *
- * The thread is #921's model and nobody else's. What this panel refuses to do is draw a composer
- * over a table that does not exist: a person who typed there would lose the words on reload and
- * the screen would have promised a feature the database cannot keep.
+ * The v2 rectification's `chat-and-discussion` row (`docs/specs/v2-rectification.md`) found the
+ * panel drawing a heading and one sentence where both the doc and the reference draw a conversation
+ * and a composer. So this panel now draws the same thread `/dashboard/chat` does — read from
+ * `data/chat-threads.ts`, keyed on the relationship — in the relationship screen's own expression
+ * (`discussion-thread.tsx`): comment cards with the author's seat and instant, an **Add a Comment**
+ * box, a **Tag an Aspect** selector and **Send**.
+ *
+ * **The three states are derived, and only one of them writes.** `waiting` when the pair is not
+ * both in (`connectionOf`), `paused` when the trial lapsed (`pauseOf`), `live` otherwise — the same
+ * `chatThreadStateOf` the Chat page uses, so the two surfaces cannot disagree about whether a
+ * relationship has a conversation. A waiting or paused relationship draws no composer at all.
+ *
+ * **Nothing durable is written yet.** A message sent here joins this session's list; the thread's
+ * model is #921's and it has no schema, so the write is stated as absent (in the docstring and in
+ * the fixture's comment) rather than faked.
  */
-export function DiscussionPanel({ copy }: { copy: PageCopy }) {
+export function DiscussionPanel({
+  copy,
+  relationship,
+}: {
+  copy: PageCopy;
+  relationship: MemberRelationshipView;
+}) {
   const discussion = sectionOf(copy, "discussion");
+  const viewerRole = relationship.viewerRole;
+  const otherName =
+    (viewerRole === "initiator"
+      ? (relationship.counterpartySeatName ?? relationship.counterpartyName)
+      : relationship.initiatorName) ??
+    pageItemOf(copy, viewerRole === "initiator" ? "role-counterparty" : "role-initiator").label;
+  const viewerName =
+    (viewerRole === "initiator" ? relationship.initiatorName : relationship.counterpartySeatName) ??
+    pageItemOf(copy, viewerRole === "initiator" ? "role-initiator" : "role-counterparty").label;
+
+  /** Both seats bound and a session open — the row's own answer, with the invitation as the fallback. */
+  const connected = relationship.connection?.connected ?? relationship.invite?.claimed === true;
+  const state = chatThreadStateOf({ connected, paused: relationship.pause?.paused === true });
+
+  /**
+   * A closed relationship keeps its Discussion readable and stops taking messages — the band above
+   * the tab layer already says so ("your answers and Discussion stay readable"), and `/dashboard/chat`
+   * leaves a closed relationship out of its list for the same reason. Paused reads differently, so
+   * the two sentences are two fixture items and the panel picks the true one.
+   */
+  const readOnlyLine =
+    state === "waiting"
+      ? null
+      : relationship.closed
+        ? itemLabel(discussion, "closed")
+        : state === "paused"
+          ? itemLabel(discussion, "read-only")
+          : null;
+
+  const thread = chatThreadFor(relationship.id);
+  const aspects: readonly DiscussionAspect[] = relationship.template.items.map((item) => ({
+    id: item.id,
+    prompt: item.prompt,
+  }));
+
+  const messages: readonly DiscussionMessageView[] =
+    thread === undefined
+      ? []
+      : chatMessagesOf(thread).map((message) => ({
+          id: message.id,
+          mine: chatMessageIsMine(message, viewerRole),
+          seat: message.sender,
+          body: message.body,
+          at: message.at,
+          // `Wed 8:10 PM` — formatted from the fixture instant, never from a render-time clock.
+          timeLabel: `${formatWeekdayShort(message.at)} ${formatClockTime(message.at)}`,
+          // The Aspect is matched against this relationship's own record: an id it does not have
+          // drops the chip rather than printing a raw handle.
+          aspectPrompt: aspects.find((aspect) => aspect.id === message.aspectId)?.prompt ?? null,
+        }));
+
   return (
     <DetailSection
       title={discussion.heading}
       body={sectionBody(discussion)}
       framed
-      hooks={{ "data-relationship-discussion": "empty" }}
+      hooks={{ "data-relationship-discussion": state }}
     >
-      <p className={`mt-4 ${DETAIL_MUTED}`} data-discussion-empty="true">
-        {itemLabel(discussion, "empty")}
-      </p>
+      <div className="mt-4">
+        <DiscussionThread
+          section={discussion}
+          state={state}
+          messages={messages}
+          aspects={aspects}
+          viewerSeat={viewerRole}
+          otherName={otherName}
+          otherInitials={initialsOf(otherName)}
+          selfInitials={initialsOf(viewerName)}
+          seatLabels={{
+            initiator: pageItemOf(copy, "role-initiator").label,
+            counterparty: pageItemOf(copy, "role-counterparty").label,
+          }}
+          readOnlyLine={readOnlyLine}
+        />
+      </div>
     </DetailSection>
   );
 }
@@ -328,9 +423,15 @@ export function SettingsPanel({
 export function PaymentPanel({
   copy,
   relationship,
+  planPrice,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
+  /**
+   * The price after the trial, from the billing plan (`membershipPrice()`), passed in by the page
+   * because this component may not value-import the module that reads it (E34, #228).
+   */
+  planPrice?: string;
 }) {
   const payment = sectionOf(copy, "payment");
   /* The seat, not the permission: a reader whose seat says Initiator and whose account column
@@ -350,38 +451,74 @@ export function PaymentPanel({
     );
   }
 
+  /*
+   * The rectification register's Payment-tab delta: bundle 03 draws a summary table — *Status*, the
+   * date the window ends, *After the Trial* and its price — where the live tab drew one membership
+   * chip and a trial sentence. The status is the pause's own three states, so this tab and the rail
+   * badge cannot disagree about the same window.
+   *
+   * **The reference's `Card` row is deliberately absent.** No read on this page answers whether a
+   * card is on file, and "Not needed" printed over a card the read cannot see is a claim, not a
+   * summary. It lands with the read that can make it.
+   *
+   * **The reference's "Trial Starts When {name} Accepts" is deliberately absent too.** The shipped
+   * rule anchors the trial at the publish (the stage-5 delta the register records is that the live
+   * page states the card anchors it); a Payment tab that promised an acceptance anchor the code does
+   * not implement would be the more expensive of the two lies. A relationship with no running trial
+   * says so instead.
+   */
+  const pause = relationship.pause;
+  const state = pause?.state ?? "running";
+  const statusValue =
+    state === "trial-ended"
+      ? itemLabel(payment, "status-paused")
+      : state === "extra-week-ended"
+        ? itemLabel(payment, "status-paused-extra")
+        : relationship.trialEndsAt === null
+          ? itemLabel(payment, "no-trial")
+          : fillLabel(itemLabel(payment, "status-running"), {
+              date: formatDate(relationship.trialEndsAt),
+            });
+
   return (
     <section className={`space-y-2 ${DETAIL_CARD}`} data-relationship-payment="initiator">
       <h2 className="text-xl font-semibold text-foreground">{payment.heading}</h2>
       <FactRows
         rows={[
           {
-            label: itemLabel(payment, "membership"),
+            label: itemLabel(payment, "status"),
             value: (
               <Chip
                 variant="soft"
                 data-membership-state={
                   relationship.membership.state === "lapsed" ? "lapsed" : "open"
                 }
+                data-payment-status={state}
               >
-                {relationship.membership.state === "lapsed"
-                  ? itemLabel(payment, "lapsed")
-                  : itemLabel(payment, "open")}
+                {statusValue}
               </Chip>
             ),
           },
           { label: itemLabel(payment, "billing-owner"), value: itemLabel(payment, "you") },
-          {
-            label: pageItemOf(copy, "trial").label,
-            value:
-              relationship.trialEndsAt === null
-                ? itemLabel(payment, "no-trial")
-                : fillLabel(itemLabel(payment, "trial-ends"), {
-                    date: formatDate(relationship.trialEndsAt),
-                  }),
-          },
+          ...(planPrice === undefined
+            ? []
+            : [
+                {
+                  label: itemLabel(payment, "after-trial"),
+                  value: fillLabel(itemLabel(payment, "per-month"), { price: planPrice }),
+                },
+              ]),
         ]}
       />
+      {/* The one sentence that says what happens if nothing is added — drawn only while a window is
+          actually running, because a paused one has already had the answer applied. */}
+      {state === "running" && relationship.trialEndsAt !== null ? (
+        <p className="text-sm text-foreground" data-payment-resume="true">
+          {fillLabel(itemLabel(payment, "resume"), {
+            date: formatDate(relationship.trialEndsAt),
+          })}
+        </p>
+      ) : null}
     </section>
   );
 }

@@ -71,6 +71,7 @@ import {
   chatMessageIsMine,
   chatMessagesOf,
   chatThreadStateOf,
+  initialsOf,
   type ChatAspectTag,
   type ChatThreadState,
   unreadCountOf,
@@ -97,23 +98,6 @@ type ChatParams = {
 /** One query value as the string a person typed. A repeated key takes the first entry. */
 function queryOf(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : (value?.[0] ?? "");
-}
-
-/**
- * Up to two letters for a person's mark — the bundle's avatar, without a stored image.
- *
- * A name with one word gives one letter; an empty name gives `?` rather than nothing, because a mark
- * with no glyph in it is a hole in the row.
- */
-function initialsOf(name: string): string {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word !== "");
-  const first = words[0]?.[0] ?? "";
-  const last = words.length > 1 ? (words[words.length - 1]?.[0] ?? "") : "";
-  const initials = `${first}${last}`.toUpperCase();
-  return initials === "" ? "?" : initials;
 }
 
 /**

@@ -115,14 +115,14 @@ yours to read.
 ## trial-ended-paused
 
 ```text
-Align is paused on {{template}}. Nothing was deleted: everything you both answered is saved, and
+Stage 6 is paused on {{template}}. Nothing was deleted: everything you both answered is saved, and
 both of you can still read it.
 ```
 
 ## relationship-paused
 
 ```text
-Align is paused for now; you'll hear when it resumes.
+Stage 6 is paused for now; you'll hear when it resumes.
 ```
 
 ## support-reply

@@ -76,7 +76,7 @@ import { itemLabel, sectionOf } from "@/lib/page-copy";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Create your account",
+  title: "Create Your Account",
 };
 
 /* The embedded mode token moved with the mount: `AccountPanel` applies it to whichever view is

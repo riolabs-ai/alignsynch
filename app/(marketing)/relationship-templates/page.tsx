@@ -76,10 +76,15 @@ export default async function RelationshipTemplatesPage({
       },
     }),
   );
-  const cards = catalogueCards(relationshipCatalogueCopy, types, carry);
-  /** The exemplar: the first template the catalogue can actually show an answer for. */
-  const example = catalogueExample(relationshipCatalogueCopy, types);
+  /**
+   * The exemplar the hero offers, resolved **before** the cards: the same id is passed to
+   * `catalogueCards()` so the `Popular` badge sits on the card the hero's `Start With the Most
+   * Popular` opens, rather than on a second template chosen somewhere else.
+   */
   const popular = types.find((type) => type.id === "staff-manager") ?? types[0];
+  const cards = catalogueCards(relationshipCatalogueCopy, types, carry, popular?.id);
+  /** The worked example: the first template the catalogue can actually show an answer for. */
+  const example = catalogueExample(relationshipCatalogueCopy, types);
 
   return (
     <RelationshipCatalogue

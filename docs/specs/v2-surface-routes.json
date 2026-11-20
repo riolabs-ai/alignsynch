@@ -326,7 +326,7 @@
         "html": "spec-design-v2-bundles/07-spec-design-page-chat-v2/chat.html",
         "query": ""
       },
-      "note": "The in-relationship thread is the Discussion tab, which is where the Aspect-tagged composer lives; /dashboard/chat is the cross-relationship index of the same thread."
+      "note": "The in-relationship thread is the Discussion tab, which is where the Aspect-tagged composer lives; /dashboard/chat is the cross-relationship index of the same thread. {relationship} resolves to relationship-assessment-instance-avery-rowan-flat — the one demo relationship still running, which is also the only one whose Discussion can carry a composer; relationship-assessment-instance-avery-rowan is complete and reads read-only. data/chat-threads.ts carries the demo conversation for it."
     },
     {
       "doc": "guides/shared/leave-a-relationship.md",

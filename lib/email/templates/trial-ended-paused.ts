@@ -43,7 +43,7 @@ export const TRIAL_ENDED_PAUSED_BODY = {
 } as const satisfies EmailBodySpec;
 
 /** The spec's subject, as a constant — it is read by the person whose trial it was. */
-export const TRIAL_ENDED_PAUSED_SUBJECT = "Your trial ended — Align is paused";
+export const TRIAL_ENDED_PAUSED_SUBJECT = "Your trial ended — Stage 6 is paused";
 
 export interface TrialEndedPausedFacts {
   /** The relationship's Initiator: the account the trial belonged to. */
@@ -93,7 +93,7 @@ export function trialEndedPausedDocument(
       },
       {
         kind: "paragraph",
-        text: "You have one free 7-day extension to take, once, and adding a card resumes the relationship straight away.",
+        text: "You have two ways back, and both resume Stage 6: Add a Card and it picks up straight away, or Get 7 More Days Free — your one free Extra Week, once — before anything is charged.",
       },
       { kind: "paragraph", text: `Open it: ${facts.link}` },
       { kind: "paragraph", text: `Your plan: ${facts.plansLink}` },

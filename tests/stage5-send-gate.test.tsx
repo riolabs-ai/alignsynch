@@ -170,7 +170,7 @@ describe("the binding spec says what the stage is", () => {
   it("sends without a membership, in the owner's words", () => {
     // #1115 (spec D3) — the send is not gated on a payment: the week opens at the Counterparty's
     // acceptance, so nothing is live when a draft goes out and a pending invitation costs nothing.
-    expect(section).toContain("send email to counterparty now");
+    expect(section).toContain(itemLabel(INVITE, "submit"));
     expect(section).toContain("No membership fact is read to authorise a send");
     expect(section).toContain("pending invitation costs nothing");
     expect(section).toContain("draft");

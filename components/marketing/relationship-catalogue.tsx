@@ -141,9 +141,12 @@ export function RelationshipCatalogue({
 
       <section aria-labelledby="catalog-title" className="scroll-mt-20" id="catalog">
         <div className="mx-auto w-full max-w-content px-4 py-10 lg:px-6">
-          <div className="sr-only">
-            <h2 id="catalog-title">{band.heading}</h2>
-          </div>
+          {/*
+            One heading, not two. This band used to pair an `sr-only` `<h2 id="catalog-title">` with
+            the visible heading the browser island draws, so the document carried `Choose a Template`
+            twice and a screen reader announced the band twice; bundle 02 draws it once. The id now
+            sits on the visible heading below, which is what the section's `aria-labelledby` names.
+          */}
           <CatalogueBrowser band={band} cards={cards} groups={groups} />
         </div>
       </section>

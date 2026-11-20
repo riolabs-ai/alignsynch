@@ -61,6 +61,14 @@ export const RELATIONSHIP_EDIT_SECTION = "edit";
  */
 export const ASPECTS_LIVE_SECTION = "aspects-live";
 
+/**
+ * The id of the At a Glance card's section (#1124's rail, filled in by the v2 rectification).
+ *
+ * The section exports its own id for the same E23 reason: the page component names a section
+ * through a constant the fixture declares, never a literal of its own.
+ */
+export const RELATIONSHIP_GLANCE_SECTION = "glance";
+
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
@@ -123,6 +131,35 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "business", label: "Business" },
         { id: "personal", label: "Personal" },
         { id: "roles", label: "{initiator} / {counterparty}" },
+      ],
+    },
+    {
+      /**
+       * The v2 rectification register's most repeated delta on this screen: bundle 03 draws the
+       * relationship's **At a Glance** card above the tabs — the Aspect tally, the Mode, the
+       * Alignment Tolerance and the latest round — and the live page drew only the flat metadata
+       * card beside it. The tally is a derivation (`alignmentSummaryOf` over `content/gaps.ts`), so
+       * nothing here is a stored verdict; the card says the numbers the read produced and no others.
+       *
+       * `Open Align` is the reference's one control, and it is drawn only when the round's report is
+       * readable — a relationship whose sheets are not both sealed has no Gap to open, so the link
+       * is absent rather than dead.
+       */
+      id: "glance",
+      heading: "At a Glance",
+      items: [
+        { id: "aligned", label: "{aligned} of {total} Aspects Aligned" },
+        { id: "in-synch", label: "{count} In Synch" },
+        { id: "small-gap", label: "{count} Small Gap" },
+        { id: "gap", label: "{count} Gap" },
+        { id: "mode", label: "Mode" },
+        { id: "opinions", label: "{count} Opinions" },
+        { id: "tolerance", label: "Alignment Tolerance" },
+        { id: "tolerance-soft", label: "Soft · Small Gap OK" },
+        { id: "tolerance-full", label: "Full · No Gap OK" },
+        { id: "round", label: "Latest Round" },
+        { id: "round-value", label: "Round {round} · {date}" },
+        { id: "open-align", label: "Open Align" },
       ],
     },
     {
@@ -211,6 +248,54 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "start", label: "Start Assessment" },
         { id: "continue", label: "Continue Assessment" },
         { id: "progress", label: "{answered} of {count} Aspects answered" },
+      ],
+    },
+    {
+      /**
+       * #rect-04 — **the Align summary: what the pair's two answer sheets add up to.**
+       *
+       * `guides/shared/results-and-align.md` promises *"When you've both answered, Align puts your
+       * answers side by side"*, and bundle 04's reference is the screen that keeps that promise: a
+       * heading, the tally — **"3 of 5 Aspects Aligned"** with one count per status word — and a
+       * Next Step naming the widest Gap with one action into the Discussion. None of it was on this
+       * page: the rail went on saying *"Continue Your Assessment"* and *"5 of 5 Aspects answered"*
+       * over five answered Aspects, and the results sat behind a separate *"Complete and open the
+       * Gap"* act.
+       *
+       * The words are the reference's. `{aligned}` / `{total}` are `alignmentSummaryOf()`'s own
+       * figures (never a second count), `{aspect}` is the widest Gap's Aspect and `{gap}` its width
+       * in steps, so the sentence and the tally cannot disagree about the same rows.
+       */
+      id: "align",
+      heading: "Where You Agree, and Where You Differ",
+      body: "Both answers on every Aspect, side by side. Start with the widest Gap.",
+      items: [
+        { id: "stage", label: "Stage 6 · Align" },
+        { id: "live", label: "Live" },
+        { id: "summary", label: "Summary" },
+        { id: "aligned", label: "{aligned} of {total} Aspects Aligned" },
+        { id: "in-synch", label: "In Synch" },
+        { id: "small-gap", label: "Small Gap" },
+        { id: "gap", label: "Gap" },
+        {
+          id: "headline",
+          label: "{count} Aspects need a conversation before this relationship is aligned.",
+        },
+        {
+          id: "headline-all",
+          label: "Every Aspect is aligned — there is nothing waiting for a conversation.",
+        },
+        { id: "next-step", label: "Next Step" },
+        { id: "next-heading", label: "Talk About Your Widest Gap" },
+        {
+          /* The Aspect is named by its prompt, because that is all an Aspect carries here: bundle
+             04's reference has both a short name ("Parent Decisions") and a question, and this
+             model has the question only — so the heading names the Gap and the sentence names the
+             Aspect, rather than pressing a question into a title. */
+          id: "next-body",
+          label: "“{aspect}” is {gap} steps apart — the widest on this relationship. Start there.",
+        },
+        { id: "start", label: "Start the Conversation" },
       ],
     },
     {
@@ -594,6 +679,12 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           id: "completed",
           label: "Complete ({status}) — the Gap is open to both of you.",
         },
+        /*
+         * The reference's one sentence about what completing does *not* do: the Gap is not a report
+         * that expires when the round does. It stays readable until the relationship itself closes,
+         * which is the sentence the doc quotes and the live page had no home for.
+         */
+        { id: "live-until-closes", label: "Align stays live until the relationship closes." },
       ],
     },
     {
@@ -607,10 +698,15 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
        * relationship it came from.
        */
       id: "fork",
-      heading: "Keep these Aspects for yourself",
+      /*
+       * Copy rule 1 (Title Case for every label, heading and button) — the rectification register's
+       * one copy delta on this panel. The section and its action are both Title Case now; the body
+       * stays a sentence, because body copy is not what the rule governs.
+       */
+      heading: "Keep These Aspects for Yourself",
       body: "This relationship's template belongs to the person who started it, so it is not in your templates. Save a copy and it becomes yours to edit, with the Aspects exactly as they were when the invitation went out — and this relationship is untouched: the same words, the same answers, nothing re-sent. Taking it twice points at the copy you already have instead of making a second one.",
       items: [
-        { id: "submit", label: "Save this template to My Templates" },
+        { id: "submit", label: "Save This Template to My Templates" },
         { id: "working", label: "Saving…" },
         {
           id: "saved",
@@ -895,17 +991,39 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #1124 — the Discussion panel.
+       * #1124 — the Discussion panel, re-cut by the v2 rectification (`chat-and-discussion`).
        *
-       * **The thread has no model yet** (#921 owns it), so the panel draws what the read can
-       * support: the heading and one honest empty state. It is not a fake composer and it is not
-       * a comment box that would write nowhere — the layer ships the tab, and the thread lands
-       * when the model does.
+       * The panel used to draw a heading and one empty sentence, because the durable thread is
+       * #921's model and a composer over a table nobody had built would lose the words. The
+       * reference (`v2-bundles/03-…/relationship-detail.html`, `data-tab="discussion"` and
+       * `v2-bundles/07-…/chat.html`) draws the thread itself: the composer with an Aspect selector,
+       * then the conversation with its timestamps. So the panel now draws the demo thread the
+       * relationship has (`data/chat-threads.ts`) and the composer over it, and says so honestly —
+       * a message this session appends is session state, and the write lands when #921 does.
+       *
+       * Every word below is the doc's or the bundle's, verbatim: **Add a Comment** is the form's
+       * label, **Message {name}** the box's placeholder, **Tag an Aspect** the selector, **Send**
+       * the button.
        */
       id: "discussion",
       heading: "Relationship Discussion",
       body: "One thread for the two of you, beside the Aspects you are answering.",
-      items: [{ id: "empty", label: "Nothing has been said here yet." }],
+      items: [
+        { id: "empty", label: "Nothing has been said here yet." },
+        { id: "messages", label: "Messages" },
+        { id: "composer-label", label: "Add a Comment" },
+        { id: "composer-placeholder", label: "Message {name}" },
+        { id: "tag-label", label: "Tag an Aspect" },
+        { id: "tag-none", label: "No Aspect" },
+        { id: "send", label: "Send" },
+        { id: "you", label: "You" },
+        { id: "waiting", label: "Chat opens when {name} joins." },
+        { id: "read-only", label: "Stage 6 is paused, so chat is read-only. Nothing is lost." },
+        {
+          id: "closed",
+          label: "This relationship is closed, so the Discussion is read-only.",
+        },
+      ],
     },
     {
       /**
@@ -983,6 +1101,29 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "trial-ends", label: "Trial ends {date}." },
         { id: "no-trial", label: "No trial is running." },
         { id: "covered", label: "{name} covers this relationship. You’re never charged." },
+        /*
+         * Bundle 03's Payment tab is a summary table, not a status chip: *Status*, the date the
+         * window ends (or the acceptance the trial is waiting on), the price after it, and the
+         * sentence that says what happens if no card arrives. The anchor sentence is the doc's own
+         * — the trial starts when the other person accepts — so a waiting relationship says when
+         * the clock starts instead of printing a window that has not opened.
+         *
+         * The reference's `Card` row is **not** here: the member read carries no card fact, and a
+         * screen asserting "Not needed" about a card it cannot read is the guess this page's
+         * docstrings exist to refuse. The row lands when a read can answer it.
+         */
+        { id: "status", label: "Status" },
+        { id: "status-waiting", label: "Trial Starts When {name} Accepts" },
+        { id: "status-running", label: "Free Trial · Ends {date}" },
+        { id: "status-paused", label: "Paused · Trial Ended" },
+        { id: "status-paused-extra", label: "Paused · Extra Week Ended" },
+        { id: "after-trial", label: "After the Trial" },
+        { id: "per-month", label: "{price} / month" },
+        {
+          id: "resume",
+          label:
+            "Add a card before {date} to keep Stage 6 running. If you don’t, it pauses and nothing is lost.",
+        },
       ],
     },
     {

@@ -191,11 +191,41 @@ describe("countsOf", () => {
       p2: 0,
       wont: 1,
       conflicts: 1,
+      // P0 ∩ (hinted or missing): the artifact's "N P0 still open" — one of the two P0 rows is
+      // still only hinted, and the covered one is not open.
+      p0Open: 1,
     });
+  });
+
+  it("counts the P0s still open as P0 intersected with the prototype's answer", () => {
+    expect(countsOf(CELLS).p0Open).toBe(
+      CELLS.filter(
+        (cell) =>
+          cell.priority === "P0" && (cell.prototype === "hinted" || cell.prototype === "missing"),
+      ).length,
+    );
+    expect(countsOf([]).p0Open).toBe(0);
   });
 
   it("counts conflicts as the rows whose upstream disagrees, not as a typed figure", () => {
     expect(conflictedCells(CELLS).map((cell) => cell.action)).toEqual(["Leave"]);
+  });
+});
+
+describe("the snapshot pass the source states about itself", () => {
+  it("reads the pass from the preamble, in whatever words the file uses", () => {
+    expect(
+      parseCrudMatrixDocument(
+        `Generated from the v2 prototype triage (pass 10, 16 Nov 2026).\n${MATRIX}`,
+      ).snapshotPass,
+    ).toBe(10);
+    expect(parseCrudMatrixDocument(`Triaged (Pass 3) on a Monday.\n${MATRIX}`).snapshotPass).toBe(
+      3,
+    );
+  });
+
+  it("answers null when the document states no pass, rather than borrowing one", () => {
+    expect(parseCrudMatrixDocument(MATRIX).snapshotPass).toBeNull();
   });
 });
 

@@ -422,7 +422,7 @@ export function InviteWalk({
     <>
       <p className={MUTED}>{itemLabel(invite, "cta-body")}</p>
       <p className={SMALL} data-send-explain="open">
-        {itemLabel(invite, "active")}
+        {cardFree ? itemLabel(plans, "active-free") : itemLabel(invite, "active")}
       </p>
 
       <button
@@ -450,7 +450,17 @@ export function InviteWalk({
 
   const planPanel = (
     <>
-      <p className={MUTED}>{sectionBody(plans)}</p>
+      {/*
+        **The panel's opening sentence follows the panel, not the file.** `plans.body` is the
+        purchase panel's, and it anchors the week on a saved card ("nothing is charged today — the
+        trial starts when the card is saved"). The create path never reaches a card, so printing it
+        here made stage 5 say two opposite things in one column: the body anchored the week on the
+        card, and `trial-free` two lines below anchored it on the Counterparty's acceptance. That
+        contradiction is `docs/specs/v2-rectification.md`'s stage-5 delta, measured on a demo seat
+        whose membership was already live — the same two sentences, one panel. The card-free panel
+        gets its own body (#1115), and the week's anchor is stated once, by `trial-free`.
+      */}
+      <p className={MUTED}>{cardFree ? itemLabel(plans, "body-free") : sectionBody(plans)}</p>
       {/*
         A measured, already-paying account gets a **summary**, not the radio group (#870): the walk
         would otherwise sell a tier the person holds, and the thank-you would recap a plan nobody
@@ -629,7 +639,9 @@ export function InviteWalk({
 
   const thanksPanel = (
     <>
-      <p className={MUTED}>{itemLabel(flow, "thanks-body")}</p>
+      <p className={MUTED}>
+        {cardFree ? itemLabel(plans, "active-free") : itemLabel(flow, "thanks-body")}
+      </p>
       <p className={SMALL}>{planLabel(plan)}</p>
       {/*
         One control, and it opens the act. The step used to be a thank-you with no button whose one

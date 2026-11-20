@@ -202,6 +202,15 @@ export interface MemberRelationshipRow {
   readonly publishedAt: string | null;
   /** The assessment round that exists once the relationship is published; `null` before. */
   readonly sessionRecordId: string | null;
+  /**
+   * The latest round's ordinal (`session.round`, 0031) and the round copy's date — the At a Glance
+   * card's Latest Round row.
+   *
+   * Optional for the reason `pause` and `hygiene` are: a view literal written before these columns
+   * were selected carries neither, and the row is then absent rather than printed as "Round 0".
+   */
+  readonly round?: number | null;
+  readonly roundStartedAt?: string | null;
   readonly aspectCount: number;
   /**
    * #1128 — how many of this round's Aspects **this reader** has answered, from their own `opinion`
@@ -282,6 +291,9 @@ interface RelationshipQueryRow {
   readonly relationship_title: string | null;
   readonly summary: string;
   readonly session_record_id: string | null;
+  /** The latest round's ordinal and its date — the At a Glance card's `Latest Round` row. */
+  readonly session_round?: number | null;
+  readonly session_date?: Date | string | null;
   readonly aspect_count: number;
   readonly counterparty_name: string | null;
   readonly initiator_name: string | null;
@@ -400,6 +412,10 @@ const RELATIONSHIP_COLUMNS = `
   -- template read identically and the draft a creator had just named could not be found by name.
   sr.title AS relationship_title,
   s.record_id AS session_record_id,
+  -- The At a Glance card's Latest Round row: the ordinal the session table keys on (0031) and
+  -- the round copy's own date. Both are NULL for a draft, which is what makes the row absent
+  -- rather than invented.
+  s.round AS session_round, sr.date AS session_date,
   -- #1128 — how many Aspects the viewer has answered in the latest round, so the Next Step can
   -- offer "Continue Assessment" rather than "Start Assessment". A count, never a score: the blind
   -- rule is a property of the party read, and this statement only counts rows of the viewer's own.
@@ -425,7 +441,7 @@ const RELATIONSHIP_FROM = `
   FROM relationship rel
   JOIN record t ON t.id = rel.template_id
   LEFT JOIN LATERAL (
-    SELECT si.record_id
+    SELECT si.record_id, si.round
       FROM session si
      WHERE si.relationship_id = rel.id
      ORDER BY si.round DESC
@@ -560,6 +576,11 @@ function relationshipOf(
     createdAt: instantOf(row.created_at),
     publishedAt: row.published_at === null ? null : instantOf(row.published_at),
     sessionRecordId: row.session_record_id,
+    round: row.session_round ?? null,
+    roundStartedAt:
+      row.session_date === null || row.session_date === undefined
+        ? null
+        : instantOf(row.session_date),
     aspectCount: Number(row.aspect_count),
     viewerAnswered: Number(row.viewer_answered ?? 0),
     invite,
