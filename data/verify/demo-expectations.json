@@ -26,7 +26,7 @@
     "review_issue": 2,
     "review_issue_comment": 2,
     "review_todo": 3,
-    "activity_event_seed": 139
+    "activity_event_seed": 149
   },
   "activity": {
     "simulate": {
@@ -45,13 +45,7 @@
       "path": "/pricing",
       "status": 200,
       "mustContain": ["Simple Pricing. Start Free.", "$9.99", "Basic"],
-      "mustNotContain": [
-        "\u2014/mo",
-        "$19.99",
-        "Internal Server Error",
-        "Application error",
-        "captcha"
-      ]
+      "mustNotContain": ["—/mo", "$19.99", "Internal Server Error", "Application error", "captcha"]
     },
     {
       "path": "/help",
