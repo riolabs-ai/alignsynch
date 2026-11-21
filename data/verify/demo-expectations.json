@@ -25,7 +25,14 @@
     "relationship_payment": 2,
     "review_issue": 2,
     "review_issue_comment": 2,
-    "review_todo": 3
+    "review_todo": 3,
+    "activity_event_seed": 139
+  },
+  "activity": {
+    "simulate": {
+      "min": 1,
+      "max": 24
+    }
   },
   "routes": [
     {
