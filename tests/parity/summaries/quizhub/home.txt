@@ -151,7 +151,7 @@ links (73 unique, 96 total)
   /relationship-templates                              1
   /relationship-templates#catalog                      1
   /terms                                               1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.3 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.4 1
 
 counts
   elements  2264

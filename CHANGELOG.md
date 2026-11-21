@@ -6,6 +6,63 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [2.0.0-rc1.4] - 2026-11-21
+
+> **Declared override.** The commit census computes 2.1.0 (minor, 24 commit(s) since v2.0.0-rc1.3); this release is cut as 2.0.0-rc1.4 by decision: the 2.0.0-rc candidate line continues: 2.0.0 final has never been released and milestone #28 still holds 28 open spec issues, so the census' 2.1.0 would claim a public line that does not exist; milestone #29 names this candidate
+>
+> `pnpm release:cut` printed this banner and wrote it here so the number is a declared artefact in a published document, never a silent one.
+
+### Added
+
+- `feat(demo)` — the ten-step walkthrough as headless-Chrome scripted capture ([#1317](https://github.com/riolabs-ai/alignsynch/pull/1317))
+- `feat(templates)` — the featured-image slot, resolved through the media registry, plus the first art tranche ([#1316](https://github.com/riolabs-ai/alignsynch/pull/1316))
+- `feat(templates)` — #1259 the in-app template page, and the link that no longer leaves the app ([#1315](https://github.com/riolabs-ai/alignsynch/pull/1315))
+- `feat(docs)` — the v2 rectification register — 34 delta sets named, every bundle reference paired with a live 390/1280 capture ([#1300](https://github.com/riolabs-ai/alignsynch/pull/1300))
+- `feat(admin)` — a Docs row in the Project Spec submenu, leaving to the v2 docs preview ([#1297](https://github.com/riolabs-ai/alignsynch/pull/1297))
+- `feat(admin)` — #1252 the project spec reader — submenu, validation matrix, eleven stories, the generated register ([#1263](https://github.com/riolabs-ai/alignsynch/pull/1263))
+- `feat(release)` — the postcheck — seven after-cut facts, exit 1 naming what failed ([#1262](https://github.com/riolabs-ai/alignsynch/pull/1262))
+- `feat(admin)` — #1252 the project spec R0 spine — stakeholder, spec-read, the gate, the landing, the rail row ([#1254](https://github.com/riolabs-ai/alignsynch/pull/1254))
+
+### Fixed
+
+- `fix(verify)` — demo-expectations — drop the duplicate /assessments row ([#1327](https://github.com/riolabs-ai/alignsynch/pull/1327))
+- `fix(ui)` — land the eleven rectification lanes as one tree — register reconciled once, full gate green ([#1314](https://github.com/riolabs-ai/alignsynch/pull/1314))
+- `fix(ui)` — /how-it-works names Stage 6 and the Extra Week (rect-09) ([#1313](https://github.com/riolabs-ai/alignsynch/pull/1313))
+- `fix(admin)` — #1252 the spec submenu's responsive rows, the drawer's duplicate nav, and the surface's conformity audit ([#1267](https://github.com/riolabs-ai/alignsynch/pull/1267))
+- `fix(gate)` — the docs lane runs the md-normalised check, so a page that drifts fails its own PR ([#1266](https://github.com/riolabs-ai/alignsynch/pull/1266))
+- `fix(docs)` — regenerate the normalised snapshot for the v2 coverage matrix (#1251) ([#1258](https://github.com/riolabs-ai/alignsynch/pull/1258))
+- `fix(release)` — #1248 one normaliser — the release verbs accept the tagged spelling ([#1250](https://github.com/riolabs-ai/alignsynch/pull/1250))
+
+### Maintenance
+
+- `docs(operations)` — the deploy mechanism: the author check, and the visibility it depends on ([#1328](https://github.com/riolabs-ai/alignsynch/pull/1328))
+- `demo(reset)` — land the five demo lanes as one tree — one bundle, one expectations file, one seed path ([#1325](https://github.com/riolabs-ai/alignsynch/pull/1325))
+- `chore(nav)` — the project spec sits above the Admin heading, in a title-less group ([#1296](https://github.com/riolabs-ai/alignsynch/pull/1296))
+- `chore(db)` — #1252 publish 0043_stakeholder_role.sql — the file the ledger already applied ([#1264](https://github.com/riolabs-ai/alignsynch/pull/1264))
+- `docs(operations)` — land the migration inventory on main, re-measured on both branches (47 files / 47 rows) ([#1265](https://github.com/riolabs-ai/alignsynch/pull/1265))
+- `chore(db)` — #1249 a migration number is one step — db:migrate refuses a shared prefix ([#1255](https://github.com/riolabs-ai/alignsynch/pull/1255))
+- `docs(demo)` — record the 2026-11-19 branch retirements, including the unrecoverable one ([#1257](https://github.com/riolabs-ai/alignsynch/pull/1257))
+- `docs(specs)` — the 23-screen v2 coverage matrix — every row evidenced with file:line ([#1251](https://github.com/riolabs-ai/alignsynch/pull/1251))
+- `chore(health)` — re-record platform health at v2.0.0-rc1.3 ([#1247](https://github.com/riolabs-ai/alignsynch/pull/1247))
+
+### Known limits
+
+- **The number is declared, and the census disagrees with it.** `v2.0.0-rc1.3..HEAD` is 24 commits — 8 `feat:` and 16 other — so `pnpm release:cut --check` computes `2.1.0` (minor) and `release_boundary.py` agrees with it. This tree is cut as `2.0.0-rc1.4` by decision: milestone #28 "v2.0.0 — the official release" still holds **28 open** spec issues (`#1268`–`#1295`), so the 2.0.0 line has not shipped and a `2.1.0` would claim a public line that does not exist and a stability the candidate line does not have. The banner at the top of this entry is `pnpm release:cut`'s own record of the override, not a note added afterwards.
+
+- **Schema before code, and the order is a step rather than a hope.** `db/migrations/0044_activity_event.sql` — with `lib/db/activity-events.ts` and `lib/activity/events.ts` — is applied to the production branch, from the snapshot branch taken first, before this build serves: `pnpm db:migrate` against production's unpooled URL, then `pnpm db:verify` exit 0 on production. Nothing imports the activity modules yet — `git grep` for importers across `app/`, `components/` and `lib/` returns none — so a miss would not answer a request path with a 500; it would break `db:seed` and `db:verify`. That is one import away from mattering, which is why the apply is step 0 of the cut rather than a note.
+
+- **The rectification register ships, and it is not a clean bill of health.** `docs/specs/v2-rectification.md` is the register this window added — 67 docs, 51 rows, read as **25 `deltas`**, **13 `unverifiable`**, **3 `not-built`** and **10 `matches`**. The 25 deltas and the 13 rows the instrument could not reach are real, user-visible work that stays open; nothing in this cut says the rectification is complete, and clearing a row's verdict is a docs-intake act on that doc's own frontmatter, not a decision this cut can take.
+
+- **No browser walk of the changed screens on a live deployment.** Every change in this window is a drawn screen, a copy correction, a nav position, a demo lane or a document; the evidence is `bash scripts/verify.sh` green on this tree, the cases the pull requests added, and the register's own 390/1280 capture pairs. No part of this cut re-walks the changed screens over HTTP on production.
+
+- **`2.0.0` is not released, and this entry is not that claim.** The 28 spec issues in milestone #28 are not in this cut, `v2.0.0-rc2` (milestone #26) is still a pool of 18 open items, and `v1.22.0` remains the newest stable release. `v2.0.0-rc1.4` is a candidate of the 2.0.0 line, not the line.
+
+- **The atlas sweep for this version is deferred, and the deferral is on file.** `docs/qa-atlas/DEFERRED.md` carries the row for `v2.0.0-rc1.4` — the version, the date, the commit it is cut from, and the reason — rather than a capture, because the pool's subjects are states the atlas cannot reach from demo's seed: a lapsed trial, a completed engagement's payment tab, an admin seat with the console behind it.
+
+- **Production moves on merge, and the label moves only here.** A squash merge to `main` is the deploy, through Vercel's Git integration — there is no second promotion path in this repository — so a cut with no merge behind it carries nothing, and a merge with no cut after it leaves production serving code that `/api/version` still names with the predecessor. This entry is what makes the label agree with the tree it already serves.
+
+- **This is a pre-release.** A `-suffix` version publishes with `--prerelease`, so `v2.0.0-rc1.4` never becomes `latest`; production's `/api/version` is the only thing that says which build is live.
+
 ## [2.0.0-rc1.3] - 2026-11-19
 
 > **Declared override.** The commit census computes 2.1.0 (minor, 13 commit(s) since v2.0.0-rc1.2); this release is cut as 2.0.0-rc1.3 by decision: the v2.0.0-rc train continues: milestone 27 names this candidate, rc2 is still pending with 16 open issues, and a release candidate is a deliberate boundary the census cannot compute
@@ -2127,3 +2184,4 @@ The admin console, and relationship templates become products.
 [2.0.0-rc1.1]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1...v2.0.0-rc1.1
 [2.0.0-rc1.2]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.1...v2.0.0-rc1.2
 [2.0.0-rc1.3]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.2...v2.0.0-rc1.3
+[2.0.0-rc1.4]: https://github.com/riolabs-ai/alignsynch/compare/v2.0.0-rc1.3...v2.0.0-rc1.4
