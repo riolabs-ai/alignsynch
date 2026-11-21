@@ -196,6 +196,15 @@
  *       mirrors it, the account purge nulls it — `grep -rn counterparty_user_id lib scripts`). A
  *       count of active sessions whose relationship mirror is NULL is printed beside the census, as
  *       a report and never a failure, for exactly that reason.
+ *   V35 the activity feed's record (t_6cc2b56a): `activity_event` exists, its `source` CHECK carries
+ *       the two writers the tree has — **`seed` and `simulate`, and never `cron`** — its
+ *       `idempotency_key` is UNIQUE, its `(session_record_id, party_role)` FK points at `party`, and
+ *       no row is an orphan: every seat resolves, both halves of the reference are present or
+ *       neither is, and the seat belongs to the relationship the row is filed under. The vocabulary
+ *       half is the point: `vercel.json` has no `crons` block and a cron entry runs on production
+ *       deployments only, so a word claiming a scheduler this tree does not have would outlive the
+ *       PR that added it. The census (seed / simulate) is what `pnpm demo:verify` sits on — exact
+ *       for the seed, a bounded band for the simulate path.
  *   V34 the ledger is level with the code (#1205): every `db/migrations/*.sql` file has a
  *       `schema_migrations` row. This is the **last** check in this script because it names the
  *       cause of everything above when a deployment is behind: on 2026-11-18 production's ledger
@@ -216,6 +225,7 @@ import { fileURLToPath } from "node:url";
 import { allowlistedAdminProblems } from "./db-admin-allowlist.mjs";
 import { ledgerProblems, ledgerSummary, migrationFiles } from "./db-schema.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
+import { activityEventProblems } from "@/lib/activity/events.ts";
 
 const CONTENT_TABLES = [
   "record",
@@ -2324,6 +2334,118 @@ async function main() {
       }
     }
 
+    /* V35 — the activity feed's record (t_6cc2b56a, `0044_activity_event.sql`).
+     *
+     * Five facts, checked together because any one of them alone is a false green:
+     *
+     *   * the table exists — a branch migrated without `0044` is a request-time error on the
+     *     relationship detail page, not a caught bug;
+     *   * `source`'s CHECK is read **by its definition** and must carry `'seed'` and `'simulate'`
+     *     and nothing else — in particular **not `'cron'`**. The tree has no scheduler (`vercel.json`
+     *     has no `crons` block) and a cron entry would fire against production, whose deployment is
+     *     not the demo's branch; a vocabulary word claiming one is a lie the repo then lives with,
+     *     so this is the guard rather than a comment in a migration;
+     *   * `UNIQUE (idempotency_key)` exists, by definition and not by "an index is there" — it is
+     *     what makes a re-run of either writer a no-op instead of a duplicate timeline (V24's lesson);
+     *   * the composite `(session_record_id, party_role)` foreign key to `party` exists, because the
+     *     party reference *is* a reference: a feed row whose actor is not a seat must not be writable;
+     *   * and no row is an orphan — `activityEventProblems()` names a seat that does not resolve, a
+     *     half-written pair, and a seat that belongs to a relationship other than the one the row is
+     *     filed under (the last is the one the FK cannot express, which is why the rule exists).
+     *
+     * The census is printed either way, because "the seed wrote 87 rows and the simulate action 12"
+     * is the number `pnpm demo:verify` is read against: exact for the seed, a bounded band for the
+     * simulate path.
+     */
+    let activitySeed = 0;
+    let activitySimulate = 0;
+    let activitySeated = 0;
+    const { rows: activityTable } = await client.query(
+      "SELECT to_regclass('public.activity_event') IS NOT NULL AS present",
+    );
+    if (activityTable[0]?.present !== true) {
+      fail(
+        "V35",
+        "public.activity_event does not exist — run `pnpm db:migrate` (0044): the relationship feed would have nowhere to read from",
+      );
+    } else {
+      const { rows: constraints } = await client.query(
+        `SELECT c.conname, c.contype, pg_get_constraintdef(c.oid) AS def
+           FROM pg_constraint c
+          WHERE c.conrelid = 'public.activity_event'::regclass`,
+      );
+      const sourceCheck = constraints.find(
+        (row) => row.conname === "activity_event_source_vocabulary",
+      );
+      const sourceDef = String(sourceCheck?.def ?? "");
+      for (const source of ["seed", "simulate"]) {
+        if (!sourceDef.includes(`'${source}'`)) {
+          fail(
+            "V35",
+            `public.activity_event has no '${source}' in its source CHECK — the two writers the tree has are the two words the table accepts`,
+          );
+        }
+      }
+      if (/cron/i.test(sourceDef)) {
+        fail(
+          "V35",
+          "'cron' is in public.activity_event's source vocabulary — nothing in this tree is scheduled (vercel.json has no crons block) and a request-path write labelled cron is a lie the repo then lives with",
+        );
+      }
+      const idempotencyKey = constraints.find(
+        (row) => row.contype === "u" && String(row.def ?? "") === "UNIQUE (idempotency_key)",
+      );
+      if (idempotencyKey === undefined) {
+        fail(
+          "V35",
+          "public.activity_event has no UNIQUE (idempotency_key) — a re-seed or a second simulate press would write a second timeline",
+        );
+      }
+      const seatKey = constraints.find((row) => row.conname === "activity_event_party_is_a_seat");
+      if (seatKey === undefined) {
+        fail(
+          "V35",
+          "public.activity_event has no (session_record_id, party_role) foreign key to party — an event by somebody who is not a seat would be writable",
+        );
+      }
+
+      const { rows: activityRows } = await client.query(
+        `SELECT a.id,
+                a.relationship_id,
+                a.session_record_id,
+                a.party_role,
+                s.relationship_id AS "seatRelationshipId"
+           FROM activity_event a
+           LEFT JOIN party p
+             ON p.session_record_id = a.session_record_id AND p.role = a.party_role
+           LEFT JOIN session s ON s.record_id = p.session_record_id
+          ORDER BY a.id`,
+      );
+      for (const problem of activityEventProblems(
+        activityRows.map((row) => ({
+          id: String(row.id),
+          relationshipId: row.relationship_id,
+          sessionRecordId: row.session_record_id,
+          partyRole: row.party_role,
+          seatRelationshipId: row.seatRelationshipId ?? null,
+        })),
+      )) {
+        fail(problem.code, problem.message);
+      }
+
+      const { rows: activityCounts } = await client.query(
+        `SELECT source, count(*)::int AS n,
+                count(*) FILTER (WHERE party_role IS NOT NULL)::int AS seated
+           FROM activity_event
+          GROUP BY source`,
+      );
+      for (const row of activityCounts) {
+        if (row.source === "seed") activitySeed = row.n;
+        if (row.source === "simulate") activitySimulate = row.n;
+        activitySeated += row.seated;
+      }
+    }
+
     /* V34 — the ledger is level with the code (#1205), and it is the **last** check on purpose.
      *
      * Every check above reads columns and tables the migrations create. When a deployment is behind,
@@ -2383,7 +2505,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, its own invitation row — claimed where a seat exists, present on a draft), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, ${activitySeed} seeded activity event(s) and ${activitySimulate} simulated (${activitySeated} naming a seat, every one resolving to its own relationship), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v2.0.0-rc1.4](v2-0-0-rc1-4.md)
+
+- **Released** 2026-11-21
+- **Tag** [`v2.0.0-rc1.4`](https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1.4)
+- **Pull requests named** 24
+- **Theme:** the rectification cut — an instrument that reads every doc's design reference against the live screen, the surfaces it found wrong repaired in one tree, and the agreement itself readable inside the app.
+- **Headline:** `feat(docs)` — the v2 rectification register — 34 delta sets named, every bundle reference paired with a live 390/1280 capture (#1300)
+
 ### [v2.0.0-rc1.3](v2-0-0-rc1-3.md)
 
 - **Released** 2026-11-19

@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**200 documents in 9 sections.** Every page carries the same nav block, generated
+**201 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -45,7 +45,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Records & QA](#records-qa) — 26 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 30 documents
+- [Release notes](#release-notes) — 31 documents
 
 ## Start here
 
@@ -291,6 +291,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v2-0-0-rc1-1.md`](changelog/v2-0-0-rc1-1.md) — **v2.0.0-rc1.1** — What does the patch on the candidate fix — and what format change does it carry?
 - [`changelog/v2-0-0-rc1-2.md`](changelog/v2-0-0-rc1-2.md) — **v2.0.0-rc1.2** — Which two loops did the candidate leave open, and what closes them?
 - [`changelog/v2-0-0-rc1-3.md`](changelog/v2-0-0-rc1-3.md) — **v2.0.0-rc1.3** — Which states, notices and plans did the pool make true from each seat?
+- [`changelog/v2-0-0-rc1-4.md`](changelog/v2-0-0-rc1-4.md) — **v2.0.0-rc1.4** — What did the register find when it read every doc's design against the live screen, and what did this cut repair?
 
 <!-- docs-hub:end -->
 

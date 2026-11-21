@@ -638,6 +638,14 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRow[] = [
   { name: "QA_ATLAS_SHOTS", why: "where the atlas capture writes its PNGs" },
   { name: "QA_ATLAS_VERSION", why: "which release directory the atlas capture writes" },
   {
+    name: "SEED_LOCK_HELD_BY",
+    why: "the label a caller puts on the branch lock it hands a seed it spawns (scripts/demo-verify.mjs → scripts/db-seed.mjs, #1321); a message only, never a config file's",
+  },
+  {
+    name: "SEED_LOCK_HELD_BY_PID",
+    why: "the pid of the connection holding `algn/1`, declared to a spawned seed and proved against pg_locks before it runs (scripts/db-seed.mjs, #1321); a handoff, not a switch — never a deployment's config",
+  },
+  {
     name: "BUNDLES_DIR",
     why: "the v2 design bundle drop the fidelity audit reads its references from (scripts/design-audit.mjs); a path outside the checkout, never deployed",
   },

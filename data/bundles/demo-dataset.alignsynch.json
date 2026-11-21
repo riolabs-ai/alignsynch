@@ -2,7 +2,7 @@
   "format": "alignsynch-bundle",
   "bundleVersion": 3,
   "kind": "dataset",
-  "appVersion": "1.20.1",
+  "appVersion": "2.0.0-rc1.4",
   "payload": {
     "templates": [
       {
@@ -3887,6 +3887,214 @@
         ]
       },
       {
+        "id": "assessment-instance-kenji-rosa-company",
+        "slug": "kenji-rosa-company",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-16T09:25:00.000Z",
+        "title": "Co-founders",
+        "summary": "Co-founders, answered by Kenji and Rosa.",
+        "items": [
+          {
+            "id": "cofounder-ownership",
+            "prompt": "How is ownership of the company divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unspoken",
+            "rightValue": "Agreed and written down"
+          },
+          {
+            "id": "cofounder-direction",
+            "prompt": "How are the big decisions about the product made?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One decides",
+            "rightValue": "Made together"
+          },
+          {
+            "id": "cofounder-workload",
+            "prompt": "How is the work split between the two of you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on one",
+            "rightValue": "Evenly shared"
+          },
+          {
+            "id": "cofounder-disagreement",
+            "prompt": "When you disagree about direction, how is it resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unspoken",
+            "rightValue": "Worked through"
+          },
+          {
+            "id": "cofounder-money",
+            "prompt": "How are money drawn and reinvested decided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One calls it",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "cofounder-visibility",
+            "prompt": "How much do you each know about the other's work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Little",
+            "rightValue": "Most of it"
+          },
+          {
+            "id": "cofounder-exit",
+            "prompt": "What happens to the company if one of you leaves?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never discussed",
+            "rightValue": "Planned in advance"
+          }
+        ],
+        "templateId": "assessment-co-founders",
+        "name": "The company",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "answers": "both"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Kenji",
+            "opinions": [
+              {
+                "itemId": "cofounder-ownership",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-direction",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-disagreement",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-money",
+                "opinions": {
+                  "feel": 1,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-visibility",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-exit",
+                "opinions": {
+                  "feel": 1,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Rosa",
+            "opinions": [
+              {
+                "itemId": "cofounder-ownership",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-direction",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "cofounder-disagreement",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-visibility",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "cofounder-exit",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "assessment-instance-tomas-ada",
         "slug": "tomas-ada",
         "type": "assessment",
@@ -4037,6 +4245,189 @@
                 "itemId": "payment-terms",
                 "opinions": {
                   "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-milo-ines-marriage",
+        "slug": "milo-ines-marriage",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-13T20:40:00.000Z",
+        "title": "Spouse A–Spouse B",
+        "summary": "Spouse A–Spouse B, answered by Milo and Ines.",
+        "items": [
+          {
+            "id": "household-load",
+            "prompt": "How fairly is the everyday work of the household split?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on one",
+            "rightValue": "Balanced"
+          },
+          {
+            "id": "money-decisions",
+            "prompt": "How much say does each of you have over money decisions?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One holds it",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "time-together",
+            "prompt": "How does the time you actually spend together compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "conflict-repair",
+            "prompt": "When you argue, how well do you get back to normal?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Simmers for days",
+            "rightValue": "Repaired quickly"
+          },
+          {
+            "id": "outside-relationships",
+            "prompt": "How comfortable is each of you with the other's friendships and family time?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Resented",
+            "rightValue": "Supported"
+          },
+          {
+            "id": "future-picture",
+            "prompt": "How aligned are your pictures of the next few years?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Opposite",
+            "rightValue": "Same"
+          }
+        ],
+        "templateId": "assessment-spouses",
+        "name": "The house on Alder Way",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "answers": "both"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Milo",
+            "opinions": [
+              {
+                "itemId": "household-load",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "money-decisions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "time-together",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "conflict-repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "outside-relationships",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "future-picture",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Ines",
+            "opinions": [
+              {
+                "itemId": "household-load",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "money-decisions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "time-together",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict-repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "outside-relationships",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "future-picture",
+                "opinions": {
+                  "feel": 4,
                   "wish": 4
                 }
               }

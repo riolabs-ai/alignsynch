@@ -15,9 +15,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_WAIT_SECONDS,
+  SEED_LOCK_HELD_BY_ENV,
+  SEED_LOCK_HELD_BY_PID_ENV,
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
   holderDescription,
+  inheritedLockDecision,
+  inheritedLockNotice,
+  inheritedLockRefusal,
   lockAcquiredNotice,
   lockTimeoutMessage,
   lockWaitNotice,
@@ -371,5 +376,85 @@ describe("the seed lock", () => {
     expect(holderDescription({ pid: 7, application_name: "", datname: "" })).toBe(
       "pid 7 (an unnamed session)",
     );
+  });
+
+  /* --- #1321 — the lock is handed down, and the handoff is proved ---------------------------- */
+
+  it("acquires the lock itself only when nobody declared a holder", () => {
+    // The ordinary `pnpm db:seed`: no caller, so this process takes `algn/1` and waits as before.
+    for (const declaredPid of [undefined, null, "", "  "]) {
+      expect(inheritedLockDecision({ declaredPid }), String(declaredPid)).toBe("acquire");
+      expect(
+        inheritedLockDecision({ declaredPid, holders: [{ pid: 999, granted: true }] }),
+        String(declaredPid),
+      ).toBe("acquire");
+    }
+  });
+
+  it("inherits only a granted lock held by the declared pid", () => {
+    const holders = [
+      { pid: 4242, granted: true },
+      { pid: 777, granted: true },
+    ];
+    expect(inheritedLockDecision({ declaredPid: "4242", holders })).toBe("inherit");
+    // The env is a string, and a shell that padded it is still the same pid.
+    expect(inheritedLockDecision({ declaredPid: " 777 ", holders })).toBe("inherit");
+    expect(inheritedLockDecision({ declaredPid: 4242, holders })).toBe("inherit");
+  });
+
+  it("refuses a handoff it cannot prove, instead of acquiring or trusting it", () => {
+    // Three ways the declaration can be wrong: the pid holds nothing, the lock is only a *waiter*
+    // (ungranted), or the value is not a pid at all. Each one refuses — a variable that fell back to
+    // "acquire" would deadlock against the caller's own lock, and one that fell back to "inherit"
+    // would be a way to switch the lock off from the environment.
+    expect(inheritedLockDecision({ declaredPid: "4242", holders: [] })).toBe("refuse");
+    expect(
+      inheritedLockDecision({ declaredPid: "4242", holders: [{ pid: 777, granted: true }] }),
+    ).toBe("refuse");
+    expect(
+      inheritedLockDecision({ declaredPid: "4242", holders: [{ pid: 4242, granted: false }] }),
+    ).toBe("refuse");
+    for (const declaredPid of ["0", "-5", "soon", "4.2", "1e9"]) {
+      expect(
+        inheritedLockDecision({ declaredPid, holders: [{ pid: 4242, granted: true }] }),
+        declaredPid,
+      ).toBe("refuse");
+    }
+  });
+
+  it("names the lock, the variable and the step that produced the values", () => {
+    // The two variables are the handoff's whole surface, so a typo in either name is a bug no
+    // message could explain — pin them.
+    expect(SEED_LOCK_HELD_BY_PID_ENV).toBe("SEED_LOCK_HELD_BY_PID");
+    expect(SEED_LOCK_HELD_BY_ENV).toBe("SEED_LOCK_HELD_BY");
+    // The key itself may never move: an old worktree and a new one only serialise on the same lock.
+    expect(SEED_LOCK_NAMESPACE).toBe(0x616c676e);
+    expect(SEED_LOCK_ID).toBe(1);
+  });
+
+  it("says which caller handed the lock down, and that this seed will not release it", () => {
+    const line = inheritedLockNotice({
+      pid: 4242,
+      label: "demo:verify",
+      holder: { pid: 4242, application_name: "demo:verify", datname: "neondb", state: "active" },
+    });
+    expect(line).toContain("algn/1");
+    expect(line).toContain("pid 4242");
+    expect(line).toContain('"demo:verify"');
+    expect(line).toContain("inherited from demo:verify");
+    // The reader has to know the run that releases it is *not* this process.
+    expect(line).toContain("releases it when its run ends");
+  });
+
+  it("makes an unprovable handoff a refusal that names both the variable and the lock", () => {
+    // A handoff that cannot be verified is a way to disable the lock with an environment variable,
+    // so the message has to say that in as many words — and name what to unset.
+    const refusal = inheritedLockRefusal({ declaredPid: "4242" });
+    expect(refusal).toContain(SEED_LOCK_HELD_BY_PID_ENV);
+    expect(refusal).toContain("algn/1");
+    expect(refusal).toContain("4242");
+    expect(refusal).toContain("cannot be used to skip the lock");
+    expect(refusal).toContain("writes nothing");
+    expect(refusal).toContain("unset");
   });
 });

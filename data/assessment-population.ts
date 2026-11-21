@@ -1,5 +1,5 @@
 /**
- * The demo population — 30 people, 27 relationships, and every lifecycle the model allows (#1079).
+ * The demo population — 33 people, 29 relationships, and every lifecycle the model allows (#1079).
  *
  * This file is **data, not content logic**: it holds one compact row per relationship and
  * `data/assessments.ts` turns each row into a full `AssessmentSession` (`populationSession`),
@@ -29,8 +29,8 @@
  *   |---|---|---|
  *   | 1 Details · 2 Settings · 3 Aspects | a cookie, no row (`lib/flow/create-draft.ts`) | — (nothing to seed) |
  *   | 4 Account | the relationship written as a **draft**, no invitation | `esme-walt`, `pia-greta`, `ivan-ada` |
- *   | 5 Invite | the invitation **sent** (`pending`) and, once claimed, `published` | `rowan-kenji`, `lena-yusuf`, `hugo-selma`; `rowan-esme`, `theo-lena`, `tomas-ada`, `bea-anouk`, `dario-fatima` |
- *   | after the flow | `active`, `complete`, and the two ways it ends — `void`, `expired` | 5 · 8 · 3 · 3 |
+ *   | 5 Invite | the invitation **sent** (`pending`) and, once claimed, `published` | `kenji-yusuf`, `lena-yusuf`, `hugo-selma`; `esme-jules`, `rowan-avery-review`, `kenji-rosa-company`, `tomas-ada`, `milo-ines-marriage`, `theo-lena`, `bea-anouk`, `dario-fatima` |
+ *   | after the flow | `active`, `complete`, and the two ways it ends — `void`, `expired` | 5 · 4 · 3 · 3 |
  *
  * Names are fixtures (`demo.alignsynch.test` is the only address the demo owns) and the scores are
  * authored, not measured: nothing here is a real person's answer, and `DEMO_NOW_ISO` owns the clock
@@ -77,6 +77,8 @@ const VENDOR_PRODUCT = "assessment-customer-vendor-product";
 const VENDOR_SERVICES = "assessment-customer-vendor-services";
 const PARENT_TEACHER = "assessment-parent-teacher";
 const TEACHER_STUDENT = "assessment-teacher-student";
+const SPOUSES = "assessment-spouses";
+const CO_FOUNDERS = "assessment-co-founders";
 
 /**
  * The population, newest last. Dates run Aug–Oct 2026 so the lists sort meaningfully under
@@ -178,6 +180,27 @@ export const populationRows: readonly PopulationRow[] = [
     counterparty: { name: "Avery", answers: "3/4 3/4 3/4 3/4 3/4" },
   },
   {
+    /**
+     * The demo's **deeper** sheet: `co-founders` authors seven Aspects, so this relationship's
+     * At a Glance draws seven rows rather than five and the report has more than one length to
+     * render. Kenji and Rosa were colleagues on a finished team sheet; they also build something
+     * together, which is what a real pair looks like — one person in several relationships of
+     * different depths.
+     *
+     * Answers are a pair who agree about the work and disagree about the money and the exit, so
+     * the seven rows spread across In Synch, Small Gap and Gap instead of one colour.
+     */
+    slug: "kenji-rosa-company",
+    templateId: CO_FOUNDERS,
+    name: "The company",
+    date: "2026-10-16T09:25:00.000Z",
+    mode: "basic",
+    setting: "soft",
+    lifecycle: { status: "published", answers: "both" },
+    initiator: { name: "Kenji", answers: "3/4 3/4 3/4 3/4 1/4 3/4 1/4" },
+    counterparty: { name: "Rosa", answers: "3/4 3/4 3/5 3/4 3/4 3/4 2/4" },
+  },
+  {
     slug: "tomas-ada",
     templateId: VENDOR_SERVICES,
     date: "2026-10-15T09:10:00.000Z",
@@ -186,6 +209,25 @@ export const populationRows: readonly PopulationRow[] = [
     lifecycle: { status: "published", answers: "both", plan: "principal" },
     initiator: { name: "Tomas", answers: "3/5 2/4 3/5 2/4 3/5" },
     counterparty: { name: "Ada", answers: "3/4 3/4 3/4 3/4 3/4" },
+  },
+  {
+    /**
+     * The second **deeper** sheet: `spouses` authors six Aspects — the everyday stuff, not the
+     * flat's five — so the demo holds three depths (five, six and seven rows) between the
+     * relationships At a Glance has to draw.
+     *
+     * Milo and Ines are already live on Relationship Basics, which is the honest shape for a
+     * married pair: the everyday split and the wider picture are two conversations, not one.
+     */
+    slug: "milo-ines-marriage",
+    templateId: SPOUSES,
+    name: "The house on Alder Way",
+    date: "2026-10-13T20:40:00.000Z",
+    mode: "basic",
+    setting: "soft",
+    lifecycle: { status: "published", answers: "both" },
+    initiator: { name: "Milo", answers: "2/4 3/4 2/5 3/4 4/4 3/5" },
+    counterparty: { name: "Ines", answers: "3/4 3/4 4/4 3/4 3/4 4/4" },
   },
   {
     slug: "theo-lena",

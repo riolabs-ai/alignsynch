@@ -125,8 +125,8 @@ describe("the seeded bundle's invitations", () => {
     expect(invited.every(({ lifecycle }) => WORDS.includes(lifecycle.invite))).toBe(true);
   });
   it("counts the rows a seed installs, not the rows the bundle authors", () => {
-    // `#1079`'s census: 31 relationships over 56 party rows and 205 answers. The authored bundle
-    // carries 62 and 310 — a lifecycle with one seat or one answered sheet writes less, and a
+    // `#1079`'s census: 33 relationships over 60 party rows and 231 answers. The authored bundle
+    // carries 66 and 336 — a lifecycle with one seat or one answered sheet writes less, and a
     // checker that compared the branch against the authored number reported a green seed as a
     // failed reset.
     const total = sessions.reduce(
@@ -136,7 +136,7 @@ describe("the seeded bundle's invitations", () => {
       },
       { parties: 0, opinions: 0 },
     );
-    expect(total).toEqual({ parties: 56, opinions: 205 });
+    expect(total).toEqual({ parties: 60, opinions: 231 });
     const authored = sessions.reduce(
       (sum, session) => ({
         parties: sum.parties + session.parties.length,

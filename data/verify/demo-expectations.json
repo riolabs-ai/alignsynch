@@ -2,14 +2,14 @@
   "dataset": "demo-dataset.alignsynch.json",
   "brand": "alignsynch",
   "rows": {
-    "record": 60,
-    "item": 307,
+    "record": 62,
+    "item": 320,
     "response_option": 0,
-    "relationship": 31,
-    "session": 31,
-    "session_invite": 31,
-    "party": 56,
-    "opinion": 205,
+    "relationship": 33,
+    "session": 33,
+    "session_invite": 33,
+    "party": 60,
+    "opinion": 231,
     "billing_plan": 6,
     "billing_subscription": 2,
     "demo_account": 3,
@@ -25,7 +25,14 @@
     "relationship_payment": 2,
     "review_issue": 2,
     "review_issue_comment": 2,
-    "review_todo": 3
+    "review_todo": 3,
+    "activity_event_seed": 149
+  },
+  "activity": {
+    "simulate": {
+      "min": 1,
+      "max": 24
+    }
   },
   "routes": [
     {
@@ -37,8 +44,8 @@
     {
       "path": "/pricing",
       "status": 200,
-      "mustContain": ["Simple, transparent pricing", "$9.99", "$19.99"],
-      "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
+      "mustContain": ["Simple Pricing. Start Free.", "$9.99", "Basic"],
+      "mustNotContain": ["—/mo", "$19.99", "Internal Server Error", "Application error", "captcha"]
     },
     {
       "path": "/help",
@@ -60,8 +67,11 @@
     },
     {
       "path": "/assessments",
-      "status": 307,
-      "redirect": "/login"
+      "session": "initiator",
+      "status": 200,
+      "mustContain": ["My Relationships", "Start a relationship", "data-assessments-list"],
+      "mustNotContain": ["data-assessments-unreadable", "data-assessments-empty"],
+      "mustNameRelationship": true
     },
     {
       "path": "/dashboard",
@@ -70,21 +80,13 @@
     },
     {
       "path": "/templates/relationship",
-      "status": 307,
-      "redirect": "/login"
+      "status": 308,
+      "redirect": "/dashboard/templates"
     },
     {
       "path": "/assessment/templates",
       "status": 308,
-      "redirect": "/templates/relationship"
-    },
-    {
-      "path": "/assessments",
-      "session": "initiator",
-      "status": 200,
-      "mustContain": ["My Relationships", "Start a relationship", "data-assessments-list"],
-      "mustNotContain": ["data-assessments-unreadable", "data-assessments-empty"],
-      "mustNameRelationship": true
+      "redirect": "/dashboard/templates"
     }
   ]
 }

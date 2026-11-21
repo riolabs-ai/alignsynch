@@ -1588,15 +1588,19 @@ async function resetContent(connectionString) {
       (await client.query("SELECT to_regclass($1) IS NOT NULL AS present", [qualified])).rows[0]
         .present;
 
-    // Dependency order: opinion → party → session_invite → session → relationship_member /
-    // coach_invite → relationship → template_version (a relationship names a version) → item
-    // (cascades response_option) → record.
+    // Dependency order: opinion → activity_event → party → session_invite → session →
+    // relationship_member / coach_invite → relationship → template_version (a relationship names a
+    // version) → item (cascades response_option) → record.
     // `session.template_record_id` and `relationship.template_id` have no ON DELETE CASCADE, so
     // the session and relationship rows have to go before the records they name — and the session
     // before the relationship it belongs to (`session.relationship_id` is NOT NULL with an FK).
     // Membership and coach invites reference `relationship` (CASCADE), so they go before it.
+    // `activity_event` (0044) references both `relationship` and `party` with CASCADE, so it is
+    // deleted explicitly **first**: the feed's row count belongs in this report, and a reset that
+    // reported every count except the one table it left to a cascade would be hiding it.
     const statements = [
       ["opinion", "public.opinion", "DELETE FROM opinion"],
+      ["activity_event", "public.activity_event", "DELETE FROM activity_event"],
       ["party", "public.party", "DELETE FROM party"],
       ["session_invite", "public.session_invite", "DELETE FROM session_invite"],
       ["session", "public.session", "DELETE FROM session"],
