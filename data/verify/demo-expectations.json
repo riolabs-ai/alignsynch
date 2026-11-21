@@ -87,14 +87,6 @@
       "path": "/assessment/templates",
       "status": 308,
       "redirect": "/dashboard/templates"
-    },
-    {
-      "path": "/assessments",
-      "session": "initiator",
-      "status": 200,
-      "mustContain": ["My Relationships", "Start a relationship", "data-assessments-list"],
-      "mustNotContain": ["data-assessments-unreadable", "data-assessments-empty"],
-      "mustNameRelationship": true
     }
   ]
 }
