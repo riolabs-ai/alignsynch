@@ -134,9 +134,14 @@ import {
 import { seedAdminSurfaces } from "./db-seed-admin-surfaces.mjs";
 import { DEMO_ACCOUNTS, inviteEmailFor } from "./db-seed-invite.mjs";
 import {
+  SEED_LOCK_HELD_BY_ENV,
+  SEED_LOCK_HELD_BY_PID_ENV,
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
   SEED_LOCK_POLL_MS,
+  inheritedLockDecision,
+  inheritedLockNotice,
+  inheritedLockRefusal,
   lockAcquiredNotice,
   lockTimeoutMessage,
   lockWaitNotice,
@@ -1509,20 +1514,73 @@ async function draftInvitationCensus(client, relationshipIds) {
  * second, which is why the pair is passed as the same two integers everywhere.
  */
 async function seedLockHolder(client) {
+  const holders = await seedLockHolders(client);
+  return holders.find((row) => row.granted === true) ?? null;
+}
+
+/**
+ * Every session the branch's lock is visible to, granted or not — the rows `inheritedLockDecision`
+ * reads, and the one place the `pg_locks` question is spelled.
+ *
+ * `l.pid` is selected rather than `a.pid`, and the join to `pg_stat_activity` is a `LEFT` one, so a
+ * role without `pg_read_all_stats` still gets the pid a handoff is proved against and a holder
+ * description that says the session is not visible to it. An ungranted row is a *waiter*: it is
+ * returned (so a caller can tell "queued" from "holding") and never counts as the holder.
+ */
+async function seedLockHolders(client) {
   const { rows } = await client.query(
-    `SELECT a.pid, a.application_name, a.datname, a.state
+    `SELECT l.pid AS pid, a.application_name, a.datname, a.state, l.granted
        FROM pg_locks l
-       JOIN pg_stat_activity a ON a.pid = l.pid
+       LEFT JOIN pg_stat_activity a ON a.pid = l.pid
       WHERE l.locktype  = 'advisory'
         AND l.objsubid  = 2
         AND l.classid   = $1::int::oid
         AND l.objid     = $2::int::oid
-        AND l.granted
-      ORDER BY a.pid
-      LIMIT 1`,
+      ORDER BY l.pid`,
     [SEED_LOCK_NAMESPACE, SEED_LOCK_ID],
   );
-  return rows[0] ?? null;
+  return rows;
+}
+
+/**
+ * Takes this branch's seed lock — or runs under one the caller already holds (#1321).
+ *
+ * `pnpm demo:verify` holds `algn/1` for its whole run — its seed, its counts, its sign-ins and its
+ * route reads — so that a concurrent seeder **waits for the run** instead of interleaving with it
+ * and reporting a dataset it walked over. This seed is spawned *inside* that window, so taking the
+ * lock here would be a deadlock by construction: a session-level advisory lock belongs to the
+ * connection that took it, so this process's `pg_try_advisory_lock` could never be granted against
+ * its parent's, and the seed would sit out the whole wait budget and then fail.
+ *
+ * So the lock is **handed down**, never re-taken: the caller puts its own `pg_backend_pid()` in
+ * `SEED_LOCK_HELD_BY_PID`. That word is not taken on trust — the declaration is proved against
+ * `pg_locks` before a single `DELETE` runs. A handoff nobody can verify would be a way to switch
+ * the lock off with an environment variable, which is exactly the race it exists to remove, so an
+ * unprovable one **refuses by name** rather than falling back to acquiring.
+ *
+ * Returns `true` when this process owns the lock and must release it, `false` when it inherited one
+ * from the caller's session (which is the caller's to release; see the `finally` in `main`).
+ */
+async function claimSeedLock(client) {
+  const declaredPid = (process.env[SEED_LOCK_HELD_BY_PID_ENV] ?? "").trim();
+  if (inheritedLockDecision({ declaredPid }) === "acquire") {
+    await acquireSeedLock(client);
+    return true;
+  }
+
+  const holders = await seedLockHolders(client);
+  if (inheritedLockDecision({ declaredPid, holders }) === "refuse") {
+    throw new Error(inheritedLockRefusal({ declaredPid }));
+  }
+
+  console.log(
+    inheritedLockNotice({
+      pid: Number(declaredPid),
+      label: process.env[SEED_LOCK_HELD_BY_ENV],
+      holder: holders.find((row) => Number(row.pid) === Number(declaredPid)),
+    }),
+  );
+  return false;
 }
 
 /**
@@ -1777,6 +1835,9 @@ async function main() {
   // is what lets a failure say which one happened.
   let phaseTwoOpen = false;
   let demoAccountsCreated = 0;
+  // #1321 — `true` when this process took `algn/1` itself, `false` when it runs under the lock a
+  // caller (a `demo:verify` run) already holds. Only the owner releases it.
+  let seedLockOwned = false;
   try {
     console.log(
       `db:seed — ${assessments.length} template(s), ${assessmentInstances.length} instance(s)` +
@@ -1795,8 +1856,10 @@ async function main() {
      * same phase on the next run (it deletes by email, not by remembered id).
      *
      * **Two phases means two processes can interleave, so the branch's seed lock is held across
-     * both** (taken above, released in `finally`). It has to be the database's lock: the runs come
-     * from different worktrees with different pids, so a file lock would serialise nothing.
+     * both** (claimed above, released in `finally` — or, when a `demo:verify` run handed its lock
+     * down, inherited and left for that run to release: #1321). It has to be the database's lock:
+     * the runs come from different worktrees with different pids, so a file lock would serialise
+     * nothing.
      *
      * **What a failed run leaves behind, stated because it is recoverable, not atomic.** If phase 1
      * commits and phase 2 then aborts — a sign-up the auth server refuses, a count mismatch, a
@@ -1816,7 +1879,7 @@ async function main() {
      * a half-deleted subtree. Phase 2's exact-count assertion is unchanged: convergence is what
      * makes it affordable, deleting it (or weakening it) is what would make the next drift
      * invisible. */
-    await acquireSeedLock(client);
+    seedLockOwned = await claimSeedLock(client);
     await client.query("BEGIN");
     let deleted;
     let removed;
@@ -2126,7 +2189,12 @@ async function main() {
     // Both the normal path and every failure path release here; a process that is *killed* never
     // reaches it, and the backend drops a session-level lock when the connection dies — which is
     // what makes a crash unable to wedge the branch (measured: SIGKILL a seed, the next one runs).
-    await releaseSeedLock(client);
+    //
+    // #1321 — **only the owner releases.** When this seed inherited the lock (a `demo:verify` run
+    // was holding it), the lock belongs to *that* session: an unlock here would either return
+    // `false` harmlessly or, worse, be read as "the seed is done, the branch is free" while the run
+    // that owns it is still walking the dataset. A process never unlocks a lock it did not take.
+    if (seedLockOwned) await releaseSeedLock(client);
     await client.end();
   }
 }
