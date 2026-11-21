@@ -1061,6 +1061,11 @@
           "path": "changelog/v2-0-0-rc1-3.md",
           "title": "v2.0.0-rc1.3",
           "question": "Which states, notices and plans did the pool make true from each seat?"
+        },
+        {
+          "path": "changelog/v2-0-0-rc1-4.md",
+          "title": "v2.0.0-rc1.4",
+          "question": "What did the register find when it read every doc's design against the live screen, and what did this cut repair?"
         }
       ]
     }
