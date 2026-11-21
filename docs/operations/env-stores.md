@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Env stores · prev [Deploying](deploying.md) · next [Env manifest](env-manifest.md)
+[Docs hub](../README.md) › **Operations** › Env stores · prev [Demo walkthrough](demo-walkthrough.md) · next [Env manifest](env-manifest.md)
 
 <!-- docs-nav:end -->
 
@@ -125,6 +125,6 @@ Each is either an app variable missing from the table (add the row) or a local t
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Env stores · prev [Deploying](deploying.md) · next [Env manifest](env-manifest.md)
+[Docs hub](../README.md) › **Operations** › Env stores · prev [Demo walkthrough](demo-walkthrough.md) · next [Env manifest](env-manifest.md)
 
 <!-- docs-nav:end -->
