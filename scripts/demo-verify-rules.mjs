@@ -20,6 +20,11 @@
  *                            statuses, redirect targets) and nothing else. `mustContain` /
  *                            `mustNotContain` are authored expectations, so an update that quietly
  *                            erased them would turn a red run green by forgetting what was asked.
+ *                            The authored `activity` band passes through untouched for the same
+ *                            reason.
+ *   simulateBoundProblems()  is the activity feed's `simulate` count inside the band the file
+ *                            authors? An exact count there is a check that fails the first time
+ *                            somebody presses the action twice — see the function.
  *
  * `serializeExpectations()` is here too, because "`--update` on an unchanged app produces no diff"
  * is a property of the *bytes* this module writes, not of a promise in a comment.
@@ -165,6 +170,36 @@ export function locationPath(location) {
 }
 
 /**
+ * The band `pnpm demo:verify` accepts for the activity feed's `simulate` source (t_6cc2b56a), and
+ * whether a run's count is inside it.
+ *
+ * **A band and not a count**, because the two sources are different facts. The `seed` rows are
+ * derived from the dataset and replaced on every seed, so an exact number that moves is drift. The
+ * `simulate` rows are written by an explicit action a person presses: it writes one row per seat on
+ * the relationships the branch happens to have live, stamped at the instant it ran, and it may be
+ * pressed again. An exact assertion over that is a flaky check with a red face — the ceiling is
+ * `SIMULATE_MAX_EVENTS` in `lib/activity/events.ts`, and `tests/activity-events.test.ts` holds the
+ * file's band to it so it cannot be widened to hide a duplicate writer.
+ *
+ * An unstated half is not a problem here: "no floor authored" and "the run broke the floor" are
+ * different sentences, and a file that names neither is a file that has not been asked yet.
+ *
+ * @param {{ count: number, min?: number, max?: number }} options
+ */
+export function simulateBoundProblems({ count, min, max }) {
+  if (min === undefined && max === undefined) return [];
+  if (min !== undefined && count < min) {
+    return [`${count} simulate event(s), below the band's floor of ${min}`];
+  }
+  if (max !== undefined && count > max) {
+    return [
+      `${count} simulate event(s), above the band's ceiling of ${max} — one run of \`pnpm demo:simulate-activity\` writes at most one event per seat on the live relationships`,
+    ];
+  }
+  return [];
+}
+
+/**
  * Does one rendered answer match one expectation? Returns human-readable problems, `[]` when not.
  *
  * A wrong status short-circuits: when `/pricing` answers 500, "missing `$8.95`" is noise about a
@@ -252,6 +287,9 @@ export function reviseExpectations(previous, observations) {
       dataset: previous.dataset,
       brand: previous.brand,
       rows,
+      // The activity band is **authored**, like `mustContain`: `--update` records counts and
+      // statuses, and a band it rewrote from the run it just made would never fail again.
+      ...(previous.activity === undefined ? {} : { activity: previous.activity }),
       routes,
     },
     changes,

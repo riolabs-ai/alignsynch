@@ -37,6 +37,23 @@
  * dependency, and no Playwright: the acceptance is on the **rendered HTML**, which is what a
  * `fetch` returns and what an assertion can read.
  *
+ * **The activity feed is checked in both of its sources, differently on purpose** (t_6cc2b56a).
+ * The `seed` rows are derived from the dataset and replaced by every seed, so their count is exact —
+ * it is one of the row counts above. The `simulate` rows belong to an **explicit action**
+ * (`pnpm demo:simulate-activity`), which this check *invokes* — the same way it invokes the seed,
+ * and never on a schedule — and then presses twice: the count must land inside the band the
+ * expectations file authors and must not move between the presses. An exact number there would be a
+ * check that fails the first time somebody presses it on a different dataset.
+ *
+ * ## The branch lock (#1321)
+ *
+ * This run owns `algn/1` from just before its seed to its last read, and hands that lock's pid down
+ * to the seed (`SEED_LOCK_HELD_BY_PID`) instead of letting the child take it again — an advisory
+ * lock belongs to the session that took it, so the child's attempt could never be granted. The seed
+ * proves the declaration against `pg_locks` before any `DELETE`. A concurrent `db:seed` therefore
+ * waits for the whole run rather than deleting the demo accounts underneath its sign-ins.
+ *
+ *
  * ## The refusals
  *
  *   * `NEON_BRANCH=production`, or a `DATABASE_URL` on `ep-winter-block` — a demo seeder pointed
@@ -77,6 +94,17 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
 import { ADMIN_SURFACE_COUNT_SQL } from "./db-seed-admin-surfaces.mjs";
+import {
+  SEED_LOCK_HELD_BY_ENV,
+  SEED_LOCK_HELD_BY_PID_ENV,
+  SEED_LOCK_ID,
+  SEED_LOCK_NAMESPACE,
+  SEED_LOCK_POLL_MS,
+  lockAcquiredNotice,
+  lockTimeoutMessage,
+  lockWaitNotice,
+  waitBudgetMs,
+} from "./db-seed-lock.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 import {
   brandMismatch,
@@ -87,6 +115,7 @@ import {
   routeKey,
   routeProblems,
   serializeExpectations,
+  simulateBoundProblems,
 } from "./demo-verify-rules.mjs";
 
 const ARGS = process.argv.slice(2);
@@ -133,6 +162,11 @@ const COUNT_SQL = {
   // (`scripts/db-seed-payments.mjs`), not the console's, so it is counted here beside the other
   // rows that half writes rather than in `ADMIN_SURFACE_COUNT_SQL`.
   relationship_payment: "SELECT count(*)::int AS n FROM relationship_payment",
+  // t_6cc2b56a — the feed's **seed-owned** rows: an exact count, because the seed derives them from
+  // the dataset's lifecycle (`lib/activity/events.ts::seedActivityEvents`) and replaces them every
+  // run. Source 'simulate' is deliberately **not** here — it is the explicit action's, it may run
+  // any number of times, and it is held to a bounded band below instead (`activity.simulate`).
+  activity_event_seed: "SELECT count(*)::int AS n FROM activity_event WHERE source = 'seed'",
   ...ADMIN_SURFACE_COUNT_SQL,
 };
 
@@ -469,6 +503,149 @@ async function main() {
   }
   step("✓", "bundle", `the committed bundle is the canonical export (${seconds(bundleCheck.ms)})`);
 
+  /* --- the branch lock: this run holds it from its seed to its last read (#1321) --------------
+   *
+   * Taken here — after every refusal above, before the seed — and released in the `finally` below,
+   * which every path after this point passes through (the row, session, property and problem
+   * branches all return early). Refusals stay outside it on purpose: a run that refuses to proceed
+   * has no reason to park every other seeder on the branch behind it.
+   *
+   * `demo:verify` used to be the thing that reported a missing demo account: the seed it spawns took
+   * `algn/1` and released it when the child exited, so the counts, the sign-ins and the route reads
+   * that follow ran with nothing held and a concurrent `pnpm db:seed` could delete the accounts
+   * mid-run. The lock is now the *run's*, and the seed runs under it via `SEED_LOCK_HELD_BY_PID`. */
+  let runLock;
+  try {
+    runLock = await holdRunLock(seedUrl);
+  } catch (error) {
+    const [first, ...rest] = error.message.split("\n");
+    console.log(`  ✗ lock     ${first}`);
+    for (const line of rest) console.log(`             ${line}`);
+    return 1;
+  }
+  try {
+    return await runVerification({
+      expectations,
+      bundle,
+      seedUrl,
+      startedAt,
+      lockPid: runLock.pid,
+    });
+  } finally {
+    await releaseRunLock(runLock);
+  }
+}
+
+/** This run's label on its own lock connection — what a `pg_locks` reader sees holding `algn/1`. */
+const LOCK_APPLICATION_NAME = "demo:verify";
+
+/**
+ * The session holding this branch's seed lock — the same `pg_locks` question `scripts/db-seed.mjs`
+ * asks, spelled again here because that module runs its seed at import and can never be imported.
+ * `l.pid` survives a role that cannot see the other session, and `holderDescription` turns the row
+ * into the one phrase both commands use.
+ */
+async function seedLockHolder(client) {
+  const { rows } = await client.query(
+    `SELECT l.pid AS pid, a.application_name, a.datname, a.state
+       FROM pg_locks l
+       LEFT JOIN pg_stat_activity a ON a.pid = l.pid
+      WHERE l.locktype  = 'advisory'
+        AND l.objsubid  = 2
+        AND l.classid   = $1::int::oid
+        AND l.objid     = $2::int::oid
+        AND l.granted
+      ORDER BY l.pid
+      LIMIT 1`,
+    [SEED_LOCK_NAMESPACE, SEED_LOCK_ID],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Takes `algn/1` on a connection of the run's own and returns `{ client, pid }` (#1321).
+ *
+ * **Why the run holds it.** The dataset this command diffs against is only true while it is what the
+ * branch holds. When the lock lived inside the `db:seed` child, a concurrent seeder was free to
+ * delete and re-create the demo accounts while this run counted rows and signed in — measured as a
+ * false `demo_account has no row for initiator@demo.alignsynch.test`, on a branch with nothing wrong
+ * with it. Holding the lock across the seed, the counts, the sign-ins and every route read makes the
+ * second run **wait** for the first instead of walking over it.
+ *
+ * **Why a separate connection.** An advisory lock belongs to the session that takes it, so this is
+ * its own `Client`, opened on `seedUrl` (the branch the seed writes and the counts read) with its own
+ * `application_name`, and closed when the run ends. The read client further down stays a second
+ * connection with a second owner: `pg_locks` names the run, never the read session, and a query on
+ * the read client cannot drop a lock by accident.
+ *
+ * **Why the seed's words.** `waitBudgetMs`, `SEED_LOCK_POLL_MS`, `lockWaitNotice`,
+ * `lockAcquiredNotice` and `lockTimeoutMessage` are the vocabulary an operator already reads from
+ * `pnpm db:seed`; forking them here would be two dialects for one lock, and the line a waiting run
+ * prints has to be recognisable to whoever is waiting on the other side of it.
+ */
+async function holdRunLock(connectionString) {
+  const client = new Client({
+    connectionString,
+    application_name: LOCK_APPLICATION_NAME,
+  });
+  await client.connect();
+  try {
+    const budgetMs = waitBudgetMs();
+    const startedAt = Date.now();
+    const tryLock = async () =>
+      (
+        await client.query("SELECT pg_try_advisory_lock($1::int, $2::int) AS ok", [
+          SEED_LOCK_NAMESPACE,
+          SEED_LOCK_ID,
+        ])
+      ).rows[0].ok === true;
+
+    if (!(await tryLock())) {
+      console.log(lockWaitNotice({ holder: await seedLockHolder(client), budgetMs }));
+      let held = false;
+      while (Date.now() - startedAt < budgetMs) {
+        await new Promise((resolve) => setTimeout(resolve, SEED_LOCK_POLL_MS));
+        if (await tryLock()) {
+          held = true;
+          break;
+        }
+      }
+      if (!held) {
+        throw new Error(lockTimeoutMessage({ holder: await seedLockHolder(client), budgetMs }));
+      }
+      console.log(lockAcquiredNotice({ waitedMs: Date.now() - startedAt }));
+    }
+
+    // The pid the seed is handed: a *proved* declaration, which is why it is read back from this
+    // connection rather than assumed.
+    const { rows } = await client.query("SELECT pg_backend_pid() AS pid");
+    return { client, pid: rows[0].pid };
+  } catch (error) {
+    await client.end().catch(() => {});
+    throw error;
+  }
+}
+
+/**
+ * Releases the run's lock and closes its connection — on every path, including a step that failed or
+ * a route that drifted. The unlock is best-effort (a dead connection has already released it);
+ * `end()` is what guarantees the backend cannot leave the branch parked after this process exits.
+ */
+async function releaseRunLock(lock) {
+  await lock.client
+    .query("SELECT pg_advisory_unlock($1::int, $2::int)", [SEED_LOCK_NAMESPACE, SEED_LOCK_ID])
+    .catch(() => {});
+  await lock.client.end().catch(() => {});
+}
+
+/**
+ * The run itself: seed under the run's own lock, count the rows, sign in, read the routes, diff.
+ *
+ * Extracted from `main` so that the lock wraps **all** of it (#1321) — one `try/finally` in `main`,
+ * and no early `return 1` below can escape it. `lockPid` is the pid of the connection holding
+ * `algn/1`; the seed proves it against `pg_locks` and refuses by name if it cannot.
+ */
+async function runVerification({ expectations, bundle, seedUrl, startedAt, lockPid }) {
   // --- seed ------------------------------------------------------------------------------------
   const seed = runScript("db:seed", {
     env: {
@@ -476,6 +653,11 @@ async function main() {
       // Pin the seed to the branch this run counted and diffed, whatever the shell's two names say.
       DATABASE_URL: seedUrl,
       DATABASE_URL_UNPOOLED: seedUrl,
+      // #1321 — the lock is this run's, not the child's. The seed proves the declaration against
+      // `pg_locks` before any DELETE and refuses by name when that pid holds nothing, so this cannot
+      // be used to skip the lock; the label is what its inherited-lock line names.
+      [SEED_LOCK_HELD_BY_PID_ENV]: String(lockPid),
+      [SEED_LOCK_HELD_BY_ENV]: LOCK_APPLICATION_NAME,
     },
   });
   if (!seed.ok) {
@@ -548,6 +730,78 @@ async function main() {
         Object.keys(expectations.rows ?? counts)
           .map((table) => `${table} ${counts[table]}`)
           .join(" · "),
+      );
+    }
+
+    /* t_6cc2b56a — the activity feed's two halves, checked the two different ways they deserve.
+     *
+     * `activity_event_seed` is already an exact count above (it is in `COUNT_SQL`), because the seed
+     * derives that timeline from the dataset and replaces it on every run: a number that moves is
+     * drift.
+     *
+     * The **simulate** source is the opposite fact — an explicit action a person presses, which
+     * writes one row per seat on the relationships the branch happens to have live, stamped at the
+     * instant it ran. Two things follow, and both are checked here rather than assumed:
+     *
+     *   * it is **pressed twice**, and the count must not move between the presses. That is the
+     *     idempotency claim proved against a real database instead of against the derivation — the
+     *     second press replaces the first's rows, and a writer that appended would double the band;
+     *   * the count is held to a **band** (`activity.simulate` in the expectations file), never an
+     *     exact number: the action writes as many rows as the branch has live relationships and
+     *     stamps them at the instant it ran, so an exact assertion would fail the first time
+     *     somebody pressed it on a different dataset. The band's ceiling is held to
+     *     `SIMULATE_MAX_EVENTS` by `tests/activity-events.test.ts`, so it cannot be widened to hide
+     *     a duplicate writer.
+     *
+     * This is the check **invoking** the action, the same way it invokes `pnpm db:seed` above — not
+     * a scheduler. Nothing in this tree schedules either of them, and `vercel.json` has no `crons`
+     * block (0044's header says why that matters). */
+    const simulateEnv = { DATABASE_URL: seedUrl, DATABASE_URL_UNPOOLED: seedUrl };
+    const simulateCount = async () => {
+      const { rows } = await client.query(
+        "SELECT count(*)::int AS n FROM activity_event WHERE source = 'simulate'",
+      );
+      return rows[0]?.n ?? 0;
+    };
+
+    const firstPress = runScript("demo:simulate-activity", { env: simulateEnv });
+    if (!firstPress.ok) {
+      console.log(`  ✗ activity \`pnpm demo:simulate-activity\` failed — the simulate path is a`);
+      console.log(
+        "             writer this check exists to hold, so a failure here is not a skip:",
+      );
+      for (const line of tail(firstPress.output)) console.log(line);
+      return 1;
+    }
+    const afterFirst = await simulateCount();
+    const secondPress = runScript("demo:simulate-activity", { env: simulateEnv });
+    if (!secondPress.ok) {
+      console.log(`  ✗ activity \`pnpm demo:simulate-activity\` failed on the second press:`);
+      for (const line of tail(secondPress.output)) console.log(line);
+      return 1;
+    }
+    const afterSecond = await simulateCount();
+
+    const band = {
+      min: expectations.activity?.simulate?.min,
+      max: expectations.activity?.simulate?.max,
+    };
+    const bandProblems = simulateBoundProblems({ count: afterSecond, ...band });
+    if (bandProblems.length > 0) {
+      problem("activity", `${bandProblems[0]} (\`activity.simulate\` in ${EXPECTATIONS_LABEL})`);
+    }
+    if (afterFirst !== afterSecond) {
+      problem(
+        "activity",
+        `a second simulate press moved the count from ${afterFirst} to ${afterSecond} — the writer appends where it must replace, and the feed would grow a duplicate timeline on every press`,
+      );
+    }
+    if (bandProblems.length === 0 && afterFirst === afterSecond) {
+      const bandText = `${band.min ?? 0}–${band.max ?? "∞"}`;
+      step(
+        "✓",
+        "activity",
+        `${counts.activity_event_seed} seeded event(s), exactly · ${afterSecond} simulated, inside the band ${bandText}, and unmoved by a second press (a replay replaces, it does not append) — written by an explicit action, never a schedule`,
       );
     }
 

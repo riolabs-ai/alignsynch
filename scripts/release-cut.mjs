@@ -1007,6 +1007,9 @@ function prepare(evidence, opts) {
   if (opts.override) say(`    wrote   the override banner into the entry, with the reason`);
   say();
   say(
+    `  next:  ${C.bold}pnpm bundles export --dataset --fix${C.off} ${C.dim}(E32 holds the bundle's appVersion equal to package.json — pay it in the bump commit)${C.off}`,
+  );
+  say(
     `  next:  ${`docs/changelog/v${candidate.replace(/\./g, "-")}.md`} — hand-authored (prose, mermaid, at least one screenshot)`,
   );
   say(

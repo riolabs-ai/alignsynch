@@ -82,6 +82,12 @@ takes a session-level advisory lock (`algn/1`, `scripts/db-seed-lock.mjs`) and a
 rather than interleaving. A killed seed leaves a **half-seeded** branch — content intact, no demo
 identities — and the next successful seed is the recovery, not a manual repair.
 
+`pnpm demo:verify` holds that same lock for its **whole run** — its seed, its row counts, its
+sign-ins and its route reads — and hands it down to the seed it spawns, whose session proves the
+handoff against `pg_locks` before running. So a concurrent `pnpm db:seed` waits for the entire
+`demo:verify` run (not just its seed), and two runs serialise instead of one of them reporting a demo
+account a neighbour had just deleted.
+
 The end-to-end proof:
 
 ```bash

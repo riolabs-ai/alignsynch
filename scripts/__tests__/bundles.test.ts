@@ -575,12 +575,22 @@ describe("E32 — the committed demo bundle is the canonical export of the fixtu
     assert.match(problems[0], /is missing — write it with/);
   });
 
-  it("ignores appVersion, which is provenance and never gated", () => {
+  it("fails when the committed bundle was stamped by another build", () => {
     const directory = workspace();
     const committed = readFileSync(DEMO_BUNDLE_FILE, "utf8");
     const renamed = committed.replace(/"appVersion": "[^"]*"/, '"appVersion": "9.9.9-other-build"');
     assert.notEqual(renamed, committed, "the case must actually change the version");
     const file = write(directory, "demo-other-version.json", renamed);
-    assert.deepEqual(demoBundleProblems({ file }), []);
+    const problems = demoBundleProblems({ file });
+    assert.equal(problems.length, 1, problems.join("\n"));
+    assert.match(problems[0], /says appVersion "9\.9\.9-other-build"/);
+    assert.match(problems[0], /pnpm bundles export --dataset --fix/);
+  });
+
+  it("fails when the stamp asked for is not this tree's version", () => {
+    const problems = demoBundleProblems({ appVersion: "9.9.9-other-build" });
+    assert.equal(problems.length, 1, problems.join("\n"));
+    assert.match(problems[0], /and this tree is "9\.9\.9-other-build"/);
+    assert.match(problems[0], /pnpm bundles export --dataset --fix/);
   });
 });

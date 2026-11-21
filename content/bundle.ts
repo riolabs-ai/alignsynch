@@ -26,8 +26,11 @@
  * pins it and any future schema that adds a transform breaks the test before it breaks a
  * bundle.
  *
- * **No timestamp, and nowhere to hide a secret.** `appVersion` is provenance and is never
- * gated; `bundleVersion` is the one format gate, because a build that half-reads a newer
+ * **No timestamp, and nowhere to hide a secret.** `appVersion` is provenance — it says which
+ * build made the file — and E32 holds the committed demo bundle's stamp equal to
+ * `package.json` (`pnpm bundles export --dataset --fix` re-stamps it; the stamp is never edited
+ * by hand), because an import that is told the wrong build is told a lie. `bundleVersion` is the
+ * one *format* gate, because a build that half-reads a newer
  * file is worse than one that refuses it. There is no `exportedAt` field: a clock reading
  * would make two exports of the same records differ, which is exactly what the round trip
  * forbids. Every object in the envelope and the payload is `strict()`, so an unknown key is

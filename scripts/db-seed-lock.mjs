@@ -131,3 +131,77 @@ export function lockTimeoutMessage({ holder, budgetMs }) {
     "the demo identities to the next successful run, because phase 1 deletes by email and by stored id.",
   ].join("\n");
 }
+
+/* ------------------------------------------------------------------ *\
+ * Handing the lock down (#1321)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The variable a caller sets to declare "I already hold `algn/1` on pid N": the pid is the caller's
+ * own `pg_backend_pid()`, a number an operator can find in `pg_locks`.
+ *
+ * The sibling variable names the caller in the message (`demo:verify`), because the point of the
+ * handoff is that the *run* owns the lock while the seed it spawns runs under it — and a reader
+ * told only "inherited" cannot tell which tool to wait for.
+ */
+export const SEED_LOCK_HELD_BY_PID_ENV = "SEED_LOCK_HELD_BY_PID";
+export const SEED_LOCK_HELD_BY_ENV = "SEED_LOCK_HELD_BY";
+
+/**
+ * What a seed should do about the lock, given a declared holder and the `pg_locks` rows that
+ * actually hold it: `"acquire"` (take it here, the old behaviour), `"inherit"` (the declared pid
+ * is a granted holder — do not take it, do not release it) or `"refuse"` (a handoff was declared
+ * and cannot be proved).
+ *
+ * **The refusal is the whole point.** A variable that let a seed skip the lock would be a way to
+ * switch the lock off in the environment, which is the race it exists to remove — so an unprovable
+ * declaration is a hard stop, never a quiet fall-back to `"acquire"`. Nor is it a fall-back the
+ * other way: taking the lock the caller already holds would block this seed for the whole wait
+ * budget and then fail, which is the deadlock the handoff was written to avoid.
+ *
+ * `holders` rows need `pid` and `granted`; an ungranted waiter is not a holder.
+ *
+ * @param {{ declaredPid?: string | number | null, holders?: Array<{ pid?: number | null, granted?: boolean }> }} [input]
+ * @returns {"acquire" | "inherit" | "refuse"}
+ */
+export function inheritedLockDecision({ declaredPid, holders = [] } = {}) {
+  const raw = declaredPid === undefined || declaredPid === null ? "" : String(declaredPid).trim();
+  if (raw === "") return "acquire";
+  const pid = Number(raw);
+  if (!Number.isInteger(pid) || pid <= 0) return "refuse";
+  const held = (holders ?? []).some(
+    (row) => Number(row?.pid) === pid && row?.granted !== false && row?.pid !== null,
+  );
+  return held ? "inherit" : "refuse";
+}
+
+/**
+ * The line a seed prints when it is running under a caller's lock: who holds it, which tool handed
+ * it down, and the one fact the reader needs — that this seed is not going to release it.
+ */
+export function inheritedLockNotice({ pid, label, holder }) {
+  const caller =
+    typeof label === "string" && label.trim() !== "" ? label.trim() : "a caller that did not say";
+  return [
+    `  · seed lock: ${SEED_LOCK_LABEL} is held by ${holderDescription(holder ?? { pid })} —`,
+    `    inherited from ${caller} (pid ${pid}), which releases it when its run ends.`,
+  ].join("\n");
+}
+
+/**
+ * Why this seed is stopping, when `SEED_LOCK_HELD_BY_PID` was set to a pid that holds nothing.
+ *
+ * It names both the variable and the lock, because the two ways to arrive here — a caller that
+ * released the lock too early, and a hand-written environment variable hoping to skip it — have the
+ * same answer (the lock is the caller's job, and nobody may talk this seed out of it) and only one
+ * of them is a bug in code.
+ */
+export function inheritedLockRefusal({ declaredPid }) {
+  return [
+    `${SEED_LOCK_HELD_BY_PID_ENV}=${declaredPid === undefined || declaredPid === null ? "" : String(declaredPid).trim()} is declared as the holder of ${SEED_LOCK_LABEL}, and pg_locks has no granted row for that pid.`,
+    `${SEED_LOCK_HELD_BY_PID_ENV} is a handoff, not a switch: it cannot be used to skip the lock, so this seed takes nothing and writes nothing.`,
+    "If a caller was handing the lock down, it released it before starting this seed — acquire the lock",
+    "in the caller first, pass the pid of the connection holding it, and re-run. Otherwise unset",
+    `${SEED_LOCK_HELD_BY_PID_ENV} and let this seed wait for ${SEED_LOCK_LABEL} itself.`,
+  ].join("\n");
+}
