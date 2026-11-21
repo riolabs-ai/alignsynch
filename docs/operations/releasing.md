@@ -655,6 +655,16 @@ the rename was never the cause. A `success` on the **push** is therefore the onl
 release reached production, and a `STALE` from `scripts/deploy-check.mjs` after a merge means "look
 at the commit status", not "wait longer".
 
+**A blocked deployment is a `BLOCKED` record, and a branch push makes no record at all.** Read off
+the project API on 2026-11-21 (`GET /v9/projects/alignsynch`, then `GET /v6/deployments`): the three
+refused commits appear as `production · BLOCKED · ref=main · <sha>` — the record is created and then
+refused, which is why the build log is empty rather than red — and the project reports
+`previewDeploymentsDisabled: true` with `gitProviderOptions.createDeployments: "disabled"`, so a
+**branch** push creates no deployment record and therefore no commit status. A pull request head can
+never carry a `Vercel` status on this project; the status line that proves the deploy path is the one
+on `main` after the merge. `pnpm deploy:demo` is the one command that creates a record for a
+non-`main` ref, and only for `demo`.
+
 **The same free tier's second ceiling is Function Storage — and its guard depends on a secret that
 is not provisioned.** [`scripts/vercel-prune.mjs`](../../scripts/vercel-prune.mjs) records 454
 deployments in 9.6 days reaching **100 % of the 10 GB** allowance on 2026-11-08, and a full quota is
