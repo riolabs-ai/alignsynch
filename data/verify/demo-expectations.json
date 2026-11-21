@@ -37,7 +37,7 @@
     {
       "path": "/pricing",
       "status": 200,
-      "mustContain": ["Simple, transparent pricing", "$9.99", "$19.99"],
+      "mustContain": ["Simple Pricing. Start Free.", "$9.99"],
       "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
     },
     {
@@ -70,13 +70,13 @@
     },
     {
       "path": "/templates/relationship",
-      "status": 307,
-      "redirect": "/login"
+      "status": 308,
+      "redirect": "/dashboard/templates"
     },
     {
       "path": "/assessment/templates",
       "status": 308,
-      "redirect": "/templates/relationship"
+      "redirect": "/dashboard/templates"
     },
     {
       "path": "/assessments",
