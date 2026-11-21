@@ -37,8 +37,14 @@
     {
       "path": "/pricing",
       "status": 200,
-      "mustContain": ["Simple Pricing. Start Free.", "$9.99"],
-      "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
+      "mustContain": ["Simple Pricing. Start Free.", "$9.99", "Basic"],
+      "mustNotContain": [
+        "\u2014/mo",
+        "$19.99",
+        "Internal Server Error",
+        "Application error",
+        "captcha"
+      ]
     },
     {
       "path": "/help",
@@ -60,8 +66,11 @@
     },
     {
       "path": "/assessments",
-      "status": 307,
-      "redirect": "/login"
+      "session": "initiator",
+      "status": 200,
+      "mustContain": ["My Relationships", "Start a relationship", "data-assessments-list"],
+      "mustNotContain": ["data-assessments-unreadable", "data-assessments-empty"],
+      "mustNameRelationship": true
     },
     {
       "path": "/dashboard",
