@@ -176,6 +176,114 @@ export const chatThreads: readonly ChatThread[] = zChatThreads.parse([
       },
     ],
   },
+  {
+    /**
+     * Rowan and Avery — the review relationship, and the second thread the **Counterparty**
+     * account can open. `rowan-avery-review` is `published` with Rowan initiating, so the
+     * relationship-detail Discussion tab is live for both seats and the unread message is Rowan's
+     * — the seat that is not the reader.
+     */
+    relationshipId: demoRelationshipId("assessment-instance-rowan-avery-review"),
+    messages: [
+      {
+        id: "chat-rowan-avery-review-1",
+        sender: "initiator",
+        body: "Before Thursday: the sheet is not a verdict on you, and I want to be clear about that first.",
+        at: "2026-10-19T17:12:00.000Z",
+        aspectId: "shared-context",
+      },
+      {
+        id: "chat-rowan-avery-review-2",
+        sender: "counterparty",
+        body: "I read it that way. The one I want to talk through is credit — I do not think it is as even as the number says.",
+        at: "2026-10-20T08:40:00.000Z",
+        aspectId: "credit",
+      },
+      {
+        id: "chat-rowan-avery-review-3",
+        sender: "initiator",
+        body: "Fair. Let us take that one first and leave the rest for the next round.",
+        at: "2026-10-20T09:02:00.000Z",
+        unread: true,
+      },
+    ],
+  },
+  /**
+   * Avery and Rowan — the **complete** relationship, kept on purpose. A finished relationship's
+   * Discussion is read-only, so this thread is what the closed band draws: a conversation that
+   * happened, with no composer over it.
+   */
+  {
+    relationshipId: demoRelationshipId("assessment-instance-avery-rowan-summer"),
+    messages: [
+      {
+        id: "chat-avery-rowan-summer-1",
+        sender: "initiator",
+        body: "Summer is the one I keep re-reading. We agreed on the rules and disagreed on how much notice they get.",
+        at: "2026-09-29T19:15:00.000Z",
+        aspectId: "aspect-house-rules",
+      },
+      {
+        id: "chat-avery-rowan-summer-2",
+        sender: "counterparty",
+        body: "And we settled it by writing the notice down, which is why it stopped being a fight.",
+        at: "2026-09-29T19:38:00.000Z",
+        aspectId: "aspect-house-rules",
+      },
+    ],
+  },
+  /**
+   * Kenji and Rosa — a **seven-Aspect** sheet (`co-founders`), so a tag here names an Aspect the
+   * five-Aspect templates do not have. Two messages, both about the two rows they disagree on.
+   */
+  {
+    relationshipId: demoRelationshipId("assessment-instance-kenji-rosa-company"),
+    messages: [
+      {
+        id: "chat-kenji-rosa-company-1",
+        sender: "initiator",
+        body: "The money one is why I wanted to do this. I would rather we say it out loud than keep assuming.",
+        at: "2026-10-17T18:05:00.000Z",
+        aspectId: "cofounder-money",
+      },
+      {
+        id: "chat-kenji-rosa-company-2",
+        sender: "counterparty",
+        body: "Agreed — and the exit, too. Neither of us has written anything down about it.",
+        at: "2026-10-17T18:22:00.000Z",
+        aspectId: "cofounder-exit",
+      },
+    ],
+  },
+  /**
+   * Milo and Ines — a **six-Aspect** sheet (`spouses`). The conversation is about the one row with
+   * a real Gap on it, so the chip beside the message carries a Gap rather than In Synch.
+   */
+  {
+    relationshipId: demoRelationshipId("assessment-instance-milo-ines-marriage"),
+    messages: [
+      {
+        id: "chat-milo-ines-marriage-1",
+        sender: "counterparty",
+        body: "The household one is not really about the list. It is about who notices the list needs doing.",
+        at: "2026-10-14T07:40:00.000Z",
+        aspectId: "household-load",
+      },
+      {
+        id: "chat-milo-ines-marriage-2",
+        sender: "initiator",
+        body: "That is fair, and I had not read it that way at all.",
+        at: "2026-10-14T08:05:00.000Z",
+        aspectId: "household-load",
+      },
+      {
+        id: "chat-milo-ines-marriage-3",
+        sender: "counterparty",
+        body: "Then let us look at it together on Sunday, before the week starts.",
+        at: "2026-10-14T08:12:00.000Z",
+      },
+    ],
+  },
 ]);
 
 /**
