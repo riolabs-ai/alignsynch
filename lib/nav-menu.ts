@@ -45,8 +45,21 @@
  */
 import { DEFAULT_USER_ROLE, roleAdmits, type UserRole } from "../content/role-ladder";
 import type { NavDocument, NavIcon, NavRowRecord } from "../content/nav";
+import {
+  DEFAULT_NAV_SOURCE,
+  NAV_SOURCES,
+  coverageOf,
+  navSourceFrom,
+  unplacedOf,
+  type NavCoverage,
+  type NavDocumentView,
+  type NavInventory,
+  type NavSource,
+  type UnplacedSurface,
+} from "./nav-reconcile";
 import { navViewer, type NavCapability } from "./nav";
 import navDocumentJson from "../data/nav-menu.json" with { type: "json" };
+import navInventoryJson from "../data/nav-inventory.json" with { type: "json" };
 
 /** The glyphs a rail row may draw. A name, not a component: this module holds no JSX. */
 export type NavIconName = NavIcon;
@@ -241,4 +254,92 @@ export function menuFor(
  */
 export function allItems(): NavItem[] {
   return ALIGN_MENU.flatMap((group) => [...group.items]);
+}
+
+/* ------------------------------------------------------------------ *
+ * The reconciler (#862)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The tree, as `pnpm nav:menu --inventory` wrote it — the derived half.
+ *
+ * A committed file rather than a walk, because this module is imported by a client component and
+ * the browser has no `app/` to read. `data:check` **E43** re-walks the tree on every gate run and
+ * fails when this file and the tree disagree, so the copy cannot drift: the file is a *cache of a
+ * fact*, never a second source of it.
+ */
+const INVENTORY = navInventoryJson as unknown as NavInventory;
+
+/**
+ * The document, flattened to the shape the reconciler reads: every row (hidden ones included) and
+ * the `unlisted` list. One adapter, so `unplacedOf` and `coverageOf` cannot disagree about what the
+ * document says.
+ */
+const DOCUMENT_VIEW: NavDocumentView = {
+  rows: DOCUMENT.groups.flatMap((group) => group.items),
+  unlisted: DOCUMENT.unlisted ?? [],
+};
+
+/**
+ * What the rail reconciles against — `both` unless the build says otherwise.
+ *
+ * **A build-time value, deliberately.** It is read here at import and inlined into both bundles
+ * through `next.config.mjs`'s `env` block, because a *runtime* read would make the server render
+ * the document and the hydration render the tree — React `#418`, the exact class of bug
+ * `content/core.ts`'s fixture clock exists to prevent. So the toggle is "build this tree with
+ * `NAV_SOURCE=derived` and look", not a request-time flag.
+ *
+ *   `document`  the file is the rail; no findings drawn (trust the document).
+ *   `derived`   the tree is the rail; the document is not consulted (the truth test).
+ *   `both`      the default: the document draws, the tree fills `Unplaced`.
+ */
+export const BUILD_NAV_SOURCE: NavSource = navSourceFrom(process.env.NAV_SOURCE);
+
+/** The sources this module understands, re-exported so callers need not import two modules. */
+export { NAV_SOURCES, DEFAULT_NAV_SOURCE };
+export type { NavSource, UnplacedSurface };
+
+/** The rail as one viewer sees it: the document's groups, and the doors it does not draw. */
+export interface Rail {
+  readonly groups: NavGroup[];
+  /**
+   * The `Unplaced` group, as rows. **Drawn for `owner` only** — an operator's rail is where a
+   * missing door belongs, and a member's rail is not a to-do list. `derived` is the one mode that
+   * has nothing else to draw, so it is the one mode whose groups are empty.
+   */
+  readonly unplaced: readonly UnplacedSurface[];
+}
+
+/**
+ * The rail, reconciled (#862): `menuFor` plus the doors the document does not draw.
+ *
+ * `menuFor` is untouched on purpose — it is the document's own view, and the four rungs' menus are
+ * pinned by `tests/nav-menu.test.ts`. This function is the *rail's* view: the same groups, then the
+ * `Unplaced` group for the one role that owns the finding. The two are separate so "what the file
+ * says" and "what the shell draws" can be compared instead of confused.
+ *
+ * A `hidden` row, an `unlisted` surface and a route nobody accounted for all land in the same
+ * list, in that order, with the reason beside each: losing a door on purpose is fine, discovering
+ * one is not.
+ */
+export function railFor(
+  role: UserRole | null,
+  capabilities: ReadonlySet<NavCapability> = navViewer(role).capabilities,
+  source: NavSource = BUILD_NAV_SOURCE,
+): Rail {
+  const groups = source === "derived" ? [] : menuFor(role, capabilities);
+  const unplaced =
+    (role ?? DEFAULT_USER_ROLE) === "owner" ? unplacedOf(DOCUMENT_VIEW, INVENTORY, source) : [];
+  return { groups, unplaced };
+}
+
+/**
+ * The census the gate prints and the CLI reports — `walked / static / in jurisdiction / placed /
+ * unlisted / unaccounted`, computed from the same two files the rail reads.
+ *
+ * Exported so a test can assert the numbers rather than a rendering of them, and so the CLI's
+ * `--inventory --check` and `data:check` E43 cannot grow two definitions of "accounted for".
+ */
+export function navCoverage(): NavCoverage {
+  return coverageOf(INVENTORY, DOCUMENT_VIEW);
 }

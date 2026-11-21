@@ -96,6 +96,18 @@ const nextConfig = {
      * with `main`. Never a secret, and never resolved at request time.
      */
     APP_COMMIT,
+    /**
+     * What the rail reconciles against (#862): `document`, `derived` or `both`.
+     *
+     * **Here rather than read at request time, and that is the whole point.** `lib/nav-menu.ts` is
+     * imported by a client component, so a *runtime* read would leave the server render on the
+     * document and the hydration on the tree — the two disagree and React logs `#418`. Inlining it
+     * through this block gives both bundles the same literal, which is what makes `derived` a
+     * build-time truth test ("build this tree from the tree alone and look") instead of a flag.
+     * `both` is the default and the only value a normal build uses; it is not a secret, so this is
+     * the one block it may live in.
+     */
+    NAV_SOURCE: process.env.NAV_SOURCE || "both",
   },
   /**
    * The health screen's recorded artifact, carried into the deployment (#508).

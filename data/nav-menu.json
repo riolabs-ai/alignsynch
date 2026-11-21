@@ -1,5 +1,6 @@
 {
-  "version": 3,
+  "version": 4,
+  "note": "v4 (#862): the reconciler. `groups` still places every rail row; `unlisted` now accounts for the shell surfaces the rail does not owe, by address and reason, and `data:check` E43 fails the build on any route under app/(mainlayout) that neither list names. The drawn rail is unchanged by this version.",
   "groups": [
     {
       "id": "group-project-spec",
@@ -156,6 +157,84 @@
           "note": "The first-run tour points at this row (data-tour=\"help\"), still in the Support group — group-support is the help/contact pair, not a second workspace."
         }
       ]
+    }
+  ],
+  "unlisted": [
+    {
+      "href": "/admin/brand",
+      "reason": "The brand and audience profile (#906). Its door is the admin notice bar's CTA, which is on every screen; a rail row would be a second control for one destination."
+    },
+    {
+      "href": "/admin/console/relationships",
+      "reason": "A console detail list (#478) — reached from the console hub's own row, and it lists what My Relationships lists for the other role."
+    },
+    {
+      "href": "/admin/console/templates",
+      "reason": "A console detail list (#478) — reached from the console hub, and the operator's view of the same catalogue the member's Templates row opens."
+    },
+    {
+      "href": "/admin/console/users",
+      "reason": "A console detail list (#478) — reached from the console hub; an operator's queue, never a destination of its own."
+    },
+    {
+      "href": "/admin/docs/features",
+      "reason": "A docs sub-surface (#901) — inside the docs home's own tree, which is what the `admin-docs` row opens. A rail row per docs page is what that home exists to avoid."
+    },
+    {
+      "href": "/admin/docs/releases",
+      "reason": "A docs sub-surface (#901) — the release notes inside the docs home's tree."
+    },
+    {
+      "href": "/admin/growth",
+      "reason": "The growth model (#1095). The owner kept the page and removed its rail row, because a screen charting a simulated business does not belong in an operator's rail — so it stays URL-only by that ruling, and this entry is where the ruling is written down."
+    },
+    {
+      "href": "/admin/spec/validation",
+      "reason": "The project spec's validation page (#1252). The `admin-spec` row opens the spec, and its submenu is how its pages are reached — a rail row per spec page would be the submenu again, in the rail."
+    },
+    {
+      "href": "/admin/templates",
+      "reason": "The operator's template list — the alignment product's authoring tree, alignment-only and admin-gated, reached from the console hub."
+    },
+    {
+      "href": "/assessment",
+      "reason": "The published-template catalogue (#146). Two ways in already exist — the Templates row and a relationship's own screen — and a third would make the rail a list of form entries."
+    },
+    {
+      "href": "/assessment/new/failed",
+      "reason": "The create flow's failure screen (#1226) — a state a browser lands on when a write throws, never a destination."
+    },
+    {
+      "href": "/assessments",
+      "reason": "My Assessments (#877). #1129 retired its rail row when Start took the top slot; the listing still answers at its own address, and the sessions are one click from My Relationships."
+    },
+    {
+      "href": "/dashboard/payment",
+      "reason": "The member's billing surface (#1132) — reached from a relationship's own screen and the account menu. The v2 reference draws Payment as the last rail row; when the document gains that row, this entry is deleted."
+    },
+    {
+      "href": "/how-it-works",
+      "reason": "The recorded walkthrough (#898). The rail's How It Works row is `/dashboard/help`; this is the signed-out visitor's copy of the same story, reached from the public chrome."
+    },
+    {
+      "href": "/leaderboard",
+      "reason": "The community leaderboard (#175) — gated on `community.leaderboard` and off on the builds this rail ships. A row would advertise a surface that answers 404."
+    },
+    {
+      "href": "/news",
+      "reason": "Quiz News & Updates — the quiz catalogue's news list; the alignment build's announcements arrive through the broadcast and the marketing chrome."
+    },
+    {
+      "href": "/search",
+      "reason": "The palette's view-all page (#156). The header's search opens it, and a rail row beside a search field is a second way to the same results."
+    },
+    {
+      "href": "/settings",
+      "reason": "The signed-in person's own profile (#164) — opened from the account menu, which is where a person looks for themselves."
+    },
+    {
+      "href": "/support",
+      "reason": "The account support page's shorter address — the rail's Support row is `/dashboard/support`, which is the workspace surface #542 phase 1 built; this one is the page it replaced and still answers."
     }
   ]
 }

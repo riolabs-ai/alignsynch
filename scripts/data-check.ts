@@ -41,6 +41,9 @@ import {
 } from "../content/quiz";
 import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
+import { zNavDocument } from "../content/nav";
+import { coverageLine, coverageOf, inventoryDocument } from "../lib/nav-reconcile";
+import { inventoryFrom } from "./nav-inventory";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
   NOTIFICATION_ICON_KEYS,
@@ -2018,10 +2021,83 @@ if (!existsSync(specRegisterPath)) {
   }
 }
 
+/**
+ * E43 — every route under the shell is accounted for in the rail's document (#862)
+ *
+ * The rail's rows are authored (`data/nav-menu.json`, #861) and the tree is not: a page can be added
+ * and nobody's rail changes, which is exactly how `/admin/console` was URL-only for two releases
+ * (#542 phase 2). So the document is checked against a **derived inventory** — `scripts/nav-inventory.ts`
+ * reduces every `page.tsx` under `app/` to a route with its brand boundary and its role floor, and
+ * `lib/nav-reconcile.ts` subtracts what the document says:
+ *
+ *   placed      a row in a group, drawn or `hidden` (with a reason — `/admin/growth`'s shape)
+ *   unlisted    an address in the document's `unlisted` list, with the reason the rail does not owe it
+ *   unaccounted everything else — a finding, and this rule fails on it
+ *
+ * Jurisdiction is two derived facts, not a list: a surface is the document's business when it lives
+ * under the shell (`(mainlayout)` — the group that mounts the rail) **and** its brand boundary does
+ * not exclude this product (`requireQuizProduct()` answers 404 on the alignment build, so a row
+ * would advertise a door this build does not sell). The census prints all four numbers on pass as
+ * well as fail: `0 unaccounted` is worth nothing without the count it was measured against.
+ *
+ * The committed inventory (`data/nav-inventory.json`) is compared with this walk on every run,
+ * because the shell reconciles at import time and cannot walk `app/` itself — a stale copy would be
+ * a rail that quietly disagrees with the tree. It is the *only* generated file this rule trusts.
+ */
+const NAV_SHELL_PAGES = walkSources("app");
+const navInventory = inventoryFrom(NAV_SHELL_PAGES);
+
+const navDocumentRaw = existsSync(join(process.cwd(), "data/nav-menu.json"))
+  ? (JSON.parse(readFileSync(join(process.cwd(), "data/nav-menu.json"), "utf8")) as unknown)
+  : undefined;
+const navDocumentParsed =
+  navDocumentRaw === undefined ? undefined : zNavDocument.safeParse(navDocumentRaw);
+
+if (navDocumentParsed === undefined) {
+  err("E43", "data/nav-menu.json is missing: the rail's document cannot be reconciled");
+} else if (!navDocumentParsed.success) {
+  err(
+    "E43",
+    "data/nav-menu.json does not satisfy content/nav.ts — `pnpm nav:menu --check` names the row",
+  );
+}
+
+const navDocumentView =
+  navDocumentParsed?.success === true
+    ? {
+        rows: navDocumentParsed.data.groups.flatMap((group) => group.items),
+        unlisted: navDocumentParsed.data.unlisted ?? [],
+      }
+    : { rows: [], unlisted: [] };
+
+const navCoverage = coverageOf(navInventory, navDocumentView);
+const navCensusLine = coverageLine(navCoverage);
+
+for (const problem of navCoverage.unjustified) {
+  err("E43", problem);
+}
+
+/**
+ * The committed copy of the walk. A surface that changed (a boundary gate added, a rung moved) is as
+ * stale as an added page, so the comparison is the whole document, not the href set.
+ */
+const navInventoryPath = join(process.cwd(), "data/nav-inventory.json");
+if (!existsSync(navInventoryPath)) {
+  err("E43", "data/nav-inventory.json is missing — run `pnpm nav:menu --inventory`");
+} else {
+  const committed = JSON.parse(readFileSync(navInventoryPath, "utf8")) as unknown;
+  const fresh = inventoryDocument(navInventory) as unknown;
+  if (JSON.stringify(committed) !== JSON.stringify(fresh)) {
+    err(
+      "E43",
+      "data/nav-inventory.json disagrees with app/** — run `pnpm nav:menu --inventory` (the tree is the truth, the file is the copy)",
+    );
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * report
  * ------------------------------------------------------------------ */
-
 const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error");
 const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warn");
 
@@ -2116,6 +2192,7 @@ console.log(
   `      ${ancestorCoverage.walked} components walked, ${ancestorCoverage.withAncestor} with an ancestor, ${ancestorCoverage.approved} approved exceptions (E35; components/ui/** is vendored and excluded from the walk)`,
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
+console.log(`      ${navCensusLine} (E43)`);
 console.log(`      ${brandWordCensus} (E37)`);
 console.log(`      ${vocabularyCensus} (E41)`);
 console.log(`      ${leavingCensus} (E39)`);

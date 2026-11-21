@@ -216,6 +216,17 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
   },
   {
     owner:
+      "the rail's document and the tree it reconciles against (lib/nav-reconcile.ts + scripts/nav-inventory.ts — issue #862)",
+    // Two files: the *rule* is `coverageOf` in `lib/nav-reconcile.ts` (pure — the document and the
+    // inventory arrive as values), the walk that reads `app/**` is `scripts/nav-inventory.ts`, and
+    // `data-check.ts` runs both and prints the census line. Same shape as the spec-register group.
+    files: ["nav-inventory.ts", "data-check.ts"],
+    codes: {
+      E43: "every route under the shell (`app/(mainlayout)`, and not quiz-only) is accounted for in `data/nav-menu.json` — placed as a row (drawn or `hidden` with a reason) or named in `unlisted` with a reason — and the committed `data/nav-inventory.json` is a fresh walk of `app/**`",
+    },
+  },
+  {
+    owner:
       "rules 6 and 7 of the reference pattern set — numbers and empty states (scripts/ui-census.ts)",
     // The rule *lives* in `ui-census.ts`: the numeric vocabulary, the record-list shape, the guard
     // forms and the empty-block measurement are all pure derivations there. Two files for the same

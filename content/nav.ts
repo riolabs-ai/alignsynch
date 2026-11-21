@@ -43,8 +43,18 @@ import { USER_ROLES } from "./role-ladder";
  * opens with the title-less `group-project-spec`. A v3 document is not readable by a v2 build for
  * exactly that reason: v2 would have rendered it with no heading anyway, but the *intent* — a group
  * that is allowed to have none — is new, and the version says so.
+ *
+ * **4 (2026-11-21, #862)** — the document gained a **second way to account for a surface**, because
+ * it is now checked against the tree rather than only against itself. `groups[].items[]` places a
+ * destination in the rail (optionally `hidden`, with a reason), and the new `unlisted` list names a
+ * surface the rail **does not owe** — the console's detail lists, `/settings`, a failed-create page
+ * — by address and reason alone: no glyph, no fixture word, no `needs`, because inventing a menu
+ * word for a door nobody draws is how a rail fills with rows that read as destinations. Every route
+ * the inventory finds under the shell must be one or the other, and `data:check` **E43** fails the
+ * build on the remainder. A v3 document has no `unlisted` list and a v4 build reads that as "none",
+ * so the bump is a statement of intent as much as a schema change — the same reason v3 was one.
  */
-export const NAV_DOCUMENT_VERSION = 3;
+export const NAV_DOCUMENT_VERSION = 4;
 
 /**
  * Every glyph a rail row may draw. A name, not a component: the descriptor holds no JSX, and the
@@ -157,14 +167,50 @@ export const zNavGroup = z
   })
   .strict();
 
+/**
+ * A surface the rail **does not owe** (#862) — named by address, with the reason it is not a row.
+ *
+ * This is the second half of the document's accounting, and it is deliberately not a `zNavRow`:
+ * a row carries a glyph, a rung and a fixture word, all of which say "this is a destination".
+ * `/admin/console/users` is not a destination — it is the list behind the console's hub — and a
+ * menu word for it would be a word nobody should ever see in a rail. So the entry carries the two
+ * facts that are true: where it is, and why it is not drawn.
+ *
+ * The reason is required, for the same reason a `hidden` row's is: a surface with no statement is
+ * a finding, and an empty string would be a statement that says nothing. `data:check` E43 also
+ * refuses an entry naming a route the tree does not render — a stale statement hides a door.
+ */
+export const zNavUnlisted = z
+  .object({
+    /** The route, resolved against `content/routes.ts` and against the inventory by the checks. */
+    href: z.string().startsWith("/"),
+    /** Why this surface is not a rail row. One sentence an operator can act on. */
+    reason: z.string().min(1),
+  })
+  .strict();
+
 /** The document: a version, then the groups in the order the rail draws them. */
 export const zNavDocument = z
   .object({
     version: z.number().int().min(1),
+    /**
+     * Why this version exists, in one line — the document's own changelog entry (#862).
+     *
+     * Git is the history; this is the sentence a reader of the JSON gets without opening a log.
+     * Optional, because a document is valid without one and a note that is required becomes a
+     * note that is copied.
+     */
+    note: z.string().min(1).optional(),
     groups: z.array(zNavGroup).min(1),
+    /**
+     * Surfaces the rail does not owe (#862). Absent means none — every v3 document, which is why
+     * the v4 build reads it as optional rather than requiring it.
+     */
+    unlisted: z.array(zNavUnlisted).optional(),
   })
   .strict();
 
 export type NavDocument = z.infer<typeof zNavDocument>;
 export type NavGroupRecord = z.infer<typeof zNavGroup>;
 export type NavRowRecord = z.infer<typeof zNavRow>;
+export type NavUnlistedRecord = z.infer<typeof zNavUnlisted>;

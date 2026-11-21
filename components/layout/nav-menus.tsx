@@ -11,7 +11,7 @@ import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { leavesApp } from "@/lib/marketing-routes";
 import { TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
-import { type NavIconName, menuFor } from "@/lib/nav-menu";
+import { type NavIconName, railFor } from "@/lib/nav-menu";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -548,9 +548,10 @@ function AlignSynchMenu({
   hidden,
 }: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
+  const rail = railFor(viewer.role, viewer.capabilities);
   return (
     <>
-      {menuFor(viewer.role, viewer.capabilities).map((group) => (
+      {rail.groups.map((group) => (
         <Fragment key={group.id}>
           <NavGroup
             id={group.id}
@@ -580,6 +581,33 @@ function AlignSynchMenu({
           </NavGroup>
         </Fragment>
       ))}
+      {rail.unplaced.length > 0 ? (
+        /**
+         * #862 — the doors the rail does not draw, **for `owner` only** and only when there are any.
+         *
+         * Three kinds, in the reconciler's order: a `hidden` row (it had a place and gave it up), an
+         * `unlisted` surface (the document says why the rail does not owe it), and an `unaccounted`
+         * route (nobody said anything — that one is a finding, and `data:check` E43 fails the build
+         * on it). The rows are deliberately **not** links and carry no glyph: this is a statement
+         * about the menu, not a second menu, and a row here must never read as a destination a
+         * reader is being offered. The address and the reason are the whole content.
+         */
+        <NavGroup id="group-unplaced" label={itemLabel(nav, "group-unplaced")} labelled={labelled}>
+          {rail.unplaced.map((surface) => (
+            <div
+              key={`${surface.kind}:${surface.href}`}
+              data-nav-unplaced={surface.kind}
+              className={cn(
+                "grid gap-0.5 rounded-md px-3 py-1.5 text-xs text-muted-foreground",
+                labelled ? undefined : "hidden xl:grid",
+              )}
+            >
+              <span className="truncate font-mono">{surface.href}</span>
+              <span className="line-clamp-2">{surface.reason}</span>
+            </div>
+          ))}
+        </NavGroup>
+      ) : null}
     </>
   );
 }

@@ -381,6 +381,14 @@ export const ENV_ROWS: readonly EnvRow[] = [
     ],
     "The origin every flow link and email is built from. No trailing slash.",
   ),
+  row(
+    "NAV_SOURCE",
+    ["optional", "optional", "optional"],
+    { literal: "both" },
+    "What the rail reconciles against (#862): `document`, `derived` or `both`. A build-time switch " +
+      "inlined through next.config.mjs's env block — `derived` builds the rail from the tree alone, " +
+      "which is the truth test; a deployment never sets it.",
+  ),
 
   // --- Forms and docs -------------------------------------------------------------------------
   row(
