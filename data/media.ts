@@ -481,6 +481,27 @@ export const media = {
     height: 344,
     kind: "background",
   },
+  "relationship-types.featured.friends": {
+    src: "/relationship-types/featured/friends.svg",
+    alt: "Two people drawn side by side, with a rising arc of dots between them — the friends template's featured art",
+    width: 640,
+    height: 360,
+    kind: "illustration",
+  },
+  "relationship-types.featured.spouses": {
+    src: "/relationship-types/featured/spouses.svg",
+    alt: "Two people drawn side by side, linked by a dashed line — the spouses template's featured art",
+    width: 640,
+    height: 360,
+    kind: "illustration",
+  },
+  "relationship-types.featured.staff-manager": {
+    src: "/relationship-types/featured/staff-manager.svg",
+    alt: "Two people drawn side by side, with stepped levels between them — the staff and manager template's featured art",
+    width: 640,
+    height: 360,
+    kind: "illustration",
+  },
   "relationship-types.hero-connection": {
     src: "/relationship-types/hero-connection.png",
     alt: "Hero Connection",

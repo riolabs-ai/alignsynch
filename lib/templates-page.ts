@@ -55,7 +55,7 @@
  * leaf literals).
  */
 import type { Assessment } from "@/content/assessment";
-import { isFileMedia } from "@/content/media";
+import { isFileMedia, type MediaEntry } from "@/content/media";
 import type { PageCopy } from "@/content/pages";
 import { media } from "@/data/media";
 import {
@@ -74,6 +74,7 @@ import {
   sectionOf,
 } from "@/lib/page-copy";
 import { platformTemplates } from "@/lib/platform-templates";
+import { featuredArt } from "@/lib/featured-art";
 import { realmArt, twoPartyMark, type RealmArt } from "@/lib/relationship-art";
 import { cataloguePriceNote, templateCard, type TemplateCard } from "@/lib/template-catalogue";
 import { startHrefFor, type StartViewer } from "@/lib/start-path";
@@ -135,6 +136,12 @@ export interface RealmGroup {
 export interface CatalogueCard extends TemplateCard {
   readonly detailsLabel: string;
   readonly search: string;
+  /**
+   * The record's featured art, when the tranche has reached it — a file entry out of
+   * `data/media.ts`, resolved by `lib/featured-art.ts`. `undefined` means "draw the realm band",
+   * which is the designed state for most records rather than a hole (#t_f96ad328).
+   */
+  readonly featured?: MediaEntry;
 }
 
 /** One numbered step, wherever the page prints one. */
@@ -280,9 +287,11 @@ function exampleAspect(types: readonly RelationshipType[]): {
 
 /** One record's card for this surface: the shared projection plus its details label and search. */
 function catalogueCard(copy: PageCopy, type: RelationshipType): CatalogueCard {
+  const featured = featuredArt(type.id);
   return {
     ...templateCard(copy, type),
     detailsLabel: pageItemOf(copy, CARD_IDS.details).label,
+    ...(featured === undefined ? {} : { featured }),
     search: [
       type.name,
       type.shortName,

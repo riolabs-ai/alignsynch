@@ -58,6 +58,12 @@ data/generated/
 # leg, never committed — the committed half is the manifest and the summaries.
 tests/parity/artifacts/
 
+# The demo walkthrough's captures (`node scripts/demo-walkthrough.mjs`): 20 screenshots of
+# the live demo branch, ~6 MB, beside the run's own report.json. The committed half is
+# `docs/operations/demo-walkthrough.md` — the steps, the routes, the expected text — on the same
+# discipline as `tests/parity/` above: evidence is never committed, what checks it always is.
+/.artifacts/
+
 # The v2 fidelity evidence (scripts/design-audit.mjs`): one live capture, one reference
 # render and one side-by-side per doc, 79 MB for 51 rows. The committed half is
 # `manifest.json` — the sha, the URL, the two widths and the reference path — on the same
