@@ -399,6 +399,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "group-app", label: "Workspace" },
           { id: "group-support", label: "Support" },
           { id: "group-admin", label: "Admin" },
+          /**
+           * #862 — the reconciler's group. It is not in the document: the reconciler appends it, and
+           * it is drawn **only for `owner`**, only when something is in it, and never as a row a
+           * reader can mistake for a destination — its rows are the addresses the rail does not
+           * draw, each with the reason. The word still lives here, because a heading typed in
+           * `nav-menus.tsx` would be a literal E23 cannot see.
+           */
+          { id: "group-unplaced", label: "Unplaced" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

@@ -19,7 +19,20 @@
  *               the sidebar runs, so what it prints is what the shell draws for that rung.
  *   --unplaced  every `page.tsx` under `app/(mainlayout)/admin/**` with no rail row. Four today,
  *               on purpose (the console's three sub-pages and `/admin/templates`): they are the live
- *               proof this verb works, and placing them is a separate change.
+ *               proof this verb works, and placing them is a separate change. Since #862 the same
+ *               four are named in `data/nav-menu.json`'s `unlisted` list with a reason — the verb
+ *               still reports them because it asks about a *row*, and an `unlisted` surface has
+ *               none; `--inventory` and `--tree` are the verbs that answer "is anything missing".
+ *   --inventory the **derived** half (#862): walk `app/**` into routes with their brand boundary and
+ *               role floor, and write `data/nav-inventory.json` — the committed view the shell
+ *               reconciles against. `--check` compares instead of writing and fails on drift, which
+ *               is what `data:check` E43 does for itself; the verb is the writer a human runs after
+ *               adding a route.
+ *
+ * **`--source` is a truth test, not a setting.** `both` (the default) draws the document and the
+ * `Unplaced` group; `derived` ignores the document entirely ("what does the tree actually contain?");
+ * `document` trusts the file and draws no findings. `--tree` respects it, and the served rail reads
+ * the same three values from the build's own `NAV_SOURCE` (see `lib/nav-menu.ts`).
  *
  * `--check` runs in every lane of `scripts/verify.sh` (it reads files only, ~0.1 s) and is never
  * a CI-only step: the YAML calls the gate script and nothing else.
@@ -39,7 +52,7 @@
  * after `register()` — which, with this tsconfig's `target`, means inside `main()` rather than as
  * a top-level `await` (a top-level await needs `target: es2017`, and the app's target is ES6).
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { register } from "node:module";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +61,8 @@ register("./ts-modules.mjs", import.meta.url);
 
 type NavModule = typeof import("../content/nav");
 type NavMenuModule = typeof import("../lib/nav-menu");
+type NavReconcileModule = typeof import("../lib/nav-reconcile");
+type NavInventoryModule = typeof import("./nav-inventory");
 type ChromeNavModule = typeof import("../lib/nav");
 type PageCopyModule = typeof import("../lib/page-copy");
 type RouteManifestModule = typeof import("../content/route-manifest");
@@ -56,9 +71,13 @@ type RoleLadderModule = typeof import("../content/role-ladder");
 type ShellModule = typeof import("../data/pages/shell");
 
 type UserRole = RoleLadderModule["USER_ROLES"][number];
+/** The reconciler's source union, as a type — a module namespace exports values, not types. */
+type NavSource = import("../lib/nav-reconcile").NavSource;
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const DOCUMENT_PATH = "data/nav-menu.json";
+const INVENTORY_PATH = "data/nav-inventory.json";
+const APP_ROOT = "app";
 const ADMIN_ROOT = "app/(mainlayout)/admin";
 
 /**
@@ -74,6 +93,8 @@ type BrandId = (typeof BRANDS)[number];
 
 let nav: NavModule;
 let navMenu: NavMenuModule;
+let reconcile: NavReconcileModule;
+let inventoryModule: NavInventoryModule;
 let chrome: ChromeNavModule;
 let pageCopy: PageCopyModule;
 let routeManifestModule: RouteManifestModule;
@@ -85,6 +106,8 @@ let shell: ShellModule;
 async function load(): Promise<void> {
   nav = await import("../content/nav");
   navMenu = await import("../lib/nav-menu");
+  reconcile = await import("../lib/nav-reconcile");
+  inventoryModule = await import("./nav-inventory");
   chrome = await import("../lib/nav");
   pageCopy = await import("../lib/page-copy");
   routeManifestModule = await import("../content/route-manifest");
@@ -98,14 +121,40 @@ async function load(): Promise<void> {
  * ------------------------------------------------------------------ */
 
 function usageText(): string {
-  return `nav:menu — the rail's document (#861)
+  return `nav:menu — the rail's document (#861) and the tree it reconciles against (#862)
 
-  pnpm nav:menu --check                                    schema, ids, hrefs, icons, labels, rungs
-  pnpm nav:menu --tree [--as <role>] [--brand <brand>]     the rail as one rung sees it
-  pnpm nav:menu --unplaced                                 admin pages with no rail row
+  pnpm nav:menu --check [--inventory-check]          schema, ids, hrefs, icons, labels, rungs, unlisted
+  pnpm nav:menu --tree [--as <role>] [--source <s>]  the rail as one rung sees it
+  pnpm nav:menu --unplaced                           admin pages with no rail row
+  pnpm nav:menu --inventory                          write data/nav-inventory.json from app/**
+  pnpm nav:menu --inventory --check                  compare instead — exit 1 on drift
 
-roles:  ${ladder.USER_ROLES.join(" < ")}
-brands: ${BRANDS.join(" | ")} (the document governs alignsynch; quizhub draws its own menu)`;
+roles:   ${ladder.USER_ROLES.join(" < ")}
+sources: ${reconcile.NAV_SOURCES.join(" | ")} (default ${reconcile.DEFAULT_NAV_SOURCE})
+brands:  ${BRANDS.join(" | ")} (the document governs alignsynch; quizhub draws its own menu)`;
+}
+
+/** Everything the reconciler needs on hand: the tree as it is on disk, walked once. */
+function appSources(): { path: string; source: string }[] {
+  const sources: { path: string; source: string }[] = [];
+  const walk = (path: string): void => {
+    for (const entry of readdirSync(join(ROOT, path)).sort()) {
+      const child = `${path}/${entry}`;
+      if (statSync(join(ROOT, child)).isDirectory()) {
+        walk(child);
+        continue;
+      }
+      if (!entry.endsWith(".tsx") && !entry.endsWith(".ts")) continue;
+      sources.push({ path: child, source: readFileSync(join(ROOT, child), "utf8") });
+    }
+  };
+  walk(APP_ROOT);
+  return sources;
+}
+
+/** The inventory of this tree, as the CLI sees it — the same call `data:check` E43 makes. */
+function currentInventory(): ReturnType<NavInventoryModule["inventoryFrom"]> {
+  return inventoryModule.inventoryFrom(appSources());
 }
 
 /** Every finding this run makes, in the order they were found. */
@@ -206,7 +255,6 @@ function check(): number {
   let rows = 0;
   let hidden = 0;
   let adminRows = 0;
-
   for (const group of document.groups) {
     const groupAt = `group "${group.id}"`;
     if (groupIds.has(group.id)) finding(`${groupAt}: the group id is used twice`);
@@ -270,14 +318,40 @@ function check(): number {
     }
   }
 
+  /**
+   * #862 — the `unlisted` list: the surfaces the rail does not owe.
+   *
+   * A run of groups says what the rail draws; this says what it deliberately does not, and the two
+   * halves must not overlap: an `unlisted` href that is also a row would be a door with two
+   * statements, and the row would win silently in a render.
+   */
+  const unlistedHrefs = new Set<string>();
+  for (const entry of document.unlisted ?? []) {
+    const at = `unlisted "${entry.href}"`;
+    if (unlistedHrefs.has(entry.href)) finding(`${at}: named twice`);
+    unlistedHrefs.add(entry.href);
+    if (hrefs.has(entry.href)) {
+      finding(`${at}: a group's row already places this destination — one statement, one door`);
+    }
+    if (entry.reason.trim() === "") {
+      finding(`${at}: no reason — an unlisted surface says why the rail does not owe it`);
+    }
+    if (routeManifestModule.matchRoute(routes.routeManifest, entry.href) === undefined) {
+      finding(`${at}: resolves no route in content/routes.ts`);
+    }
+  }
+
   if (findings.length > 0) return report();
 
+  const unlisted = unlistedHrefs.size;
   console.log(
-    `nav:menu — ${DOCUMENT_PATH} v${document.version} · ${document.groups.length} groups · ${rows} rows (${adminRows} admin, ${hidden} hidden)`,
+    `nav:menu — ${DOCUMENT_PATH} v${document.version} · ${document.groups.length} groups · ${rows} rows (${adminRows} admin, ${hidden} hidden) · ${unlisted} unlisted`,
   );
   console.log(
     `  ${hrefs.size} hrefs resolve · ${icons.size} icons · ${labelUses.size} labels · ${ladder.USER_ROLES.length} rungs · 0 findings`,
   );
+  // #862 — the census, every run: the document checked against the tree it is supposed to cover.
+  console.log(`  ${reconcile.coverageLine(navMenu.navCoverage())} (E43)`);
   return 0;
 }
 
@@ -293,7 +367,7 @@ function report(): number {
  * --tree
  * ------------------------------------------------------------------ */
 
-function tree(role: UserRole, brand: BrandId): number {
+function tree(role: UserRole, brand: BrandId, source: NavSource): number {
   if (brand !== "alignsynch") {
     console.log(
       `brand=${brand} — this document governs the AlignSynch rail only. The quiz brand draws its own fixed menu (QuizHubMenu in components/layout/nav-menus.tsx), which has no rungs and no document.`,
@@ -302,7 +376,8 @@ function tree(role: UserRole, brand: BrandId): number {
   }
 
   const navSection = pageCopy.sectionOf(shell.shellPageCopy, "nav-alignsynch");
-  const groups = navMenu.menuFor(role);
+  const rebuilt = navMenu.railFor(role, undefined, source);
+  const groups = rebuilt.groups;
 
   const raw = readDocument();
   const parsed = raw === undefined ? undefined : nav.zNavDocument.safeParse(raw);
@@ -322,7 +397,9 @@ function tree(role: UserRole, brand: BrandId): number {
     0,
   );
 
-  console.log(`rail · brand=alignsynch · role=${role} · ${groups.length} groups · ${drawn} rows`);
+  console.log(
+    `rail · brand=alignsynch · role=${role} · source=${source} · ${groups.length} groups · ${drawn} rows · ${rebuilt.unplaced.length} unplaced`,
+  );
 
   groups.forEach((group, groupIndex) => {
     const lastGroup = groupIndex === groups.length - 1;
@@ -354,7 +431,57 @@ function tree(role: UserRole, brand: BrandId): number {
     }
   }
 
+  if (rebuilt.unplaced.length > 0) {
+    const width = Math.max(...rebuilt.unplaced.map((surface) => surface.href.length), 0);
+    console.log(`\nunplaced — ${rebuilt.unplaced.length} door(s) the rail does not draw:`);
+    for (const surface of rebuilt.unplaced) {
+      console.log(`  · ${surface.href.padEnd(width)}  [${surface.kind}] ${surface.reason}`);
+    }
+  } else if (source !== "document") {
+    console.log("\nunplaced — none: every route in the tree is placed or accounted for");
+  }
+
   return 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * --inventory
+ * ------------------------------------------------------------------ */
+
+/**
+ * `data/nav-inventory.json` — the tree, committed (#862).
+ *
+ * The shell reconciles at import time with no I/O, so the derived half has to be a file in the
+ * bundle. It is generated, never authored: `--inventory` walks `app/**` and writes it, `--check`
+ * compares the file with a fresh walk and names the first difference, and `data:check` **E43**
+ * makes the same comparison in every gate lane — so a page added without a regeneration is a red
+ * build rather than a rail that quietly disagrees with the tree.
+ */
+function inventory(write: boolean): number {
+  const built = currentInventory();
+  const document = reconcile.inventoryDocument(built);
+  const json = `${JSON.stringify(document, null, 2)}\n`;
+  const path = join(ROOT, INVENTORY_PATH);
+
+  if (write) {
+    writeFileSync(path, json, "utf8");
+    console.log(
+      `nav:inventory — wrote ${INVENTORY_PATH} · ${document.walked} page.tsx walked · ${document.surfaces.length} static routes`,
+    );
+    return 0;
+  }
+
+  const existing = readFileSync(path, "utf8");
+  if (JSON.stringify(JSON.parse(existing)) === JSON.stringify(document)) {
+    console.log(
+      `nav:inventory — ${INVENTORY_PATH} is current · ${document.walked} page.tsx walked · ${document.surfaces.length} static routes`,
+    );
+    return 0;
+  }
+  finding(
+    `${INVENTORY_PATH} disagrees with app/** — run \`pnpm nav:menu --inventory\` (the tree is the truth, the file is the copy)`,
+  );
+  return report();
 }
 
 /* ------------------------------------------------------------------ *
@@ -421,11 +548,16 @@ function usage(message?: string): number {
 }
 
 async function main(argv: readonly string[]): Promise<number> {
-  let verb: "check" | "tree" | "unplaced" | undefined;
+  let verb: "check" | "tree" | "unplaced" | "inventory" | undefined;
   let role: UserRole = "owner";
   let brand: BrandId = "alignsynch";
+  let compare = false;
 
   await load();
+
+  // After `load()`: the default lives in the reconciler, and a module cannot be read before it is
+  // imported — an initialiser here would run first and see `undefined`.
+  let source: NavSource = reconcile.DEFAULT_NAV_SOURCE;
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -435,10 +567,19 @@ async function main(argv: readonly string[]): Promise<number> {
     const next = (): string | undefined => inline ?? argv[index + 1];
 
     switch (flag) {
-      case "--check":
+      case "--check": {
+        // `--inventory --check` compares; `--check` alone is the document's own validation.
+        compare = true;
+        if (verb === undefined) verb = "check";
+        if (verb !== "check" && verb !== "inventory") {
+          return usage("--check goes with --inventory or on its own — not with --tree");
+        }
+        break;
+      }
       case "--tree":
-      case "--unplaced": {
-        const named = flag.slice(2) as "check" | "tree" | "unplaced";
+      case "--unplaced":
+      case "--inventory": {
+        const named = flag.slice(2) as "tree" | "unplaced" | "inventory";
         if (verb !== undefined && verb !== named) {
           return usage(`${verb} and ${flag} are separate verbs — run one at a time`);
         }
@@ -452,6 +593,18 @@ async function main(argv: readonly string[]): Promise<number> {
           return usage(`--as "${value}" is not a role (${ladder.USER_ROLES.join(" | ")})`);
         }
         role = value as UserRole;
+        if (inline === undefined) index += 1;
+        break;
+      }
+      case "--source": {
+        const value = next();
+        if (value === undefined) return usage("--source needs one of: document | derived | both");
+        if (!(reconcile.NAV_SOURCES as readonly string[]).includes(value)) {
+          return usage(
+            `--source "${value}" is not a source (${reconcile.NAV_SOURCES.join(" | ")})`,
+          );
+        }
+        source = value as NavSource;
         if (inline === undefined) index += 1;
         break;
       }
@@ -477,11 +630,13 @@ async function main(argv: readonly string[]): Promise<number> {
     case "check":
       return check();
     case "tree":
-      return tree(role, brand);
+      return tree(role, brand, source);
     case "unplaced":
       return unplaced();
+    case "inventory":
+      return inventory(!compare);
     default:
-      return usage("say what to do: --check, --tree or --unplaced");
+      return usage("say what to do: --check, --tree, --unplaced or --inventory");
   }
 }
 
