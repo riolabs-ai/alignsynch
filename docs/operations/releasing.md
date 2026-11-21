@@ -602,6 +602,73 @@ is the coupling, not a bug in the badge: a badge that always resolves but never 
 build identifies nothing. `scripts/release.sh` creates the tag and the Release in that order, and
 `--tag-only` is what a prepared bump uses, so the ordinary path already satisfies it.
 
+## Who may deploy: the author check, and the silence it fails in
+
+Production deploys **only** through Vercel's Git integration. There is no `vercel` or `deploy` verb
+in [`scripts/release.sh`](../../scripts/release.sh) — it tags, writes the release note and stops —
+and no `.vercel/` in the tree (the link `vercel link` writes is gitignored), so a release cut from
+this checkout cannot deploy anything by itself. What deploys is that Vercel **created** a deployment
+for a pushed commit and then **allowed it to be built**: `vercel.json`'s `ignoreCommand` is the
+policy of record and [`DEPLOYING.md`](deploying.md) is the page that reads it.
+
+The check with no page of its own is the **author** one, and it is how a merge lands green, passes
+every gate, and changes nothing in production. **The commit author must have contributing access to
+the Vercel project.** On the free (Hobby) plan that resolves to one identity, and the plan's
+collaboration rule is what makes the next sentence load-bearing: **a public repository deploys for
+any author; a private one deploys only for the single project member.** So on Hobby, with no Pro
+seat, a private repository plus `jadenblack` authoring commits means **no production deployments at
+all** — and the failure is silent, because nothing failed. The commit status reads
+
+```text
+Vercel = failure: Deployment was blocked
+```
+
+not `build failed`, there is no build log to open (no build started), and CI is green throughout, so
+the only instrument that sees it is the commit status or `/api/version`:
+
+```bash
+gh api repos/riolabs-ai/alignsynch-web/commits/$(git rev-parse HEAD)/status \
+  --jq '.statuses[]|select(.context|test("ercel";"i"))|"\(.state): \(.description) \(.target_url)"'
+curl -s https://alignsynch.com/api/version
+```
+
+**The repo must stay public, or production stops moving** — that is a decision, not a preference:
+both accounts are on the free tier. If privacy is ever needed, the two alternatives cost plumbing
+and not money: author every commit as the Vercel-owner identity, or deploy from CI with a
+`VERCEL_TOKEN` (`POST /v13/deployments`, §3 below).
+
+The onset, read off that command on 2026-11-21 and not inferred from CI (the author is identical in
+all five rows — the **visibility** changed, not the author):
+
+| Commit      | Author                              | `Vercel` status                     | Status created (UTC) |
+| ----------- | ----------------------------------- | ----------------------------------- | -------------------- |
+| `371f63d81` | Jaden Black `github@jadenblack.com` | `success: Deployment has completed` | `15:59:24`           |
+| `95d5a0bbf` | Jaden Black `github@jadenblack.com` | `success: Deployment has completed` | `22:52:36`           |
+| `5f92b0a7a` | Jaden Black `github@jadenblack.com` | `failure: Deployment was blocked`   | `00:46:20`           |
+| `6a70320ac` | Jaden Black `github@jadenblack.com` | `failure: Deployment was blocked`   | `01:45:14`           |
+| `ffda1b68e` | Jaden Black `github@jadenblack.com` | `failure: Deployment was blocked`   | `03:20:31`           |
+
+`95d5a0bbf` is the last commit production serves (`/api/version` answered `95d5a0bbf89c3` while
+`ffda1b68e` was `origin/main`), and `5f92b0a7a` — the commit after it — is the first blocked one. The
+repository had been made private under a new name in that window and returned to public afterwards;
+the rename was never the cause. A `success` on the **push** is therefore the only evidence that a
+release reached production, and a `STALE` from `scripts/deploy-check.mjs` after a merge means "look
+at the commit status", not "wait longer".
+
+**The same free tier's second ceiling is Function Storage — and its guard depends on a secret that
+is not provisioned.** [`scripts/vercel-prune.mjs`](../../scripts/vercel-prune.mjs) records 454
+deployments in 9.6 days reaching **100 % of the 10 GB** allowance on 2026-11-08, and a full quota is
+a release that cannot deploy ([`DEPLOYING.md` §4](deploying.md#4-function-storage-deployments-accumulate-so-prune-them)).
+The script's credential is `VERCEL_TOKEN` **or** the Vercel CLI's own `auth.json`, and the variable
+name exists **nowhere** here: not in the profile's `.env` (no `VERCEL_*` key at all) and not in the
+`alignsynch-web` BWS project (27 keys, none of them a Vercel token). So `pnpm deploy:prune` runs on a
+machine where a human has run `vercel login` and refuses, naming the variable, on one where they have
+not — measured 2026-11-21T03:56Z on this host: the dry run worked through the CLI's `auth.json`,
+`43 deployments · 4 protected (live ∪ newest 3) · 35 candidates`, and deleted nothing. The guard
+exists and is **disabled by a missing secret name** wherever that login is absent, which is the state
+a fresh worker starts in. Do not read a green gate as evidence about either ceiling: the gate is
+network-free by contract.
+
 ## main → production: promoting a release
 
 A tag fixes the artefact; production is a separate decision, and the first honest sentence about it
