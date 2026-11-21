@@ -513,12 +513,16 @@ function firstDifference(committed: string, canonical: string): string {
 
 /**
  * The canonical export of `data/assessments.ts`, compared byte for byte with the committed
- * file. `[]` when they agree; the reasons otherwise — `data:check` prints them as `E32`, and
- * `pnpm bundles export --dataset --check` prints them and exits 1.
+ * file — its `appVersion` stamp included. `[]` when they agree; the reasons otherwise —
+ * `data:check` prints them as `E32`, and `pnpm bundles export --dataset --check` prints them
+ * and exits 1.
  *
- * `appVersion` is provenance and is never gated, so the comparison re-stamps the *committed*
- * file's own version: only the records can turn E32 red, and a version bump does not churn a
- * fixture. `--fix` writes today's version.
+ * `appVersion` is provenance a reader trusts — the file says which build made it — so the
+ * stamp is **gated**: the committed file must name this tree's `package.json` version (#1320).
+ * It was structurally invisible while the comparison re-stamped with the committed file's own
+ * version, so the stamp drifted four releases without a red gate. The failure names the repair
+ * command, and `--fix` writes head's version (`readAppVersion()`) — the stamp is never edited
+ * by hand.
  */
 export function demoBundleProblems(options: DemoBundleOptions = {}): string[] {
   const file = options.file ?? DEMO_BUNDLE_FILE;
@@ -530,12 +534,15 @@ export function demoBundleProblems(options: DemoBundleOptions = {}): string[] {
 
   const committed = readFileSync(file, "utf8");
   const parsed = parseBundle(committed);
-  const appVersion =
-    options.appVersion ?? (parsed.ok ? parsed.bundle.appVersion : readAppVersion());
+  const appVersion = options.appVersion ?? readAppVersion();
 
   const canonical = serializeBundle(
     canonicalDemoBundle(assessments, assessmentSessions, appVersion),
   );
+
+  /** The same text with whichever stamp it carries replaced, so a stamp-only diff is not a record diff. */
+  const withoutStamp = (text: string) =>
+    text.replace(/"appVersion": "[^"]*"/, '"appVersion": "<stamp>"');
 
   const problems: string[] = [];
   if (!parsed.ok) {
@@ -544,8 +551,17 @@ export function demoBundleProblems(options: DemoBundleOptions = {}): string[] {
     );
   }
   if (committed === canonical) return problems;
+
+  const stamped = parsed.ok ? parsed.bundle.appVersion : undefined;
+  if (stamped !== undefined && stamped !== appVersion) {
+    problems.push(
+      `${displayPath(file)} says appVersion "${stamped}" and this tree is "${appVersion}" — the stamp is gated to package.json, so a bundle that names another build is a false answer to whoever imports it. Re-stamp it with \`pnpm bundles export --dataset --fix\` (it writes "${appVersion}")`,
+    );
+  }
+  if (withoutStamp(committed) === withoutStamp(canonical)) return problems;
+
   problems.push(
-    `${displayPath(file)} is not the canonical export of data/assessments.ts (${firstDifference(committed, canonical)}) — regenerate it with \`pnpm bundles export --dataset --fix\``,
+    `${displayPath(file)} is not the canonical export of data/assessments.ts (${firstDifference(withoutStamp(committed), withoutStamp(canonical))}) — regenerate it with \`pnpm bundles export --dataset --fix\``,
   );
   return problems;
 }

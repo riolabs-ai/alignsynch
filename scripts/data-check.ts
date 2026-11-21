@@ -266,7 +266,9 @@ const sessionRecords = validateCollection("E0", "assessment session", zAssessmen
  * --fix` writes it, and this compares the committed bytes with a fresh canonical export of
  * `data/assessments.ts`. A fixture edited without regenerating the bundle is drift in a
  * file other people import, and nothing else in the gate can see it — the records are
- * valid, the bundle is valid, and they say different things.
+ * valid, the bundle is valid, and they say different things. The `appVersion` stamp is part
+ * of that comparison (#1320): the file names the build that made it, so a stamp that is not
+ * `package.json`'s version is a false answer to whoever imports it.
  * ------------------------------------------------------------------ */
 
 for (const problem of demoBundleProblems()) {

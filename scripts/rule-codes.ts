@@ -140,7 +140,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     files: ["data-check.ts"],
     codes: {
       E31: "an assessment session names a template that exists, and its Aspects are that template's Aspects — a copy that drifted is not a copy",
-      E32: "the committed demo bundle is the canonical export of `data/assessments.ts`",
+      E32: "the committed demo bundle is the canonical export of `data/assessments.ts`, stamped with `package.json`'s version",
       E33: "an imported tenant store parses, and the active assessment set passes E0/E1/E2/E31 against itself",
     },
   },
